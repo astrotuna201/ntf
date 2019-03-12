@@ -6,6 +6,9 @@
 //==============================================================================
 // Platform
 public protocol Platform : ObjectTracking, Logging {
+    /// evaluation context
+    var context: EvaluationContext { get }
+    /// collection of available devices on the platform
     var devices: [Device] { get }
 }
 
@@ -19,6 +22,8 @@ public protocol Device : ObjectTracking, Logging {
     var attributes: [String:String] { get }
     /// the amount of free memory currently available on the device
     var availableMemory: UInt64 { get }
+    /// evaluation context
+    var context: EvaluationContext { get }
     /// the id of the device for example gpu:0
     var id: Int { get }
     /// the maximum number of threads supported per block
@@ -47,6 +52,8 @@ public protocol Device : ObjectTracking, Logging {
 public protocol DeviceArray : ObjectTracking, Logging {
     //-------------------------------------
     // properties
+    /// evaluation context
+    var context: EvaluationContext { get }
     /// the device where this array is allocated
     var device: Device { get }
     /// a pointer to the memory on the device
@@ -98,6 +105,8 @@ public struct StreamEventOptions: OptionSet {
 public protocol DeviceStream : ObjectTracking, Logging {
     //-------------------------------------
     // properties
+    /// evaluation context
+    var context: EvaluationContext { get }
     /// the device the stream is associated with
     var device: Device { get }
     /// a unique id used to identify the stream

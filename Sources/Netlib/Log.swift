@@ -8,7 +8,7 @@ import Dispatch
 //==============================================================================
 // Logging
 public protocol Logging {
-    var context: Context? { get }
+    var context: EvaluationContext? { get }
 	var logLevel: LogLevel { get set }
 	var namePath: String { get }
 	var nestingLevel: Int { get }

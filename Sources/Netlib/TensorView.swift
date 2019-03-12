@@ -10,7 +10,7 @@ public struct TensorView<Scalar> : Logging {
     public var tensorData: TensorData<Scalar>
 
     // logging
-    public let context: Context?
+    public let context: EvaluationContext?
     public var logLevel = LogLevel.error
     public let nestingLevel = 0
     public var namePath: String = "TODO"
@@ -48,7 +48,7 @@ public struct TensorView<Scalar> : Logging {
                 elementOffset: Int = 0,
                 isShared: Bool = false,
                 name: String? = nil,
-                context: Context? = nil) {
+                context: EvaluationContext? = nil) {
         // assign
         let elementSize = MemoryLayout<Scalar>.size
         self.shape = shape

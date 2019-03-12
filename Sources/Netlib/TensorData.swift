@@ -22,7 +22,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
     public var namePath: String = "TODO"
 
     // logging
-    public let context: Context?
+    public let context: EvaluationContext?
     public var logLevel = LogLevel.error 
     public let nestingLevel = 0
 
@@ -92,7 +92,8 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a database
-    public init(context: Context?, readOnlyReferenceTo buffer: BufferUInt8) {
+    public init(context: EvaluationContext?, 
+                readOnlyReferenceTo buffer: BufferUInt8) {
         isReadOnlyReference = true
         self.context  = context
         elementCount  = buffer.count
@@ -110,7 +111,9 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // create new space
-    public init(context: Context?, elementCount: Int, name: String? = nil) {
+    public init(context: EvaluationContext?, 
+                elementCount: Int, 
+                name: String? = nil) {
         isReadOnlyReference = false
         self.context = context
         self.elementCount = elementCount

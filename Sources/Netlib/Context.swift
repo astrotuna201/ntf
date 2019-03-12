@@ -12,10 +12,11 @@ public enum EvaluationMode { case inference, training }
 /// A context contains device specific resources (e.g. CPU, GPU, cloud)
 /// required to generically execute layers
 open class Context : ObjectTracking, Logging {
+    public private(set) var context: Context? = nil
     /// The current evaluation mode
     public let evaluationMode: EvaluationMode
     /// The current event log
-    public private(set) var log: Log?
+    public private(set) var log: Log!
     /// The log reporting level for this object
     public var logLevel: LogLevel
     /// The log formatted nesting level for this object
@@ -33,6 +34,7 @@ open class Context : ObjectTracking, Logging {
                          log: Log?,
                          logLevel: LogLevel = .error) {
         // assign
+//        self.context = self
         let rootNamePath = name ?? String(describing: Context.self)
         self.namePath = rootNamePath
         self.evaluationMode = evaluationMode
@@ -44,6 +46,7 @@ open class Context : ObjectTracking, Logging {
     ///
     /// - Parameter context: The existing context to copy from.
     public required init(_ other: Context) {
+//        self.context = self
         self.evaluationMode = other.evaluationMode
         self.log = other.log
         self.logLevel = other.logLevel

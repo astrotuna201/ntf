@@ -4,11 +4,16 @@
 //
 import Foundation
 
-public struct TensorView<Scalar> {
+public struct TensorView<Scalar> : Logging {
     //--------------------------------------------------------------------------
     // properties
     public var tensorData: TensorData<Scalar>
-    public var log: Log?
+
+    // logging
+    public let context: Context?
+    public var logLevel = LogLevel.error
+    public let nestingLevel = 0
+    public var namePath: String = "TODO"
 
     // shape and shorthand accessors
     public let shape: TensorShape
@@ -43,7 +48,7 @@ public struct TensorView<Scalar> {
                 elementOffset: Int = 0,
                 isShared: Bool = false,
                 name: String? = nil,
-                log: Log? = nil) {
+                context: Context? = nil) {
         // assign
         let elementSize = MemoryLayout<Scalar>.size
         self.shape = shape
@@ -51,16 +56,17 @@ public struct TensorView<Scalar> {
         self.elementOffset = elementOffset
         self.viewByteOffset = elementOffset * elementSize
         self.viewByteCount = shape.elementSpanCount * elementSize
-        self.log = log
+        self.context = context
         self.tensorData = tensorData ?? TensorData(
-                log: log, elementCount: shape.elementCount, name: name)
+                context: context, elementCount: shape.elementCount, name: name)
 
         assert(viewByteOffset + viewByteCount <= self.tensorData.byteCount)
     }
 
     //--------------------------------------------------------------------------
-    // empty array
+    // empty view
     public init() {
+        context = nil
         shape = TensorShape()
         tensorData = TensorData()
         isShared = false

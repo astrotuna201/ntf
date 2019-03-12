@@ -8,7 +8,7 @@ import Dispatch
 //==============================================================================
 // Logging
 public protocol Logging {
-    var log: Log? { get }
+    var context: Context? { get }
 	var logLevel: LogLevel { get set }
 	var namePath: String { get }
 	var nestingLevel: Int { get }
@@ -20,8 +20,8 @@ extension Logging {
 	//------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		guard let thisLog = log else { return false }
-		return level <= thisLog.logLevel || level <= logLevel
+		guard let log = context?.log else { return false }
+		return level <= log.logLevel || level <= logLevel
 	}
 
 	//------------------------------------
@@ -30,8 +30,9 @@ extension Logging {
 	                     indent: Int = 0, trailing: String = "",
 	                     minCount: Int = 80) {
 		if willLog(level: level) {
-			log!.write(level: level, nestingLevel: indent + nestingLevel,
-			           trailing: trailing, minCount: minCount, message: message)
+			context!.log.write(
+					level: level, nestingLevel: indent + nestingLevel,
+					trailing: trailing, minCount: minCount, message: message)
 		}
 	}
 
@@ -43,10 +44,10 @@ extension Logging {
 		if willLog(level: .diagnostic) {
 			// if subcategories have been selected on the log object
 			// then make sure the caller's category is desired
-			if let mask = log?.categories?.rawValue,
+			if let mask = context!.log.categories?.rawValue,
 			   categories.rawValue & mask == 0 { return }
 
-			log!.write(
+			context!.log.write(
 					level: .diagnostic, nestingLevel: indent + nestingLevel, 
 					trailing: trailing, minCount: minCount, message: message)
 		}

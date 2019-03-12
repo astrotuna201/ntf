@@ -10,7 +10,8 @@ import Dispatch
 public protocol Logging {
     var log: Log? { get }
 	var logLevel: LogLevel { get set }
-	var nestingLevel: Int { get set }
+	var namePath: String { get }
+	var nestingLevel: Int { get }
 }
 
 //------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ final public class Log : ObjectTracking {
 	public var history = [LogEvent]()
     public var logLevel = LogLevel.error
     public var nestingLevel = 0
-    public var namePath: String = "TODO"
+    public var namePath: String
 
     // ObjectTracking
     public private(set) var trackingId: Int = 0
@@ -76,6 +77,11 @@ final public class Log : ObjectTracking {
 	private static let levelColWidth =
 		String(describing: LogLevel.diagnostic).count
 
+	// initializer to allow for Log to be used as a parameter default
+	public init(parentNamePath: String) {
+		namePath = parentNamePath + ".Log"		
+	}
+	
 	//----------------------------------------------------------------------------
 	// functions
 	public func write(level: LogLevel, nestingLevel: Int,

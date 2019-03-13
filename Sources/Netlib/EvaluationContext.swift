@@ -43,7 +43,7 @@ open class EvaluationContext : ObjectTracking, Logging {
 
     /// Creates a context by copying all information from an existing context.
     /// - Parameter context: The existing context to copy from.
-    public required init(_ other: EvaluationContext) {
+    public required init(other: EvaluationContext) {
 //        self.context = self
         self.evaluationMode = other.evaluationMode
         self.log = other.log
@@ -60,14 +60,11 @@ public protocol Training { }
 public final class TrainingContext: EvaluationContext, Training {
     public init(name: String?, log: Log?, logLevel: LogLevel = .error) {
         super.init(evaluationMode: .training, name: name,
-                   log: log, logLevel: logLevel = .error)
+                   log: log, logLevel: logLevel)
     }
-//
-//    /// Creates a context by copying all information from an existing context.
-//    /// - Parameter context: The existing context to copy from.
-//    public required init(_ other: EvaluationContext) {
-//        super.init(other: other)
-//    }
+    public required init(other: EvaluationContext) {
+        super.init(other: other)
+    }
 }
 
 //==============================================================================
@@ -78,12 +75,9 @@ public protocol Inferring { }
 public final class InferenceContext: EvaluationContext, Inferring {
     public init(name: String?, log: Log?, logLevel: LogLevel = .error) {
         super.init(evaluationMode: .inference, name: name,
-                   log: log, logLevel: logLevel = .error)
+                   log: log, logLevel: logLevel)
     }
-//
-//    /// Creates a context by copying all information from an existing context.
-//    /// - Parameter context: The existing context to copy from.
-//    public required init(_ other: EvaluationContext) {
-//        super.init(other: other)
-//    }
+    public required init(other: EvaluationContext) {
+        super.init(other: other)
+    }
 }

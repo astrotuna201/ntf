@@ -6,6 +6,7 @@
 //==============================================================================
 // ComputeService
 public protocol ComputeService: ObjectTracking, Logging {
+    init(context: EvaluationContext) throws
     var devices: [ComputeDevice] { get }
     var id: Int { get set }
     var name: String { get }

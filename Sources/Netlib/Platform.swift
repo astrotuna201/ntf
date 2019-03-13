@@ -2,7 +2,7 @@
 //  Created by Edward Connell on 8/20/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
-//  Context (local, remote)
+//  EvaluationContext (local, remote)
 //    Platform (global)
 //		services[]
 //		  ComputeService (cpu, cuda, amd, tpu, ...)
@@ -62,18 +62,19 @@ final public class Platform: ObjectTracking, Logging {
     private init() {
         do {
             // add cpu service by default
-            try add(service: CpuComputeService(log: currentLog))
-            #if os(Linux)
-            try add(service: CudaComputeService(log: currentLog))
-            #endif
+            // TODO: put back!
+//            try add(service: CpuComputeService(log: currentLog))
+//            #if os(Linux)
+//            try add(service: CudaComputeService(log: currentLog))
+//            #endif
 
-            for bundle in ComputePlatform.plugInBundles {
+            for bundle in Platform.plugInBundles {
                 try bundle.loadAndReturnError()
 //			var unloadBundle = false
 
                 if let serviceType = bundle.principalClass as? ComputeService.Type {
                     // create the service
-                    let service = try serviceType.init(log: currentLog)
+                    let service = try serviceType.init(context: context)
 
                     if willLog(level: .diagnostic) {
                         diagnostic("Loaded compute service '\(service.name)'." +

@@ -30,6 +30,7 @@ final public class ObjectTracker {
 	}
 
 	// properties
+	public static let shared = ObjectTracker()
 	private let queue = DispatchQueue(label: "ObjectTracker.queue")
 	public let counter = AtomicCounter()
 	public var debuggerRegisterBreakId = -1

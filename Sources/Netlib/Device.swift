@@ -4,18 +4,17 @@
 //
 
 //==============================================================================
-// Platform
-public protocol Platform : ObjectTracking, Logging {
-    /// evaluation context
-    var context: EvaluationContext { get }
-    /// collection of available devices on the platform
-    var devices: [Device] { get }
+// ComputeService
+public protocol ComputeService: ObjectTracking, Logging {
+    var devices: [ComputeDevice] { get }
+    var id: Int { get set }
+    var name: String { get }
 }
 
 //==============================================================================
-// Device
+// ComputeDevice
 //    This specifies the compute device interface
-public protocol Device : ObjectTracking, Logging {
+public protocol ComputeDevice : ObjectTracking, Logging {
     //-------------------------------------
     // properties
     /// a dictionary of device specific attributes describing the device
@@ -30,6 +29,8 @@ public protocol Device : ObjectTracking, Logging {
     var maxThreadsPerBlock: Int { get }
     /// the name of the device
     var name: String { get }
+    /// the service this device belongs to
+    var service: ComputeService! { get }
     /// is `true` if the device is configured to use unified memory addressing
     /// with the host CPU
     var usesUnifiedAddressing: Bool { get }
@@ -55,7 +56,7 @@ public protocol DeviceArray : ObjectTracking, Logging {
     /// evaluation context
     var context: EvaluationContext { get }
     /// the device where this array is allocated
-    var device: Device { get }
+    var device: ComputeDevice { get }
     /// a pointer to the memory on the device
     var data: UnsafeMutableRawPointer { get }
     /// the size of the device memory in bytes
@@ -66,7 +67,7 @@ public protocol DeviceArray : ObjectTracking, Logging {
     //-------------------------------------
     // functions
     /// clears the array to zero
-    func zero(using stream: DeviceStream) throws
+    func zero(using stream: DeviceStream?) throws
     /// asynchronously copies the contents of another device array
     func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
     /// asynchronously copies the contents of a memory buffer
@@ -108,7 +109,7 @@ public protocol DeviceStream : ObjectTracking, Logging {
     /// evaluation context
     var context: EvaluationContext { get }
     /// the device the stream is associated with
-    var device: Device { get }
+    var device: ComputeDevice { get }
     /// a unique id used to identify the stream
     var id: Int { get }
     /// a label used to identify the stream

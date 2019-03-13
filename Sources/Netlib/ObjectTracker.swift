@@ -22,6 +22,8 @@ public var objectTracker = ObjectTracker()
 /// The object tracker class is used during debug to track the lifetime of
 /// class objects to prevent reference cycles and memory leaks
 final public class ObjectTracker {
+	//--------------------------------------------------------------------------
+	// types
 	public struct ItemInfo {
         weak var object: ObjectTracking?
 		let typeName: String
@@ -29,8 +31,11 @@ final public class ObjectTracker {
 		var isStatic: Bool
 	}
 
-	// properties
-	public static let shared = ObjectTracker()
+	//--------------------------------------------------------------------------
+	// properties TODO: document all these
+	/// global shared instance
+	public static let global = ObjectTracker()
+	
 	private let queue = DispatchQueue(label: "ObjectTracker.queue")
 	public let counter = AtomicCounter()
 	public var debuggerRegisterBreakId = -1

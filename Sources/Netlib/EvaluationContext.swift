@@ -4,11 +4,13 @@
 //
 import Foundation
 
+//==============================================================================
 /// A value that indicates if the model will be used for training or inference
 /// This effects resource allocation during `init` and control logic in
 /// the `applied(to:` function
 public enum EvaluationMode { case inference, training }
 
+//==============================================================================
 /// A context contains device specific resources (e.g. CPU, GPU, cloud)
 /// required to generically execute layers
 open class EvaluationContext : ObjectTracking, Logging {
@@ -27,12 +29,9 @@ open class EvaluationContext : ObjectTracking, Logging {
     public var namePath: String
 
     /// Creates a context.
-    ///
     /// - Parameter evaluationMode: The current evaluation mode
-    public required init(evaluationMode: EvaluationMode,
-                         name: String?,
-                         log: Log?,
-                         logLevel: LogLevel = .error) {
+    public init(evaluationMode: EvaluationMode, name: String?,
+                log: Log?, logLevel: LogLevel = .error) {
         // assign
 //        self.context = self
         let rootNamePath = name ?? String(describing: EvaluationContext.self)
@@ -43,7 +42,6 @@ open class EvaluationContext : ObjectTracking, Logging {
     }
 
     /// Creates a context by copying all information from an existing context.
-    ///
     /// - Parameter context: The existing context to copy from.
     public required init(_ other: EvaluationContext) {
 //        self.context = self
@@ -52,4 +50,40 @@ open class EvaluationContext : ObjectTracking, Logging {
         self.logLevel = other.logLevel
         self.namePath = other.namePath
     }
+}
+
+//==============================================================================
+/// A context conforming to a Training tag to enable
+/// model conformance specialization 
+public protocol Training { }
+
+public final class TrainingContext: EvaluationContext, Training {
+    public init(name: String?, log: Log?, logLevel: LogLevel = .error) {
+        super.init(evaluationMode: .training, name: name,
+                   log: log, logLevel: logLevel = .error)
+    }
+//
+//    /// Creates a context by copying all information from an existing context.
+//    /// - Parameter context: The existing context to copy from.
+//    public required init(_ other: EvaluationContext) {
+//        super.init(other: other)
+//    }
+}
+
+//==============================================================================
+/// A context conforming to a Inferring tag to enable
+/// model conformance specialization 
+public protocol Inferring { }
+
+public final class InferenceContext: EvaluationContext, Inferring {
+    public init(name: String?, log: Log?, logLevel: LogLevel = .error) {
+        super.init(evaluationMode: .inference, name: name,
+                   log: log, logLevel: logLevel = .error)
+    }
+//
+//    /// Creates a context by copying all information from an existing context.
+//    /// - Parameter context: The existing context to copy from.
+//    public required init(_ other: EvaluationContext) {
+//        super.init(other: other)
+//    }
 }

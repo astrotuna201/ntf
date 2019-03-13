@@ -2,13 +2,15 @@
 //  Created by Edward Connell on 8/20/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
-//  Platform (singleton)
-//		services
-//			ComputeService (cpu, cuda, amd, cloud, ...)
-//				devices
-//					ComputeDevice (gpu:0, gpu:1, ...)
-//						DeviceStream
-//						DeviceArray
+//  Context (local, remote)
+//    Platform (global)
+//		services[]
+//		  ComputeService (cpu, cuda, amd, tpu, ...)
+//			devices[]
+//			  ComputeDevice (gpu:0, gpu:1, ...)
+//			    DeviceStream
+//				DeviceArray
+//
 import Foundation
 
 //==============================================================================
@@ -17,11 +19,18 @@ import Foundation
 final public class Platform: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
-    public static let shared: Platform = { return Platform() }()
+    /// global shared instance
+    public static let global: Platform = { return Platform() }()
+    /// a device automatically selected during init based on service priority
     public var defaultDevice: ComputeDevice
+    ///
     public var defaultDeviceCount = 1
+    /// ordered list of device ids specifying the order for auto selection
     public var devicePriority: [Int]?
+    /// ordered list of service names specifying the order for auto selection
     public var servicePriority = ["cuda", "cpu"]
+    /// location of dynamically loaded service modules
+    public var servicesLocation: URL
 
     // object tracking
     public private(set) var trackingId = 0
@@ -32,11 +41,11 @@ final public class Platform: ObjectTracking, Logging {
     public var logLevel = LogLevel.error
     public let nestingLevel = 0
 
-    // cpu, cuda, etc...
+    /// collection of registered compute services (cpu, cuda, ...)
     public private(set) var services: [String : ComputeService]
 
     //--------------------------------------------------------------------------
-    // plugIns
+    // plugIns TODO: move to compute service
     public static var plugInBundles: [Bundle] = {
         var bundles = [Bundle]()
         if let dir = Bundle.main.builtInPlugInsPath {

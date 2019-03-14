@@ -4,6 +4,7 @@
 //
 import Foundation
 import TensorFlow
+import Netlib
 
 /// A densely-connected neural network layer.
 ///

@@ -8,7 +8,7 @@ public struct TensorShape: Equatable {
     //--------------------------------------------------------------------------
     // properties
     /// The extent of the shape in each dimension
-    public let dimensions: [Int]
+    public let extents: [Int]
     /// The dense number of elements defined by the shape
     public let elementCount: Int
     /// The sparse number of elements spanned by the shape
@@ -22,13 +22,13 @@ public struct TensorShape: Equatable {
     public var isContiguous: Bool { return elementCount == elementSpanCount }
     public var isEmpty: Bool { return elementCount == 0 }
     public var isScalar: Bool { return layout == .scalar }
-    public var rank: Int { return dimensions.count }
+    public var rank: Int { return extents.count }
 
-    public var items: Int { return dimensions[layout.nAxis] }
-    public var channels: Int { return dimensions[layout.cAxis] }
-    public var depths: Int { return dimensions[layout.dAxis] }
-    public var rows: Int { return dimensions[layout.hAxis] }
-    public var cols: Int { return dimensions[layout.wAxis] }
+    public var items: Int { return extents[layout.nAxis] }
+    public var channels: Int { return extents[layout.cAxis] }
+    public var depths: Int { return extents[layout.dAxis] }
+    public var rows: Int { return extents[layout.hAxis] }
+    public var cols: Int { return extents[layout.wAxis] }
 
     public var itemStride: Int { return strides[layout.nAxis] }
     public var channelStride: Int { return strides[layout.cAxis] }
@@ -38,68 +38,68 @@ public struct TensorShape: Equatable {
 
     //--------------------------------------------------------------------------
     /// Initialize with all options
-    /// - Parameter dimensions: extent of the shape in each dimension
+    /// - Parameter extents: extent of the shape in each dimension
     /// - Parameter layout: defines the interpretation of each dimension
     /// - Parameter strides: the distance to the next element in each dimension
     /// - Parameter colMajor: if `true` it allows normal indexing of imported
     ///             row major data, such as matrices from Matlab or Octave
-    public init(dimensions: [Int],
+    public init(extents: [Int],
                 layout: TensorLayout? = nil,
                 strides: [Int]? = nil,
                 colMajor: Bool = false) {
         // validate and assign
-        assert(strides == nil || strides?.count == dimensions.count)
-        let rank = dimensions.count
-        self.dimensions = dimensions
-        self.elementCount = dimensions.reduce(1, *)
+        assert(strides == nil || strides?.count == extents.count)
+        let rank = extents.count
+        self.extents = extents
+        self.elementCount = extents.reduce(1, *)
         self.layout = layout ?? TensorLayout(defaultForRank: rank)
 
         // strides
         if let userStrides = strides {
             self.strides = userStrides
         } else if colMajor {
-            var cmExtent = dimensions
+            var cmExtent = extents
             cmExtent.swapAt(self.layout.hAxis, self.layout.wAxis)
             var cmStrides = TensorShape.denseStrides(for: cmExtent)
             cmStrides.swapAt(self.layout.hAxis, self.layout.wAxis)
             self.strides = cmStrides
         } else {
-            self.strides = TensorShape.denseStrides(for: dimensions)
+            self.strides = TensorShape.denseStrides(for: extents)
         }
-        elementSpanCount = TensorShape.spanCount(for: dimensions,
+        elementSpanCount = TensorShape.spanCount(for: extents,
                                                  with: self.strides)
     }
 
-    /// Initialize with an array literal representing the shape dimensions.
-    /// The rank of the tensor is the number of dimensions.
-    /// - Parameter elements: The shape dimensions.
+    /// Initialize with an array literal representing the shape extents.
+    /// The rank of the tensor is the number of extents.
+    /// - Parameter elements: The shape extents.
     @inlinable @inline(__always)
     public init(arrayLiteral elements: Int...) {
-        self.init(dimensions: elements)
+        self.init(extents: elements)
     }
 
-    /// Initialize with variadic elements representing the shape dimensions.
+    /// Initialize with variadic elements representing the shape extents.
     /// The rank of the tensor is the number of elements.
-    /// - Parameter elements: The shape dimensions.
+    /// - Parameter elements: The shape extents.
     @inlinable @inline(__always)
     public init(_ elements: Int...) {
-        self.init(dimensions: elements)
+        self.init(extents: elements)
     }
 
-    /// Initialize with an array representing the shape dimensions.
+    /// Initialize with an array representing the shape extents.
     /// The rank of the tensor is the number of elements.
-    /// - Parameter elements: The shape dimensions.
+    /// - Parameter elements: The shape extents.
     @inlinable @inline(__always)
     public init(_ elements: [Int]) {
-        self.init(dimensions: elements)
+        self.init(extents: elements)
     }
 
     //--------------------------------------------------------------------------
     // denseStrides
-    private static func denseStrides(for dimensions: [Int]) -> [Int] {
-        var strides = [Int](repeating: 1, count: dimensions.count)
-        for index in (1..<dimensions.count).reversed() {
-            strides[index-1] = dimensions[index] * strides[index]
+    private static func denseStrides(for extents: [Int]) -> [Int] {
+        var strides = [Int](repeating: 1, count: extents.count)
+        for index in (1..<extents.count).reversed() {
+            strides[index-1] = extents[index] * strides[index]
         }
         return strides
     }
@@ -109,9 +109,9 @@ public struct TensorShape: Equatable {
     // A sub view may cover a wider range of parent element indexes
     // than the number of elements defined by the extent of this view
     // The span of the extent is the linear index of the last index + 1
-    private static func spanCount(for dimensions: [Int],
+    private static func spanCount(for extents: [Int],
                                   with strides: [Int]) -> Int {
-        return zip(dimensions, strides).reduce(0) { $0 + ($1.0 - 1) * $1.1 } + 1
+        return zip(extents, strides).reduce(0) { $0 + ($1.0 - 1) * $1.1 } + 1
     }
 }
 

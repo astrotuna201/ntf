@@ -21,6 +21,24 @@ public struct TensorView<Scalar>: Logging {
     public let viewByteOffset: Int
     public let viewByteCount: Int
 
+    // convenience shorthand
+    public var isContiguous: Bool { return shape.isContiguous }
+    public var isEmpty: Bool { return shape.isEmpty }
+    public var isScalar: Bool { return shape.isScalar }
+    public var rank: Int { return shape.rank }
+
+    public var items: Int { return shape.items }
+    public var channels: Int { return shape.channels }
+    public var depths: Int { return shape.depths }
+    public var rows: Int { return shape.rows }
+    public var cols: Int { return shape.cols }
+
+    public var itemStride: Int { return shape.itemStride }
+    public var channelStride: Int { return shape.channelStride }
+    public var depthStride: Int { return shape.depthStride }
+    public var rowStride: Int { return shape.rowStride }
+    public var colStride: Int { return shape.colStride }
+
     //--------------------------------------------------------------------------
     // testing properties
     /// set any time the underlying TensorData is mutated
@@ -61,8 +79,8 @@ public struct TensorView<Scalar>: Logging {
         assert(viewByteOffset + viewByteCount <= self.tensorData.byteCount)
     }
 
-    //--------------------------------------------------------------------------
-    // empty view
+    //------------------------------------
+    // simple empty arrays
     public init() {
         log = nil
         shape = TensorShape()
@@ -71,6 +89,40 @@ public struct TensorView<Scalar>: Logging {
         elementOffset = 0
         viewByteCount = 0
         viewByteOffset = 0
+    }
+
+    public init(count: Int, log: Log? = nil) {
+        self.init(shape: TensorShape(count), log: log)
+    }
+
+    public init(extents: [Int], log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+
+    public init(_ extents: Int..., log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+
+    //------------------------------------
+    // from array
+    public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
+        let byteCount = scalars.count * MemoryLayout<Scalar>.size
+        let dataPointer = scalars.withUnsafeBufferPointer { buffer in
+            buffer.baseAddress!.withMemoryRebound(to: UInt8.self, capacity: byteCount) { $0 }
+        }
+        self.init(shape: shape, start: dataPointer, count: byteCount, log: log)
+    }
+
+    public init(scalars: [Scalar], log: Log? = nil) {
+        self.init(shape: TensorShape(scalars.count), scalars: scalars, log: log)
+    }
+
+    //------------------------------------
+    // copy from pointer
+    public init(shape: TensorShape, start: UnsafePointer<UInt8>, count: Int, log: Log? = nil) {
+        let buffer = UnsafeBufferPointer(start: start, count: count)
+        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
+        self.init(shape: shape, tensorData: tensorData, log: log)
     }
 
     //--------------------------------------------------------------------------

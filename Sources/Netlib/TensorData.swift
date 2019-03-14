@@ -9,7 +9,7 @@ public typealias BufferUInt8 = UnsafeBufferPointer<UInt8>
 public typealias MutableBufferUInt8 = UnsafeMutableBufferPointer<UInt8>
 
 public class TensorData<Scalar> : ObjectTracking, Logging {
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // properties
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
     public let elementCount: Int
@@ -108,6 +108,21 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
     }
 
     //----------------------------------------
+    // copy from buffer
+    public init(log: Log?, buffer: BufferUInt8) {
+        self.log = log
+        isReadOnlyReference = false
+        self.elementCount = buffer.count
+        do {
+            _ = try rwReal8U().initialize(from: buffer)
+        } catch {
+            // TODO: what do we want to do here when it should never fail
+        }
+        assert(hostVersion == 0 && masterVersion == 0)
+        register()
+    }
+
+    //----------------------------------------
     // create new space
     public init(log: Log?, elementCount: Int, name: String? = nil) {
         isReadOnlyReference = false
@@ -126,5 +141,301 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
                     "elements: \(elementCount)", categories: .dataAlloc)
         }
+    }
+
+    //----------------------------------------
+    deinit {
+        do {
+            // synchronize with all streams that have accessed these arrays
+            // before freeing them
+            for sid in 0..<deviceArrays.count {
+                for devId in 0..<deviceArrays[sid].count {
+                    if let info = deviceArrays[sid][devId] {
+                        try info.stream.blockCallerUntilComplete()
+                    }
+                }
+            }
+        } catch {
+            writeLog(String(describing: error))
+        }
+        objectTracker.remove(trackingId: trackingId)
+
+        if elementCount > 0 && willLog(level: .diagnostic) {
+            diagnostic("\(releaseString) \(name)(\(trackingId)) " +
+                "elements: \(elementCount)", categories: .dataAlloc)
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // ro
+    public func roReal8U() throws -> BufferUInt8 {
+        try migrate(readOnly: true)
+        return BufferUInt8(hostBuffer)
+    }
+
+    public func ro(using stream: DeviceStream) throws -> UnsafeRawPointer {
+        try migrate(readOnly: true, using: stream)
+        return UnsafeRawPointer(deviceDataPointer)
+    }
+
+    //--------------------------------------------------------------------------
+    // rw
+    public func rwReal8U() throws -> MutableBufferUInt8 {
+        assert(!isReadOnlyReference)
+        try migrate(readOnly: false)
+        return hostBuffer
+    }
+
+    public func rw(using stream: DeviceStream) throws -> UnsafeMutableRawPointer {
+        assert(!isReadOnlyReference)
+        try migrate(readOnly: false, using: stream)
+        return deviceDataPointer
+    }
+
+    //----------------------------------------------------------------------------
+    // migrate
+    private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {
+        // if the array is empty then there is nothing to do
+        guard !isReadOnlyReference && elementCount > 0 else { return }
+        let srcUsesUMA = master?.stream.device.usesUnifiedAddressing ?? true
+        let dstUsesUMA = stream?.device.usesUnifiedAddressing ?? true
+
+        // reset, this is to support automated tests
+        lastAccessCopiedBuffer = false
+
+        switch srcUsesUMA {
+        case true where dstUsesUMA:
+            try setDeviceDataPointerToHostBuffer(readOnly: readOnly)
+
+        case false where dstUsesUMA:
+            try device2host(readOnly: readOnly)
+
+        case true where !dstUsesUMA:
+            assert(stream != nil, streamRequired)
+            try host2device(readOnly: readOnly, using: stream!)
+
+        case false where !dstUsesUMA:
+            assert(stream != nil, streamRequired)
+            try device2device(readOnly: readOnly, using: stream!)
+
+        // shouldn't be possible
+        default: fatalError()
+        }
+    }
+
+    //----------------------------------------------------------------------------
+    // getArray
+    //  this manages a dictionary of replicated device arrays indexed
+    // by serviceId and deviceId. It will lazily create a device array if needed
+    private func getArray(for stream: DeviceStream) throws -> ArrayInfo {
+        let device = stream.device
+        let serviceId = device.service.serviceId
+
+        // add the device array list if needed
+        if deviceArrays.count <= serviceId {
+            let addCount = max(serviceId + 1, 2) - deviceArrays.count
+            for _ in 0..<addCount {    deviceArrays.append([ArrayInfo?]()) }
+        }
+
+        // create array list if needed
+        if deviceArrays[serviceId].isEmpty {
+            deviceArrays[serviceId] =
+                [ArrayInfo?](repeating: nil, count: device.service.devices.count)
+        }
+
+        // return existing if found
+        if let info = deviceArrays[serviceId][device.deviceId] {
+            // sync the requesting stream with the last stream that accessed it
+            try stream.sync(with: info.stream, event: getSyncEvent(using: stream))
+
+            // update the last stream used to access this array for sync purposes
+            info.stream = stream
+            return info
+
+        } else {
+            // create the device array
+            if willLog(level: .diagnostic) {
+                diagnostic("\(createString) \(name)(\(trackingId)) " +
+                    "allocating array on device(\(device.deviceId)) elements: \(elementCount)",
+                    categories: .dataAlloc)
+            }
+            let array = try device.createArray(count: byteCount)
+            array.version = -1
+            let info = ArrayInfo(array: array, stream: stream)
+            deviceArrays[serviceId][device.deviceId] = info
+            return info
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // createHostArray
+    private func createHostArray() throws {
+        if willLog(level: .diagnostic) {
+            diagnostic("\(createString) \(name)(\(trackingId)) " +
+                "host array  elements: \(elementCount)", categories: .dataAlloc)
+        }
+        hostArray = [UInt8](repeating: 0, count: byteCount)
+        hostBuffer = hostArray.withUnsafeMutableBufferPointer { $0 }
+        hostVersion = -1
+    }
+
+    //-----------------------------------
+    // releaseHostArray
+    private func releaseHostArray() {
+        precondition(!isReadOnlyReference)
+        if willLog(level: .diagnostic) {
+            diagnostic(
+                "\(releaseString) \(name) DataArray(\(trackingId)) host array " +
+                "elements: \(elementCount)", categories: .dataAlloc)
+        }
+        hostArray = [UInt8]()
+        hostBuffer = nil
+    }
+
+    //--------------------------------------------------------------------------
+    // setDeviceDataPointerToHostBuffer
+    private func setDeviceDataPointerToHostBuffer(readOnly: Bool) throws {
+        assert(!isReadOnlyReference)
+        // lazily create the uma buffer if needed
+        if hostBuffer == nil { try createHostArray() }
+        deviceDataPointer = UnsafeMutableRawPointer(hostBuffer.baseAddress!)
+        if !readOnly { master = nil; masterVersion += 1 }
+        hostVersion = masterVersion
+    }
+
+    //--------------------------------------------------------------------------
+    // host2device
+    private func host2device(readOnly: Bool, using stream: DeviceStream) throws {
+        let arrayInfo = try getArray(for: stream)
+        let array     = arrayInfo.array
+        deviceDataPointer = array.data
+
+        if hostBuffer == nil {
+            // clear the device buffer and set it to be the new master
+            try array.zero(using: stream)
+            master = arrayInfo
+
+        } else if array.version != masterVersion {
+            // copy host data to device if it exists and is needed
+            if willLog(level: .diagnostic) {
+                diagnostic("\(copyString) \(name)(\(trackingId)) host" +
+                    "\(setText(" ---> ", color: .blue))" +
+                    "d\(stream.device.deviceId)_s\(stream.streamId) elements: \(elementCount)",
+                    categories: .dataCopy)
+            }
+
+            try array.copyAsync(from: BufferUInt8(hostBuffer), using: stream)
+            lastAccessCopiedBuffer = true
+
+            if autoReleaseUmaBuffer && !isReadOnlyReference {
+                // wait for the copy to complete, free the uma array,
+                // and specify the device array as the new master
+                try stream.blockCallerUntilComplete()
+                releaseHostArray()
+                master = arrayInfo
+            }
+        }
+
+        // set version
+        if !readOnly { master = arrayInfo; masterVersion += 1 }
+        array.version = masterVersion
+    }
+
+    //----------------------------------------------------------------------------
+    // device2host
+    private func device2host(readOnly: Bool) throws {
+        // master cannot be nil
+        let master = self.master!
+        assert(master.array.version == masterVersion)
+
+        // lazily create the uma buffer if needed
+        if hostBuffer == nil { try createHostArray() }
+        deviceDataPointer = UnsafeMutableRawPointer(hostBuffer.baseAddress!)
+
+        // copy if needed
+        if hostVersion != masterVersion {
+            if willLog(level: .diagnostic) {
+                diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                    "d\(master.stream.device.deviceId)_s\(master.stream.streamId)" +
+                    "\(setText(" ---> ", color: .blue)) host" +
+                    " elements: \(elementCount)", categories: .dataCopy)
+            }
+
+            // synchronous copy
+            try master.array.copy(to: hostBuffer, using: master.stream)
+            lastAccessCopiedBuffer = true
+        }
+
+        // set version
+        if !readOnly { self.master = nil; masterVersion += 1 }
+        hostVersion = masterVersion
+    }
+
+    //----------------------------------------------------------------------------
+    // device2device
+    private func device2device(readOnly: Bool, using stream: DeviceStream) throws {
+        // master cannot be nil
+        let master = self.master!
+        assert(master.array.version == masterVersion)
+
+        // get array for stream's device and set deviceBuffer pointer
+        let arrayInfo = try getArray(for: stream)
+        let array     = arrayInfo.array
+        deviceDataPointer = array.data
+
+        // synchronize output stream with master stream
+        try stream.sync(with: master.stream, event: getSyncEvent(using: stream))
+
+        // copy only if versions do not match
+        if array.version != masterVersion {
+            // copy within same service
+            if master.stream.device.service.serviceId == stream.device.service.serviceId {
+                // copy cross device within the same service if needed
+                if master.stream.device.deviceId != stream.device.deviceId {
+                    if willLog(level: .diagnostic) {
+                        diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                            "device(\(master.stream.device.deviceId))" +
+                            "\(setText(" ---> ", color: .blue))" +
+                            "device(\(stream.device.deviceId)) elements: \(elementCount)",
+                            categories: .dataCopy)
+                    }
+                    try array.copyAsync(from: master.array, using: stream)
+                    lastAccessCopiedBuffer = true
+                }
+
+            } else {
+                fatalError()
+                //                if willLog(level: .diagnostic) == true {
+                //                    diagnostic("\(copyString) \(name)(\(trackingId)) cross service from " +
+                //                        "device(\(master.stream.device.id))" +
+                //                    "\(setText(" ---> ", color: .blue))" +
+                //                        "device(\(stream.device.id)) elementCount: \(elementCount)",
+                //                        categories: .dataCopy)
+                //                }
+                //
+                //                // cross service non-uma migration
+                //                // copy data to uma buffer
+                //                if umaBuffer == nil { try createHostArray() }
+                //                try master.array.copy(to: umaBuffer, using: master.stream)
+                //
+                //                // copy data to destination device
+                //                try dest.array.copyAsync(from: BufferUInt8(umaBuffer), using: stream)
+                //
+                //                if autoReleaseUmaBuffer {
+                //                    // wait for the copy to complete, free the uma array,
+                //                    // and specify the device array as the new master
+                //                    try stream.blockCallerUntilComplete()
+                //                    releaseHostArray()
+                //                    self.master = dest
+                //                }
+                //
+                //                lastAccessCopiedBuffer = true
+            }
+        }
+
+        // set version
+        if !readOnly { self.master = arrayInfo; masterVersion += 1 }
+        self.master!.array.version = masterVersion
+        array.version = masterVersion
     }
 }

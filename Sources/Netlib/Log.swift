@@ -6,6 +6,20 @@ import Foundation
 import Dispatch
 
 //==============================================================================
+// String(timeInterval:
+extension String {
+    public init(timeInterval: TimeInterval) {
+        let milliseconds = Int(timeInterval.truncatingRemainder(dividingBy: 1.0) * 1000)
+        let interval = Int(timeInterval)
+        let seconds = interval % 60
+        let minutes = (interval / 60) % 60
+        let hours = (interval / 3600)
+        self = String(format: "%0.2d:%0.2d:%0.2d.%0.3d",
+                      hours, minutes, seconds, milliseconds)
+    }
+}
+
+//==============================================================================
 // Logging
 public protocol Logging {
     var log: Log? { get }

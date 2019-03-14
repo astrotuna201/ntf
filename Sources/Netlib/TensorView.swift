@@ -4,13 +4,13 @@
 //
 import Foundation
 
-public struct TensorView<Scalar> : Logging {
+public struct TensorView<Scalar>: Logging {
     //--------------------------------------------------------------------------
     // properties
     public var tensorData: TensorData<Scalar>
 
     // logging
-    public let context: EvaluationContext?
+    public let log: Log?
     public var logLevel = LogLevel.error
     public let nestingLevel = 0
     public var namePath: String = "TODO"
@@ -40,15 +40,13 @@ public struct TensorView<Scalar> : Logging {
 
     //--------------------------------------------------------------------------
     // initializers
-    
-    //--------------------------------------------------------------------------
     // fully specified
     public init(shape: TensorShape,
                 tensorData: TensorData<Scalar>? = nil,
                 elementOffset: Int = 0,
                 isShared: Bool = false,
                 name: String? = nil,
-                context: EvaluationContext? = nil) {
+                log: Log? = nil) {
         // assign
         let elementSize = MemoryLayout<Scalar>.size
         self.shape = shape
@@ -56,9 +54,9 @@ public struct TensorView<Scalar> : Logging {
         self.elementOffset = elementOffset
         self.viewByteOffset = elementOffset * elementSize
         self.viewByteCount = shape.elementSpanCount * elementSize
-        self.context = context
+        self.log = log
         self.tensorData = tensorData ?? TensorData(
-                context: context, elementCount: shape.elementCount, name: name)
+                log: log, elementCount: shape.elementCount, name: name)
 
         assert(viewByteOffset + viewByteCount <= self.tensorData.byteCount)
     }
@@ -66,7 +64,7 @@ public struct TensorView<Scalar> : Logging {
     //--------------------------------------------------------------------------
     // empty view
     public init() {
-        context = nil
+        log = nil
         shape = TensorShape()
         tensorData = TensorData()
         isShared = false
@@ -74,7 +72,7 @@ public struct TensorView<Scalar> : Logging {
         viewByteCount = 0
         viewByteOffset = 0
     }
-    
+
     //--------------------------------------------------------------------------
     // shared memory
     public var isShared: Bool {
@@ -83,7 +81,7 @@ public struct TensorView<Scalar> : Logging {
                 "to set memory to shared it must already be shared or unique")
         }
     }
-    
+
     //--------------------------------------------------------------------------
     /// compose
     /// This function is used to join multiple views to create a higher rank
@@ -94,7 +92,6 @@ public struct TensorView<Scalar> : Logging {
         let shape = self
         return shape
     }
-    
 
     //--------------------------------------------------------------------------
     // shuffle
@@ -109,7 +106,4 @@ public struct TensorView<Scalar> : Logging {
         }
         return shuffledIndex
     }
-
-    
-
 }

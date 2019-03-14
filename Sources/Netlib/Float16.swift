@@ -4,97 +4,89 @@
 //
 import Foundation
 
-public struct Float16 : Equatable, Comparable
-{
+public struct Float16: Equatable, Comparable {
 	// initializers
-	public init() {	x = UInt16(0) }
-	public init(_ v: Float16) { x = v.x }
-	public init(bitPattern: UInt16) { x = bitPattern }
+	public init() {	bits = UInt16(0) }
+	public init(_ value: Float16) { bits = value.bits }
+	public init(bitPattern: UInt16) { bits = bitPattern }
 	public init?(_ string: String) {
-        guard let v = Float(string) else { return nil }
-		x = floatToFloat16_rn(v).x
+        guard let value = Float(string) else { return nil }
+		bits = floatToFloat16_rn(value).bits
 	}
 
-	public init(_ v: UInt8)  { x = floatToFloat16_rn(Float(v)).x}
-	public init(_ v: UInt16) { x = floatToFloat16_rn(Float(v)).x}
-	public init(_ v: Int16)  { x = floatToFloat16_rn(Float(v)).x}
-	public init(_ v: Int32)  { x = floatToFloat16_rn(Float(v)).x}
-	public init(_ v: Int)    { x = floatToFloat16_rn(Float(v)).x}
-	public init(_ v: Float)  { x = floatToFloat16_rn(v).x}
-	public init(_ d: Double) { x = floatToFloat16_rn(Float(d)).x}
-	public init(d: Double)   { x = floatToFloat16_rn(Float(d)).x}
-	
+	public init(_ value: UInt8) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: UInt16) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Int16) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Int32) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Int) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Float) { bits = floatToFloat16_rn(value).bits}
+	public init(_ value: Double) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(double: Double) { bits = floatToFloat16_rn(Float(double)).bits}
+
 	// properties
-	var x: UInt16
-	
+	var bits: UInt16
+
 	// 10:5:1
 	private static let mantissaMask: UInt16 = 0b0000001111111111
 	private static let exponentMask: UInt16 = 0b0111110000000000
-	private static let signMask:     UInt16 = 0b1000000000000000
-	
+	private static let signMask: UInt16 = 0b1000000000000000
+
 	// functions
-	public var mantissa: Int {
-		get {	return (Int)(x & Float16.mantissaMask) }
-	}
-	public var exponent: Int {
-		get {	return (Int)(x & Float16.exponentMask) }
-	}
-	public var sign: Int {
-		get {	return (Int)(x & Float16.signMask) }
-	}
-	
-	public static func <(lhs: Float16, rhs: Float16) -> Bool {
+	public var mantissa: Int { return (Int)(bits & Float16.mantissaMask) }
+	public var exponent: Int { return (Int)(bits & Float16.exponentMask) }
+	public var sign: Int { return (Int)(bits & Float16.signMask) }
+
+    // operators
+	public static func<(lhs: Float16, rhs: Float16) -> Bool {
 		return Float(lhs) < Float(rhs)
 	}
-	
-	public static func ==(lhs: Float16, rhs: Float16) -> Bool {
-		return lhs.x == rhs.x
+
+	public static func==(lhs: Float16, rhs: Float16) -> Bool {
+		return lhs.bits == rhs.bits
 	}
-	
-	// operators
-	public static func +(lhs: Float16, rhs: Float16) -> Float16 {
+
+	public static func+(lhs: Float16, rhs: Float16) -> Float16 {
 		return Float16(Float(lhs) + Float(rhs))
 	}
-	
-	public static func -(lhs: Float16, rhs: Float16) -> Float16 {
+
+	public static func-(lhs: Float16, rhs: Float16) -> Float16 {
 		return Float16(Float(lhs) - Float(rhs))
 	}
 
-	public static func *(lhs: Float16, rhs: Float16) -> Float16 {
+	public static func*(lhs: Float16, rhs: Float16) -> Float16 {
 		return Float16(Float(lhs) * Float(rhs))
 	}
 
-	public static func /(lhs: Float16, rhs: Float16) -> Float16 {
+	public static func/(lhs: Float16, rhs: Float16) -> Float16 {
 		return Float16(Float(lhs) / Float(rhs))
 	}
 }
 
 //==============================================================================
 // helpers
-public func habs(_ h: Float16) -> Float16 {
- return Float16(bitPattern: h.x & UInt16(0x7fff))
+public func habs(_ value: Float16) -> Float16 {
+    return Float16(bitPattern: value.bits & UInt16(0x7fff))
 }
 
-public func hneg(_ h: Float16) -> Float16 {
- return Float16(bitPattern: h.x ^ UInt16(0x8000))
+public func hneg(_ value: Float16) -> Float16 {
+    return Float16(bitPattern: value.bits ^ UInt16(0x8000))
 }
 
-public func ishnan(_ h: Float16) -> Bool {
+public func ishnan(_ value: Float16) -> Bool {
 	// When input is NaN, exponent is all 1s and mantissa is non-zero.
-	return (h.x & UInt16(0x7c00)) == UInt16(0x7c00) && (h.x & UInt16(0x03ff)) != 0
+	return (value.bits & UInt16(0x7c00)) ==
+        UInt16(0x7c00) && (value.bits & UInt16(0x03ff)) != 0
 }
 
-public func ishinf(_ h: Float16) -> Bool {
+public func ishinf(_ value: Float16) -> Bool {
 	// When input is +/- inf, exponent is all 1s and mantissa is zero.
-	return (h.x & UInt16(0x7c00)) == UInt16(0x7c00) && (h.x & UInt16(0x03ff)) == 0
-
+	return (value.bits & UInt16(0x7c00)) ==
+        UInt16(0x7c00) && (value.bits & UInt16(0x03ff)) == 0
 }
 
-public func ishequ(x: Float16, y: Float16) -> Bool {
-	return !ishnan(x) && !ishnan(y) && x.x == y.x
+public func ishequ(bits: Float16, value: Float16) -> Bool {
+	return !ishnan(bits) && !ishnan(value) && bits.bits == value.bits
 }
-
-public func hzero() -> Float16 { return Float16() }
 
 public func hone() -> Float16 { return Float16(bitPattern: UInt16(0x3c00)) }
 
@@ -133,36 +125,36 @@ extension Double {
 //	cpu functions for converting between FP32 and FP16 formats
 // inspired from Paulius Micikevicius (pauliusm@nvidia.com)
 
-public func floatToFloat16_rn(_ f: Float) -> Float16 {
+public func floatToFloat16_rn(_ value: Float) -> Float16 {
 	var result = Float16()
-	
-	let x = f.bitPattern
-	let u: UInt32 = x & 0x7fffffff
-	var remainder, shift, lsb, lsb_s1, lsb_m1:UInt32
+
+	let bits = value.bitPattern
+	let ubits: UInt32 = bits & 0x7fffffff
+	var remainder, shift, lsb, lsbS1, lsbM1: UInt32
 	var sign, exponent, mantissa: UInt32
-	
+
 	// Get rid of +NaN/-NaN case first.
-	if (u > 0x7f800000) {
-		result.x = UInt16(0x7fff)
-		return result;
+	if ubits > 0x7f800000 {
+		result.bits = UInt16(0x7fff)
+		return result
 	}
-	
-	sign = ((x >> 16) & UInt32(0x8000))
-	
+
+	sign = ((bits >> 16) & UInt32(0x8000))
+
 	// Get rid of +Inf/-Inf, +0/-0.
-	if (u > 0x477fefff) {
-		result.x = UInt16(sign | UInt32(0x7c00))
+	if ubits > 0x477fefff {
+		result.bits = UInt16(sign | UInt32(0x7c00))
 		return result
 	}
-	if (u < 0x33000001) {
-		result.x = UInt16(sign | 0x0000)
+	if ubits < 0x33000001 {
+		result.bits = UInt16(sign | 0x0000)
 		return result
 	}
-	
-	exponent = ((u >> 23) & 0xff)
-	mantissa = (u & 0x7fffff)
-	
-	if (exponent > 0x70) {
+
+	exponent = ((ubits >> 23) & 0xff)
+	mantissa = (ubits & 0x7fffff)
+
+	if exponent > 0x70 {
 		shift = 13
 		exponent -= 0x70
 	} else {
@@ -171,33 +163,31 @@ public func floatToFloat16_rn(_ f: Float) -> Float16 {
 		mantissa |= 0x800000
 	}
 	lsb    = (1 << shift)
-	lsb_s1 = (lsb >> 1)
-	lsb_m1 = (lsb - 1)
-	
+	lsbS1 = (lsb >> 1)
+	lsbM1 = (lsb - 1)
+
 	// Round to nearest even.
-	remainder = (mantissa & lsb_m1)
+	remainder = (mantissa & lsbM1)
 	mantissa >>= shift
-	if (remainder > lsb_s1 || (remainder == lsb_s1 && (mantissa & 0x1) != 0)) {
+	if remainder > lsbS1 || (remainder == lsbS1 && (mantissa & 0x1) != 0) {
 		mantissa += 1
-		if ((mantissa & 0x3ff) == 0) {
+		if (mantissa & 0x3ff) == 0 {
 			exponent += 1
 			mantissa = 0
 		}
 	}
-	
-	result.x = UInt16(sign | (exponent << 10) | mantissa)
+
+	result.bits = UInt16(sign | (exponent << 10) | mantissa)
 	return result
 }
 
-
 //==============================================================================
 // float16ToFloat
-public func float16ToFloat(_ h: Float16) -> Float
-{
-	var sign     = UInt32((h.x >> 15) & 1)
-	var exponent = UInt32((h.x >> 10) & 0x1f)
-	var mantissa = UInt32(h.x & 0x3ff) << 13
-	
+public func float16ToFloat(_ value: Float16) -> Float {
+	var sign = UInt32((value.bits >> 15) & 1)
+	var exponent = UInt32((value.bits >> 10) & 0x1f)
+	var mantissa = UInt32(value.bits & 0x3ff) << 13
+
 	if exponent == 0x1f {  /* NaN or Inf */
 		if mantissa != 0 {
 			sign = 0
@@ -220,20 +210,5 @@ public func float16ToFloat(_ h: Float16) -> Float
 	} else {
 		exponent += 0x70
 	}
-	
 	return Float(bitPattern: UInt32((sign << 31) | (exponent << 23) | mantissa))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,7 @@ import Foundation
 import Glibc
 #endif
 
-public protocol ObjectTracking : class {
+public protocol ObjectTracking: class {
     var namePath: String { get }
 	var trackingId: Int { get }
 }
@@ -35,12 +35,11 @@ final public class ObjectTracker {
 	// properties TODO: document all these
 	/// global shared instance
 	public static let global = ObjectTracker()
-	
 	private let queue = DispatchQueue(label: "ObjectTracker.queue")
 	public let counter = AtomicCounter()
 	public var debuggerRegisterBreakId = -1
 	public var debuggerRemoveBreakId = -1
-	public private(set) var activeObjects = [Int : ItemInfo]()
+	public private(set) var activeObjects = [Int: ItemInfo]()
 	public var hasActiveObjects: Bool { return !activeObjects.isEmpty }
 
 	//--------------------------------------------------------------------------
@@ -51,7 +50,8 @@ final public class ObjectTracker {
 		for objectId in (activeObjects.keys.sorted { $0 < $1 }) {
 			let info = activeObjects[objectId]!
 			if includeStatics || !info.isStatic {
-				result += getObjectDescription(id: objectId, info: info) + "\n"
+				result += getObjectDescription(trackingId: objectId,
+                                               info: info) + "\n"
 				activeCount += 1
 			}
 		}
@@ -62,8 +62,8 @@ final public class ObjectTracker {
 	}
 
 	// getObjectDescription
-	private func getObjectDescription(id: Int, info: ItemInfo) -> String {
-		var description = "[\(info.typeName)(\(id))"
+	private func getObjectDescription(trackingId: Int, info: ItemInfo) -> String {
+		var description = "[\(info.typeName)(\(trackingId))"
 		if info.supplementalInfo.isEmpty {
 			description += "]"
 		} else {
@@ -80,8 +80,8 @@ final public class ObjectTracker {
 	// register(object:
 	public func register(object: ObjectTracking, info: String = "") -> Int {
 		#if ENABLE_TRACKING
-            let id = counter.increment()
-            register(id: id, info:
+            let trackingId = counter.increment()
+            register(trackingId: trackingId, info:
                 ItemInfo(object: object, typeName: object.typeName,
                          supplementalInfo: info, isStatic: false))
             return id
@@ -94,8 +94,8 @@ final public class ObjectTracker {
 	// register(type:
 	public func register<T>(type: T, info: String = "") -> Int {
 		#if ENABLE_TRACKING
-            let id = counter.increment()
-            register(id: id, info:
+            let trackingId = counter.increment()
+            register(trackingId: trackingId, info:
                 ItemInfo(object: nil,
                          typeName: String(describing: Swift.type(of: T.self)),
                          supplementalInfo: info, isStatic: false))
@@ -104,7 +104,7 @@ final public class ObjectTracker {
             return 0
 		#endif
 	}
-	
+
 	//--------------------------------------------------------------------------
 	// register
 	private func register(trackingId: Int, info: ItemInfo) {
@@ -116,7 +116,7 @@ final public class ObjectTracker {
 			activeObjects[trackingId] = info
 		}
 	}
-	
+
 	//--------------------------------------------------------------------------
 	// markStatic
 	public func markStatic(trackingId: Int) {
@@ -124,7 +124,7 @@ final public class ObjectTracker {
             _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
 		#endif
 	}
-	
+
 	//--------------------------------------------------------------------------
 	// remove
 	public func remove(trackingId: Int) {

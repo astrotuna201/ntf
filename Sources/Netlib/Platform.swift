@@ -22,7 +22,7 @@ final public class Platform: ObjectTracking, Logging {
     /// global shared instance
     public static let global: Platform = { return Platform() }()
     /// a device automatically selected during init based on service priority
-    public var defaultDevice: ComputeDevice
+    public var defaultDevice: ComputeDevice! = nil
     ///
     public var defaultDeviceCount = 1
     /// ordered list of device ids specifying the order for auto selection
@@ -30,19 +30,19 @@ final public class Platform: ObjectTracking, Logging {
     /// ordered list of service names specifying the order for auto selection
     public var servicePriority = ["cuda", "cpu"]
     /// location of dynamically loaded service modules
-    public var servicesLocation: URL
+    public var servicesLocation: URL = URL(fileURLWithPath: "TODO")
 
     // object tracking
     public private(set) var trackingId = 0
     public var namePath = String(describing: Platform.self)
 
     // logging
-    public let context: EvaluationContext?
+    public var log: Log?
     public var logLevel = LogLevel.error
     public let nestingLevel = 0
 
     /// collection of registered compute services (cpu, cuda, ...)
-    public private(set) var services: [String : ComputeService]
+    public private(set) var services = [String: ComputeService]()
 
     //--------------------------------------------------------------------------
     // plugIns TODO: move to compute service
@@ -74,7 +74,7 @@ final public class Platform: ObjectTracking, Logging {
 
                 if let serviceType = bundle.principalClass as? ComputeService.Type {
                     // create the service
-                    let service = try serviceType.init(context: context)
+                    let service = try serviceType.init(log: log)
 
                     if willLog(level: .diagnostic) {
                         diagnostic("Loaded compute service '\(service.name)'." +
@@ -101,28 +101,31 @@ final public class Platform: ObjectTracking, Logging {
             }
 
             // try to exact match the service request
+            var defaultDev: ComputeDevice?
             let requestedDevice = devicePriority?[0] ?? 0
-            for serviceName in servicePriority where _defaultDevice == nil {
-                _defaultDevice = requestDevice(serviceName: serviceName,
-                        deviceId: requestedDevice,
-                        allowSubstitute: false)
+            for serviceName in servicePriority where defaultDev == nil {
+                defaultDev = requestDevice(serviceName: serviceName,
+                                           deviceId: requestedDevice,
+                                           allowSubstitute: false)
             }
 
             // if the search failed, then allow substitutes
-            if _defaultDevice == nil {
-                let services = servicePriority + ["cpu"]
-                for serviceName in services where _defaultDevice == nil {
-                    _defaultDevice = requestDevice(serviceName: serviceName, deviceId: 0,
-                            allowSubstitute: false)
+            if defaultDev == nil {
+                let priority = servicePriority + ["cpu"]
+                for serviceName in priority where defaultDev == nil {
+                    defaultDev = requestDevice(serviceName: serviceName,
+                                               deviceId: 0,
+                                               allowSubstitute: true)
                 }
             }
+            // we had to find at least one device like the cpu
+            assert(defaultDev != nil)
 
-            // we have to find something
-            assert(_defaultDevice != nil)
             if willLog(level: .status) {
-                writeLog("default device: \(defaultDevice.name)" +
-                        "   id: \(defaultDevice.service.name).\(defaultDevice.id)",
-                        level: .status)
+                writeLog("""
+                    default device: \(defaultDevice.name)
+                    id: \(defaultDevice.service.name).\(defaultDevice.deviceId)
+                    """, level: .status)
             }
         } catch {
             writeLog(String(describing: error))
@@ -132,7 +135,7 @@ final public class Platform: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // add(service
     public func add(service: ComputeService) {
-        service.id = services.count
+        service.serviceId = services.count
         services[service.name] = service
     }
 
@@ -145,8 +148,8 @@ final public class Platform: ObjectTracking, Logging {
     // If no ids are specified, then one stream per defaultDeviceCount is returned
     public func requestStreams(label: String,
                                serviceName: String? = nil,
-                               deviceIds: [Int]? = nil) throws -> [DeviceStream]
-    {
+                               deviceIds: [Int]? = nil) throws -> [DeviceStream] {
+
         let serviceName = serviceName ?? defaultDevice.service.name
         let maxDeviceCount = min(defaultDeviceCount, defaultDevice.service.devices.count)
         let ids = deviceIds ?? [Int](0..<maxDeviceCount)
@@ -175,8 +178,8 @@ final public class Platform: ObjectTracking, Logging {
     /// return a suitable alternative. In the case of an invalid string, an
     /// error will be reported, but no exception will be thrown
     public func requestDevice(serviceName: String, deviceId: Int,
-                              allowSubstitute: Bool) -> ComputeDevice?
-    {
+                              allowSubstitute: Bool) -> ComputeDevice? {
+
         if let service = services[serviceName] {
             if deviceId < service.devices.count {
                 return service.devices[deviceId]

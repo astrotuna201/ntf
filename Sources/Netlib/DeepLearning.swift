@@ -14,7 +14,7 @@ import TensorFlow
 public struct Dense2<Scalar: TensorFlowFloatingPoint> {
     /// the unique identifier for this function
 //    @noDerivative
-    public let id = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
+    public let functionId = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
     /// the output view for this instance
 //    @noDerivative
     public var output: TensorView<Scalar>
@@ -47,7 +47,6 @@ public struct Dense2<Scalar: TensorFlowFloatingPoint> {
     }
 }
 
-
 /// A densely-connected neural network layer.
 ///
 /// `Dense` implements the operation `activation(matmul(input, weight) + bias)`, where `weight` is
@@ -57,7 +56,7 @@ public struct Dense2<Scalar: TensorFlowFloatingPoint> {
 public struct Dense<Scalar: TensorFlowFloatingPoint>: Function {
     /// the unique identifier for this function
     @noDerivative
-    public let id = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
+    public let functionId = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
     /// the output view for this instance
     @noDerivative
     public var output: Tensor<Scalar>

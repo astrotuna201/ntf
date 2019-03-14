@@ -5,27 +5,26 @@
 import Foundation
 import TensorFlow
 
-public protocol Function :
-    Differentiable,
-    KeyPathIterable where Self.AllDifferentiableVariables : KeyPathIterable {
+public protocol Function: Differentiable,
+    KeyPathIterable where Self.AllDifferentiableVariables: KeyPathIterable {
 
     //--------------------------------------------------------------------------
     // types
     /// The input type of the function.
-    associatedtype Input : Differentiable
+    associatedtype Input: Differentiable
     /// The output type of the function.
-    associatedtype Output : Differentiable
+    associatedtype Output: Differentiable
 
     //--------------------------------------------------------------------------
     // properties
     /// the unique identifier for this function
-    var id: UUID { get }
+    var functionId: UUID { get }
 
     /// This is the reusable output object allocated by the function
     /// during `setup`. This avoids allocating a new output for every iteration
     /// of the applied function
     var output: Self.Output { get }
-    
+
     /// Returns the output obtained from applying the function to the given input.
     ///
     /// - Parameters

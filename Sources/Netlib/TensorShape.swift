@@ -4,7 +4,7 @@
 //
 import Foundation
 
-public struct TensorShape : Equatable {
+public struct TensorShape: Equatable {
     //--------------------------------------------------------------------------
     // properties
     /// The extent of the shape in each dimension
@@ -69,7 +69,7 @@ public struct TensorShape : Equatable {
         elementSpanCount = TensorShape.spanCount(for: dimensions,
                                                  with: self.strides)
     }
-    
+
     /// Initialize with an array literal representing the shape dimensions.
     /// The rank of the tensor is the number of dimensions.
     /// - Parameter elements: The shape dimensions.
@@ -77,7 +77,7 @@ public struct TensorShape : Equatable {
     public init(arrayLiteral elements: Int...) {
         self.init(dimensions: elements)
     }
-    
+
     /// Initialize with variadic elements representing the shape dimensions.
     /// The rank of the tensor is the number of elements.
     /// - Parameter elements: The shape dimensions.
@@ -85,7 +85,7 @@ public struct TensorShape : Equatable {
     public init(_ elements: Int...) {
         self.init(dimensions: elements)
     }
-    
+
     /// Initialize with an array representing the shape dimensions.
     /// The rank of the tensor is the number of elements.
     /// - Parameter elements: The shape dimensions.
@@ -93,17 +93,17 @@ public struct TensorShape : Equatable {
     public init(_ elements: [Int]) {
         self.init(dimensions: elements)
     }
-    
+
     //--------------------------------------------------------------------------
     // denseStrides
     private static func denseStrides(for dimensions: [Int]) -> [Int] {
         var strides = [Int](repeating: 1, count: dimensions.count)
-        for i in (1..<dimensions.count).reversed() {
-            strides[i-1] = dimensions[i] * strides[i]
+        for index in (1..<dimensions.count).reversed() {
+            strides[index-1] = dimensions[index] * strides[index]
         }
         return strides
     }
-    
+
     //--------------------------------------------------------------------------
     // spanCount
     // A sub view may cover a wider range of parent element indexes
@@ -117,10 +117,10 @@ public struct TensorShape : Equatable {
 
 //==============================================================================
 // TensorLayout
-public enum TensorLayout : Int {
+public enum TensorLayout: Int {
     // warning: don't rearrange without also updating axis mapping below
     case scalar, vector, matrix, volume, nchw, nhwc, ncdhw, ndhwc
-    
+
     // axis mapping                 s  ve m  vo nc nh nc nd
     public var nAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 0][rawValue] }
     public var cAxis: Int { return [0, 0, 0, 0, 1, 3, 1, 4][rawValue] }

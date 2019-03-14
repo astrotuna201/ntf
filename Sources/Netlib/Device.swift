@@ -6,26 +6,26 @@
 //==============================================================================
 // ComputeService
 public protocol ComputeService: ObjectTracking, Logging {
-    init(context: EvaluationContext) throws
+    init(log: Log?) throws
     var devices: [ComputeDevice] { get }
-    var id: Int { get set }
+    var serviceId: Int { get set }
     var name: String { get }
 }
 
 //==============================================================================
 // ComputeDevice
 //    This specifies the compute device interface
-public protocol ComputeDevice : ObjectTracking, Logging {
+public protocol ComputeDevice: ObjectTracking, Logging {
     //-------------------------------------
     // properties
     /// a dictionary of device specific attributes describing the device
-    var attributes: [String:String] { get }
+    var attributes: [String: String] { get }
     /// the amount of free memory currently available on the device
     var availableMemory: UInt64 { get }
     /// evaluation context
     var context: EvaluationContext { get }
     /// the id of the device for example gpu:0
-    var id: Int { get }
+    var deviceId: Int { get }
     /// the maximum number of threads supported per block
     var maxThreadsPerBlock: Int { get }
     /// the name of the device
@@ -37,7 +37,7 @@ public protocol ComputeDevice : ObjectTracking, Logging {
     var usesUnifiedAddressing: Bool { get }
     /// current percent of the device utilized
     var utilization: Float { get }
-    
+
     //-------------------------------------
     // device resource functions
     /// creates an array on this device
@@ -51,7 +51,7 @@ public protocol ComputeDevice : ObjectTracking, Logging {
 //==============================================================================
 // DeviceArray
 //    This represents a device data array
-public protocol DeviceArray : ObjectTracking, Logging {
+public protocol DeviceArray: ObjectTracking, Logging {
     //-------------------------------------
     // properties
     /// evaluation context
@@ -64,7 +64,7 @@ public protocol DeviceArray : ObjectTracking, Logging {
     var count: Int { get }
     /// the array edit version number used for replication and synchronization
     var version: Int { get set }
-    
+
     //-------------------------------------
     // functions
     /// clears the array to zero
@@ -85,7 +85,7 @@ public protocol DeviceArray : ObjectTracking, Logging {
 //==============================================================================
 // StreamEvent
 /// Stream events are queued to enable stream synchronization
-public protocol StreamEvent : ObjectTracking {
+public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred
     var occurred: Bool { get }
 
@@ -104,7 +104,7 @@ public struct StreamEventOptions: OptionSet {
 // DeviceStream
 /// A device stream is an asynchronous queue of commands executed on
 /// the associated device
-public protocol DeviceStream : ObjectTracking, Logging {
+public protocol DeviceStream: ObjectTracking, Logging {
     //-------------------------------------
     // properties
     /// evaluation context
@@ -112,10 +112,10 @@ public protocol DeviceStream : ObjectTracking, Logging {
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream
-    var id: Int { get }
+    var streamId: Int { get }
     /// a label used to identify the stream
     var label: String { get }
-    
+
     //-------------------------------------
     // synchronization
     /// blocks the calling thread until the stream queue is empty

@@ -14,16 +14,16 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
     public let elementCount: Int
     public let elementSize = MemoryLayout<Scalar>.size
-    public var byteCount: Int { get { return elementSize * elementCount } }
+    public var byteCount: Int { return elementSize * elementCount }
     public var autoReleaseUmaBuffer = false
-    
+
     // object tracking
     public private(set) var trackingId = 0
     public var namePath: String = "TODO"
 
     // logging
-    public let context: EvaluationContext?
-    public var logLevel = LogLevel.error 
+    public let log: Log?
+    public var logLevel = LogLevel.error
     public let nestingLevel = 0
 
     /// an optional context specific name for logging
@@ -86,16 +86,15 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // initializers
     public convenience init() {
-        self.init(context: nil, elementCount: 0)
+        self.init(log: nil, elementCount: 0)
     }
 
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a database
-    public init(context: EvaluationContext?, 
-                readOnlyReferenceTo buffer: BufferUInt8) {
+    public init(log: Log?, readOnlyReferenceTo buffer: BufferUInt8) {
+        self.log  = log
         isReadOnlyReference = true
-        self.context  = context
         elementCount  = buffer.count
         masterVersion = 0
         hostVersion   = 0
@@ -108,14 +107,11 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         register()
     }
 
-
     //----------------------------------------
     // create new space
-    public init(context: EvaluationContext?, 
-                elementCount: Int, 
-                name: String? = nil) {
+    public init(log: Log?, elementCount: Int, name: String? = nil) {
         isReadOnlyReference = false
-        self.context = context
+        self.log  = log
         self.elementCount = elementCount
         self._name = name
         register()
@@ -132,4 +128,3 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         }
     }
 }
-

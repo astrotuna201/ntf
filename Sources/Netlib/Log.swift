@@ -8,7 +8,7 @@ import Dispatch
 //==============================================================================
 // Logging
 public protocol Logging {
-    var context: EvaluationContext? { get }
+    var log: Log? { get }
 	var logLevel: LogLevel { get set }
 	var namePath: String { get }
 	var nestingLevel: Int { get }
@@ -20,7 +20,7 @@ extension Logging {
 	//------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		guard let log = context?.log else { return false }
+		guard let log = self.log else { return false }
 		return level <= log.logLevel || level <= logLevel
 	}
 
@@ -30,9 +30,8 @@ extension Logging {
 	                     indent: Int = 0, trailing: String = "",
 	                     minCount: Int = 80) {
 		if willLog(level: level) {
-			context!.log.write(
-					level: level, nestingLevel: indent + nestingLevel,
-					trailing: trailing, minCount: minCount, message: message)
+			log!.write(level: level, nestingLevel: indent + nestingLevel,
+                       trailing: trailing, minCount: minCount, message: message)
 		}
 	}
 
@@ -44,19 +43,18 @@ extension Logging {
 		if willLog(level: .diagnostic) {
 			// if subcategories have been selected on the log object
 			// then make sure the caller's category is desired
-			if let mask = context!.log.categories?.rawValue,
+			if let mask = log!.categories?.rawValue,
 			   categories.rawValue & mask == 0 { return }
 
-			context!.log.write(
-					level: .diagnostic, nestingLevel: indent + nestingLevel, 
-					trailing: trailing, minCount: minCount, message: message)
+			log!.write(level: .diagnostic, nestingLevel: indent + nestingLevel,
+					   trailing: trailing, minCount: minCount, message: message)
 		}
 	}
 }
 
 //==============================================================================
 // Log
-final public class Log : ObjectTracking {
+final public class Log: ObjectTracking {
 	//--------------------------------------------------------------------------
 	// properties
 	public var categories: LogCategories?
@@ -71,7 +69,7 @@ final public class Log : ObjectTracking {
 
     // ObjectTracking
     public private(set) var trackingId: Int = 0
-    
+
     // A log can be written to freely by any thread,
     // so create write queue
 	private let queue = DispatchQueue(label: "Log.queue")
@@ -80,14 +78,14 @@ final public class Log : ObjectTracking {
 
 	// initializer to allow for Log to be used as a parameter default
 	public init(parentNamePath: String) {
-		namePath = parentNamePath + ".Log"		
+		namePath = parentNamePath + ".Log"
 	}
-	
+
 	//----------------------------------------------------------------------------
 	// functions
 	public func write(level: LogLevel, nestingLevel: Int,
 	                  trailing: String, minCount: Int, message: String) {
-		queue.sync() { [unowned self] in
+		queue.sync { [unowned self] in
 			if self.maxHistory > 0 {
 				if self.history.count == self.maxHistory { self.history.removeFirst() }
 				self.history.append(LogEvent(level: level, nestingLevel: nestingLevel,
@@ -128,15 +126,15 @@ final public class Log : ObjectTracking {
 //==============================================================================
 // LogEvent
 public struct LogEvent {
-	var level       : LogLevel
+	var level: LogLevel
 	var nestingLevel: Int
-	var message     : String
+	var message: String
 }
 
 //------------------------------------------------------------------------------
 // LogColors
 //  http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
-public enum LogColor : String {
+public enum LogColor: String {
 	case reset       = "\u{1b}[m"
 	case red         = "\u{1b}[31m"
 	case green       = "\u{1b}[32m"
@@ -166,30 +164,32 @@ public func setText(_ text: String, color: LogColor) -> String {
 //------------------------------------------------------------------------------
 // LogCategories
 public struct LogCategories: OptionSet {
+    private let masks = [
+        "connections": LogCategories.connections.rawValue,
+        "context": LogCategories.context.rawValue,
+        "dataAlloc": LogCategories.dataAlloc.rawValue,
+        "dataCopy": LogCategories.dataCopy.rawValue,
+        "dataMutation": LogCategories.dataMutation.rawValue,
+        "defaults": LogCategories.defaultsLookup.rawValue,
+        "evaluate": LogCategories.evaluate.rawValue,
+        "setup": LogCategories.setup.rawValue,
+        "setupBackward": LogCategories.setupBackward.rawValue,
+        "setupForward": LogCategories.setupForward.rawValue,
+        "streamAlloc": LogCategories.streamAlloc.rawValue,
+        "streamSync": LogCategories.streamSync.rawValue,
+        "tryLookup": LogCategories.tryDefaultsLookup.rawValue,
+        "download": LogCategories.download.rawValue
+    ]
+
 	public init(rawValue: Int) { self.rawValue = rawValue }
 
 	public init?(string: String) throws {
 		var value = 0
 		let options = string.components(separatedBy: ",")
-		for i in 0..<options.count {
-			let option = options[i].trimmingCharacters(in: .whitespacesAndNewlines)
-			switch option {
-			case "connections"  : value |= LogCategories.connections.rawValue
-			case "context"      : value |= LogCategories.context.rawValue
-			case "dataAlloc"    : value |= LogCategories.dataAlloc.rawValue
-			case "dataCopy"     : value |= LogCategories.dataCopy.rawValue
-			case "dataMutation" : value |= LogCategories.dataMutation.rawValue
-			case "defaults"     : value |= LogCategories.defaultsLookup.rawValue
-			case "evaluate"     : value |= LogCategories.evaluate.rawValue
-			case "setup"        : value |= LogCategories.setup.rawValue
-			case "setupBackward": value |= LogCategories.setupBackward.rawValue
-			case "setupForward" : value |= LogCategories.setupForward.rawValue
-			case "streamAlloc"  : value |= LogCategories.streamAlloc.rawValue
-			case "streamSync"   : value |= LogCategories.streamSync.rawValue
-			case "tryLookup"    : value |= LogCategories.tryDefaultsLookup.rawValue
-			case "download"     : value |= LogCategories.download.rawValue
-			default: return nil
-			}
+		for option in options {
+			let key = option.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let keyValue = masks[key] else { return nil }
+            value |= keyValue
 		}
 		self.rawValue = value
 	}
@@ -244,9 +244,9 @@ let mutationString = "[\(setText("MUTATE ", color: .blue))]"
 
 //------------------------------------------------------------------------------
 // LogLevel
-public enum LogLevel : Int, Comparable {
+public enum LogLevel: Int, Comparable {
 	case error, warning, status, diagnostic
-	
+
 	public init?(string: String) {
 		switch string {
 		case "error"     : self = .error
@@ -258,9 +258,6 @@ public enum LogLevel : Int, Comparable {
 	}
 }
 
-public func <(lhs: LogLevel, rhs: LogLevel) -> Bool {
+public func<(lhs: LogLevel, rhs: LogLevel) -> Bool {
 	return lhs.rawValue < rhs.rawValue
 }
-
-
-

@@ -4,11 +4,12 @@
 //
 import Foundation
 import Dispatch
+import TensorFlow
 
 public typealias BufferUInt8 = UnsafeBufferPointer<UInt8>
 public typealias MutableBufferUInt8 = UnsafeMutableBufferPointer<UInt8>
 
-public class TensorData<Scalar> : ObjectTracking, Logging {
+public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
@@ -114,7 +115,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         isReadOnlyReference = false
         self.elementCount = buffer.count
         do {
-            _ = try rwReal8U().initialize(from: buffer)
+            _ = try rwHostBuffer().initialize(from: buffer)
         } catch {
             // TODO: what do we want to do here when it should never fail
         }
@@ -132,6 +133,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         register()
     }
 
+    //----------------------------------------
     // object lifetime tracking for leak detection
     private func register() {
         trackingId = objectTracker.register(
@@ -168,25 +170,27 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // ro
-    public func roReal8U() throws -> BufferUInt8 {
+    public func roHostBuffer() throws -> BufferUInt8 {
         try migrate(readOnly: true)
         return BufferUInt8(hostBuffer)
     }
 
-    public func ro(using stream: DeviceStream) throws -> UnsafeRawPointer {
+    public func roDevicePointer(using stream: DeviceStream) throws ->
+        UnsafeRawPointer {
         try migrate(readOnly: true, using: stream)
         return UnsafeRawPointer(deviceDataPointer)
     }
 
     //--------------------------------------------------------------------------
     // rw
-    public func rwReal8U() throws -> MutableBufferUInt8 {
+    public func rwHostBuffer() throws -> MutableBufferUInt8 {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
         return hostBuffer
     }
 
-    public func rw(using stream: DeviceStream) throws -> UnsafeMutableRawPointer {
+    public func rwDevicePointer(using stream: DeviceStream) throws ->
+        UnsafeMutableRawPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false, using: stream)
         return deviceDataPointer
@@ -223,13 +227,13 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         }
     }
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // getArray
     //  this manages a dictionary of replicated device arrays indexed
-    // by serviceId and deviceId. It will lazily create a device array if needed
+    // by serviceId and id. It will lazily create a device array if needed
     private func getArray(for stream: DeviceStream) throws -> ArrayInfo {
         let device = stream.device
-        let serviceId = device.service.serviceId
+        let serviceId = device.service.id
 
         // add the device array list if needed
         if deviceArrays.count <= serviceId {
@@ -244,7 +248,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         }
 
         // return existing if found
-        if let info = deviceArrays[serviceId][device.deviceId] {
+        if let info = deviceArrays[serviceId][device.id] {
             // sync the requesting stream with the last stream that accessed it
             try stream.sync(with: info.stream, event: getSyncEvent(using: stream))
 
@@ -256,13 +260,13 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
             // create the device array
             if willLog(level: .diagnostic) {
                 diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "allocating array on device(\(device.deviceId)) elements: \(elementCount)",
+                    "allocating array on device(\(device.id)) elements: \(elementCount)",
                     categories: .dataAlloc)
             }
             let array = try device.createArray(count: byteCount)
             array.version = -1
             let info = ArrayInfo(array: array, stream: stream)
-            deviceArrays[serviceId][device.deviceId] = info
+            deviceArrays[serviceId][device.id] = info
             return info
         }
     }
@@ -320,7 +324,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) host" +
                     "\(setText(" ---> ", color: .blue))" +
-                    "d\(stream.device.deviceId)_s\(stream.streamId) elements: \(elementCount)",
+                    "d\(stream.device.id)_s\(stream.id) elements: \(elementCount)",
                     categories: .dataCopy)
             }
 
@@ -356,7 +360,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         if hostVersion != masterVersion {
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                    "d\(master.stream.device.deviceId)_s\(master.stream.streamId)" +
+                    "d\(master.stream.device.id)_s\(master.stream.id)" +
                     "\(setText(" ---> ", color: .blue)) host" +
                     " elements: \(elementCount)", categories: .dataCopy)
             }
@@ -371,7 +375,7 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         hostVersion = masterVersion
     }
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // device2device
     private func device2device(readOnly: Bool, using stream: DeviceStream) throws {
         // master cannot be nil
@@ -389,14 +393,14 @@ public class TensorData<Scalar> : ObjectTracking, Logging {
         // copy only if versions do not match
         if array.version != masterVersion {
             // copy within same service
-            if master.stream.device.service.serviceId == stream.device.service.serviceId {
+            if master.stream.device.service.id == stream.device.service.id {
                 // copy cross device within the same service if needed
-                if master.stream.device.deviceId != stream.device.deviceId {
+                if master.stream.device.id != stream.device.id {
                     if willLog(level: .diagnostic) {
                         diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                            "device(\(master.stream.device.deviceId))" +
+                            "device(\(master.stream.device.id))" +
                             "\(setText(" ---> ", color: .blue))" +
-                            "device(\(stream.device.deviceId)) elements: \(elementCount)",
+                            "device(\(stream.device.id)) elements: \(elementCount)",
                             categories: .dataCopy)
                     }
                     try array.copyAsync(from: master.array, using: stream)

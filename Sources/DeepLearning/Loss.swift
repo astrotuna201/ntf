@@ -29,7 +29,7 @@ import Netlib
 //) -> TensorView<Scalar> {
 //    return (expected - predicted).squared().mean()
 //}
-//
+
 ///// Computes the softmax cross entropy (categorical cross entropy) between logits and labels.
 /////
 ///// - Parameters:

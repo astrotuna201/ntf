@@ -8,7 +8,7 @@
 public protocol ComputeService: ObjectTracking, Logging {
     init(log: Log?) throws
     var devices: [ComputeDevice] { get }
-    var serviceId: Int { get set }
+    var id: Int { get set }
     var name: String { get }
 }
 
@@ -25,7 +25,7 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     /// evaluation context
     var context: EvaluationContext { get }
     /// the id of the device for example gpu:0
-    var deviceId: Int { get }
+    var id: Int { get }
     /// the maximum number of threads supported per block
     var maxThreadsPerBlock: Int { get }
     /// the name of the device
@@ -112,7 +112,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream
-    var streamId: Int { get }
+    var id: Int { get }
     /// a label used to identify the stream
     var label: String { get }
 

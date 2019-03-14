@@ -18,6 +18,7 @@ final class NetlibTests: XCTestCase {
     }
 
     public struct MNISTClassifier: Function {
+        @differentiable
         public func applied(to input: TensorView<Float>) -> TensorView<Float> {
             return input
         }

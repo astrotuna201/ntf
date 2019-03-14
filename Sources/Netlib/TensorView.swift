@@ -3,23 +3,24 @@
 //  Copyright © 2019 Edward Connell. All rights reserved.
 //
 import Foundation
+import TensorFlow
 
-public struct TensorView<Scalar>: Logging {
+public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     //--------------------------------------------------------------------------
     // properties
-    public var tensorData: TensorData<Scalar>
+    @noDerivative private var tensorData: TensorData<Scalar>
 
     // logging
-    public let log: Log?
-    public var logLevel = LogLevel.error
-    public let nestingLevel = 0
-    public var namePath: String = "TODO"
+    @noDerivative public let log: Log?
+    @noDerivative public var logLevel = LogLevel.error
+    @noDerivative public let nestingLevel = 0
+    @noDerivative public var namePath: String = "TODO"
 
     // shape and shorthand accessors
-    public let shape: TensorShape
-    public let elementOffset: Int
-    public let viewByteOffset: Int
-    public let viewByteCount: Int
+    @noDerivative public let shape: TensorShape
+    @noDerivative public let elementOffset: Int
+    @noDerivative public let viewByteOffset: Int
+    @noDerivative public let viewByteCount: Int
 
     // convenience shorthand
     public var isContiguous: Bool { return shape.isContiguous }
@@ -42,7 +43,7 @@ public struct TensorView<Scalar>: Logging {
     //--------------------------------------------------------------------------
     // testing properties
     /// set any time the underlying TensorData is mutated
-    public private(set) var lastAccessMutated = false
+    @noDerivative public private(set) var lastAccessMutated = false
     /// determines is the view holds a unique reference to the underlying
     /// TensorData array
     public mutating func isUniqueReference() -> Bool {
@@ -51,9 +52,18 @@ public struct TensorView<Scalar>: Logging {
 
     //--------------------------------------------------------------------------
     // name
-    public var name: String {
+    @noDerivative public var name: String {
         get { return tensorData.name }
         set { tensorData.name = newValue }
+    }
+
+    //--------------------------------------------------------------------------
+    // shared memory
+    @noDerivative public var isShared: Bool {
+        willSet {
+            assert(!newValue || isShared || isUniqueReference(),
+                   "to set memory to shared it must already be shared or unique")
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -123,15 +133,6 @@ public struct TensorView<Scalar>: Logging {
         let buffer = UnsafeBufferPointer(start: start, count: count)
         let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
         self.init(shape: shape, tensorData: tensorData, log: log)
-    }
-
-    //--------------------------------------------------------------------------
-    // shared memory
-    public var isShared: Bool {
-        willSet {
-            assert(!newValue || isShared || isUniqueReference(),
-                "to set memory to shared it must already be shared or unique")
-        }
     }
 
     //--------------------------------------------------------------------------

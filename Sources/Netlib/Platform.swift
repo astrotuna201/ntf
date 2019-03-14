@@ -124,7 +124,7 @@ final public class Platform: ObjectTracking, Logging {
             if willLog(level: .status) {
                 writeLog("""
                     default device: \(defaultDevice.name)
-                    id: \(defaultDevice.service.name).\(defaultDevice.deviceId)
+                    id: \(defaultDevice.service.name).\(defaultDevice.id)
                     """, level: .status)
             }
         } catch {
@@ -135,7 +135,7 @@ final public class Platform: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // add(service
     public func add(service: ComputeService) {
-        service.serviceId = services.count
+        service.id = services.count
         services[service.name] = service
     }
 

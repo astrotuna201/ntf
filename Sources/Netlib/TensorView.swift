@@ -13,7 +13,7 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     // logging
     @noDerivative public let log: Log?
     @noDerivative public var logLevel = LogLevel.error
-    @noDerivative public let nestingLevel = 0
+    @noDerivative public let nestingLevel: Int
     @noDerivative public var namePath: String = "TODO"
 
     // shape and shorthand accessors
@@ -80,59 +80,14 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
         self.shape = shape
         self.isShared = isShared
         self.elementOffset = elementOffset
+        self.log = log
+        self.nestingLevel = 0
         self.viewByteOffset = elementOffset * elementSize
         self.viewByteCount = shape.elementSpanCount * elementSize
-        self.log = log
         self.tensorData = tensorData ?? TensorData(
                 log: log, elementCount: shape.elementCount, name: name)
 
         assert(viewByteOffset + viewByteCount <= self.tensorData.byteCount)
-    }
-
-    //------------------------------------
-    // simple empty arrays
-    public init() {
-        log = nil
-        shape = TensorShape()
-        tensorData = TensorData()
-        isShared = false
-        elementOffset = 0
-        viewByteCount = 0
-        viewByteOffset = 0
-    }
-
-    public init(count: Int, log: Log? = nil) {
-        self.init(shape: TensorShape(count), log: log)
-    }
-
-    public init(extents: [Int], log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
-    }
-
-    public init(_ extents: Int..., log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
-    }
-
-    //------------------------------------
-    // from array
-    public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
-        let byteCount = scalars.count * MemoryLayout<Scalar>.size
-        let dataPointer = scalars.withUnsafeBufferPointer { buffer in
-            buffer.baseAddress!.withMemoryRebound(to: UInt8.self, capacity: byteCount) { $0 }
-        }
-        self.init(shape: shape, start: dataPointer, count: byteCount, log: log)
-    }
-
-    public init(scalars: [Scalar], log: Log? = nil) {
-        self.init(shape: TensorShape(scalars.count), scalars: scalars, log: log)
-    }
-
-    //------------------------------------
-    // copy from pointer
-    public init(shape: TensorShape, start: UnsafePointer<UInt8>, count: Int, log: Log? = nil) {
-        let buffer = UnsafeBufferPointer(start: start, count: count)
-        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
-        self.init(shape: shape, tensorData: tensorData, log: log)
     }
 
     //--------------------------------------------------------------------------
@@ -158,5 +113,77 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
             index.removeLast()
         }
         return shuffledIndex
+    }
+}
+
+//==============================================================================
+// initializers
+extension TensorView {
+    //--------------------------------------------------------------------------
+    // empty tensor
+    public init() {
+        elementOffset = 0
+        isShared = false
+        log = nil
+        nestingLevel = 0
+        shape = TensorShape()
+        tensorData = TensorData()
+        viewByteCount = 0
+        viewByteOffset = 0
+    }
+    
+    //--------------------------------------------------------------------------
+    // implicitly zero is the default
+    public init(count: Int, log: Log? = nil) {
+        self.init(shape: TensorShape(count), log: log)
+    }
+    
+    public init(extents: [Int], log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+    
+    public init(_ extents: Int..., log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+    
+    //--------------------------------------------------------------------------
+    // explicitly zero
+    public init(zeros extents: [Int], log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+    
+    public init(zeros extents: Int..., log: Log? = nil) {
+        self.init(shape: TensorShape(extents), log: log)
+    }
+    
+    //--------------------------------------------------------------------------
+    // from Array
+    public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
+        let byteCount = scalars.count * MemoryLayout<Scalar>.size
+        let dataPointer = scalars.withUnsafeBufferPointer { buffer in
+            buffer.baseAddress!.withMemoryRebound(to: UInt8.self,
+                                                  capacity: byteCount) { $0 }
+        }
+        self.init(shape: shape, start: dataPointer, count: byteCount, log: log)
+    }
+    
+    public init(scalars: [Scalar], log: Log? = nil) {
+        self.init(shape: TensorShape(scalars.count), scalars: scalars, log: log)
+    }
+    
+    //--------------------------------------------------------------------------
+    // copy from host buffer pointer
+    public init(shape: TensorShape, start: UnsafePointer<UInt8>,
+                count: Int, log: Log? = nil) {
+        let buffer = UnsafeBufferPointer(start: start, count: count)
+        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
+        self.init(shape: shape, tensorData: tensorData, log: log)
+    }
+    
+    //--------------------------------------------------------------------------
+    // type cast
+    public init(_ other: TensorView<Bool>) {
+        // TODO
+        self = TensorView()
     }
 }

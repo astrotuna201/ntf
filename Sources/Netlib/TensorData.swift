@@ -203,6 +203,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //----------------------------------------------------------------------------
     // migrate
+    // This migrates
     private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {
         // if the array is empty then there is nothing to do
         guard !isReadOnlyReference && elementCount > 0 else { return }
@@ -212,29 +213,26 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         // reset, this is to support automated tests
         lastAccessCopiedBuffer = false
 
-        switch srcUsesUMA {
-        case true where dstUsesUMA:
-            try setDeviceDataPointerToHostBuffer(readOnly: readOnly)
-
-        case false where dstUsesUMA:
-            try device2host(readOnly: readOnly)
-
-        case true where !dstUsesUMA:
-            assert(stream != nil, streamRequired)
-            try host2device(readOnly: readOnly, using: stream!)
-
-        case false where !dstUsesUMA:
-            assert(stream != nil, streamRequired)
-            try device2device(readOnly: readOnly, using: stream!)
-
-        // shouldn't be possible
-        default: fatalError()
+        if srcUsesUMA {
+            if dstUsesUMA {
+                try setDeviceDataPointerToHostBuffer(readOnly: readOnly)
+            } else {
+                assert(stream != nil, streamRequired)
+                try host2device(readOnly: readOnly, using: stream!)
+            }
+        } else {
+            if dstUsesUMA {
+                try device2host(readOnly: readOnly)
+            } else {
+                assert(stream != nil, streamRequired)
+                try device2device(readOnly: readOnly, using: stream!)
+            }
         }
     }
 
     //--------------------------------------------------------------------------
     // getArray
-    //  this manages a dictionary of replicated device arrays indexed
+    // This manages a dictionary of replicated device arrays indexed
     // by serviceId and id. It will lazily create a device array if needed
     private func getArray(for stream: DeviceStream) throws -> ArrayInfo {
         let device = stream.device
@@ -350,7 +348,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         array.version = masterVersion
     }
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // device2host
     private func device2host(readOnly: Bool) throws {
         // master cannot be nil

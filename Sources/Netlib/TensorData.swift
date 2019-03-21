@@ -110,7 +110,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(log: Log?, buffer: BufferUInt8) {
+    public init(log: Log?, buffer: UnsafeBufferPointer<Scalar>) {
         self.log = log
         isReadOnlyReference = false
         self.elementCount = buffer.count
@@ -170,23 +170,28 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // ro
-    public func roHostBuffer() throws -> BufferUInt8 {
+    public func roHostBuffer() throws -> UnsafeBufferPointer<Scalar> {
         try migrate(readOnly: true)
-        return BufferUInt8(hostBuffer)
+        return hostBuffer.baseAddress!
+            .withMemoryRebound(to: Scalar.self, capacity: elementCount) {
+                return UnsafeBufferPointer<Scalar>(start: $0, count: elementCount)
+        }
     }
 
-    public func roDevicePointer(using stream: DeviceStream) throws ->
-        UnsafeRawPointer {
+    public func roDevicePointer(using stream: DeviceStream) throws -> UnsafeRawPointer {
         try migrate(readOnly: true, using: stream)
         return UnsafeRawPointer(deviceDataPointer)
     }
 
     //--------------------------------------------------------------------------
     // rw
-    public func rwHostBuffer() throws -> MutableBufferUInt8 {
+    public func rwHostBuffer() throws -> UnsafeMutableBufferPointer<Scalar> {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
-        return hostBuffer
+        return hostBuffer.baseAddress!
+            .withMemoryRebound(to: Scalar.self, capacity: elementCount) {
+                return UnsafeMutableBufferPointer<Scalar>(start: $0, count: elementCount)
+        }
     }
 
     public func rwDevicePointer(using stream: DeviceStream) throws ->

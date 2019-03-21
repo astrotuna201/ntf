@@ -91,14 +91,52 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     }
 
     //--------------------------------------------------------------------------
-    /// compose
-    /// This function is used to join multiple views to create a higher rank
-    /// shape. For example a set of 2D views can be joined to form a virtual
-    /// 3D view that can be indexed by operators without copying any data.
-    public func compose(with: TensorView...) -> TensorView {
-        // TODO
-        let shape = self
-        return shape
+    // create a sub view
+    public func view(offset: [Int], extents: [Int]) -> TensorView {
+        // the view created will have the same isShared state as the parent
+        return createSubView(offset: offset, extents: extents, isReference: isShared)
+    }
+    
+    //--------------------------------------------------------------------------
+    // view(item:
+    public func view(item: Int) -> TensorView    {
+        return viewItems(offset: item, count: 1)
+    }
+    
+    //--------------------------------------------------------------------------
+    // viewItems
+    // the view created will have the same isShared state as the parent
+    public func viewItems(offset: Int, count: Int) -> TensorView {
+        var index: [Int]
+        let viewExtents: [Int]
+        if rank == 1 {
+            index = [offset]
+            viewExtents = [count]
+        } else {
+            index = [offset] + [Int](repeating: 0, count: rank - 1)
+            viewExtents = [count] + shape.extents.suffix(from: 1)
+        }
+        
+        return createSubView(offset: index, extents: viewExtents, isReference: isShared)
+    }
+    
+    //----------------------------------------------------------------------------
+    // createSubView
+    private func createSubView(offset: [Int], extents: [Int], isReference: Bool) -> TensorView {
+        // validate
+        assert(offset.count == shape.rank && extents.count == shape.rank)
+        assert(shape.contains(offset: offset,
+                              shape: TensorShape(extents: extents, layout: shape.layout)))
+        assert(extents[0] <= shape.items)
+        
+        let eltOffset = elementOffset + shape.linearIndex(of: offset)
+        let viewShape = TensorShape(extents: extents,
+                                    layout: shape.layout,
+                                    strides: shape.strides,
+                                    colMajor: shape.isColMajor)
+        
+        return TensorView(shape: viewShape, tensorData: tensorData,
+                          elementOffset: eltOffset, isShared: isReference)
     }
 
     //--------------------------------------------------------------------------
@@ -161,7 +199,7 @@ extension TensorView {
     public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
         let byteCount = scalars.count * MemoryLayout<Scalar>.size
         let dataPointer = scalars.withUnsafeBufferPointer { buffer in
-            buffer.baseAddress!.withMemoryRebound(to: UInt8.self,
+            buffer.baseAddress!.withMemoryRebound(to: Scalar.self,
                                                   capacity: byteCount) { $0 }
         }
         self.init(shape: shape, start: dataPointer, count: byteCount, log: log)
@@ -171,9 +209,13 @@ extension TensorView {
         self.init(shape: TensorShape(scalars.count), scalars: scalars, log: log)
     }
     
+    public init(extents: Int..., scalars: [Scalar], log: Log? = nil) {
+        self.init( )
+    }
+    
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init(shape: TensorShape, start: UnsafePointer<UInt8>,
+    public init(shape: TensorShape, start: UnsafePointer<Scalar>,
                 count: Int, log: Log? = nil) {
         let buffer = UnsafeBufferPointer(start: start, count: count)
         let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
@@ -185,5 +227,10 @@ extension TensorView {
     public init(_ other: TensorView<Bool>) {
         // TODO
         self = TensorView()
+    }
+
+    //--------------------------------------------------------------------------
+    public func scalarized() throws -> Scalar {
+        return try tensorData.roHostBuffer()[0]
     }
 }

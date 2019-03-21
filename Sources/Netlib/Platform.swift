@@ -19,14 +19,22 @@ import Foundation
 final public class Platform: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
-    /// global shared instance
-    public static let global: Platform = { return Platform() }()
+    public weak var context: EvaluationContext!
     /// a device automatically selected during init based on service priority
-    public var defaultDevice: ComputeDevice! = nil
+    public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     ///
     public var defaultDeviceCount = 1
     /// ordered list of device ids specifying the order for auto selection
     public var devicePriority: [Int]?
+    /// default device stream
+    public lazy var defaultStream: DeviceStream = {
+        do {
+            return try self.defaultDevice.createStream(label: "Platform.defaultStream")
+        } catch {
+            writeLog(String(describing: error))
+            fatalError()
+        }
+    }()
     /// ordered list of service names specifying the order for auto selection
     public var servicePriority = ["cuda", "cpu"]
     /// location of dynamically loaded service modules
@@ -41,9 +49,78 @@ final public class Platform: ObjectTracking, Logging {
     public var logLevel = LogLevel.error
     public let nestingLevel = 0
 
+    //--------------------------------------------------------------------------
+    // init
+    public init(context: EvaluationContext) {
+        self.context = context
+        self.log = context.log
+    }
+    
+    //--------------------------------------------------------------------------
     /// collection of registered compute services (cpu, cuda, ...)
-    public private(set) var services = [String: ComputeService]()
-
+    private static var _services: [String: ComputeService]!
+    public lazy var services: [String: ComputeService] = {
+        Platform.getServices(instance: self)
+    }()
+    
+    private class func getServices(instance: Platform) -> [String: ComputeService] {
+        guard Platform._services == nil else { return Platform._services }
+        var _services = [String: ComputeService]()
+        // helper
+        func add(service: ComputeService) {
+            service.id = _services.count
+            _services[service.name] = service
+        }
+        
+        do {
+            // add cpu service by default
+            // TODO: put back!
+            //            try add(service: CpuComputeService(log: currentLog))
+            //            #if os(Linux)
+            //            try add(service: CudaComputeService(log: currentLog))
+            //            #endif
+            //-------------------------------------
+            // dynamically load services
+            for bundle in Platform.plugInBundles {
+                try bundle.loadAndReturnError()
+                //            var unloadBundle = false
+                
+                if let serviceType = bundle.principalClass as? ComputeService.Type {
+                    // create the service
+                    let service = try serviceType.init(log: instance.log)
+                    
+                    if instance.willLog(level: .diagnostic) {
+                        instance.diagnostic(
+                            "Loaded compute service '\(service.name)'." +
+                            " ComputeDevice count = \(service.devices.count)",
+                            categories: .setup)
+                    }
+                    
+                    if service.devices.count > 0 {
+                        // add plugin service
+                        add(service: service)
+                    } else {
+                        if instance.willLog(level: .warning) {
+                            instance.writeLog(
+                                "Compute service '\(service.name)' successfully loaded, " +
+                                "but reported devices = 0, so service is unavailable",
+                                level: .warning)
+                        }
+                        //                    unloadBundle = true
+                    }
+                }
+                // TODO: we should call bundle unload here if there were no devices
+                // however simply calling bundle.load() then bundle.unload() making no
+                // references to objects inside, later causes an exception in the code.
+                // Very strange
+                //            if unloadBundle { bundle.unload() }
+            }
+        } catch {
+            instance.writeLog(String(describing: error))
+        }
+        return _services
+    }
+    
     //--------------------------------------------------------------------------
     // plugIns TODO: move to compute service
     public static var plugInBundles: [Bundle] = {
@@ -58,78 +135,36 @@ final public class Platform: ObjectTracking, Logging {
     }()
 
     //--------------------------------------------------------------------------
-    // initializer
-    private init() {
-        do {
-            // add cpu service by default
-            // TODO: put back!
-//            try add(service: CpuComputeService(log: currentLog))
-//            #if os(Linux)
-//            try add(service: CudaComputeService(log: currentLog))
-//            #endif
-
-            for bundle in Platform.plugInBundles {
-                try bundle.loadAndReturnError()
-//			var unloadBundle = false
-
-                if let serviceType = bundle.principalClass as? ComputeService.Type {
-                    // create the service
-                    let service = try serviceType.init(log: log)
-
-                    if willLog(level: .diagnostic) {
-                        diagnostic("Loaded compute service '\(service.name)'." +
-                                " ComputeDevice count = \(service.devices.count)", categories: .setup)
-                    }
-
-                    if service.devices.count > 0 {
-                        // add plugin service
-                        add(service: service)
-                    } else {
-                        if willLog(level: .warning) {
-                            writeLog("Compute service '\(service.name)' successfully loaded, " +
-                                    "but reported devices = 0, so service is unavailable",
-                                    level: .warning)
-                        }
-//					unloadBundle = true
-                    }
-                }
-                // TODO: we should call bundle unload here if there were no devices
-                // however simply calling bundle.load() then bundle.unload() making no
-                // references to objects inside, later causes an exception in the code.
-                // Very strange
-//			if unloadBundle { bundle.unload() }
-            }
-
-            // try to exact match the service request
-            var defaultDev: ComputeDevice?
-            let requestedDevice = devicePriority?[0] ?? 0
-            for serviceName in servicePriority where defaultDev == nil {
-                defaultDev = requestDevice(serviceName: serviceName,
-                                           deviceId: requestedDevice,
-                                           allowSubstitute: false)
-            }
-
-            // if the search failed, then allow substitutes
-            if defaultDev == nil {
-                let priority = servicePriority + ["cpu"]
-                for serviceName in priority where defaultDev == nil {
-                    defaultDev = requestDevice(serviceName: serviceName,
-                                               deviceId: 0,
-                                               allowSubstitute: true)
-                }
-            }
-            // we had to find at least one device like the cpu
-            assert(defaultDev != nil)
-
-            if willLog(level: .status) {
-                writeLog("""
-                    default device: \(defaultDevice.name)
-                    id: \(defaultDevice.service.name).\(defaultDevice.id)
-                    """, level: .status)
-            }
-        } catch {
-            writeLog(String(describing: error))
+    // selectDefaultDevice
+    private func selectDefaultDevice() -> ComputeDevice {
+        // try to exact match the service request
+        var defaultDev: ComputeDevice?
+        let requestedDevice = devicePriority?[0] ?? 0
+        for serviceName in servicePriority where defaultDev == nil {
+            defaultDev = requestDevice(serviceName: serviceName,
+                                       deviceId: requestedDevice,
+                                       allowSubstitute: false)
         }
+
+        // if the search failed, then allow substitutes
+        if defaultDev == nil {
+            let priority = servicePriority + ["cpu"]
+            for serviceName in priority where defaultDev == nil {
+                defaultDev = requestDevice(serviceName: serviceName,
+                                           deviceId: 0,
+                                           allowSubstitute: true)
+            }
+        }
+        if willLog(level: .status) {
+            writeLog("""
+                default device: \(defaultDevice.name)
+                id: \(defaultDevice.service.name).\(defaultDevice.id)
+                """, level: .status)
+        }
+
+        // we had to find at least one device like the cpu
+        guard let device = defaultDev else { fatalError("No available devices") }
+        return device
     }
 
     //--------------------------------------------------------------------------

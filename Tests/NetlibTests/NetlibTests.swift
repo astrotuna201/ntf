@@ -17,7 +17,16 @@ final class NetlibTests: XCTestCase {
         let testLabels: TensorView<Int32>
     }
 
-    public struct MNISTClassifier: Function {
+    public struct MNISTClassifier<ContextT>: Function where ContextT: Evaluating {
+        @noDerivative public let functionId =
+            UUID(uuidString: "7F2FFF4E-58D7-4ED9-A5D7-1E15D6D3D34A")!
+        public var output: TensorView<Float>
+        
+        public init(context: ContextT,
+                    inputShape: Netlib.TensorShape,
+                    using stream: DeviceStream? = nil) {
+        }
+        
         @differentiable
         public func applied(to input: TensorView<Float>) -> TensorView<Float> {
             return input
@@ -107,57 +116,58 @@ final class NetlibTests: XCTestCase {
 
         //------------------------------------------------------------------------------
         // train classifier
-        var model = MNISTClassifier()
+        let batchSize = 60
+        let batchShape = TensorShape(batchSize, 28, 28, 1)
+        let trainingContext = TrainingContext()
+        var model = MNISTClassifier(context: trainingContext, inputShape: batchShape)
 
         let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
-        let batchSize = 60
-        let testBatchSize = 1000
         let trainingIterations = data.trainingImages.items / batchSize
         let epochs = 10
-        let trainingContext = Context(learningPhase: .training)
-        let testContext = Context(learningPhase: .inference)
 
-        func minibatch<T>(_ x: TensorView<T>, size: Int, batchIndex: Int) -> TensorView<T> {
-            let start = batchIndex * size
-            return x[start..<start + size]
-        }
+        let testBatchSize = 1000
+        let testContext = InferenceContext()
 
         print("Begin training for \(epochs) epochs" )
         let start = Date()
 
-        for epoch in 0..<epochs {
-            //--------------------------------
-            // train
-            var totalLoss: Float = 0
+        do {
+            for epoch in 0..<epochs {
+                //--------------------------------
+                // train
+                var totalLoss: Float = 0
 
-            for i in 0..<trainingIterations {
-                let images = minibatch(data.trainingImages, size: batchSize, batchIndex: i)
-                let labels = minibatch(data.trainingLabels, size: batchSize, batchIndex: i)
+                for i in 0..<trainingIterations {
+                    let images = data.trainingImages.viewItems(offset: i, count: batchSize)
+                    let labels = data.trainingLabels.viewItems(offset: i, count: batchSize)
 
-                let gradients = gradient(at: model) { model -> Tensor<Float> in
-                    let logits = model.applied(to: images)
-                    let batchLoss = TensorView<Float>() //softmaxCrossEntropy(logits: logits, labels: labels)
-                    totalLoss += batchLoss.scalarized()
-                    return batchLoss
+                    let gradients = gradient(at: model) { model -> TensorView<Float> in
+                        let logits = model.applied(to: images)
+                        let batchLoss = TensorView<Float>() //softmaxCrossEntropy(logits: logits, labels: labels)
+                        totalLoss += try batchLoss.scalarized()
+                        return batchLoss
+                    }
+                    optimizer.update(&model.allDifferentiableVariables, along: gradients)
                 }
-                optimizer.update(&model.allDifferentiableVariables, along: gradients)
-            }
 
-            //--------------------------------
-            // test
-            var totalCorrect = 0
-            for i in 0..<10 {
-                let images = minibatch(data.testImages, size: testBatchSize, batchIndex: i)
-                let labels = minibatch(data.testLabels, size: testBatchSize, batchIndex: i)
-                let predictions = model.infer(from: images)
-//                let correct = predictions.argmax(squeezingAxis: 1) .== labels
-                totalCorrect += 0 // Tensor<Int32>(correct).sum().scalarized()
-            }
+                //--------------------------------
+                // test
+                var totalCorrect = 0
+                for i in 0..<10 {
+                    let images = data.testImages.viewItems(offset: i, count: testBatchSize)
+                    let labels = data.testLabels.viewItems(offset: i, count: testBatchSize)
+                    let predictions = model.infer(from: images)
+    //                let correct = predictions.argmax(squeezingAxis: 1) .== labels
+                    totalCorrect += 0 // Tensor<Int32>(correct).sum().scalarized()
+                }
 
-            let accuracy = Float(totalCorrect) / Float(data.testLabels.items)
-            print("epoch \(epoch) accuracy: \(accuracy) loss: \(totalLoss)")
+                let accuracy = Float(totalCorrect) / Float(data.testLabels.items)
+                print("epoch \(epoch) accuracy: \(accuracy) loss: \(totalLoss)")
+            }
+            print("Training complete: \(String(timeInterval: Date().timeIntervalSince(start)))")
+        } catch {
+            
         }
-        print("Training complete: \(String(timeInterval: Date().timeIntervalSince(start)))")
     }
 
     func test_MnistInference() {

@@ -13,7 +13,9 @@ public struct TensorShape: Equatable {
     public let elementCount: Int
     /// The sparse number of elements spanned by the shape
     public let elementSpanCount: Int
-    /// The interpretation of each dimension in the shape
+    /// True if rows and cols are arranged in column major order
+    public let isColMajor: Bool
+    /// The interpretation of each extent in the shape
     public let layout: TensorLayout
     /// The distance to the next element for each dimension
     public let strides: [Int]
@@ -53,6 +55,7 @@ public struct TensorShape: Equatable {
         self.extents = extents
         self.elementCount = extents.reduce(1, *)
         self.layout = layout ?? TensorLayout(defaultForRank: rank)
+        self.isColMajor = colMajor
 
         // strides
         if let userStrides = strides {
@@ -112,6 +115,39 @@ public struct TensorShape: Equatable {
     private static func spanCount(for extents: [Int],
                                   with strides: [Int]) -> Int {
         return zip(extents, strides).reduce(0) { $0 + ($1.0 - 1) * $1.1 } + 1
+    }
+    
+    //--------------------------------------------------------------------------
+    // linearIndex
+    //    returns the linear element index
+    public func linearIndex(of index: [Int]) -> Int {
+        assert(rank > 0 && index.count == rank)
+        var result: Int
+        switch rank {
+        case 1: result = index[0]
+        case 2: result = index[0] * strides[0] + index[1] * strides[1]
+        default: result = index[0] * strides[0] + index[1] * strides[1] +
+            index[2] * strides[2] + index[3] * strides[3]
+        }
+        assert(result <= elementSpanCount)
+        return result
+    }
+
+    //--------------------------------------------------------------------------
+    // contains
+    public func contains(index: [Int]) -> Bool {
+        assert(index.count == rank, "rank mismatch")
+        return linearIndex(of: index) <= elementSpanCount
+    }
+    
+    public func contains(shape: TensorShape) -> Bool {
+        assert(shape.rank == rank, "rank mismatch")
+        return shape.elementSpanCount <= elementSpanCount
+    }
+    
+    public func contains(offset: [Int], shape: TensorShape) -> Bool {
+        assert(offset.count == rank && shape.rank == rank, "rank mismatch")
+        return linearIndex(of: offset) + shape.elementSpanCount <= elementSpanCount
     }
 }
 

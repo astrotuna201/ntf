@@ -19,7 +19,6 @@ public protocol Function: Differentiable,
     // properties
     /// the unique identifier for this function
     var functionId: UUID { get }
-
     /// This is the reusable output object allocated by the function
     /// during `setup`. This avoids allocating a new output for every iteration
     /// of the applied function

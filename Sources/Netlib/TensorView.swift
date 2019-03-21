@@ -92,22 +92,21 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
 
     //--------------------------------------------------------------------------
     // create a sub view
-    public func view(offset: [Int], extents: [Int]) -> TensorView {
+    public func view(at offset: [Int], with extents: [Int]) -> TensorView {
         // the view created will have the same isShared state as the parent
-        return createSubView(offset: offset, extents: extents,
-                             isReference: isShared)
+        return createSubView(at: offset, with: extents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     // view(item:
     public func view(item: Int) -> TensorView    {
-        return viewItems(offset: item, count: 1)
+        return viewItems(at: item, count: 1)
     }
     
     //--------------------------------------------------------------------------
     // viewItems
     // the view created will have the same isShared state as the parent
-    public func viewItems(offset: Int, count: Int) -> TensorView {
+    public func viewItems(at offset: Int, count: Int) -> TensorView {
         var index: [Int]
         let viewExtents: [Int]
         if rank == 1 {
@@ -118,13 +117,12 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createSubView(offset: index, extents: viewExtents,
-                             isReference: isShared)
+        return createSubView(at: index, with: viewExtents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     // createSubView
-    private func createSubView(offset: [Int], extents: [Int],
+    private func createSubView(at offset: [Int], with extents: [Int],
                                isReference: Bool) -> TensorView {
         // validate
         assert(extents[0] <= shape.items)

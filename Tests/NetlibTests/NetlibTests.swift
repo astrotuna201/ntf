@@ -140,8 +140,9 @@ final class NetlibTests: XCTestCase {
                 var totalLoss: Float = 0
 
                 for i in 0..<trainingIterations {
-                    let images = data.trainingImages.viewItems(offset: i, count: batchSize)
-                    let labels = data.trainingLabels.viewItems(offset: i, count: batchSize)
+                    let index = i * batchSize
+                    let images = data.trainingImages.viewItems(at: index, count: batchSize)
+                    let labels = data.trainingLabels.viewItems(at: index, count: batchSize)
 
                     let gradients = gradient(at: model) { model -> TensorView<Float> in
                         let logits = model.applied(to: images)
@@ -156,8 +157,9 @@ final class NetlibTests: XCTestCase {
                 // test
                 var totalCorrect = 0
                 for i in 0..<10 {
-                    let images = data.testImages.viewItems(offset: i, count: testBatchSize)
-                    let labels = data.testLabels.viewItems(offset: i, count: testBatchSize)
+                    let index = i * batchSize
+                    let images = data.testImages.viewItems(at: index, count: testBatchSize)
+                    let labels = data.testLabels.viewItems(at: index, count: testBatchSize)
                     let predictions = model.infer(from: images)
     //                let correct = predictions.argmax(squeezingAxis: 1) .== labels
                     totalCorrect += 0 // Tensor<Int32>(correct).sum().scalarized()

@@ -7,6 +7,8 @@ import Foundation
 public struct TensorShape: Equatable {
     //--------------------------------------------------------------------------
     // properties
+    /// The interpretation of each channel in the shape
+    public let channelLayout: ChannelLayout
     /// The extent of the shape in each dimension
     public let extents: [Int]
     /// The dense number of elements defined by the shape
@@ -47,11 +49,13 @@ public struct TensorShape: Equatable {
     ///             row major data, such as matrices from Matlab or Octave
     public init(extents: [Int],
                 layout: TensorLayout? = nil,
+                channelLayout: ChannelLayout = .any,
                 strides: [Int]? = nil,
                 colMajor: Bool = false) {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
         let rank = extents.count
+        self.channelLayout = channelLayout
         self.extents = extents
         self.elementCount = extents.reduce(1, *)
         self.layout = layout ?? TensorLayout(defaultForRank: rank)
@@ -168,3 +172,15 @@ public enum TensorLayout: Int {
         self = [.scalar, .vector, .matrix, .volume, .nchw, .ncdhw][rank]
     }
 }
+
+//==============================================================================
+/// ChannelLayout
+/// This is used to label channel to aid in automated format conversion
+public enum ChannelLayout {
+    // other
+    case any
+    // image
+    case gray, grayAlpha, rgb, rgba
+    // etc...
+}
+

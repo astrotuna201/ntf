@@ -92,7 +92,7 @@ final class NetlibTests: XCTestCase {
                 (TensorView<Float>, TensorView<Int32>) {
                     let imagesArray = imagesFile.readDataToEndOfFile().dropFirst(16).map { Float($0) }
                     let labelsArray = labelsFile.readDataToEndOfFile().dropFirst(8).map { Int32($0) }
-                    let shape = TensorShape(labelsArray.count, 28, 28, 1)
+                    let shape = TensorShape(extents: [labelsArray.count, 28, 28, 1], channelLayout: .gray)
                     let images = TensorView<Float>(shape: shape, scalars: imagesArray) // / 255
                     let labels = TensorView<Int32>(scalars: labelsArray)
                     return (images, labels)

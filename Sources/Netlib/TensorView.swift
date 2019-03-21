@@ -11,13 +11,10 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     @noDerivative private var tensorData: TensorData<Scalar>
 
     // logging
-    @noDerivative public let log: Log?
-    @noDerivative public var logLevel = LogLevel.error
-    @noDerivative public let nestingLevel: Int
-    @noDerivative public var namePath: String = "TODO"
+    @noDerivative public var logging: LogInfo?
 
     // shape and shorthand accessors
-    @noDerivative public let shape: TensorShape
+    @noDerivative public let shape: Shape
     @noDerivative public let elementOffset: Int
     @noDerivative public let viewByteOffset: Int
     @noDerivative public let viewByteCount: Int
@@ -69,23 +66,22 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     //--------------------------------------------------------------------------
     // initializers
     // fully specified
-    public init(shape: TensorShape,
+    public init(shape: Shape,
                 tensorData: TensorData<Scalar>? = nil,
                 elementOffset: Int = 0,
                 isShared: Bool = false,
                 name: String? = nil,
-                log: Log? = nil) {
+                logging: LogInfo? = nil) {
         // assign
         let elementSize = MemoryLayout<Scalar>.size
         self.shape = shape
         self.isShared = isShared
         self.elementOffset = elementOffset
-        self.log = log
-        self.nestingLevel = 0
+        self.logging = logging
         self.viewByteOffset = elementOffset * elementSize
         self.viewByteCount = shape.elementSpanCount * elementSize
         self.tensorData = tensorData ?? TensorData(
-                log: log, elementCount: shape.elementCount, name: name)
+                logging: logging, elementCount: shape.elementCount, name: name)
 
         assert(viewByteOffset + viewByteCount <= self.tensorData.byteCount)
     }
@@ -128,11 +124,11 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
         assert(extents[0] <= shape.items)
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset,
-                              shape: TensorShape(extents: extents,
+                              shape: Shape(extents: extents,
                                                  layout: shape.layout)))
         
         let eltOffset = elementOffset + shape.linearIndex(of: offset)
-        let viewShape = TensorShape(extents: extents,
+        let viewShape = Shape(extents: extents,
                                     layout: shape.layout,
                                     strides: shape.strides,
                                     colMajor: shape.isColMajor)
@@ -164,9 +160,8 @@ extension TensorView {
     public init() {
         elementOffset = 0
         isShared = false
-        log = nil
-        nestingLevel = 0
-        shape = TensorShape()
+        logging = nil
+        shape = Shape()
         tensorData = TensorData()
         viewByteCount = 0
         viewByteOffset = 0
@@ -174,53 +169,53 @@ extension TensorView {
     
     //--------------------------------------------------------------------------
     // implicitly zero is the default
-    public init(count: Int, log: Log? = nil) {
-        self.init(shape: TensorShape(count), log: log)
+    public init(count: Int, logging: LogInfo? = nil) {
+        self.init(shape: Shape(count), logging: logging)
     }
     
-    public init(extents: [Int], log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
+    public init(extents: [Int], logging: LogInfo? = nil) {
+        self.init(shape: Shape(extents), logging: logging)
     }
     
-    public init(_ extents: Int..., log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
+    public init(_ extents: Int..., logging: LogInfo? = nil) {
+        self.init(shape: Shape(extents), logging: logging)
     }
     
     //--------------------------------------------------------------------------
     // explicitly zero
-    public init(zeros extents: [Int], log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
+    public init(zeros extents: [Int], logging: LogInfo? = nil) {
+        self.init(shape: Shape(extents), logging: logging)
     }
     
-    public init(zeros extents: Int..., log: Log? = nil) {
-        self.init(shape: TensorShape(extents), log: log)
+    public init(zeros extents: Int..., logging: LogInfo? = nil) {
+        self.init(shape: Shape(extents), logging: logging)
     }
     
     //--------------------------------------------------------------------------
     // from Array
-    public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
+    public init(shape: Shape, scalars: [Scalar], logging: LogInfo? = nil) {
         let buffer = scalars.withUnsafeBufferPointer { $0 }
-        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
-        self.init(shape: shape, tensorData: tensorData, log: log)
+        let tensorData = TensorData<Scalar>(logging: logging, buffer: buffer)
+        self.init(shape: shape, tensorData: tensorData, logging: logging)
     }
     
-    public init(scalars: [Scalar], log: Log? = nil) {
-        self.init(shape: TensorShape(scalars.count), scalars: scalars, log: log)
+    public init(scalars: [Scalar], logging: LogInfo? = nil) {
+        self.init(shape: Shape(scalars.count), scalars: scalars, logging: logging)
     }
     
-    public init(extents: Int..., scalars: [Scalar], log: Log? = nil) {
-        self.init(shape: TensorShape(extents: extents),
-                  scalars: scalars, log: log)
+    public init(extents: Int..., scalars: [Scalar], logging: LogInfo? = nil) {
+        self.init(shape: Shape(extents: extents),
+                  scalars: scalars, logging: logging)
     }
     
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init(shape: TensorShape,
+    public init(shape: Shape,
                 start: UnsafePointer<Scalar>, count: Int,
-                log: Log? = nil) {
+                logging: LogInfo? = nil) {
         let buffer = UnsafeBufferPointer(start: start, count: count)
-        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
-        self.init(shape: shape, tensorData: tensorData, log: log)
+        let tensorData = TensorData<Scalar>(logging: logging, buffer: buffer)
+        self.init(shape: shape, tensorData: tensorData, logging: logging)
     }
     
     //--------------------------------------------------------------------------

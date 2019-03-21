@@ -21,11 +21,21 @@ extension String {
 
 //==============================================================================
 // Logging
+public struct LogInfo {
+    var log: Log
+    var logLevel: LogLevel = .error
+    var namePath: String
+    var nestingLevel: Int
+    
+    public func child(_ name: String) -> LogInfo {
+        return LogInfo(log: log, logLevel: .error,
+                       namePath: "\(namePath)/\(name)",
+                       nestingLevel: nestingLevel + 1)
+    }
+}
+
 public protocol Logging {
-    var log: Log? { get }
-	var logLevel: LogLevel { get set }
-	var namePath: String { get }
-	var nestingLevel: Int { get }
+    var logging: LogInfo? { get }
 }
 
 //------------------------------------------------------------------------------
@@ -34,8 +44,8 @@ extension Logging {
 	//------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		guard let log = self.log else { return false }
-		return level <= log.logLevel || level <= logLevel
+		guard let logging = self.logging else { return false }
+		return level <= logging.log.logLevel || level <= logging.logLevel
 	}
 
 	//------------------------------------
@@ -44,8 +54,10 @@ extension Logging {
 	                     indent: Int = 0, trailing: String = "",
 	                     minCount: Int = 80) {
 		if willLog(level: level) {
-			log!.write(level: level, nestingLevel: indent + nestingLevel,
-                       trailing: trailing, minCount: minCount, message: message)
+			logging!.log.write(level: level,
+                               nestingLevel: indent + logging!.nestingLevel,
+                               trailing: trailing, minCount: minCount,
+                               message: message)
 		}
 	}
 
@@ -57,11 +69,13 @@ extension Logging {
 		if willLog(level: .diagnostic) {
 			// if subcategories have been selected on the log object
 			// then make sure the caller's category is desired
-			if let mask = log!.categories?.rawValue,
+			if let mask = logging!.log.categories?.rawValue,
 			   categories.rawValue & mask == 0 { return }
 
-			log!.write(level: .diagnostic, nestingLevel: indent + nestingLevel,
-					   trailing: trailing, minCount: minCount, message: message)
+			logging!.log.write(level: .diagnostic,
+                               nestingLevel: indent + logging!.nestingLevel,
+                               trailing: trailing, minCount: minCount,
+                               message: message)
 		}
 	}
 }

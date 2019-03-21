@@ -19,7 +19,6 @@ import Foundation
 final public class Platform: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
-    public weak var context: EvaluationContext!
     /// a device automatically selected during init based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     ///
@@ -45,15 +44,12 @@ final public class Platform: ObjectTracking, Logging {
     public var namePath = String(describing: Platform.self)
 
     // logging
-    public var log: Log?
-    public var logLevel = LogLevel.error
-    public let nestingLevel = 0
+    public var logging: LogInfo?
 
     //--------------------------------------------------------------------------
     // init
-    public init(context: EvaluationContext) {
-        self.context = context
-        self.log = context.log
+    public init(logging: LogInfo?) {
+        self.logging = logging
     }
     
     //--------------------------------------------------------------------------
@@ -87,7 +83,7 @@ final public class Platform: ObjectTracking, Logging {
                 
                 if let serviceType = bundle.principalClass as? ComputeService.Type {
                     // create the service
-                    let service = try serviceType.init(log: instance.log)
+                    let service = try serviceType.init(logging: instance.logging)
                     
                     if instance.willLog(level: .diagnostic) {
                         instance.diagnostic(

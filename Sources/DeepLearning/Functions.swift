@@ -12,79 +12,44 @@ import Netlib
 /// a weight matrix, `bias` is a bias vector, and `activation` is an element-wise activation
 /// function.
 @_fixed_layout
-public struct Dense2<Scalar: TensorFlowFloatingPoint> {
-    /// the unique identifier for this function
-//    @noDerivative
-    public let functionId = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
-    /// the output view for this instance
-//    @noDerivative
-    public var output: TensorView<Scalar>
-    /// The weight matrix.
-    public var weight: TensorView<Scalar>
+public struct Dense<Scalar: TensorFlowFloatingPoint>: Function, Logging {
+    /// activation function to apply
+    public typealias Activation =
+        @differentiable (TensorView<Scalar>) -> TensorView<Scalar>
+    /// The element-wise activation function.
+    @noDerivative public let activation: Activation
     /// The bias vector.
     public var bias: TensorView<Scalar>
-    public typealias Activation =
-//            @differentiable
-            (TensorView<Scalar>) -> TensorView<Scalar>
-    /// The element-wise activation function.
-//    @noDerivative
-    public let activation: Activation
+    /// the output view for this instance
+    public var output: TensorView<Scalar>
+    /// The device stream used to execute the function isntance
+    @noDerivative public private(set) var stream: DeviceStream
+    /// The weight matrix.
+    public var weight: TensorView<Scalar>
+    // Logging
+    @noDerivative public var logging: LogInfo?
 
+    //--------------------------------------------------------------------------
+    // initializers
     public init(weight: TensorView<Scalar>,
                 bias: TensorView<Scalar>,
                 activation: @escaping Activation,
-                using stream: DeviceStream) {
+                input: Shape,
+                logging: LogInfo? = nil,
+                using deviceStream: DeviceStream? = nil) {
         // store parameters
-        self.weight = weight
-        self.bias = bias
         self.activation = activation
-        // create output view TODO: give it a real shape
-        output = TensorView<Scalar>()
-    }
-
-//    @differentiable
-    public func applied(to input: TensorView<Scalar>) -> TensorView<Scalar> {
-        return TensorView<Scalar>() // activation(matmul(input, weight) + bias)
-    }
-}
-
-/// A densely-connected neural network layer.
-///
-/// `Dense` implements the operation `activation(matmul(input, weight) + bias)`, where `weight` is
-/// a weight matrix, `bias` is a bias vector, and `activation` is an element-wise activation
-/// function.
-@_fixed_layout
-public struct Dense<Scalar: TensorFlowFloatingPoint>: Function {
-    /// the unique identifier for this function
-    @noDerivative
-    public let functionId = UUID(uuidString: "acf809d5-3fc0-41bb-879b-622f32356d91")!
-    /// the output view for this instance
-    @noDerivative
-    public var output: Tensor<Scalar>
-    /// The weight matrix.
-    public var weight: Tensor<Scalar>
-    /// The bias vector.
-    public var bias: Tensor<Scalar>
-    public typealias Activation = @differentiable (Tensor<Scalar>) -> Tensor<Scalar>
-    /// The element-wise activation function.
-    @noDerivative
-    public let activation: Activation
-
-    public init(weight: Tensor<Scalar>,
-                bias: Tensor<Scalar>,
-                activation: @escaping Activation,
-                using stream: DeviceStream) {
-        // store parameters
-        self.weight = weight
         self.bias = bias
-        self.activation = activation
-        // create output view TODO: give it a real shape
-        output = Tensor<Scalar>()
+        self.weight = weight
+        self.logging = logging
+        stream = deviceStream ?? Platform.defaultStream
+        output = TensorView<Scalar>(extents: [input.items, weight.cols],
+                                    logging: logging)
     }
 
     @differentiable
-    public func applied(to input: Tensor<Scalar>) -> Tensor<Scalar> {
-        return activation(matmul(input, weight) + bias)
+    public func applied(to input: TensorView<Scalar>) -> TensorView<Scalar> {
+        return output // activation(matmul(input, weight) + bias)
     }
 }
 
@@ -179,12 +144,12 @@ public struct Dense<Scalar: TensorFlowFloatingPoint>: Function {
 //            activation: @escaping Activation = identity,
 //            generator: inout G
 //    ) {
-//        let filterTensorShape = TensorShape([
+//        let filterShape = Shape([
 //            Int32(filterShape.0), Int32(filterShape.1),
 //            Int32(filterShape.2), Int32(filterShape.3)])
 //        self.init(
-//                filter: Tensor(glorotUniform: filterTensorShape, generator: &generator),
-//                bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+//                filter: Tensor(glorotUniform: filterShape, generator: &generator),
+//                bias: Tensor(zeros: Shape([Int32(filterShape.3)])),
 //                activation: activation,
 //                strides: strides,
 //                padding: padding)
@@ -217,12 +182,12 @@ public struct Dense<Scalar: TensorFlowFloatingPoint>: Function {
 //            seed: (Int64, Int64) = (Int64.random(in: Int64.min..<Int64.max),
 //                    Int64.random(in: Int64.min..<Int64.max))
 //    ) {
-//        let filterTensorShape = TensorShape([
+//        let filterShape = Shape([
 //            Int32(filterShape.0), Int32(filterShape.1),
 //            Int32(filterShape.2), Int32(filterShape.3)])
 //        self.init(
-//                filter: Tensor(glorotUniform: filterTensorShape, seed: seed),
-//                bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+//                filter: Tensor(glorotUniform: filterShape, seed: seed),
+//                bias: Tensor(zeros: Shape([Int32(filterShape.3)])),
 //                activation: activation,
 //                strides: (Int32(strides.0), Int32(strides.1)),
 //                padding: padding)

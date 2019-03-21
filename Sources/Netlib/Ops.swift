@@ -1425,7 +1425,7 @@ public extension TensorView where Scalar : Numeric {
 //    }
 //
 //    @inlinable @inline(__always)
-//    func broadcast(to shape: TensorShape) -> TensorView {
+//    func broadcast(to shape: Shape) -> TensorView {
 //        return broadcast(toShape: TensorView<Int32>(shape.dimensions))
 //    }
 //
@@ -1456,7 +1456,7 @@ public extension TensorView where Scalar : Numeric {
 //    }
 //
 //    @inlinable @inline(__always)
-//    func unbroadcast(to shape: TensorShape) -> TensorView {
+//    func unbroadcast(to shape: Shape) -> TensorView {
 //        return unbroadcast(toShape: TensorView<Int32>(shape.dimensions))
 //    }
 //

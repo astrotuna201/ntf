@@ -6,7 +6,7 @@
 //==============================================================================
 // ComputeService
 public protocol ComputeService: ObjectTracking, Logging {
-    init(log: Log?) throws
+    init(logging: LogInfo?) throws
     var devices: [ComputeDevice] { get }
     var id: Int { get set }
     var name: String { get }
@@ -22,8 +22,6 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     var attributes: [String: String] { get }
     /// the amount of free memory currently available on the device
     var availableMemory: UInt64 { get }
-    /// evaluation context
-    var context: EvaluationContext { get }
     /// the id of the device for example gpu:0
     var id: Int { get }
     /// the maximum number of threads supported per block
@@ -54,8 +52,6 @@ public protocol ComputeDevice: ObjectTracking, Logging {
 public protocol DeviceArray: ObjectTracking, Logging {
     //-------------------------------------
     // properties
-    /// evaluation context
-    var context: EvaluationContext { get }
     /// the device where this array is allocated
     var device: ComputeDevice { get }
     /// a pointer to the memory on the device
@@ -107,8 +103,6 @@ public struct StreamEventOptions: OptionSet {
 public protocol DeviceStream: ObjectTracking, Logging {
     //-------------------------------------
     // properties
-    /// evaluation context
-    var context: EvaluationContext { get }
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream

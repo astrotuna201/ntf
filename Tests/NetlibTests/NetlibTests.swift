@@ -18,14 +18,21 @@ final class NetlibTests: XCTestCase {
     }
 
     public struct MNISTClassifier<ContextT>: Function {
-        @noDerivative public let functionId =
-            UUID(uuidString: "7F2FFF4E-58D7-4ED9-A5D7-1E15D6D3D34A")!
-        
+        //        let maxPool1: MaxPool2D<Float>
+        //        let maxPool2: MaxPool2D<Float>
+        //        var conv1: Conv2D<Float>
+        //        var conv2: Conv2D<Float>
+        //var dense1: Dense<Float>
+        //        var dense2: Dense<Float>
         public var output: TensorView<Float>
-        
-        public init(context: ContextT,
-                    inputShape: Netlib.TensorShape,
-                    using stream: DeviceStream? = nil) {
+        @noDerivative public var stream: DeviceStream
+
+        public init(inputShape: Shape,
+                    mode: EvaluationMode,
+                    logging: LogInfo,
+                    using deviceStream: DeviceStream? = nil) {
+
+            stream = deviceStream ?? Platform.defaultStream
             self.output = TensorView(count: inputShape.items)
         }
         
@@ -34,12 +41,6 @@ final class NetlibTests: XCTestCase {
             return output
         }
 
-//        let maxPool1: MaxPool2D<Float>
-//        let maxPool2: MaxPool2D<Float>
-//        var conv1: Conv2D<Float>
-//        var conv2: Conv2D<Float>
-//        var dense1: Dense<Float>
-//        var dense2: Dense<Float>
 //
 //        public init() {
 //            conv1 = Conv2D(filterShape: (5, 5, 1, 20), padding: .valid)
@@ -92,7 +93,7 @@ final class NetlibTests: XCTestCase {
                 (TensorView<Float>, TensorView<Int32>) {
                     let imagesArray = imagesFile.readDataToEndOfFile().dropFirst(16).map { Float($0) }
                     let labelsArray = labelsFile.readDataToEndOfFile().dropFirst(8).map { Int32($0) }
-                    let shape = TensorShape(extents: [labelsArray.count, 28, 28, 1], channelLayout: .gray)
+                    let shape = Shape(extents: [labelsArray.count, 28, 28, 1], channelLayout: .gray)
                     let images = TensorView<Float>(shape: shape, scalars: imagesArray) // / 255
                     let labels = TensorView<Int32>(scalars: labelsArray)
                     return (images, labels)
@@ -119,9 +120,9 @@ final class NetlibTests: XCTestCase {
         //------------------------------------------------------------------------------
         // train classifier
         let batchSize = 60
-        let batchShape = TensorShape(batchSize, 28, 28, 1)
+        let batchShape = Shape(batchSize, 28, 28, 1)
         let trainingContext = TrainingContext()
-        var model = MNISTClassifier(context: trainingContext, inputShape: batchShape)
+        var model = MNISTClassifier(inputShape: batchShape, mode: .training)
 
         let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
         let trainingIterations = data.trainingImages.items / batchSize

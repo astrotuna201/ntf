@@ -4,7 +4,7 @@
 //
 import Foundation
 
-public struct TensorShape: Equatable {
+public struct Shape: Equatable {
     //--------------------------------------------------------------------------
     // properties
     /// The interpretation of each channel in the shape
@@ -67,13 +67,13 @@ public struct TensorShape: Equatable {
         } else if colMajor {
             var cmExtent = extents
             cmExtent.swapAt(self.layout.hAxis, self.layout.wAxis)
-            var cmStrides = TensorShape.denseStrides(for: cmExtent)
+            var cmStrides = Shape.denseStrides(for: cmExtent)
             cmStrides.swapAt(self.layout.hAxis, self.layout.wAxis)
             self.strides = cmStrides
         } else {
-            self.strides = TensorShape.denseStrides(for: extents)
+            self.strides = Shape.denseStrides(for: extents)
         }
-        elementSpanCount = TensorShape.spanCount(for: extents,
+        elementSpanCount = Shape.spanCount(for: extents,
                                                  with: self.strides)
     }
 
@@ -144,12 +144,12 @@ public struct TensorShape: Equatable {
         return linearIndex(of: index) <= elementSpanCount
     }
     
-    public func contains(shape: TensorShape) -> Bool {
+    public func contains(shape: Shape) -> Bool {
         assert(shape.rank == rank, "rank mismatch")
         return shape.elementSpanCount <= elementSpanCount
     }
     
-    public func contains(offset: [Int], shape: TensorShape) -> Bool {
+    public func contains(offset: [Int], shape: Shape) -> Bool {
         assert(offset.count == rank && shape.rank == rank, "rank mismatch")
         return linearIndex(of: offset) + shape.elementSpanCount <= elementSpanCount
     }

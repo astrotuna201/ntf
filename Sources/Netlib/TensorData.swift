@@ -23,9 +23,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     public var namePath: String = "TODO"
 
     // logging
-    public let log: Log?
-    public var logLevel = LogLevel.error
-    public let nestingLevel = 0
+    public var logging: LogInfo?
 
     /// an optional context specific name for logging
     private var _name: String?
@@ -89,18 +87,18 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     
     // Empty
     public convenience init() {
-        self.init(log: nil, elementCount: 0)
+        self.init(logging: nil, elementCount: 0)
     }
 
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(log: Log?, readOnlyReferenceTo buffer: BufferUInt8) {
-        self.log  = log
+    public init(logging: LogInfo?, readOnlyReferenceTo buffer: BufferUInt8) {
+        self.logging = logging
         isReadOnlyReference = true
-        elementCount  = buffer.count
+        elementCount = buffer.count
         masterVersion = 0
-        hostVersion   = 0
+        hostVersion = 0
 
         // we won't ever actually mutate in this case
         hostBuffer = MutableBufferUInt8(
@@ -112,8 +110,8 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(log: Log?, buffer: UnsafeBufferPointer<Scalar>) {
-        self.log = log
+    public init(logging: LogInfo?, buffer: UnsafeBufferPointer<Scalar>) {
+        self.logging = logging
         isReadOnlyReference = false
         self.elementCount = buffer.count
         do {
@@ -127,9 +125,9 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // create new space
-    public init(log: Log?, elementCount: Int, name: String? = nil) {
+    public init(logging: LogInfo?, elementCount: Int, name: String? = nil) {
         isReadOnlyReference = false
-        self.log  = log
+        self.logging = logging
         self.elementCount = elementCount
         self._name = name
         register()

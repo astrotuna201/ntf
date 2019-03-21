@@ -94,7 +94,8 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
     // create a sub view
     public func view(offset: [Int], extents: [Int]) -> TensorView {
         // the view created will have the same isShared state as the parent
-        return createSubView(offset: offset, extents: extents, isReference: isShared)
+        return createSubView(offset: offset, extents: extents,
+                             isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -117,17 +118,20 @@ public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createSubView(offset: index, extents: viewExtents, isReference: isShared)
+        return createSubView(offset: index, extents: viewExtents,
+                             isReference: isShared)
     }
     
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // createSubView
-    private func createSubView(offset: [Int], extents: [Int], isReference: Bool) -> TensorView {
+    private func createSubView(offset: [Int], extents: [Int],
+                               isReference: Bool) -> TensorView {
         // validate
+        assert(extents[0] <= shape.items)
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset,
-                              shape: TensorShape(extents: extents, layout: shape.layout)))
-        assert(extents[0] <= shape.items)
+                              shape: TensorShape(extents: extents,
+                                                 layout: shape.layout)))
         
         let eltOffset = elementOffset + shape.linearIndex(of: offset)
         let viewShape = TensorShape(extents: extents,
@@ -197,12 +201,9 @@ extension TensorView {
     //--------------------------------------------------------------------------
     // from Array
     public init(shape: TensorShape, scalars: [Scalar], log: Log? = nil) {
-        let byteCount = scalars.count * MemoryLayout<Scalar>.size
-        let dataPointer = scalars.withUnsafeBufferPointer { buffer in
-            buffer.baseAddress!.withMemoryRebound(to: Scalar.self,
-                                                  capacity: byteCount) { $0 }
-        }
-        self.init(shape: shape, start: dataPointer, count: byteCount, log: log)
+        let buffer = scalars.withUnsafeBufferPointer { $0 }
+        let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
+        self.init(shape: shape, tensorData: tensorData, log: log)
     }
     
     public init(scalars: [Scalar], log: Log? = nil) {
@@ -210,13 +211,15 @@ extension TensorView {
     }
     
     public init(extents: Int..., scalars: [Scalar], log: Log? = nil) {
-        self.init( )
+        self.init(shape: TensorShape(extents: extents),
+                  scalars: scalars, log: log)
     }
     
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init(shape: TensorShape, start: UnsafePointer<Scalar>,
-                count: Int, log: Log? = nil) {
+    public init(shape: TensorShape,
+                start: UnsafePointer<Scalar>, count: Int,
+                log: Log? = nil) {
         let buffer = UnsafeBufferPointer(start: start, count: count)
         let tensorData = TensorData<Scalar>(log: log, buffer: buffer)
         self.init(shape: shape, tensorData: tensorData, log: log)

@@ -86,13 +86,15 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // initializers
+    
+    // Empty
     public convenience init() {
         self.init(log: nil, elementCount: 0)
     }
 
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
-    // a database
+    // a read only data object
     public init(log: Log?, readOnlyReferenceTo buffer: BufferUInt8) {
         self.log  = log
         isReadOnlyReference = true
@@ -190,7 +192,8 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         try migrate(readOnly: false)
         return hostBuffer.baseAddress!
             .withMemoryRebound(to: Scalar.self, capacity: elementCount) {
-                return UnsafeMutableBufferPointer<Scalar>(start: $0, count: elementCount)
+                return UnsafeMutableBufferPointer<Scalar>(start: $0,
+                                                          count: elementCount)
         }
     }
 
@@ -201,7 +204,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         return deviceDataPointer
     }
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // migrate
     // This migrates
     private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {

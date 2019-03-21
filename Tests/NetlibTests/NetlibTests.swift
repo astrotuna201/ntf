@@ -17,19 +17,21 @@ final class NetlibTests: XCTestCase {
         let testLabels: TensorView<Int32>
     }
 
-    public struct MNISTClassifier<ContextT>: Function where ContextT: Evaluating {
+    public struct MNISTClassifier<ContextT>: Function {
         @noDerivative public let functionId =
             UUID(uuidString: "7F2FFF4E-58D7-4ED9-A5D7-1E15D6D3D34A")!
+        
         public var output: TensorView<Float>
         
         public init(context: ContextT,
                     inputShape: Netlib.TensorShape,
                     using stream: DeviceStream? = nil) {
+            self.output = TensorView(count: inputShape.items)
         }
         
         @differentiable
         public func applied(to input: TensorView<Float>) -> TensorView<Float> {
-            return input
+            return output
         }
 
 //        let maxPool1: MaxPool2D<Float>
@@ -61,7 +63,7 @@ final class NetlibTests: XCTestCase {
 //        }
 //
         public func infer(from input: TensorView<Float>) -> TensorView<Float> {
-            return input
+            return output
 //            return softmax(applied(to: input))
         }
     }

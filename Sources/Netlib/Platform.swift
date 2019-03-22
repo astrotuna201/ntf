@@ -2,14 +2,14 @@
 //  Created by Edward Connell on 8/20/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
-//  EvaluationContext (local, remote)
-//    Platform (global)
-//		services[]
-//		  ComputeService (cpu, cuda, amd, tpu, ...)
-//			devices[]
-//			  ComputeDevice (gpu:0, gpu:1, ...)
-//			    DeviceStream
-//				DeviceArray
+//  Platform (local)
+//	  services[]
+//	    ComputeService (cpu, cuda, amd, tpu, ...)
+//		  devices[]
+//		    ComputeDevice (gpu:0, gpu:1, ...)
+//            DeviceArray
+//		      DeviceStream
+//            StreamEvent
 //
 import Foundation
 
@@ -17,19 +17,18 @@ import Foundation
 // Platform
 /// The root service to enumerate and select compute services and devices
 final public class Platform: ObjectTracking, Logging {
-    //--------------------------------------------------------------------------
-    // properties
-    /// a device automatically selected during init based on service priority
-    public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
+    /// a device automatically selected based on service priority
+    public static var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     ///
     public var defaultDeviceCount = 1
     /// ordered list of device ids specifying the order for auto selection
-    public var devicePriority: [Int]?
-    /// default device stream
+    public var deviceIdPriority: [Int]?
+    /// a stream created on the default device
     public lazy var defaultStream: DeviceStream = {
         do {
             return try self.defaultDevice.createStream(label: "Platform.defaultStream")
         } catch {
+            // this should never fail
             writeLog(String(describing: error))
             fatalError()
         }
@@ -47,18 +46,24 @@ final public class Platform: ObjectTracking, Logging {
     public var logging: LogInfo?
 
     //--------------------------------------------------------------------------
-    // init
-    public init(logging: LogInfo?) {
-        self.logging = logging
-    }
-    
-    //--------------------------------------------------------------------------
     /// collection of registered compute services (cpu, cuda, ...)
-    private static var _services: [String: ComputeService]!
+    /// loading and enumerating services is expensive and invariant, so
+    /// we only want to do it once per process and share it across all
+    /// Platform instances.
     public lazy var services: [String: ComputeService] = {
-        Platform.getServices(instance: self)
+        Platform.servicesMutex.sync {
+            Platform.getServices(instance: self)
+        }
     }()
     
+    /// this stores the global services collection initialized by getServices
+    private static var _services: [String: ComputeService]!
+    private static var servicesMutex = Mutex()
+
+    /// getServices
+    /// Parameters
+    /// - instance is the first Platform instance to access the services
+    ///            collection. It is passed in to provide logging.
     private class func getServices(instance: Platform) -> [String: ComputeService] {
         guard Platform._services == nil else { return Platform._services }
         var _services = [String: ComputeService]()
@@ -118,6 +123,16 @@ final public class Platform: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
+    // initializers
+    public init(logging: LogInfo? = nil) {
+        self.logging = logging ?? {
+            let namePath = String(describing: Platform.self)
+            return LogInfo(log: Log(parentNamePath: namePath), logLevel: .error,
+                           namePath: namePath, nestingLevel: 0)
+        }()
+    }
+    
+    //--------------------------------------------------------------------------
     // plugIns TODO: move to compute service
     public static var plugInBundles: [Bundle] = {
         var bundles = [Bundle]()
@@ -135,7 +150,7 @@ final public class Platform: ObjectTracking, Logging {
     private func selectDefaultDevice() -> ComputeDevice {
         // try to exact match the service request
         var defaultDev: ComputeDevice?
-        let requestedDevice = devicePriority?[0] ?? 0
+        let requestedDevice = deviceIdPriority?[0] ?? 0
         for serviceName in servicePriority where defaultDev == nil {
             defaultDev = requestDevice(serviceName: serviceName,
                                        deviceId: requestedDevice,

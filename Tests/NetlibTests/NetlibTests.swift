@@ -4,6 +4,62 @@ import TensorFlow
 @testable import Netlib
 @testable import DeepLearning
 
+//==============================================================================
+// Model definition
+public struct MNISTClassifier: Function {
+    //        let maxPool1: MaxPool2D<Float>
+    //        let maxPool2: MaxPool2D<Float>
+    //        var conv1: Conv2D<Float>
+    //        var conv2: Conv2D<Float>
+    var dense1: Dense<Float>
+    //        var dense2: Dense<Float>
+    public var output: TensorView<Float>
+    @noDerivative public var stream: DeviceStream
+    
+    public init(inputShape: Shape,
+                mode: EvaluationMode,
+                logging: LogInfo,
+                using deviceStream: DeviceStream? = nil) {
+        
+        stream = deviceStream ?? Platform.defaultStream
+        self.output = TensorView(count: inputShape.items)
+    }
+    
+    @differentiable
+    public func applied(to input: TensorView<Float>) -> TensorView<Float> {
+        return output
+    }
+    
+    
+    public init() {
+        //            conv1 = Conv2D(filterShape: (5, 5, 1, 20), padding: .valid)
+        //            maxPool1 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
+        //            conv2 = Conv2D(filterShape: (5, 5, 20, 50), padding: .valid)
+        //            maxPool2 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
+        //            dense1 = Dense(inputSize: 800, outputSize: 500, activation: relu)
+        //            dense2 = Dense(inputSize: 500, outputSize: 10, activation: { $0 })
+    }
+    //
+    //        // separate tensors
+    //        @differentiable(wrt: (self, input))
+    //        public func applied(to input: Tensor<Float>, in context: Context) -> Tensor<Float> {
+    //            let h0 = conv1.applied(to: input, in: context)
+    //            let h1 = maxPool1.applied(to: h0, in: context)
+    //            let h2 = conv2.applied(to: h1, in: context)
+    //            let h3 = maxPool2.applied(to: h2, in: context)
+    //            let dense1InputShape = Tensor<Int32>([h3.shape[0], 800])
+    //            let h4 = dense1.applied(to: h3.reshaped(toShape: dense1InputShape), in: context)
+    //            return dense2.applied(to: h4, in: context)
+    //        }
+    //
+    public func infer(from input: TensorView<Float>) -> TensorView<Float> {
+        return output
+        //            return softmax(applied(to: input))
+    }
+}
+
+//==============================================================================
+// tests
 final class NetlibTests: XCTestCase {
     static var allTests = [
         ("test_MnistTraining", test_MnistTraining),
@@ -17,64 +73,12 @@ final class NetlibTests: XCTestCase {
         let testLabels: TensorView<Int32>
     }
 
-    public struct MNISTClassifier<ContextT>: Function {
-        //        let maxPool1: MaxPool2D<Float>
-        //        let maxPool2: MaxPool2D<Float>
-        //        var conv1: Conv2D<Float>
-        //        var conv2: Conv2D<Float>
-        //var dense1: Dense<Float>
-        //        var dense2: Dense<Float>
-        public var output: TensorView<Float>
-        @noDerivative public var stream: DeviceStream
-
-        public init(inputShape: Shape,
-                    mode: EvaluationMode,
-                    logging: LogInfo,
-                    using deviceStream: DeviceStream? = nil) {
-
-            stream = deviceStream ?? Platform.defaultStream
-            self.output = TensorView(count: inputShape.items)
-        }
-        
-        @differentiable
-        public func applied(to input: TensorView<Float>) -> TensorView<Float> {
-            return output
-        }
-
-//
-//        public init() {
-//            conv1 = Conv2D(filterShape: (5, 5, 1, 20), padding: .valid)
-//            maxPool1 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
-//            conv2 = Conv2D(filterShape: (5, 5, 20, 50), padding: .valid)
-//            maxPool2 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
-//            dense1 = Dense(inputSize: 800, outputSize: 500, activation: relu)
-//            dense2 = Dense(inputSize: 500, outputSize: 10, activation: { $0 })
-//        }
-//
-//        // separate tensors
-//        @differentiable(wrt: (self, input))
-//        public func applied(to input: Tensor<Float>, in context: Context) -> Tensor<Float> {
-//            let h0 = conv1.applied(to: input, in: context)
-//            let h1 = maxPool1.applied(to: h0, in: context)
-//            let h2 = conv2.applied(to: h1, in: context)
-//            let h3 = maxPool2.applied(to: h2, in: context)
-//            let dense1InputShape = Tensor<Int32>([h3.shape[0], 800])
-//            let h4 = dense1.applied(to: h3.reshaped(toShape: dense1InputShape), in: context)
-//            return dense2.applied(to: h4, in: context)
-//        }
-//
-        public func infer(from input: TensorView<Float>) -> TensorView<Float> {
-            return output
-//            return softmax(applied(to: input))
-        }
-    }
-
     //==========================================================================
     //
     func test_MnistTraining() {
         let dir = "/home/ed/⁨nl2/⁨data/⁨mnist⁩/"
 
-        //------------------------------------------------------------------------------
+        //----------------------------------------------------------------------
         // Load images and labels (without performing header validation)
         func readMNIST() -> TrainingData? {
             // validate
@@ -110,69 +114,66 @@ final class NetlibTests: XCTestCase {
                                 testLabels: testLabels)
         }
 
-        //------------------------------------------------------------------------------
+        //----------------------------------------------------------------------
         // load the data
         guard let data = readMNIST() else {
             print("Failed to open data files in working directory")
             exit(1)
         }
 
-        //------------------------------------------------------------------------------
+        //----------------------------------------------------------------------
         // train classifier
         let batchSize = 60
         let batchShape = Shape(batchSize, 28, 28, 1)
-        let trainingContext = TrainingContext()
         var model = MNISTClassifier(inputShape: batchShape, mode: .training)
-
-        let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
-        let trainingIterations = data.trainingImages.items / batchSize
-        let epochs = 10
-
-        let testBatchSize = 1000
-        let testContext = InferenceContext()
-
-        print("Begin training for \(epochs) epochs" )
-        let start = Date()
-
-        do {
-            for epoch in 0..<epochs {
-                //--------------------------------
-                // train
-                var totalLoss: Float = 0
-
-                for i in 0..<trainingIterations {
-                    let index = i * batchSize
-                    let images = data.trainingImages.viewItems(at: index, count: batchSize)
-                    let labels = data.trainingLabels.viewItems(at: index, count: batchSize)
-
-                    let gradients = gradient(at: model) { model -> TensorView<Float> in
-                        let logits = model.applied(to: images)
-                        let batchLoss = TensorView<Float>() //softmaxCrossEntropy(logits: logits, labels: labels)
-                        totalLoss += try batchLoss.scalarized()
-                        return batchLoss
-                    }
-                    optimizer.update(&model.allDifferentiableVariables, along: gradients)
-                }
-
-                //--------------------------------
-                // test
-                var totalCorrect = 0
-                for i in 0..<10 {
-                    let index = i * batchSize
-                    let images = data.testImages.viewItems(at: index, count: testBatchSize)
-                    let labels = data.testLabels.viewItems(at: index, count: testBatchSize)
-                    let predictions = model.infer(from: images)
-    //                let correct = predictions.argmax(squeezingAxis: 1) .== labels
-                    totalCorrect += 0 // Tensor<Int32>(correct).sum().scalarized()
-                }
-
-                let accuracy = Float(totalCorrect) / Float(data.testLabels.items)
-                print("epoch \(epoch) accuracy: \(accuracy) loss: \(totalLoss)")
-            }
-            print("Training complete: \(String(timeInterval: Date().timeIntervalSince(start)))")
-        } catch {
-            
-        }
+//        let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
+//        let trainingIterations = data.trainingImages.items / batchSize
+//        let epochs = 10
+//
+//        let testBatchSize = 1000
+//
+//        print("Begin training for \(epochs) epochs" )
+//        let start = Date()
+//
+//        do {
+//            for epoch in 0..<epochs {
+//                //--------------------------------
+//                // train
+//                var totalLoss: Float = 0
+//
+//                for i in 0..<trainingIterations {
+//                    let index = i * batchSize
+//                    let images = data.trainingImages.viewItems(at: index, count: batchSize)
+//                    let labels = data.trainingLabels.viewItems(at: index, count: batchSize)
+//
+//                    let gradients = gradient(at: model) { model -> TensorView<Float> in
+//                        let logits = model.applied(to: images)
+//                        let batchLoss = TensorView<Float>() //softmaxCrossEntropy(logits: logits, labels: labels)
+//                        totalLoss += try batchLoss.scalarized()
+//                        return batchLoss
+//                    }
+//                    optimizer.update(&model.allDifferentiableVariables, along: gradients)
+//                }
+//
+//                //--------------------------------
+//                // test
+//                var totalCorrect = 0
+//                for i in 0..<10 {
+//                    let index = i * batchSize
+//                    let images = data.testImages.viewItems(at: index, count: testBatchSize)
+//                    let labels = data.testLabels.viewItems(at: index, count: testBatchSize)
+//                    let predictions = model.infer(from: images)
+//    //                let correct = predictions.argmax(squeezingAxis: 1) .== labels
+//                    totalCorrect += 0 // Tensor<Int32>(correct).sum().scalarized()
+//                }
+//
+//                let accuracy = Float(totalCorrect) / Float(data.testLabels.items)
+//                print("epoch \(epoch) accuracy: \(accuracy) loss: \(totalLoss)")
+//            }
+//            print("Training complete: \(String(timeInterval: Date().timeIntervalSince(start)))")
+//        } catch {
+//
+//        }
     }
 
     func test_MnistInference() {

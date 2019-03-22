@@ -17,19 +17,21 @@ import Foundation
 // Platform
 /// The root service to enumerate and select compute services and devices
 final public class Platform: ObjectTracking, Logging {
+    /// global shared instance
+    public static let global = Platform()
     /// a device automatically selected based on service priority
-    public static var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
-    ///
-    public var defaultDeviceCount = 1
+    public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
+    /// the default number of devices to use
+    public var defaultDevicesToAllocate = 1
     /// ordered list of device ids specifying the order for auto selection
     public var deviceIdPriority: [Int]?
     /// a stream created on the default device
-    public lazy var defaultStream: DeviceStream = {
+    public private(set) static var defaultStream: DeviceStream = {
         do {
-            return try self.defaultDevice.createStream(label: "Platform.defaultStream")
+            return try global.defaultDevice.createStream(label: "Platform.defaultStream")
         } catch {
             // this should never fail
-            writeLog(String(describing: error))
+            global.writeLog(String(describing: error))
             fatalError()
         }
     }()
@@ -51,28 +53,14 @@ final public class Platform: ObjectTracking, Logging {
     /// we only want to do it once per process and share it across all
     /// Platform instances.
     public lazy var services: [String: ComputeService] = {
-        Platform.servicesMutex.sync {
-            Platform.getServices(instance: self)
-        }
+        if Platform._services.count == 0 { getServices() }
+        return Platform._services
     }()
     
     /// this stores the global services collection initialized by getServices
-    private static var _services: [String: ComputeService]!
-    private static var servicesMutex = Mutex()
+    private static var _services = [String: ComputeService]()
 
-    /// getServices
-    /// Parameters
-    /// - instance is the first Platform instance to access the services
-    ///            collection. It is passed in to provide logging.
-    private class func getServices(instance: Platform) -> [String: ComputeService] {
-        guard Platform._services == nil else { return Platform._services }
-        var _services = [String: ComputeService]()
-        // helper
-        func add(service: ComputeService) {
-            service.id = _services.count
-            _services[service.name] = service
-        }
-        
+    private func getServices() {
         do {
             // add cpu service by default
             // TODO: put back!
@@ -88,10 +76,10 @@ final public class Platform: ObjectTracking, Logging {
                 
                 if let serviceType = bundle.principalClass as? ComputeService.Type {
                     // create the service
-                    let service = try serviceType.init(logging: instance.logging)
+                    let service = try serviceType.init(logging: logging)
                     
-                    if instance.willLog(level: .diagnostic) {
-                        instance.diagnostic(
+                    if willLog(level: .diagnostic) {
+                        diagnostic(
                             "Loaded compute service '\(service.name)'." +
                             " ComputeDevice count = \(service.devices.count)",
                             categories: .setup)
@@ -99,10 +87,11 @@ final public class Platform: ObjectTracking, Logging {
                     
                     if service.devices.count > 0 {
                         // add plugin service
-                        add(service: service)
+                        service.id = Platform._services.count
+                        Platform._services[service.name] = service
                     } else {
-                        if instance.willLog(level: .warning) {
-                            instance.writeLog(
+                        if willLog(level: .warning) {
+                            writeLog(
                                 "Compute service '\(service.name)' successfully loaded, " +
                                 "but reported devices = 0, so service is unavailable",
                                 level: .warning)
@@ -117,19 +106,17 @@ final public class Platform: ObjectTracking, Logging {
                 //            if unloadBundle { bundle.unload() }
             }
         } catch {
-            instance.writeLog(String(describing: error))
+            writeLog(String(describing: error))
         }
-        return _services
     }
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(logging: LogInfo? = nil) {
-        self.logging = logging ?? {
-            let namePath = String(describing: Platform.self)
-            return LogInfo(log: Log(parentNamePath: namePath), logLevel: .error,
+    private init() {
+        let namePath = String(describing: Platform.self)
+        let info = LogInfo(log: Log(parentNamePath: namePath), logLevel: .error,
                            namePath: namePath, nestingLevel: 0)
-        }()
+        self.logging = info
     }
     
     //--------------------------------------------------------------------------
@@ -197,7 +184,7 @@ final public class Platform: ObjectTracking, Logging {
                                deviceIds: [Int]? = nil) throws -> [DeviceStream] {
 
         let serviceName = serviceName ?? defaultDevice.service.name
-        let maxDeviceCount = min(defaultDeviceCount, defaultDevice.service.devices.count)
+        let maxDeviceCount = min(defaultDevicesToAllocate, defaultDevice.service.devices.count)
         let ids = deviceIds ?? [Int](0..<maxDeviceCount)
 
         return try ids.map {

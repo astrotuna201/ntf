@@ -11,7 +11,7 @@ import TensorFlow
 public enum EvaluationMode { case inference, training }
 
 /// Function
-public protocol Function: Differentiable,
+public protocol Function: Differentiable, Logging,
     KeyPathIterable where Self.AllDifferentiableVariables: KeyPathIterable {
 
     //--------------------------------------------------------------------------

@@ -12,7 +12,7 @@ import Netlib
 /// a weight matrix, `bias` is a bias vector, and `activation` is an element-wise activation
 /// function.
 @_fixed_layout
-public struct Dense<Scalar: TensorFlowFloatingPoint>: Function, Logging {
+public struct Dense_<Scalar: TensorFlowFloatingPoint>: Function, Logging {
     /// activation function to apply
     public typealias Activation =
         @differentiable (TensorView<Scalar>) -> TensorView<Scalar>

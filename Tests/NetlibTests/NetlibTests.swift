@@ -11,18 +11,28 @@ public struct MNISTClassifier: Function {
     //        let maxPool2: MaxPool2D<Float>
     //        var conv1: Conv2D<Float>
     //        var conv2: Conv2D<Float>
-    var dense1: Dense<Float>
+//    var dense1: Dense_<Float>
     //        var dense2: Dense<Float>
     public var output: TensorView<Float>
+    @noDerivative public var logging: LogInfo?
     @noDerivative public var stream: DeviceStream
     
     public init(inputShape: Shape,
                 mode: EvaluationMode,
-                logging: LogInfo,
+                logging: LogInfo? = nil,
                 using deviceStream: DeviceStream? = nil) {
-        
-        stream = deviceStream ?? Platform.defaultStream
+        // setup props
+        self.logging = logging ?? Platform.global.logging
+        self.stream = deviceStream ?? Platform.defaultStream
         self.output = TensorView(count: inputShape.items)
+        
+        // init model elements
+        //            conv1 = Conv2D(filterShape: (5, 5, 1, 20), padding: .valid)
+        //            maxPool1 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
+        //            conv2 = Conv2D(filterShape: (5, 5, 20, 50), padding: .valid)
+        //            maxPool2 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
+        //            dense1 = Dense(inputSize: 800, outputSize: 500, activation: relu)
+        //            dense2 = Dense(inputSize: 500, outputSize: 10, activation: { $0 })
     }
     
     @differentiable
@@ -31,15 +41,6 @@ public struct MNISTClassifier: Function {
     }
     
     
-    public init() {
-        //            conv1 = Conv2D(filterShape: (5, 5, 1, 20), padding: .valid)
-        //            maxPool1 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
-        //            conv2 = Conv2D(filterShape: (5, 5, 20, 50), padding: .valid)
-        //            maxPool2 = MaxPool2D(poolSize: (2, 2), strides: (2, 2), padding: .valid)
-        //            dense1 = Dense(inputSize: 800, outputSize: 500, activation: relu)
-        //            dense2 = Dense(inputSize: 500, outputSize: 10, activation: { $0 })
-    }
-    //
     //        // separate tensors
     //        @differentiable(wrt: (self, input))
     //        public func applied(to input: Tensor<Float>, in context: Context) -> Tensor<Float> {
@@ -116,16 +117,16 @@ final class NetlibTests: XCTestCase {
 
         //----------------------------------------------------------------------
         // load the data
-        guard let data = readMNIST() else {
-            print("Failed to open data files in working directory")
-            exit(1)
-        }
+//        guard let data = readMNIST() else {
+//            print("Failed to open data files in working directory")
+//            exit(1)
+//        }
 
         //----------------------------------------------------------------------
         // train classifier
-        let batchSize = 60
-        let batchShape = Shape(batchSize, 28, 28, 1)
-        var model = MNISTClassifier(inputShape: batchShape, mode: .training)
+//        let batchSize = 60
+//        let batchShape = Shape(batchSize, 28, 28, 1)
+//        var model = MNISTClassifier(inputShape: batchShape, mode: .training)
 //        let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
 //        let trainingIterations = data.trainingImages.items / batchSize
 //        let epochs = 10

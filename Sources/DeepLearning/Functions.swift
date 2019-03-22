@@ -43,7 +43,8 @@ public struct Dense_<Scalar: TensorFlowFloatingPoint>: Function, Logging {
         self.weight = weight
         self.logging = logging
         stream = deviceStream ?? Platform.defaultStream
-        output = TensorView<Scalar>(extents: [input.items, weight.cols],
+        let flatInput = input.flattened(axis: 1)
+        output = TensorView<Scalar>(extents: [flatInput.rows, weight.cols],
                                     logging: logging)
     }
 
@@ -53,29 +54,29 @@ public struct Dense_<Scalar: TensorFlowFloatingPoint>: Function, Logging {
     }
 }
 
-//public extension Dense {
-//    /// Creates a `Dense` layer with the specified input size, output size, and element-wise
-//    /// activation function. The weight matrix is created with shape `[inputSize, outputSize]` and
-//    /// is initialized using Glorot uniform initialization with the specified generator. The bias
-//    /// vector is created with shape `[outputSize]` and is initialized with zeros.
-//    init<G: RandomNumberGenerator>(
-//            inputSize: Int,
-//            outputSize: Int,
-//            activation: @escaping Activation = identity,
-//            generator: inout G
-//    ) {
-//        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
-//                generator: &generator),
-//                bias: Tensor(zeros: [Int32(outputSize)]),
-//                activation: activation)
-//    }
-//
-//    init(inputSize: Int, outputSize: Int, activation: @escaping Activation = identity) {
-//        self.init(inputSize: inputSize, outputSize: outputSize, activation: activation,
-//                generator: &PhiloxRandomNumberGenerator.global)
-//    }
-//}
-//
+public extension Dense {
+    /// Creates a `Dense` layer with the specified input size, output size, and element-wise
+    /// activation function. The weight matrix is created with shape `[inputSize, outputSize]` and
+    /// is initialized using Glorot uniform initialization with the specified generator. The bias
+    /// vector is created with shape `[outputSize]` and is initialized with zeros.
+    init<G: RandomNumberGenerator>(
+            inputSize: Int,
+            outputSize: Int,
+            activation: @escaping Activation = identity,
+            generator: inout G
+    ) {
+        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
+                generator: &generator),
+                bias: Tensor(zeros: [Int32(outputSize)]),
+                activation: activation)
+    }
+
+    init(inputSize: Int, outputSize: Int, activation: @escaping Activation = identity) {
+        self.init(inputSize: inputSize, outputSize: outputSize, activation: activation,
+                generator: &PhiloxRandomNumberGenerator.global)
+    }
+}
+
 //public extension Dense {
 //    /// Creates a `Dense` layer with the specified input size, output size, and element-wise
 //    /// activation function. The weight matrix is created with shape `[inputSize, outputSize]` and

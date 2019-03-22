@@ -3,6 +3,7 @@
 //  Copyright © 2016 Edward Connell. All rights reserved.
 //
 import Foundation
+import TensorFlow
 
 public struct Shape: Equatable {
     //--------------------------------------------------------------------------
@@ -128,13 +129,16 @@ public struct Shape: Equatable {
         assert(rank > 0 && index.count == rank)
         var result: Int
         switch rank {
+        case 0: result = 0
         case 1: result = index[0]
-        case 2: result = index[0] * strides[0] + index[1] * strides[1]
-        default: result = index[0] * strides[0] + index[1] * strides[1] +
-            index[2] * strides[2] + index[3] * strides[3]
+        default: result = zip(extents, strides).reduce(0) { $0 + $1.0 * $1.1 }
         }
         assert(result <= elementSpanCount)
         return result
+    }
+
+    public func linearIndex(of index: Int...) -> Int {
+        return linearIndex(of: index)
     }
 
     //--------------------------------------------------------------------------
@@ -152,6 +156,39 @@ public struct Shape: Equatable {
     public func contains(offset: [Int], shape: Shape) -> Bool {
         assert(offset.count == rank && shape.rank == rank, "rank mismatch")
         return linearIndex(of: offset) + shape.elementSpanCount <= elementSpanCount
+    }
+
+    //--------------------------------------------------------------------------
+    // contains
+    public func flattened(axis: Int = 0) -> Shape {
+        assert(isContiguous, "Cannot reshape strided data")
+        assert(axis < rank)
+        
+        // create a new flat view
+        var extent: [Int]
+        switch axis {
+        case 0: extent = [elementCount]
+        case 1: extent = [items, elementCount / items]
+        default:
+            extent = [Int](extents.prefix(upTo: axis)) +
+                [extents.suffix(from: axis).reduce(1, *)] +
+                [Int](repeating: 1, count: rank - axis - 1)
+        }
+        return Shape(extent)
+    }
+}
+
+//==============================================================================
+// Legacy TensorFlow.TensorShape
+public extension Shape {
+    init(legacy shape: TensorFlow.TensorShape) {
+        self.init(extents: shape.dimensions.map { Int($0) })
+    }
+}
+
+public extension TensorFlow.TensorShape {
+    init(_ shape: Netlib.Shape) {
+        self = TensorFlow.TensorShape(shape.extents.map { Int32($0) })
     }
 }
 

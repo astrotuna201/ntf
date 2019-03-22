@@ -168,6 +168,66 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         }
     }
 
+    //----------------------------------------
+    // init from other TensorData
+    public init(withContentsOf other: TensorData,
+                using stream: DeviceStream? = nil) throws {
+        // init
+        isReadOnlyReference = other.isReadOnlyReference
+        elementCount = other.elementCount
+        name = other.name
+        masterVersion = 0
+        hostVersion = masterVersion
+        register()
+        
+        if willLog(level: .diagnostic) {
+            let streamIdStr = stream == nil ? "nil" : "\(stream!.id)"
+            diagnostic("\(createString) \(name)(\(trackingId)) init" +
+                "\(setText(" copying ", color: .blue))" +
+                "DataArray(\(other.trackingId)) elements: \(other.elementCount) " +
+                "stream id(\(streamIdStr))", categories: [.dataAlloc, .dataCopy])
+        }
+        
+        if isReadOnlyReference {
+            // point to external data buffer, such as LMDB memory mapped data record
+            assert(master == nil)
+            hostBuffer = other.hostBuffer
+            
+        } else if let stream = stream {
+            // get new array for the target stream's device location
+            let arrayInfo = try getArray(for: stream)
+            let array     = arrayInfo.array
+            array.version = masterVersion
+            
+            if let otherMaster = other.master {
+                // sync streams and copy
+                try stream.sync(with: otherMaster.stream,
+                                event: getSyncEvent(using: stream))
+                try array.copyAsync(from: otherMaster.array, using: stream)
+                
+            } else {
+                // uma to device
+                try array.copyAsync(from: other.roHostBufferUInt8(), using: stream)
+            }
+            
+            // set the master
+            master = arrayInfo
+            
+        } else {
+            // get pointer to this array's umaBuffer
+            let buffer = try rwHostBufferUInt8()
+            
+            if let otherMaster = other.master {
+                // synchronous device to umaArray
+                try otherMaster.array.copy(to: buffer, using: otherMaster.stream)
+                
+            } else {
+                // umaArray to umaArray
+                _ = try buffer.initialize(from: other.roHostBufferUInt8())
+            }
+        }
+    }
+    
     //--------------------------------------------------------------------------
     // ro
     public func roHostBuffer() throws -> UnsafeBufferPointer<Scalar> {
@@ -178,6 +238,11 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         }
     }
 
+    public func roHostBufferUInt8() throws -> UnsafeBufferPointer<UInt8> {
+        try migrate(readOnly: true)
+        return UnsafeBufferPointer<UInt8>(hostBuffer)
+    }
+    
     public func roDevicePointer(using stream: DeviceStream) throws -> UnsafeRawPointer {
         try migrate(readOnly: true, using: stream)
         return UnsafeRawPointer(deviceDataPointer)
@@ -193,6 +258,12 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
                 return UnsafeMutableBufferPointer<Scalar>(start: $0,
                                                           count: elementCount)
         }
+    }
+
+    public func rwHostBufferUInt8() throws -> UnsafeMutableBufferPointer<UInt8> {
+        assert(!isReadOnlyReference)
+        try migrate(readOnly: false)
+        return hostBuffer
     }
 
     public func rwDevicePointer(using stream: DeviceStream) throws ->

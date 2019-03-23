@@ -5,7 +5,7 @@
 import Foundation
 import TensorFlow
 
-public struct Shape: Equatable {
+public struct Shape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // properties
     /// The interpretation of each channel in the shape
@@ -194,7 +194,7 @@ public extension TensorFlow.TensorShape {
 
 //==============================================================================
 // TensorLayout
-public enum TensorLayout: Int {
+public enum TensorLayout: Int, Codable {
     // warning: don't rearrange without also updating axis mapping below
     case scalar, vector, matrix, volume, nchw, nhwc, ncdhw, ndhwc
 
@@ -213,11 +213,10 @@ public enum TensorLayout: Int {
 //==============================================================================
 /// ChannelLayout
 /// This is used to label channel to aid in automated format conversion
-public enum ChannelLayout {
+public enum ChannelLayout: Int, Codable {
     // other
     case any
     // image
     case gray, grayAlpha, rgb, rgba
     // etc...
 }
-

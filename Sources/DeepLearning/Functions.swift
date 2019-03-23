@@ -15,15 +15,13 @@ import Netlib
 public struct Dense_<Scalar: TensorFlowFloatingPoint>: Function, Logging {
     /// activation function to apply
     public typealias Activation =
-        @differentiable (TensorView<Scalar>) -> TensorView<Scalar>
+        (TensorView<Scalar>, DeviceStream) -> TensorView<Scalar>
     /// The element-wise activation function.
     @noDerivative public let activation: Activation
     /// The bias vector.
     public var bias: TensorView<Scalar>
     /// the output view for this instance
     public var output: TensorView<Scalar>
-    /// The device stream used to execute the function isntance
-    @noDerivative public private(set) var stream: DeviceStream
     /// The weight matrix.
     public var weight: TensorView<Scalar>
     // Logging
@@ -42,14 +40,15 @@ public struct Dense_<Scalar: TensorFlowFloatingPoint>: Function, Logging {
         self.bias = bias
         self.weight = weight
         self.logging = logging
-        stream = deviceStream ?? Platform.defaultStream
         let flatInput = input.flattened(axis: 1)
         output = TensorView<Scalar>(extents: [flatInput.rows, weight.cols],
                                     logging: logging)
     }
 
     @differentiable
-    public func applied(to input: TensorView<Scalar>) -> TensorView<Scalar> {
+    public func evaluate(input: TensorView<Scalar>,
+                         using stream: DeviceStream?) -> TensorView<Scalar> {
+//        let dataStream = stream ?? Platform.defaultStream
         return output // activation(matmul(input, weight) + bias)
     }
 }

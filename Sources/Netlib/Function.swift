@@ -27,8 +27,6 @@ public protocol Function: Differentiable, Logging,
     /// during `setup`. This avoids allocating a new output for every iteration
     /// of the applied function
     var output: Self.Output { get }
-    /// The device stream used to execute the function isntance
-    var stream: DeviceStream { get }
 
     /// Returns the output obtained from applying the function to the given input.
     ///
@@ -38,6 +36,6 @@ public protocol Function: Differentiable, Logging,
     ///              function execution.
     /// - Returns: The output.
     @differentiable
-    func applied(to input: Self.Input) -> Self.Output
+    func evaluate(input: Self.Input, using stream: DeviceStream?) -> Self.Output
 }
 

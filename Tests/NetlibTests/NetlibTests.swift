@@ -15,7 +15,6 @@ public struct MNISTClassifier: Function {
     //        var dense2: Dense<Float>
     public var output: TensorView<Float>
     @noDerivative public var logging: LogInfo?
-    @noDerivative public var stream: DeviceStream
     
     public init(inputShape: Shape,
                 mode: EvaluationMode,
@@ -23,7 +22,6 @@ public struct MNISTClassifier: Function {
                 using deviceStream: DeviceStream? = nil) {
         // setup props
         self.logging = logging ?? Platform.global.logging
-        self.stream = deviceStream ?? Platform.defaultStream
         self.output = TensorView(count: inputShape.items)
         
         // init model elements
@@ -36,7 +34,7 @@ public struct MNISTClassifier: Function {
     }
     
     @differentiable
-    public func applied(to input: TensorView<Float>) -> TensorView<Float> {
+    public func evaluate(input: TensorView<Float>, using stream: DeviceStream?) -> TensorView<Float> {
         return output
     }
     

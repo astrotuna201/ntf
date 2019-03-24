@@ -365,7 +365,7 @@ extension TensorView {
     // copy from host buffer pointer
     public init<T>(_ scalar: T) where T: AnyScalar {
         self.init(extents: 1)
-//        try! rw()[0] = Scalar(scalar)
+        try! rw()[0] = Scalar(any: scalar)
     }
     
     //--------------------------------------------------------------------------
@@ -401,10 +401,11 @@ extension TensorView {
     }
 }
 
-public extension TensorFlow.Tensor {
+public extension TensorFlow.Tensor where Scalar: AnyTensorFlowScalar {
     /// create a dense copy of other and perform type conversion
-    init<T>(_ view: Netlib.TensorView<T>, using stream: DeviceStream? = nil) throws
-        where T: AnyScalar, Scalar: AnyScalar {
+    init<T: AnyTensorFlowScalar>(_ view: Netlib.TensorView<T>,
+                                 using stream: DeviceStream? = nil) throws {
+
         let denseView = TensorView<Scalar>(withContentsOf: view, using: stream)
         self = Tensor<Scalar>(shape: TensorFlow.TensorShape(denseView.shape),
                       scalars: try denseView.ro())

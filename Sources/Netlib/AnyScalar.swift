@@ -44,11 +44,10 @@ public protocol AnyNumeric: AnyScalar {}
 public protocol AnyInteger: AnyNumeric {}
 public protocol AnyFloatingPoint: AnyNumeric {}
 
-public protocol AnyTensorFlowScalar: TensorFlowScalar, AnyScalar {}
-public protocol AnyTensorFlowNumeric: TensorFlowNumeric, AnyNumeric {}
-public protocol AnyTensorFlowInteger: TensorFlowInteger, AnyInteger {}
-public protocol AnyTensorFlowFloatingPoint: TensorFlowFloatingPoint, AnyFloatingPoint {}
-
+public typealias AnyTensorFlowScalar = AnyScalar & TensorFlowScalar
+public typealias AnyTensorFlowNumeric = AnyScalar & TensorFlowNumeric
+public typealias AnyTensorFlowInteger = AnyScalar & TensorFlowInteger
+public typealias AnyTensorFlowFloatingPoint = AnyScalar & TensorFlowFloatingPoint
 
 //------------------------------------------------------------------------------
 extension UInt8: AnyInteger {

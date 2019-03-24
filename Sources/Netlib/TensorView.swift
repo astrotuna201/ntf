@@ -363,9 +363,9 @@ extension TensorView {
     
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init<T>(_ scalar: T) where T: AnyScalar {
-        self.init(extents: 1)
-        try! rw()[0] = Scalar(any: scalar)
+    public init<T>(_ value: T, logging: LogInfo? = nil) where T: AnyScalar {
+        self.init(extents: 1, logging: logging)
+        try! rw()[0] = Scalar(any: value)
     }
     
     //--------------------------------------------------------------------------

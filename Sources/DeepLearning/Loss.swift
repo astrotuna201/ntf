@@ -30,26 +30,27 @@ import Netlib
 //    return (expected - predicted).squared().mean()
 //}
 
-///// Computes the softmax cross entropy (categorical cross entropy) between logits and labels.
-/////
-///// - Parameters:
-/////   - logits: One-hot encoded outputs from a neural network.
-/////   - labels: Indices (zero-indexed) of the correct outputs.
+/// Computes the softmax cross entropy (categorical cross entropy) between logits and labels.
+///
+/// - Parameters:
+///   - logits: One-hot encoded outputs from a neural network.
+///   - labels: Indices (zero-indexed) of the correct outputs.
 //@differentiable(wrt: logits, vjp: _vjpSoftmaxCrossEntropy)
 //public func softmaxCrossEntropy<Scalar: TensorFlowFloatingPoint>(
-//    logits: TensorView<Scalar>, labels: TensorView<Int32>
-//) -> TensorView<Scalar> {
-//    return Raw.sparseSoftmaxCrossEntropyWithLogits(features: logits, labels: labels).loss.mean()
+//    logits: TensorView<Scalar>, labels: TensorView<Int32>) -> TensorView<Scalar> {
+//    fatalError()
+////    return Raw.sparseSoftmaxCrossEntropyWithLogits(features: logits, labels: labels).loss.mean()
 //}
 //
 //@usableFromInline
 //func _vjpSoftmaxCrossEntropy<Scalar: TensorFlowFloatingPoint>(
 //    logits: TensorView<Scalar>, labels: TensorView<Int32>
 //) -> (TensorView<Scalar>, (TensorView<Scalar>) -> TensorView<Scalar>) {
-//    let (loss, grad) = Raw.sparseSoftmaxCrossEntropyWithLogits(features: logits, labels: labels)
-//    return (loss.mean(), { v in v * grad })
+//    fatalError()
+////    let (loss, grad) = Raw.sparseSoftmaxCrossEntropyWithLogits(features: logits, labels: labels)
+////    return (loss.mean(), { v in v * grad })
 //}
-//
+
 ///// Computes the softmax cross entropy (categorical cross entropy) between logits and labels.
 /////
 ///// - Parameters:

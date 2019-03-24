@@ -20,10 +20,13 @@ class CodableTests: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct results.
         let shape = Shape(64, 100)
         
-        let jsonData = try! JSONEncoder().encode(shape)
-        let jsonString = String(data: jsonData, encoding: .utf8)!
-        print(jsonString)
-        print(jsonString.utf8.count)
-        
+        do {
+            let jsonData = try JSONEncoder().encode(shape)
+            let jsonString = String(data: jsonData, encoding: .utf8)!
+            print(jsonString)
+            print(jsonString.utf8.count)
+        } catch {
+            print(String(describing: error))
+        }
     }
 }

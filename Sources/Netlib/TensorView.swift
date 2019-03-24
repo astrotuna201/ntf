@@ -5,7 +5,8 @@
 import Foundation
 import TensorFlow
 
-public struct TensorView<Scalar: TensorFlowScalar>: Differentiable, Logging {
+public struct TensorView<Scalar>: Differentiable, Logging
+    where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
     @noDerivative private var tensorData: TensorData<Scalar>
@@ -329,7 +330,7 @@ extension TensorView {
         self.init(shape: Shape(extents), logging: logging)
     }
     
-    public init(_ extents: Int..., logging: LogInfo? = nil) {
+    public init(extents: Int..., logging: LogInfo? = nil) {
         self.init(shape: Shape(extents), logging: logging)
     }
     
@@ -358,6 +359,13 @@ extension TensorView {
     public init(extents: Int..., scalars: [Scalar], logging: LogInfo? = nil) {
         self.init(shape: Shape(extents: extents),
                   scalars: scalars, logging: logging)
+    }
+    
+    //--------------------------------------------------------------------------
+    // copy from host buffer pointer
+    public init<T>(_ scalar: T) where T: AnyScalar {
+        self.init(extents: 1)
+//        try! rw()[0] = Scalar(scalar)
     }
     
     //--------------------------------------------------------------------------
@@ -395,7 +403,8 @@ extension TensorView {
 
 public extension TensorFlow.Tensor {
     /// create a dense copy of other and perform type conversion
-    init<T>(_ view: Netlib.TensorView<T>, using stream: DeviceStream? = nil) throws {
+    init<T>(_ view: Netlib.TensorView<T>, using stream: DeviceStream? = nil) throws
+        where T: AnyScalar, Scalar: AnyScalar {
         let denseView = TensorView<Scalar>(withContentsOf: view, using: stream)
         self = Tensor<Scalar>(shape: TensorFlow.TensorShape(denseView.shape),
                       scalars: try denseView.ro())

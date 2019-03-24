@@ -2,6 +2,7 @@
 //  Created by Edward Connell on 3/5/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
+import Foundation
 
 //==============================================================================
 // ComputeService
@@ -42,8 +43,6 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     func createArray(count: Int) throws -> DeviceArray
     /// creates a named command stream for this device
     func createStream(label: String) throws -> DeviceStream
-    /// selects this device to support legacy CUDA driver libraries
-    func select() throws
 }
 
 //==============================================================================
@@ -101,8 +100,6 @@ public struct StreamEventOptions: OptionSet {
 /// A device stream is an asynchronous queue of commands executed on
 /// the associated device
 public protocol DeviceStream: ObjectTracking, Logging {
-    //-------------------------------------
-    // properties
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream
@@ -110,6 +107,23 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// a label used to identify the stream
     var label: String { get }
 
+    //-------------------------------------
+    /// execute function
+    ///
+    /// - Parameter uuid: The id of the function to execute
+    /// - Parameter parameter: a parameter structure to serialize
+    ///
+    /// Return
+    /// - instantiated function id
+    func execute<T>(function uuid: UUID, parameter: T) throws -> UUID
+    
+    //-------------------------------------
+    /// release function instance
+    ///
+    /// Parameters
+    /// - instance: The id of the function instance to release
+    func releaseFunction(instance: UUID) throws
+    
     //-------------------------------------
     // synchronization
     /// blocks the calling thread until the stream queue is empty
@@ -120,8 +134,8 @@ public protocol DeviceStream: ObjectTracking, Logging {
     func debugDelay(seconds: Double) throws
     /// queues a stream event
     func record(event: StreamEvent) throws -> StreamEvent
-    /// blocks caller until the event has occurred on this stream, then recorded
-    /// and occurred on the other stream
+    /// blocks caller until the event has occurred on this stream,
+    /// then recorded and occurred on the other stream
     func sync(with other: DeviceStream, event: StreamEvent) throws
     /// blocks caller until the event has occurred
     func wait(for event: StreamEvent) throws

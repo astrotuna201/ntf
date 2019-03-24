@@ -44,6 +44,12 @@ public protocol AnyNumeric: AnyScalar {}
 public protocol AnyInteger: AnyNumeric {}
 public protocol AnyFloatingPoint: AnyNumeric {}
 
+public protocol AnyTensorFlowScalar: TensorFlowScalar, AnyScalar {}
+public protocol AnyTensorFlowNumeric: TensorFlowNumeric, AnyNumeric {}
+public protocol AnyTensorFlowInteger: TensorFlowInteger, AnyInteger {}
+public protocol AnyTensorFlowFloatingPoint: TensorFlowFloatingPoint, AnyFloatingPoint {}
+
+
 //------------------------------------------------------------------------------
 extension UInt8: AnyInteger {
 	public init(any: AnyScalar) { self = any.asUInt8 }

@@ -34,10 +34,10 @@ public extension TensorView where Scalar : Numeric {
   @inlinable @inline(__always)
   init(_ other: Tensor<Bool>) {
     fatalError("Not implemented")
+    // FunctionId.Cast
 //    self = Raw.cast(other)
   }
 }
-public let _TensorViewCast_sid = UUID(uuidString: "9CFD6BDE-750B-47DE-AE50-571E0AAF412D")!
 
 //==============================================================================
 // Additive group
@@ -58,6 +58,7 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //  )
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
         fatalError("Not implemented")
+        // FunctionId.Add
 //        return Raw.add(lhs, rhs)
     }
     
@@ -70,230 +71,230 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
 //    )
     public static func - (lhs: TensorView, rhs: TensorView) -> TensorView {
         fatalError("Not implemented")
+        // FunctionId.Subtract
 //        return Raw.sub(lhs, rhs)
     }
 }
 
-public let _TensorViewAdd_sid = UUID(uuidString: "2BDCDAB2-6C9A-4150-9F6D-AA87725CEB8C")!
-public let _TensorViewSubtract_sid = UUID(uuidString: "164A3A5E-7502-416E-87BC-6CEFB7EB2028")!
+//==============================================================================
+// Vector space
+extension TensorView: VectorNumeric where Scalar: Numeric {
+    /// Multiplies the scalar with every scalar of the tensor and produces the
+    /// product.
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpMultiply(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    public static func * (lhs: Scalar, rhs: TensorView) -> TensorView {
+        return TensorView(lhs) * rhs
+    }
+}
 
-////===----------------------------------------------------------------------===//
-//// Vector space
-////===----------------------------------------------------------------------===//
-//
-//extension Tensor : VectorNumeric where Scalar : Numeric {
-//  /// Multiplies the scalar with every scalar of the tensor and produces the
-//  /// product.
-//  @inlinable @inline(__always)
-//  @differentiable(
-//    vjp: _vjpMultiply(lhs:rhs:)
-//    where Scalar : TensorFlowFloatingPoint
-//  )
-//  public static func * (lhs: Scalar, rhs: Tensor) -> Tensor {
-//    return Tensor(lhs) * rhs
-//  }
-//}
-//
-//extension Tensor : ShapedVectorNumeric where Scalar : Numeric {}
-//
-//extension Tensor : Differentiable where Scalar : TensorFlowFloatingPoint {
-//  public typealias TangentVector = Tensor
-//  public typealias CotangentVector = Tensor
-//  public typealias AllDifferentiableVariables = Tensor
+//extension TensorView : ShapedVectorNumeric where Scalar : Numeric { }
+
+//extension TensorView: Differentiable where Scalar: TensorFlowFloatingPoint {
+//  public typealias TangentVector = TensorView
+//  public typealias CotangentVector = TensorView
+//  public typealias AllDifferentiableVariables = TensorView
 //  @inlinable @inline(__always)
 //  public func tangentVector(from cotangent: CotangentVector) -> TangentVector {
 //    return cotangent
 //  }
 //}
-//
-////===----------------------------------------------------------------------===//
-//// Additional element-wise operators
-////===----------------------------------------------------------------------===//
-//
-//public extension Tensor where Scalar : Numeric {
-//  /// Adds the scalar to every scalar of the tensor and produces the sum.
-//  @inlinable @inline(__always)
+
+//==============================================================================
+// Additional element-wise operators
+public extension TensorView where Scalar: Numeric {
+  /// Adds the scalar to every scalar of the tensor and produces the sum.
+  @inlinable @inline(__always)
 //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-//  static func + (lhs: Scalar, rhs: Tensor) -> Tensor {
-//    return Tensor(lhs) + rhs
-//  }
-//
-//  /// Adds the scalar to every scalar of the tensor and produces the sum.
-//  @inlinable @inline(__always)
+  static func + (lhs: Scalar, rhs: TensorView) -> TensorView {
+    return TensorView(lhs) + rhs
+  }
+
+  /// Adds the scalar to every scalar of the tensor and produces the sum.
+  @inlinable @inline(__always)
 //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-//  static func + (lhs: Tensor, rhs: Scalar) -> Tensor {
-//    return lhs + Tensor(rhs)
-//  }
-//
-//  /// Subtracts the scalar from every scalar of the tensor and produces the
-//  /// difference.
-//  @inlinable @inline(__always)
+  static func + (lhs: TensorView, rhs: Scalar) -> TensorView {
+    return lhs + TensorView(rhs)
+  }
+
+  /// Subtracts the scalar from every scalar of the tensor and produces the
+  /// difference.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpSubtract(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func - (lhs: Scalar, rhs: Tensor) -> Tensor {
-//    return Tensor(lhs) - rhs
-//  }
-//
-//  /// Subtracts the scalar from every scalar of the tensor and produces the
-//  /// difference.
-//  @inlinable @inline(__always)
+  static func - (lhs: Scalar, rhs: TensorView) -> TensorView {
+    return TensorView(lhs) - rhs
+  }
+
+  /// Subtracts the scalar from every scalar of the tensor and produces the
+  /// difference.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpSubtract(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func - (lhs: Tensor, rhs: Scalar) -> Tensor {
-//    return lhs - Tensor(rhs)
-//  }
-//
-//  /// Adds two tensors and stores the result in the left-hand-side variable.
-//  /// - Note: `+=` supports broadcasting.
-//  @inlinable @inline(__always)
-//  static func += (lhs: inout Tensor, rhs: Tensor) {
-//    lhs = lhs + rhs
-//  }
-//
-//  /// Adds the scalar to every scalar of the tensor and stores the result in the
-//  /// left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func += (lhs: inout Tensor, rhs: Scalar) {
-//    lhs = lhs + rhs
-//  }
-//
-//  /// Subtracts the second tensor from the first and stores the result in the
-//  /// left-hand-side variable.
-//  /// - Note: `-=` supports broadcasting.
-//  @inlinable @inline(__always)
-//  static func -= (lhs: inout Tensor, rhs: Tensor) {
-//    lhs = lhs - rhs
-//  }
-//
-//  /// Subtracts the scalar from every scalar of the tensor and stores the result
-//  /// in the left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func -= (lhs: inout Tensor, rhs: Scalar) {
-//    lhs = lhs - rhs
-//  }
-//
-//  /// Multiplies two tensors and produces their product.
-//  /// - Note: `*` supports broadcasting.
-//  @inlinable @inline(__always)
+  static func - (lhs: TensorView, rhs: Scalar) -> TensorView {
+    return lhs - TensorView(rhs)
+  }
+
+  /// Adds two tensors and stores the result in the left-hand-side variable.
+  /// - Note: `+=` supports broadcasting.
+  @inlinable @inline(__always)
+  static func += (lhs: inout TensorView, rhs: TensorView) {
+    lhs = lhs + rhs
+  }
+
+  /// Adds the scalar to every scalar of the tensor and stores the result in the
+  /// left-hand-side variable.
+  @inlinable @inline(__always)
+  static func += (lhs: inout TensorView, rhs: Scalar) {
+    lhs = lhs + rhs
+  }
+
+  /// Subtracts the second tensor from the first and stores the result in the
+  /// left-hand-side variable.
+  /// - Note: `-=` supports broadcasting.
+  @inlinable @inline(__always)
+  static func -= (lhs: inout TensorView, rhs: TensorView) {
+    lhs = lhs - rhs
+  }
+
+  /// Subtracts the scalar from every scalar of the tensor and stores the result
+  /// in the left-hand-side variable.
+  @inlinable @inline(__always)
+  static func -= (lhs: inout TensorView, rhs: Scalar) {
+    lhs = lhs - rhs
+  }
+
+  /// Multiplies two tensors and produces their product.
+  /// - Note: `*` supports broadcasting.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpMultiply(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func * (lhs: Tensor, rhs: Tensor) -> Tensor {
+  static func * (lhs: TensorView, rhs: TensorView) -> TensorView {
+    fatalError("Not implemented")
+    // FunctionId.Mul
 //    return Raw.mul(lhs, rhs)
-//  }
-//
-//  /// Multiplies the scalar with every scalar of the tensor and produces the
-//  /// product.
-//  @inlinable @inline(__always)
+  }
+
+  /// Multiplies the scalar with every scalar of the tensor and produces the
+  /// product.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpMultiply(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func * (lhs: Tensor, rhs: Scalar) -> Tensor {
-//    return lhs * Tensor(rhs)
-//  }
-//
-//  /// Multiplies two tensors and stores the result in the left-hand-side
-//  /// variable.
-//  /// - Note: `*=` supports broadcasting.
-//  @inlinable @inline(__always)
-//  static func *= (lhs: inout Tensor, rhs: Tensor) {
-//    lhs = lhs * rhs
-//  }
-//
-//  @inlinable @inline(__always)
-//  static func *= (lhs: inout Tensor, rhs: Scalar) {
-//    lhs = lhs * rhs
-//  }
-//
-//  /// Returns the quotient of dividing the first tensor by the second.
-//  /// - Note: `/` supports broadcasting.
-//  @inlinable @inline(__always)
+  static func * (lhs: TensorView, rhs: Scalar) -> TensorView {
+    return lhs * TensorView(rhs)
+  }
+
+  /// Multiplies two tensors and stores the result in the left-hand-side
+  /// variable.
+  /// - Note: `*=` supports broadcasting.
+  @inlinable @inline(__always)
+  static func *= (lhs: inout TensorView, rhs: TensorView) {
+    lhs = lhs * rhs
+  }
+
+  @inlinable @inline(__always)
+  static func *= (lhs: inout TensorView, rhs: Scalar) {
+    lhs = lhs * rhs
+  }
+
+  /// Returns the quotient of dividing the first tensor by the second.
+  /// - Note: `/` supports broadcasting.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpDivide(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func / (lhs: Tensor, rhs: Tensor) -> Tensor {
+  static func / (lhs: TensorView, rhs: TensorView) -> TensorView {
+    fatalError("Not implemented")
+    // FunctionId.Div
 //    return Raw.div(lhs, rhs)
-//  }
-//
-//  /// Returns the quotient of dividing the scalar by the tensor, broadcasting
-//  /// the scalar.
-//  @inlinable @inline(__always)
+  }
+
+  /// Returns the quotient of dividing the scalar by the tensor, broadcasting
+  /// the scalar.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpDivide(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func / (lhs: Scalar, rhs: Tensor) -> Tensor {
-//    return Tensor(lhs) / rhs
-//  }
-//
-//  /// Returns the quotient of dividing the tensor by the scalar, broadcasting
-//  /// the scalar.
-//  @inlinable @inline(__always)
+  static func / (lhs: Scalar, rhs: TensorView) -> TensorView {
+    return TensorView(lhs) / rhs
+  }
+
+  /// Returns the quotient of dividing the tensor by the scalar, broadcasting
+  /// the scalar.
+  @inlinable @inline(__always)
 //  @differentiable(
 //    vjp: _vjpDivide(lhs:rhs:)
 //    where Scalar : TensorFlowFloatingPoint
 //  )
-//  static func / (lhs: Tensor, rhs: Scalar) -> Tensor {
-//    return lhs / Tensor(rhs)
-//  }
-//
-//  /// Divides the first tensor by the second and stores the quotient in the
-//  /// left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func /= (lhs: inout Tensor, rhs: Tensor) {
-//    lhs = lhs / rhs
-//  }
-//
-//  /// Divides the tensor by the scalar, broadcasting the scalar, and stores the
-//  /// quotient in the left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func /= (lhs: inout Tensor, rhs: Scalar) {
-//    lhs = lhs / rhs
-//  }
-//
-//  /// Returns the remainder of dividing the first tensor by the second.
-//  /// - Note: `%` supports broadcasting.
-//  @inlinable @inline(__always)
-//  static func % (lhs: Tensor, rhs: Tensor) -> Tensor {
+  static func / (lhs: TensorView, rhs: Scalar) -> TensorView {
+    return lhs / TensorView(rhs)
+  }
+
+  /// Divides the first tensor by the second and stores the quotient in the
+  /// left-hand-side variable.
+  @inlinable @inline(__always)
+  static func /= (lhs: inout TensorView, rhs: TensorView) {
+    lhs = lhs / rhs
+  }
+
+  /// Divides the tensor by the scalar, broadcasting the scalar, and stores the
+  /// quotient in the left-hand-side variable.
+  @inlinable @inline(__always)
+  static func /= (lhs: inout TensorView, rhs: Scalar) {
+    lhs = lhs / rhs
+  }
+
+  /// Returns the remainder of dividing the first tensor by the second.
+  /// - Note: `%` supports broadcasting.
+  @inlinable @inline(__always)
+  static func % (lhs: TensorView, rhs: TensorView) -> TensorView {
+    fatalError("Not implemented")
+    // FunctionId.Mod
 //    return Raw.mod(lhs, rhs)
-//  }
-//
-//  /// Returns the remainder of dividing the tensor by the scalar, broadcasting
-//  /// the scalar.
-//  @inlinable @inline(__always)
-//  static func % (lhs: Tensor, rhs: Scalar) -> Tensor {
-//    return lhs % Tensor(rhs)
-//  }
-//
-//  /// Returns the remainder of dividing the scalar by the tensor, broadcasting
-//  /// the scalar.
-//  @inlinable @inline(__always)
-//  static func % (lhs: Scalar, rhs: Tensor) -> Tensor {
-//    return Tensor(lhs) % rhs
-//  }
-//
-//  /// Divides the first tensor by the second and stores the remainder in the
-//  /// left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func %= (lhs: inout Tensor, rhs: Tensor) {
-//    lhs = lhs % rhs
-//  }
-//
-//  /// Divides the tensor by the scalar and stores the remainder in the
-//  /// left-hand-side variable.
-//  @inlinable @inline(__always)
-//  static func %= (lhs: inout Tensor, rhs: Scalar) {
-//    lhs = lhs % rhs
-//  }
-//}
-//
+  }
+
+  /// Returns the remainder of dividing the tensor by the scalar, broadcasting
+  /// the scalar.
+  @inlinable @inline(__always)
+  static func % (lhs: TensorView, rhs: Scalar) -> TensorView {
+    return lhs % TensorView(rhs)
+  }
+
+  /// Returns the remainder of dividing the scalar by the tensor, broadcasting
+  /// the scalar.
+  @inlinable @inline(__always)
+  static func % (lhs: Scalar, rhs: TensorView) -> TensorView {
+    return TensorView(lhs) % rhs
+  }
+
+  /// Divides the first tensor by the second and stores the remainder in the
+  /// left-hand-side variable.
+  @inlinable @inline(__always)
+  static func %= (lhs: inout TensorView, rhs: TensorView) {
+    lhs = lhs % rhs
+  }
+
+  /// Divides the tensor by the scalar and stores the remainder in the
+  /// left-hand-side variable.
+  @inlinable @inline(__always)
+  static func %= (lhs: inout TensorView, rhs: Scalar) {
+    lhs = lhs % rhs
+  }
+}
+
 ////===----------------------------------------------------------------------===//
 //// Linear algebra
 ////===----------------------------------------------------------------------===//

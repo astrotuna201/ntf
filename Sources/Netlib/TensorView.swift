@@ -446,4 +446,3 @@ public extension TensorFlow.Tensor where Scalar: AnyTensorFlowScalar {
                       scalars: try denseView.ro())
     }
 }
-

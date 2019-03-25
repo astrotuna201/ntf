@@ -159,7 +159,7 @@ public struct Shape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    // contains
+    // flattened
     public func flattened(axis: Int = 0) -> Shape {
         assert(isContiguous, "Cannot reshape strided data")
         assert(axis < rank)

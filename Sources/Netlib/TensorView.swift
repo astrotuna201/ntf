@@ -88,9 +88,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
                            rhs: TensorView<Scalar>) -> Bool {
         if lhs.tensorData === rhs.tensorData {
             // If they both reference the same tensorData then compare the views
-            return lhs.viewOffset == rhs.viewOffset &&
-                lhs.shape.extents == rhs.shape.extents &&
-                lhs.shape.strides == rhs.shape.strides
+            return lhs.viewOffset == rhs.viewOffset && lhs.shape == rhs.shape
 
         } else if lhs.shape.extents == rhs.shape.extents {
             // if the extents are equal then compare values
@@ -109,7 +107,10 @@ where Scalar: AnyScalar & TensorFlowScalar {
     }
     
     //--------------------------------------------------------------------------
-    // isFinite
+    /// isFinite
+    /// This is primarily used for debugging
+    ///
+    /// Returns: true if all values are finite
     public func isFinite() throws -> Bool {
         guard !Scalar.isFiniteType else { return true }
         // TODO use Shape indexing

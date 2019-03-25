@@ -5,8 +5,8 @@
 import Foundation
 import TensorFlow
 
-public struct TensorView<Scalar>: Differentiable, Logging
-    where Scalar: AnyScalar & TensorFlowScalar {
+public struct TensorView<Scalar>: Differentiable, Equatable, Logging
+where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
     @noDerivative private var tensorData: TensorData<Scalar>
@@ -82,6 +82,20 @@ public struct TensorView<Scalar>: Differentiable, Logging
         assert(viewOffset + shape.elementCount <= self.tensorData.elementCount)
     }
 
+    //--------------------------------------------------------------------------
+    // ==
+    public static func == (lhs: TensorView<Scalar>, rhs: TensorView<Scalar>) -> Bool {
+        // TODO
+        return false
+    }
+    
+    //--------------------------------------------------------------------------
+    // ===
+    public static func === (lhs: TensorView<Scalar>, rhs: TensorView<Scalar>) -> Bool {
+        // TODO
+        return false
+    }
+    
     //--------------------------------------------------------------------------
     // copyIfMutates
     //  Note: this should be called from inside the accessQueue.sync block

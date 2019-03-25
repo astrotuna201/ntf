@@ -18,7 +18,7 @@ class CodableTests: XCTestCase {
     func test_ShapeCodable() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
-        let shape = Shape(64, 100)
+        let shape = DataShape(64, 100)
         
         do {
             let jsonData = try JSONEncoder().encode(shape)

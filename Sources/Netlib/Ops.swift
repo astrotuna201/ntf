@@ -91,17 +91,17 @@ extension TensorView: VectorNumeric where Scalar: Numeric {
     }
 }
 
-//extension TensorView : ShapedVectorNumeric where Scalar : Numeric { }
+extension TensorView : ShapedVectorNumeric where Scalar : Numeric { }
 
-//extension TensorView: Differentiable where Scalar: TensorFlowFloatingPoint {
-//  public typealias TangentVector = TensorView
-//  public typealias CotangentVector = TensorView
-//  public typealias AllDifferentiableVariables = TensorView
-//  @inlinable @inline(__always)
-//  public func tangentVector(from cotangent: CotangentVector) -> TangentVector {
-//    return cotangent
-//  }
-//}
+extension TensorView: Differentiable where Scalar: TensorFlowFloatingPoint {
+  public typealias TangentVector = TensorView
+  public typealias CotangentVector = TensorView
+  public typealias AllDifferentiableVariables = TensorView
+  @inlinable @inline(__always)
+  public func tangentVector(from cotangent: CotangentVector) -> TangentVector {
+    return cotangent
+  }
+}
 
 //==============================================================================
 // Additional element-wise operators

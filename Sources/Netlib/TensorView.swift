@@ -5,18 +5,18 @@
 import Foundation
 import TensorFlow
 
-public struct TensorView<Scalar>: Differentiable, Equatable, Logging
+public struct TensorView<Scalar>: Equatable, Logging
 where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
-    @noDerivative private var tensorData: TensorData<Scalar>
+    private var tensorData: TensorData<Scalar>
 
     // logging
-    @noDerivative public var logging: LogInfo?
+    public var logging: LogInfo?
 
     // shape and shorthand accessors
-    @noDerivative public let shape: Shape
-    @noDerivative public let viewOffset: Int
+    public let shape: DataShape
+    public let viewOffset: Int
 
     // convenience shorthand
     public var isContiguous: Bool { return shape.isContiguous }
@@ -39,7 +39,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // testing properties
     /// set any time the underlying TensorData is mutated
-    @noDerivative public private(set) var lastAccessMutated = false
+    public private(set) var lastAccessMutated = false
     /// determines is the view holds a unique reference to the underlying
     /// TensorData array
     public mutating func isUniqueReference() -> Bool {
@@ -48,14 +48,14 @@ where Scalar: AnyScalar & TensorFlowScalar {
 
     //--------------------------------------------------------------------------
     // name
-    @noDerivative public var name: String {
+    public var name: String {
         get { return tensorData.name }
         set { tensorData.name = newValue }
     }
 
     //--------------------------------------------------------------------------
     // shared memory
-    @noDerivative public var isShared: Bool {
+    public var isShared: Bool {
         willSet {
             assert(!newValue || isShared || isUniqueReference(),
                    "to set memory to shared it must already be shared or unique")
@@ -65,7 +65,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // initializers
     // fully specified
-    public init(shape: Shape,
+    public init(shape: DataShape,
                 tensorData: TensorData<Scalar>? = nil,
                 viewOffset: Int = 0,
                 isShared: Bool = false,
@@ -113,7 +113,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
     /// Returns: true if all values are finite
     public func isFinite() throws -> Bool {
         guard !Scalar.isFiniteType else { return true }
-        // TODO use Shape indexing
+        // TODO use DataShape indexing
         fatalError("Not implemented")
     }
     
@@ -231,11 +231,11 @@ where Scalar: AnyScalar & TensorFlowScalar {
         assert(extents[0] <= shape.items)
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset,
-                              shape: Shape(extents: extents,
+                              shape: DataShape(extents: extents,
                                                  layout: shape.layout)))
         
         let eltOffset = viewOffset + shape.linearIndex(of: offset)
-        let viewShape = Shape(extents: extents,
+        let viewShape = DataShape(extents: extents,
                               layout: shape.layout,
                               strides: shape.strides,
                               colMajor: shape.isColMajor)
@@ -341,7 +341,7 @@ extension TensorView {
     public init() {
         isShared = false
         logging = nil
-        shape = Shape()
+        shape = DataShape()
         tensorData = TensorData()
         viewOffset = 0
     }
@@ -358,41 +358,41 @@ extension TensorView {
     //--------------------------------------------------------------------------
     // implicitly zero is the default
     public init(count: Int, logging: LogInfo? = nil) {
-        self.init(shape: Shape(count), logging: logging)
+        self.init(shape: DataShape(count), logging: logging)
     }
     
     public init(extents: [Int], logging: LogInfo? = nil) {
-        self.init(shape: Shape(extents), logging: logging)
+        self.init(shape: DataShape(extents), logging: logging)
     }
     
     public init(extents: Int..., logging: LogInfo? = nil) {
-        self.init(shape: Shape(extents), logging: logging)
+        self.init(shape: DataShape(extents), logging: logging)
     }
     
     //--------------------------------------------------------------------------
     // explicitly zero
     public init(zeros extents: [Int], logging: LogInfo? = nil) {
-        self.init(shape: Shape(extents), logging: logging)
+        self.init(shape: DataShape(extents), logging: logging)
     }
     
     public init(zeros extents: Int..., logging: LogInfo? = nil) {
-        self.init(shape: Shape(extents), logging: logging)
+        self.init(shape: DataShape(extents), logging: logging)
     }
     
     //--------------------------------------------------------------------------
     // from Array
-    public init(shape: Shape, scalars: [Scalar], logging: LogInfo? = nil) {
+    public init(shape: DataShape, scalars: [Scalar], logging: LogInfo? = nil) {
         let buffer = scalars.withUnsafeBufferPointer { $0 }
         let tensorData = TensorData<Scalar>(logging: logging, buffer: buffer)
         self.init(shape: shape, tensorData: tensorData, logging: logging)
     }
     
     public init(scalars: [Scalar], logging: LogInfo? = nil) {
-        self.init(shape: Shape(scalars.count), scalars: scalars, logging: logging)
+        self.init(shape: DataShape(scalars.count), scalars: scalars, logging: logging)
     }
     
     public init(extents: Int..., scalars: [Scalar], logging: LogInfo? = nil) {
-        self.init(shape: Shape(extents: extents),
+        self.init(shape: DataShape(extents: extents),
                   scalars: scalars, logging: logging)
     }
     
@@ -405,7 +405,7 @@ extension TensorView {
     
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init(shape: Shape,
+    public init(shape: DataShape,
                 start: UnsafePointer<Scalar>, count: Int,
                 logging: LogInfo? = nil) {
         let buffer = UnsafeBufferPointer(start: start, count: count)
@@ -414,9 +414,15 @@ extension TensorView {
     }
     
     //--------------------------------------------------------------------------
+    // fill
+    public init(repeating repeatedValue: Scalar, shape: DataShape) {
+        fatalError("Not implemented")
+    }
+
+    //--------------------------------------------------------------------------
     // legacy
     public init(legacy tensor: Tensor<Scalar>) {
-        let shape = Shape(legacy: tensor.shape)
+        let shape = DataShape(legacy: tensor.shape)
         self = tensor.array.withUnsafeBufferPointer {
             return TensorView(shape: shape, start: $0.baseAddress!,
                               count: $0.count)

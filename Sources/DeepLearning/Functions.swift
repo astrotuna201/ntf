@@ -32,7 +32,7 @@ public struct Dense_<Scalar: AnyTensorFlowFloatingPoint>: Function, Logging {
     public init(weight: TensorView<Scalar>,
                 bias: TensorView<Scalar>,
                 activation: @escaping Activation,
-                input: Shape,
+                input: DataShape,
                 logging: LogInfo? = nil,
                 using deviceStream: DeviceStream? = nil) {
         // store parameters
@@ -144,12 +144,12 @@ public extension Dense {
 //            activation: @escaping Activation = identity,
 //            generator: inout G
 //    ) {
-//        let filterShape = Shape([
+//        let filterShape = DataShape([
 //            Int32(filterShape.0), Int32(filterShape.1),
 //            Int32(filterShape.2), Int32(filterShape.3)])
 //        self.init(
 //                filter: Tensor(glorotUniform: filterShape, generator: &generator),
-//                bias: Tensor(zeros: Shape([Int32(filterShape.3)])),
+//                bias: Tensor(zeros: DataShape([Int32(filterShape.3)])),
 //                activation: activation,
 //                strides: strides,
 //                padding: padding)
@@ -182,12 +182,12 @@ public extension Dense {
 //            seed: (Int64, Int64) = (Int64.random(in: Int64.min..<Int64.max),
 //                    Int64.random(in: Int64.min..<Int64.max))
 //    ) {
-//        let filterShape = Shape([
+//        let filterShape = DataShape([
 //            Int32(filterShape.0), Int32(filterShape.1),
 //            Int32(filterShape.2), Int32(filterShape.3)])
 //        self.init(
 //                filter: Tensor(glorotUniform: filterShape, seed: seed),
-//                bias: Tensor(zeros: Shape([Int32(filterShape.3)])),
+//                bias: Tensor(zeros: DataShape([Int32(filterShape.3)])),
 //                activation: activation,
 //                strides: (Int32(strides.0), Int32(strides.1)),
 //                padding: padding)

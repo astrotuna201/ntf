@@ -5,7 +5,7 @@
 import Foundation
 import TensorFlow
 
-public struct Shape: Equatable, Codable {
+public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // properties
     /// The interpretation of each channel in the shape
@@ -68,13 +68,13 @@ public struct Shape: Equatable, Codable {
         } else if colMajor {
             var cmExtent = extents
             cmExtent.swapAt(self.layout.hAxis, self.layout.wAxis)
-            var cmStrides = Shape.denseStrides(for: cmExtent)
+            var cmStrides = DataShape.denseStrides(for: cmExtent)
             cmStrides.swapAt(self.layout.hAxis, self.layout.wAxis)
             self.strides = cmStrides
         } else {
-            self.strides = Shape.denseStrides(for: extents)
+            self.strides = DataShape.denseStrides(for: extents)
         }
-        elementSpanCount = Shape.spanCount(for: extents,
+        elementSpanCount = DataShape.spanCount(for: extents,
                                                  with: self.strides)
     }
 
@@ -148,19 +148,19 @@ public struct Shape: Equatable, Codable {
         return linearIndex(of: index) <= elementSpanCount
     }
     
-    public func contains(shape: Shape) -> Bool {
+    public func contains(shape: DataShape) -> Bool {
         assert(shape.rank == rank, "rank mismatch")
         return shape.elementSpanCount <= elementSpanCount
     }
     
-    public func contains(offset: [Int], shape: Shape) -> Bool {
+    public func contains(offset: [Int], shape: DataShape) -> Bool {
         assert(offset.count == rank && shape.rank == rank, "rank mismatch")
         return linearIndex(of: offset) + shape.elementSpanCount <= elementSpanCount
     }
 
     //--------------------------------------------------------------------------
     // flattened
-    public func flattened(axis: Int = 0) -> Shape {
+    public func flattened(axis: Int = 0) -> DataShape {
         assert(isContiguous, "Cannot reshape strided data")
         assert(axis < rank)
         
@@ -174,20 +174,20 @@ public struct Shape: Equatable, Codable {
                 [extents.suffix(from: axis).reduce(1, *)] +
                 [Int](repeating: 1, count: rank - axis - 1)
         }
-        return Shape(extent)
+        return DataShape(extent)
     }
 }
 
 //==============================================================================
 // Legacy TensorFlow.TensorShape
-public extension Shape {
+public extension DataShape {
     init(legacy shape: TensorFlow.TensorShape) {
         self.init(extents: shape.dimensions.map { Int($0) })
     }
 }
 
 public extension TensorFlow.TensorShape {
-    init(_ shape: Netlib.Shape) {
+    init(_ shape: Netlib.DataShape) {
         self = TensorFlow.TensorShape(shape.extents.map { Int32($0) })
     }
 }

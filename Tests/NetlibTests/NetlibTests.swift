@@ -16,7 +16,7 @@ public struct MNISTClassifier: Function {
     public var output: TensorView<Float>
     @noDerivative public var logging: LogInfo?
     
-    public init(inputShape: Shape,
+    public init(inputShape: DataShape,
                 mode: EvaluationMode,
                 logging: LogInfo? = nil,
                 using deviceStream: DeviceStream? = nil) {
@@ -96,7 +96,7 @@ final class NetlibTests: XCTestCase {
                 (TensorView<Float>, TensorView<Int32>) {
                     let imagesArray = imagesFile.readDataToEndOfFile().dropFirst(16).map { Float($0) }
                     let labelsArray = labelsFile.readDataToEndOfFile().dropFirst(8).map { Int32($0) }
-                    let shape = Shape(extents: [labelsArray.count, 28, 28, 1], channelLayout: .gray)
+                    let shape = DataShape(extents: [labelsArray.count, 28, 28, 1], channelLayout: .gray)
                     let images = TensorView<Float>(shape: shape, scalars: imagesArray) // / 255
                     let labels = TensorView<Int32>(scalars: labelsArray)
                     return (images, labels)
@@ -123,7 +123,7 @@ final class NetlibTests: XCTestCase {
         //----------------------------------------------------------------------
         // train classifier
 //        let batchSize = 60
-//        let batchShape = Shape(batchSize, 28, 28, 1)
+//        let batchShape = DataShape(batchSize, 28, 28, 1)
 //        var model = MNISTClassifier(inputShape: batchShape, mode: .training)
 //        let optimizer = SGD<MNISTClassifier, Float>(learningRate: 0.01, momentum: 0.9)
 //        let trainingIterations = data.trainingImages.items / batchSize

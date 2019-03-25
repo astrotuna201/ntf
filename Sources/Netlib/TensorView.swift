@@ -83,17 +83,37 @@ where Scalar: AnyScalar & TensorFlowScalar {
     }
 
     //--------------------------------------------------------------------------
-    // ==
-    public static func == (lhs: TensorView<Scalar>, rhs: TensorView<Scalar>) -> Bool {
-        // TODO
-        return false
+    // Equal values
+    public static func == (lhs: TensorView<Scalar>,
+                           rhs: TensorView<Scalar>) -> Bool {
+        if lhs.tensorData === rhs.tensorData {
+            // If they both reference the same tensorData then compare the views
+            return lhs.viewOffset == rhs.viewOffset &&
+                lhs.shape.extents == rhs.shape.extents &&
+                lhs.shape.strides == rhs.shape.strides
+
+        } else if lhs.shape.extents == rhs.shape.extents {
+            // if the extents are equal then compare values
+            // TODO use indexing
+            fatalError("Not implemented")
+        } else {
+            return false
+        }
     }
     
     //--------------------------------------------------------------------------
-    // ===
-    public static func === (lhs: TensorView<Scalar>, rhs: TensorView<Scalar>) -> Bool {
-        // TODO
-        return false
+    // Equal references
+    public static func === (lhs: TensorView<Scalar>,
+                            rhs: TensorView<Scalar>) -> Bool {
+        return lhs.tensorData === rhs.tensorData && lhs == rhs
+    }
+    
+    //--------------------------------------------------------------------------
+    // isFinite
+    public func isFinite() throws -> Bool {
+        guard !Scalar.isFiniteType else { return true }
+        // TODO use Shape indexing
+        fatalError("Not implemented")
     }
     
     //--------------------------------------------------------------------------

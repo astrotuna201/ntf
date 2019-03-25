@@ -38,6 +38,7 @@ public protocol AnyScalar {
 	var normBool   : Bool    { get }
 
 	var isFiniteValue: Bool { get }
+    static var isFiniteType: Bool { get }
 }
 
 public protocol AnyNumeric: AnyScalar {}
@@ -80,6 +81,7 @@ extension UInt8: AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = UInt8(string) else { return nil }
@@ -118,6 +120,7 @@ extension UInt16 : AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
     public init?(string: String) {
         guard let value = UInt16(string) else { return nil }
@@ -156,6 +159,7 @@ extension Int16 : AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = Int16(string) else { return nil }
@@ -194,6 +198,7 @@ extension Int32 : AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = Int32(string) else { return nil }
@@ -232,6 +237,7 @@ extension Int : AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = Int(string) else { return nil }
@@ -270,6 +276,7 @@ extension UInt : AnyInteger {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = UInt(string) else { return nil }
@@ -309,6 +316,7 @@ extension Bool : AnyScalar {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return true }
+    public static var isFiniteType: Bool { return true }
 
 	public init?(string: String) {
         guard let value = Bool(string) else { return nil }
@@ -345,6 +353,7 @@ extension Float16 : AnyFloatingPoint {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return Float(self).isFinite }
+    public static var isFiniteType: Bool { return false }
 
 	public init?(string: String) {
         guard let value = Float16(string) else { return nil }
@@ -381,6 +390,7 @@ extension Float : AnyFloatingPoint {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return self.isFinite }
+    public static var isFiniteType: Bool { return false }
 
 	public init?(string: String) {
         guard let value = Float(string) else { return nil }
@@ -417,6 +427,7 @@ extension Double : AnyFloatingPoint {
 	public var normBool   : Bool   { return asBool }
 
 	public var isFiniteValue: Bool { return self.isFinite }
+    public static var isFiniteType: Bool { return false }
 
 	public init?(string: String) {
         guard let value = Double(string) else { return nil }

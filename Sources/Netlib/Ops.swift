@@ -1104,7 +1104,7 @@ public extension TensorView where Scalar == Bool {
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func all(squeezingAxes axes: Int32...) -> TensorView {
+    func all(squeezingAxes axes: Int...) -> TensorView {
         fatalError("Not implemented")
         // FunctionId.AndAll
 //        return Raw.all(self, reductionIndices: TensorView<Int32>(axes), keepDims: false)
@@ -1115,7 +1115,7 @@ public extension TensorView where Scalar == Bool {
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func any(squeezingAxes axes: Int32...) -> TensorView {
+    func any(squeezingAxes axes: Int...) -> TensorView {
         fatalError("Not implemented")
         // FunctionId.OrAny
 //        return Raw.any(self, reductionIndices: TensorView<Int32>(axes), keepDims: false)
@@ -1126,7 +1126,7 @@ public extension TensorView where Scalar == Bool {
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func all(alongAxes axes: Int32...) -> TensorView {
+    func all(alongAxes axes: Int...) -> TensorView {
         fatalError("Not implemented")
         // FunctionId.AndAll
 //        return Raw.all(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
@@ -1137,365 +1137,361 @@ public extension TensorView where Scalar == Bool {
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func any(alongAxes axes: Int32...) -> TensorView {
+    func any(alongAxes axes: Int...) -> TensorView {
         fatalError("Not implemented")
         // FunctionId.OrAny
 //        return Raw.any(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
     }
 }
 
-//public extension TensorView where Scalar : Numeric & Comparable {
-//    // NOTE: This overload is necessary, otherwise `min()` would refer
-//    // to the variadic method `min(squeezingAxes:)` with zero indices.
-//    @inlinable @inline(__always)
-//    func min() -> TensorView {
+public extension TensorView where Scalar : Numeric & Comparable {
+    // NOTE: This overload is necessary, otherwise `min()` would refer
+    // to the variadic method `min(squeezingAxes:)` with zero indices.
+    @inlinable @inline(__always)
+    func min() -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Min
 //        let axes = TensorView<Int32>(rangeFrom: 0, to: rank, stride: 1)
 //        return Raw.min(self, reductionIndices: axes)
-//    }
-//
-//    // NOTE: This overload is necessary, otherwise `max()` would refer
-//    // to the variadic method `max(squeezingAxes:)` with zero indices.
-//    @inlinable @inline(__always)
-//    func max() -> TensorView {
+    }
+
+    // NOTE: This overload is necessary, otherwise `max()` would refer
+    // to the variadic method `max(squeezingAxes:)` with zero indices.
+    @inlinable @inline(__always)
+    func max() -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Max
 //        let axes = TensorView<Int32>(rangeFrom: 0, to: rank, stride: 1)
 //        return Raw.max(self, reductionIndices: axes)
-//    }
-//
-//    /// Returns the maximum values along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func max(squeezingAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the maximum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func max(squeezingAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Max
 //        return Raw.max(self, reductionIndices: TensorView<Int32>(axes), keepDims: false)
-//    }
-//
-//    /// Returns the maximum values along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func max(squeezingAxes axes: Int32...) -> TensorView {
-//        return max(squeezingAxes: axes)
-//    }
-//
-//    /// Returns the minimum values along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func min(squeezingAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the maximum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func max(squeezingAxes axes: Int32...) -> TensorView {
+        return max(squeezingAxes: axes)
+    }
+
+    /// Returns the minimum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func min(squeezingAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Min
 //        return Raw.min(self, reductionIndices: TensorView<Int32>(axes), keepDims: false)
-//    }
-//
-//    /// Returns the minimum values along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func min(squeezingAxes axes: Int32...) -> TensorView {
-//        return min(squeezingAxes: axes)
-//    }
-//
-//    /// Returns the indices of the maximum values along the specified axes. The
-//    /// reduced dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func argmax(squeezingAxis axis: Int32) -> TensorView<Int32> {
+    }
+
+    /// Returns the minimum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func min(squeezingAxes axes: Int32...) -> TensorView {
+        return min(squeezingAxes: axes)
+    }
+
+    /// Returns the indices of the maximum values along the specified axes. The
+    /// reduced dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func argmax(squeezingAxis axis: Int32) -> TensorView<Int32> {
+        fatalError("Not implemented")
+        // FunctionId.ArgMax
 //        return Raw.argMax(self, dimension: TensorView<Int32>(axis))
-//    }
-//
-//    /// Returns the indices of the minimum values along the specified axes. The
-//    /// reduced dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func argmin(squeezingAxis axis: Int32) -> TensorView<Int32> {
+    }
+
+    /// Returns the indices of the minimum values along the specified axes. The
+    /// reduced dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func argmin(squeezingAxis axis: Int32) -> TensorView<Int32> {
+        fatalError("Not implemented")
+        // FunctionId.ArgMin
 //        return Raw.argMin(self, dimension: TensorView<Int32>(axis))
-//    }
-//
-//    /// Returns the minimum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func min(alongAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the minimum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func min(alongAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Min
 //        return Raw.min(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
-//    }
-//
-//    /// Returns the minimum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func min(alongAxes axes: Int32...) -> TensorView {
-//        return min(alongAxes: axes)
-//    }
-//
-//    /// Returns the minimum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func max(alongAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the minimum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func min(alongAxes axes: Int32...) -> TensorView {
+        return min(alongAxes: axes)
+    }
+
+    /// Returns the minimum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func max(alongAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Max
 //        return Raw.max(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
-//    }
-//
-//    /// Returns the minimum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func max(alongAxes axes: Int32...) -> TensorView {
-//        return max(alongAxes: axes)
-//    }
-//
-//    /// Returns the index of the maximum value of the flattened scalars.
-//    @inlinable @inline(__always)
-//    func argmax() -> TensorView<Int32> {
-//        return flattened().argmax(squeezingAxis: 0)
-//    }
-//    
-//    /// Returns the index of the minimum value of the flattened scalars.
-//    @inlinable @inline(__always)
-//    func argmin() -> TensorView<Int32> {
-//        return flattened().argmin(squeezingAxis: 0)
-//    }
-//}
-//
-//public extension TensorView where Scalar : Numeric {
-//    // NOTE: This overload is necessary, otherwise `mean()` would refer
-//    // to the variadic method `mean(squeezingAxes:)` with zero indices.
+    }
+
+    /// Returns the minimum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func max(alongAxes axes: Int32...) -> TensorView {
+        return max(alongAxes: axes)
+    }
+
+    /// Returns the index of the maximum value of the flattened scalars.
+    @inlinable @inline(__always)
+    func argmax() -> TensorView<Int32> {
+        return flattened().argmax(squeezingAxis: 0)
+    }
+    
+    /// Returns the index of the minimum value of the flattened scalars.
+    @inlinable @inline(__always)
+    func argmin() -> TensorView<Int32> {
+        return flattened().argmin(squeezingAxis: 0)
+    }
+}
+
+public extension TensorView where Scalar : Numeric {
+    // NOTE: This overload is necessary, otherwise `mean()` would refer
+    // to the variadic method `mean(squeezingAxes:)` with zero indices.
 //    @differentiable(
 //    wrt: self, vjp: _vjpMean()
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    @inlinable @inline(__always)
-//    func mean() -> TensorView {
+    @inlinable @inline(__always)
+    func mean() -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Mean
 //        let axes = TensorView<Int32>(rangeFrom: 0, to: rank, stride: 1)
 //        return Raw.mean(self, reductionIndices: axes)
-//    }
-//
-//    // NOTE: This overload is necessary, otherwise `sum()` would refer
-//    // to the variadic method `sum(squeezingAxes:)` with zero indices.
-//    @inlinable @inline(__always)
+    }
+
+    // NOTE: This overload is necessary, otherwise `sum()` would refer
+    // to the variadic method `sum(squeezingAxes:)` with zero indices.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: self, vjp: _vjpSum()
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func sum() -> TensorView {
+    func sum() -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Sum
 //        let axes = TensorView<Int32>(rangeFrom: 0, to: rank, stride: 1)
 //        return Raw.sum(self, reductionIndices: axes)
-//    }
-//
-//    // NOTE: This overload is necessary, otherwise `sum()` would refer
-//    // to the variadic method `sum(squeezingAxes:)` with zero indices.
-//    @inlinable @inline(__always)
-//    func product() -> TensorView {
+    }
+
+    // NOTE: This overload is necessary, otherwise `sum()` would refer
+    // to the variadic method `sum(squeezingAxes:)` with zero indices.
+    @inlinable @inline(__always)
+    func product() -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Prod
 //        let axes = TensorView<Int32>(rangeFrom: 0, to: rank, stride: 1)
 //        return Raw.prod(self, reductionIndices: axes)
-//    }
-//
-//    /// Returns the arithmetic mean along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func mean(squeezingAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the arithmetic mean along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func mean(squeezingAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Mean
 //        return Raw.mean(self, reductionIndices: TensorView<Int32>(axes),
 //                        keepDims: false)
-//    }
-//
-//    /// Returns the arithmetic mean along the specified axes. The reduced
-//    /// dimensions are removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func mean(squeezingAxes axes: Int32...) -> TensorView {
-//        return mean(squeezingAxes: axes)
-//    }
-//
-//    /// Returns the sum along the specified axes. The reduced dimensions are
-//    /// removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func sum(squeezingAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the arithmetic mean along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func mean(squeezingAxes axes: Int32...) -> TensorView {
+        return mean(squeezingAxes: axes)
+    }
+
+    /// Returns the sum along the specified axes. The reduced dimensions are
+    /// removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func sum(squeezingAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Sum
 //        return Raw.sum(self, reductionIndices: TensorView<Int32>(axes), keepDims: false)
-//    }
-//
-//    /// Returns the sum along the specified axes. The reduced dimensions are
-//    /// removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func sum(squeezingAxes axes: Int32...) -> TensorView {
-//        return sum(squeezingAxes: axes)
-//    }
-//
-//    /// Returns the product along the specified axes. The reduced dimensions are
-//    /// removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func product(squeezingAxes axes: [Int32]) -> TensorView {
+    }
+
+    /// Returns the sum along the specified axes. The reduced dimensions are
+    /// removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func sum(squeezingAxes axes: Int32...) -> TensorView {
+        return sum(squeezingAxes: axes)
+    }
+
+    /// Returns the product along the specified axes. The reduced dimensions are
+    /// removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func product(squeezingAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Prod
 //        return Raw.prod(self, reductionIndices: TensorView<Int32>(axes),
 //                        keepDims: false)
-//    }
-//
-//    /// Returns the product along the specified axes. The reduced dimensions are
-//    /// removed.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-//    @inlinable @inline(__always)
-//    func product(squeezingAxes axes: Int32...) -> TensorView {
-//        return product(squeezingAxes: axes)
-//    }
-//
-//    /// Returns the arithmetic mean along the specified axes. The reduced
-//    /// dimensions are retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    }
+
+    /// Returns the product along the specified axes. The reduced dimensions are
+    /// removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    @inlinable @inline(__always)
+    func product(squeezingAxes axes: Int32...) -> TensorView {
+        return product(squeezingAxes: axes)
+    }
+
+    /// Returns the arithmetic mean along the specified axes. The reduced
+    /// dimensions are retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: self, vjp: _vjpMean(alongAxes:)
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func mean(alongAxes axes: [Int32]) -> TensorView {
+    func mean(alongAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Mean
 //        return Raw.mean(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
-//    }
-//
-//    /// Returns the arithmetic mean along the specified axes. The reduced
-//    /// dimensions are retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    }
+
+    /// Returns the arithmetic mean along the specified axes. The reduced
+    /// dimensions are retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(wrt: self where Scalar : TensorFlowFloatingPoint)
-//    func mean(alongAxes axes: Int32...) -> TensorView {
-//        return mean(alongAxes: axes)
-//    }
-//
-//    /// Returns the sum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    func mean(alongAxes axes: Int32...) -> TensorView {
+        return mean(alongAxes: axes)
+    }
+
+    /// Returns the sum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: self, vjp: _vjpSum(alongAxes:)
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func sum(alongAxes axes: [Int32]) -> TensorView {
+    func sum(alongAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Sum
 //        return Raw.sum(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
-//    }
-//
-//    /// Returns the sum along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    }
+
+    /// Returns the sum along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(wrt: self where Scalar : TensorFlowFloatingPoint)
-//    func sum(alongAxes axes: Int32...) -> TensorView {
-//        return sum(alongAxes: axes)
-//    }
-//
-//    /// Returns the variance along the specified axes. The reduced dimensions are
-//    /// retained with value 1. Does not apply Bessel's correction.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    func sum(alongAxes axes: Int32...) -> TensorView {
+        return sum(alongAxes: axes)
+    }
+
+    /// Returns the variance along the specified axes. The reduced dimensions are
+    /// retained with value 1. Does not apply Bessel's correction.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(wrt: self where Scalar : TensorFlowFloatingPoint)
-//    func variance(alongAxes axes: Int32...) -> TensorView {
-//        return variance(alongAxes: axes)
-//    }
-//
-//    /// Returns the variance along the specified axes. The reduced dimensions are
-//    /// retained with value 1. Does not apply Bessel's correction.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+    func variance(alongAxes axes: Int32...) -> TensorView {
+        return variance(alongAxes: axes)
+    }
+
+    /// Returns the variance along the specified axes. The reduced dimensions are
+    /// retained with value 1. Does not apply Bessel's correction.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(wrt: self where Scalar : TensorFlowFloatingPoint)
-//    func variance(alongAxes axes: [Int32]) -> TensorView {
-//        let mean = self.mean(alongAxes: axes)
-//        let squaredDiff = (self - mean).squared()
-//        return squaredDiff.mean(alongAxes: axes)
-//    }
-//
-//    /// Returns the product along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func product(alongAxes axes: [Int32]) -> TensorView {
+    func variance(alongAxes axes: [Int32]) -> TensorView {
+        let mean = self.mean(alongAxes: axes)
+        let squaredDiff = (self - mean).squared()
+        return squaredDiff.mean(alongAxes: axes)
+    }
+
+    /// Returns the product along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func product(alongAxes axes: [Int32]) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Prod
 //        return Raw.prod(self, reductionIndices: TensorView<Int32>(axes), keepDims: true)
-//    }
-//
-//    /// Returns the product along the specified axes. The reduced dimensions are
-//    /// retained with value 1.
-//    /// - Parameter axes: The dimensions to reduce.
-//    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
-//    func product(alongAxes axes: Int32...) -> TensorView {
-//        return product(alongAxes: axes)
-//    }
-//}
-//
-////===----------------------------------------------------------------------===//
-//// TensorView properties
-////===----------------------------------------------------------------------===//
-//
-//public extension TensorView {
-//    /// The rank of the TensorView, represented as a `TensorView<Int32>`.
-//    @inlinable
-//    var rankTensor: TensorView<Int32> {
-//        @inline(__always)
-//        get {
-//            return Raw.rank(self)
-//        }
-//    }
-//
-//    /// The dimensions of the TensorView, represented as a `TensorView<Int32>`.
-//    @inlinable
-//    var shapeTensor: TensorView<Int32> {
-//        @inline(__always)
-//        get {
-//            return Raw.shape(self)
-//        }
-//    }
-//
-//    /// The number of scalars in the TensorView, represented as a `TensorView<Int32>`.
-//    @inlinable
-//    var scalarCountTensor: TensorView<Int32> {
-//        @inline(__always)
-//        get {
-//            return Raw.size(self)
-//        }
-//    }
-//}
-//
-////===----------------------------------------------------------------------===//
-//// Broadcasting
-////===----------------------------------------------------------------------===//
-//
-//public extension TensorView {
-//    @inlinable @inline(__always)
-//    func broadcast(toShape shape: TensorView<Int32>) -> TensorView {
+    }
+
+    /// Returns the product along the specified axes. The reduced dimensions are
+    /// retained with value 1.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
+    func product(alongAxes axes: Int32...) -> TensorView {
+        return product(alongAxes: axes)
+    }
+}
+
+//==============================================================================
+// Broadcasting
+public extension TensorView {
+    @inlinable @inline(__always)
+    func broadcast(toShape shape: DataShape) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Broadcast
 //        return Raw.broadcastTo(self, shape: shape)
-//    }
-//
-//    @inlinable @inline(__always)
-//    func broadcast(to shape: TensorShape) -> TensorView {
-//        return broadcast(toShape: TensorView<Int32>(shape.dimensions))
-//    }
-//
-//    /// Broadcast to the same shape as the specified `TensorView`.
-//    /// - Precondition: The specified shape must be compatible for broadcasting.
-//    @inlinable @inline(__always)
-//    func broadcast<OtherScalar>(like other: TensorView<OtherScalar>) -> TensorView {
-//        return broadcast(toShape: other.shapeTensor)
-//    }
-//}
-//
+    }
+
+    /// Broadcast to the same shape as the specified `TensorView`.
+    /// - Precondition: The specified shape must be compatible for broadcasting.
+    @inlinable @inline(__always)
+    func broadcast<OtherScalar>(like other: TensorView<OtherScalar>) -> TensorView {
+        return broadcast(toShape: other.shape)
+    }
+}
+
 //public extension TensorView where Scalar : Numeric {
 //    @inlinable
 //    func unbroadcast(toShape otherShape: TensorView<Int32>) -> TensorView {
@@ -1524,30 +1520,26 @@ public extension TensorView where Scalar == Bool {
 //        lhs = rhs.broadcast(like: lhs)
 //    }
 //}
-//
-////===----------------------------------------------------------------------===//
-//// Padding
-////===----------------------------------------------------------------------===//
-//
-//public extension TensorView where Scalar : Numeric {
-//    /// Returns a padded TensorView according to the specified padding sizes.
-//    @inlinable
-//    func padded(
-//        forSizes sizes: [(before: Int32, after: Int32)],
-//        with value: Scalar = 0
-//        ) -> TensorView {
+
+//==============================================================================
+// Padding
+public extension TensorView where Scalar : Numeric {
+    /// Returns a padded TensorView according to the specified padding sizes.
+    @inlinable
+    func padded(forSizes sizes: [(before: Int32, after: Int32)],
+                with value: Scalar = 0) -> TensorView {
 //        let paddings = TensorView<Int32>(
-//            shape: [Int32(sizes.count), 2],
+//            shape: DataShape(sizes.count, 2),
 //            scalars: sizes.flatMap { [$0.before, $0.after] }
 //        )
+        fatalError("Not implemented")
+        // FunctionId.Pad
 //        return Raw.padV2(self, paddings: paddings, constantValues: TensorView(value))
-//    }
-//}
-//
-////===----------------------------------------------------------------------===//
-//// Indexing and slicing
-////===----------------------------------------------------------------------===//
-//
+    }
+}
+
+//==============================================================================
+// Indexing and slicing
 //public extension TensorView {
 //    /// Access the element TensorView specified by an index in the leading dimension.
 //    /// - Parameter index: Index of the element TensorView.
@@ -1649,140 +1641,143 @@ public extension TensorView where Scalar == Bool {
 //    }
 //}
 //
-////===----------------------------------------------------------------------===//
-//// Normalization
-////===----------------------------------------------------------------------===//
-//
-//public extension TensorView where Scalar : BinaryFloatingPoint {
-//    /// Computes the batch normalized TensorView along the specified axis.
-//    ///
-//    /// Specifically, returns `(self - mu)/(var + epsilon) * gamma + beta` where
-//    /// `mu` and `var` are respectively the mean and variance of `self` along
-//    /// `axis`.
-//    ///
-//    /// - Parameters:
-//    ///   - axis: The batch dimension.
-//    ///   - offset: The offset, also known as beta.
-//    ///   - scale: The scale, also known as gamma.
-//    ///   - epsilon: A small value added to the denominator for numerical
-//    ///     stability.
-//    @inlinable
+
+//==============================================================================
+// Normalization
+public extension TensorView where Scalar : BinaryFloatingPoint {
+    /// Computes the batch normalized TensorView along the specified axis.
+    ///
+    /// Specifically, returns `(self - mu)/(var + epsilon) * gamma + beta` where
+    /// `mu` and `var` are respectively the mean and variance of `self` along
+    /// `axis`.
+    ///
+    /// - Parameters:
+    ///   - axis: The batch dimension.
+    ///   - offset: The offset, also known as beta.
+    ///   - scale: The scale, also known as gamma.
+    ///   - epsilon: A small value added to the denominator for numerical
+    ///     stability.
+    @inlinable
 //    @differentiable(
 //    wrt: (self, offset, scale), vjp: _vjpBatchNormalized
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func batchNormalized(
-//        alongAxis axis: Int32,
-//        offset: TensorView = TensorView(0),
-//        scale: TensorView = TensorView(1),
-//        epsilon: Scalar = 0.001
-//        ) -> TensorView {
+    func batchNormalized(alongAxis axis: Int32,
+                         offset: TensorView = TensorView(0),
+                         scale: TensorView = TensorView(1),
+                         epsilon: Scalar = 0.001) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.SquaredDifference
+
 //        let mean = self.mean(alongAxes: axis)
 //        let squaredDiff: TensorView = Raw.squaredDifference(self, mean)
 //        let variance = squaredDiff.mean(alongAxes: axis)
 //        let inv = rsqrt(variance + epsilon) * scale
 //        return self * inv + offset - mean * inv
-//    }
-//}
-//
-////===----------------------------------------------------------------------===//
-//// Convolution and pooling
-////===----------------------------------------------------------------------===//
-//
-///// A padding scheme. Used by padding, convolution, and pooling ops.
-//// @_frozen // SR-9739
-//public enum Padding {
-//    /// The "valid" padding scheme.
-//    case valid
-//    /// The "same" padding scheme.
-//    case same
-//}
-//
-//internal extension Padding {
-//    @inlinable
-//    var raw: Raw.Padding {
-//        switch self {
-//        case .same: return .same
-//        case .valid: return .valid
-//        }
-//    }
-//}
-//
-//public extension TensorView where Scalar : FloatingPoint {
-//    /// Computes a 2-D convolution using `self` as input, with the specified
-//    /// filter, strides, and padding.
-//    ///
-//    /// - Parameters:
-//    ///   - filter: The convolution filter.
-//    ///   - strides: The strides of the sliding filter for each dimension of the
-//    ///     input.
-//    ///   - padding: The padding for the operation.
-//    /// - Precondition: `self` must have rank 4.
-//    /// - Precondition: `filter` must have rank 4.
-//    @inlinable @inline(__always)
+    }
+}
+
+//==============================================================================
+// Convolution and pooling
+/// A padding scheme. Used by padding, convolution, and pooling ops.
+// @_frozen // SR-9739
+public enum Padding {
+    /// The "valid" padding scheme.
+    case valid
+    /// The "same" padding scheme.
+    case same
+}
+
+internal extension Padding {
+    @inlinable
+    var raw: Raw.Padding {
+        switch self {
+        case .same: return .same
+        case .valid: return .valid
+        }
+    }
+}
+
+public extension TensorView where Scalar : FloatingPoint {
+    /// Computes a 2-D convolution using `self` as input, with the specified
+    /// filter, strides, and padding.
+    ///
+    /// - Parameters:
+    ///   - filter: The convolution filter.
+    ///   - strides: The strides of the sliding filter for each dimension of the
+    ///     input.
+    ///   - padding: The padding for the operation.
+    /// - Precondition: `self` must have rank 4.
+    /// - Precondition: `filter` must have rank 4.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: (self, filter), vjp: _vjpConvolved2D(filter:strides:padding:)
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func convolved2D(
-//        withFilter filter: TensorView,
-//        strides: (Int32, Int32, Int32, Int32),
-//        padding: Padding
-//        ) -> TensorView {
+    func convolved2D(withFilter filter: TensorView,
+                     strides: (Int32, Int32, Int32, Int32),
+                     padding: Padding) -> TensorView {
+        
+        fatalError("Not implemented")
+        // FunctionId.conv2D
+//
 //        return Raw.conv2D(
 //            self,
 //            filter: filter,
 //            strides: [strides.0, strides.1, strides.2, strides.3],
 //            padding: padding.raw)
-//    }
-//
-//    /// Computes a 2-D max pooling, with the specified kernel sizes, strides, and
-//    /// padding.
-//    ///
-//    /// - Parameters:
-//    ///   - kernelSize: The dimensions of the pooling kernel.
-//    ///   - strides: The strides of the sliding filter for each dimension of the
-//    ///     input.
-//    ///   - padding: The padding for the operation.
-//    @inlinable @inline(__always)
+    }
+
+    /// Computes a 2-D max pooling, with the specified kernel sizes, strides, and
+    /// padding.
+    ///
+    /// - Parameters:
+    ///   - kernelSize: The dimensions of the pooling kernel.
+    ///   - strides: The strides of the sliding filter for each dimension of the
+    ///     input.
+    ///   - padding: The padding for the operation.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: self, vjp: _vjpMaxPooled(kernelSize:strides:padding:)
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func maxPooled(
-//        kernelSize: (Int32, Int32, Int32, Int32),
-//        strides: (Int32, Int32, Int32, Int32),
-//        padding: Padding
-//        ) -> TensorView {
+    func maxPooled(kernelSize: (Int32, Int32, Int32, Int32),
+                   strides: (Int32, Int32, Int32, Int32),
+                   padding: Padding) -> TensorView {
+        
+        fatalError("Not implemented")
+        // FunctionId.MaxPool
+
 //        return Raw.maxPoolV2(
 //            self,
 //            ksize: TensorView<Int32>(kernelSize),
 //            strides: TensorView<Int32>(strides),
 //            padding: padding.raw)
-//    }
-//
-//    /// Computes a 2-D average pooling, with the specified kernel sizes, strides,
-//    /// and padding.
-//    ///
-//    /// - Parameters:
-//    ///   - kernelSize: The dimensions of the pooling kernel.
-//    ///   - strides: The strides of the sliding filter for each dimension of the
-//    ///     input.
-//    ///   - padding: The padding for the operation.
-//    @inlinable @inline(__always)
+    }
+
+    /// Computes a 2-D average pooling, with the specified kernel sizes, strides,
+    /// and padding.
+    ///
+    /// - Parameters:
+    ///   - kernelSize: The dimensions of the pooling kernel.
+    ///   - strides: The strides of the sliding filter for each dimension of the
+    ///     input.
+    ///   - padding: The padding for the operation.
+    @inlinable @inline(__always)
 //    @differentiable(
 //    wrt: self, vjp: _vjpAveragePooled(kernelSize:strides:padding:)
 //    where Scalar : TensorFlowFloatingPoint
 //    )
-//    func averagePooled(
-//        kernelSize: (Int32, Int32, Int32, Int32),
-//        strides: (Int32, Int32, Int32, Int32),
-//        padding: Padding
-//        ) -> TensorView {
+    func averagePooled(kernelSize: (Int32, Int32, Int32, Int32),
+                       strides: (Int32, Int32, Int32, Int32),
+                       padding: Padding) -> TensorView {
+
+        fatalError("Not implemented")
+        // FunctionId.MaxPool
 //        return Raw.avgPool(
 //            value: self,
 //            ksize: [kernelSize.0, kernelSize.1, kernelSize.2, kernelSize.3],
 //            strides: [strides.0, strides.1, strides.2, strides.3],
 //            padding: padding.raw)
-//    }
-//}
+    }
+}

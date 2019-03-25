@@ -15,6 +15,7 @@ public struct FunctionId {
     public static let Cast = UUID(uuidString: "9CFD6BDE-750B-47DE-AE50-571E0AAF412D")!
     public static let Ceil = UUID(uuidString: "F25BA913-59BC-46FA-95EB-C09E9187BB93")!
     public static let Conv2D = UUID(uuidString: "A055F634-E76E-4B66-AA45-BACF5C9F0247")!
+    public static let Concatenate = UUID(uuidString: "BBD13F37-8B66-47DA-81C6-AE70F9C5E0DB")!
     public static let Cos = UUID(uuidString: "094D6AA5-C77F-4433-AB63-35B90934770C")!
     public static let Cosh = UUID(uuidString: "7FFF81D5-28CC-40FA-B510-8ECD02BCD73D")!
     public static let Div = UUID(uuidString: "A9FEE793-84E5-4B79-8B2E-8D25DEC5789D")!

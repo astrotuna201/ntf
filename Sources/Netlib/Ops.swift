@@ -14,11 +14,11 @@
 import Foundation
 import TensorFlow
 
-infix operator ++ : AdditionPrecedence
-infix operator .< : ComparisonPrecedence
+infix operator ++  : AdditionPrecedence
+infix operator .<  : ComparisonPrecedence
 infix operator .<= : ComparisonPrecedence
 infix operator .>= : ComparisonPrecedence
-infix operator .> : ComparisonPrecedence
+infix operator .>  : ComparisonPrecedence
 infix operator .== : ComparisonPrecedence
 infix operator .!= : ComparisonPrecedence
 infix operator .=
@@ -622,10 +622,8 @@ public extension TensorView where Scalar == Bool {
 }
 
 // TODO
-//===----------------------------------------------------------------------===//
-//// Transforms
-////===----------------------------------------------------------------------===//
-//
+//==============================================================================
+// Transforms
 //public extension TensorView {
 //    /// Returns a transposed TensorView, with dimensions permuted in the specified
 //    /// order.
@@ -676,30 +674,33 @@ public extension TensorView where Scalar == Bool {
 //    }
 //}
 //
-//
-//public extension TensorView {
-//    /// Concatenates tensors along the specified axis.
-//    /// - Precondition: The tensors must have the same dimensions, except for the
-//    ///   specified axis.
-//    /// - Precondition: The axis must be in the range `-rank..<rank`.
-//    @inlinable @inline(__always)
+//==============================================================================
+// Concatenate
+public extension TensorView {
+    /// Concatenates tensors along the specified axis.
+    /// - Precondition: The tensors must have the same dimensions, except for the
+    ///   specified axis.
+    /// - Precondition: The axis must be in the range `-rank..<rank`.
+    @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpConcatenated where Scalar : TensorFlowFloatingPoint)
-//    func concatenated(with other: TensorView, alongAxis axis: Int32 = 0) -> TensorView {
+    func concatenated(with other: TensorView, alongAxis axis: Int32 = 0) -> TensorView {
+        fatalError("Not implemented")
+        // FunctionId.Concatentate
 //        return Raw.concatV2([self, other], axis: TensorView<Int32>(axis))
-//    }
-//
-//    /// Concatenation operator.
-//    /// - Note: `++` is a custom operator that does not exist in Swift, but does
-//    ///   in Haskell/Scala. Its addition is not an insignificant language change
-//    ///   and may be controversial. The existence/naming of `++` will be discussed
-//    ///   during a later API design phase.
-//    @inlinable @inline(__always)
+    }
+
+    /// Concatenation operator.
+    /// - Note: `++` is a custom operator that does not exist in Swift, but does
+    ///   in Haskell/Scala. Its addition is not an insignificant language change
+    ///   and may be controversial. The existence/naming of `++` will be discussed
+    ///   during a later API design phase.
+    @inlinable @inline(__always)
 //    @differentiable(where Scalar : TensorFlowFloatingPoint)
-//    static func ++ (lhs: TensorView, rhs: TensorView) -> TensorView {
-//        return lhs.concatenated(with: rhs)
-//    }
-//}
-//
+    static func ++ (lhs: TensorView, rhs: TensorView) -> TensorView {
+        return lhs.concatenated(with: rhs)
+    }
+}
+
 //internal extension TensorView where Scalar : TensorFlowFloatingPoint {
 //    @inlinable @inline(__always)
 //    func _vjpConcatenated(with other: TensorView, alongAxis axis: Int32)

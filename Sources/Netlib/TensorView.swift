@@ -371,12 +371,17 @@ extension TensorView {
     
     //--------------------------------------------------------------------------
     // explicitly zero
+    //    By default arrays are cleared to 0
     public init(zeros extents: [Int], logging: LogInfo? = nil) {
         self.init(shape: DataShape(extents), logging: logging)
     }
     
     public init(zeros extents: Int..., logging: LogInfo? = nil) {
         self.init(shape: DataShape(extents), logging: logging)
+    }
+    
+    public init(zeros shape: DataShape, logging: LogInfo? = nil) {
+        self.init(shape: shape, logging: logging)
     }
     
     //--------------------------------------------------------------------------

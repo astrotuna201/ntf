@@ -57,11 +57,27 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //    where Scalar : TensorFlowFloatingPoint
     //  )
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
-        fatalError("Not implemented")
-        // FunctionId.Add
 //        return Raw.add(lhs, rhs)
+        let result = TensorView(shape: lhs.shape)
+        try! Platform.defaultStream
+            .execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
+        return result
     }
     
+    /// Adds two tensors and produces their sum.
+    /// - Note: `+` supports broadcasting.
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpAdd(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    public static func Add(_ lhs: TensorView, _ rhs: TensorView,
+                           result: TensorView,
+                           using stream: DeviceStream? = nil) throws {
+        try (stream ?? Platform.defaultStream)
+            .execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
+    }
+
     /// Subtracts one TensorView from another and produces their difference.
     /// - Note: `-` supports broadcasting.
     @inlinable @inline(__always)
@@ -70,9 +86,27 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
 //    where Scalar : TensorFlowFloatingPoint
 //    )
     public static func - (lhs: TensorView, rhs: TensorView) -> TensorView {
-        fatalError("Not implemented")
         // FunctionId.Subtract
 //        return Raw.sub(lhs, rhs)
+        let result = TensorView(shape: lhs.shape)
+        try! Platform.defaultStream
+            .execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
+        return result
+    }
+
+    /// Subtracts one TensorView from another and produces their difference.
+    /// - Note: `-` supports broadcasting.
+    @inlinable @inline(__always)
+    //    @differentiable(
+    //    vjp: _vjpSubtract(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //    )
+    public static func Subtract(_ lhs: TensorView, _ rhs: TensorView,
+                                result: TensorView,
+                                using stream: DeviceStream? = nil) throws {
+        //        return Raw.sub(lhs, rhs)
+        try (stream ?? Platform.defaultStream)
+            .execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
     }
 }
 

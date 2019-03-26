@@ -109,20 +109,29 @@ public protocol DeviceStream: ObjectTracking, Logging {
 
     //-------------------------------------
     /// execute function
+    /// - Parameter functionId: id of the function to execute
+    /// - Parameter instanceId: function instance id for associated resources
+    /// - Parameter parameters: parameters structure to serialize
     ///
-    /// - Parameter uuid: The id of the function to execute
-    /// - Parameter parameter: a parameter structure to serialize
-    ///
-    /// Return
-    /// - instantiated function id
-    func execute<T>(function uuid: UUID, parameter: T) throws -> UUID
+    func execute<T>(functionId: UUID, with parameters: T) throws
     
     //-------------------------------------
-    /// release function instance
+    /// setup a function instance and assoicated resources for
+    /// repetative execution (e.g. convolution). The instanceId can
+    /// susequently be used with the `execute(functionId:` function
     ///
-    /// Parameters
-    /// - instance: The id of the function instance to release
-    func releaseFunction(instance: UUID) throws
+    /// - Parameter functionId: The function class to create
+    /// - Parameter instanceId: The function instance id
+    /// - Parameter parameters: The configuration parameters
+    ///
+    func setup<T>(functionId: UUID, instanceId: UUID, with parameters: T) throws
+
+    //-------------------------------------
+    /// release function instance created by createFunctionInstance
+    ///
+    /// - Parameter instance: The id of the function instance to release
+    ///
+    func release(instanceId: UUID) throws
     
     //-------------------------------------
     // synchronization

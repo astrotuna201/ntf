@@ -5,7 +5,7 @@
 import Foundation
 import TensorFlow
 
-public struct TensorView<Scalar>: Equatable, Logging
+public struct TensorView<Scalar>: Logging, Equatable
 where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
@@ -81,6 +81,18 @@ where Scalar: AnyScalar & TensorFlowScalar {
 
         assert(viewOffset + shape.elementCount <= self.tensorData.elementCount)
     }
+
+    //--------------------------------------------------------------------------
+    // helpers to obtain pointers to constants 0 and 1 to support Cuda calls
+    private var _zero = Scalar(any: 0)
+    public lazy var zeroPointer: UnsafeRawPointer = {
+        return UnsafeRawPointer(withUnsafePointer(to: &_zero) { $0 })
+    }()
+    
+    private var _one = Scalar(any: 1)
+    public lazy var onePointer: UnsafeRawPointer = {
+        return UnsafeRawPointer(withUnsafePointer(to: &_one) { $0 })
+    }()
 
     //--------------------------------------------------------------------------
     // Equal values
@@ -447,6 +459,8 @@ extension TensorView {
     }
 }
 
+//==============================================================================
+// initializers
 public extension TensorFlow.Tensor where Scalar: AnyTensorFlowScalar {
     /// create a dense copy of other and perform type conversion
     init<T: AnyTensorFlowScalar>(_ view: Netlib.TensorView<T>,

@@ -12,6 +12,7 @@ import TensorFlow
 
 class CodableTests: XCTestCase {
     static var allTests = [
+        ("test_PrimaryOps", test_PrimaryOps),
         ("test_ShapeCodable", test_ShapeCodable),
     ]
 
@@ -28,5 +29,12 @@ class CodableTests: XCTestCase {
         } catch {
             print(String(describing: error))
         }
+    }
+    
+    func test_PrimaryOps() {
+        let a = TensorView<Float>(scalars: [1, 2, 3, 4])
+        let b = TensorView<Float>(scalars: [4, 3, 2, 1])
+        let c = a + b
+        XCTAssert(c == TensorView<Float>(scalars: [5, 5, 5, 5]))
     }
 }

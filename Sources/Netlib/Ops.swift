@@ -65,9 +65,11 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
 //        return Raw.add(lhs, rhs)
-        var result = TensorView(shape: lhs.shape)
-        try! Add(lhs, rhs, result: &result)
-        return result
+        return _ThreadLocal.value.catchError {
+            var result = TensorView(shape: lhs.shape)
+            try Add(lhs, rhs, result: &result)
+            return result
+        }
     }
     
     //--------------------------------------------------------------------------

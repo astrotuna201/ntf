@@ -454,7 +454,7 @@ extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    public func scalarized() throws -> Scalar {
+    public func scalar() throws -> Scalar {
         return try tensorData.roHostBuffer()[0]
     }
 }

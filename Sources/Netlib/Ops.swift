@@ -829,7 +829,7 @@ public func abs<T : SignedNumeric>(_ x: TensorView<T>) -> TensorView<T> {
 /// Computes the natural logarithm of the specified TensorView element-wise.
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
-public func log<T : FloatingPoint>(_ x: TensorView<T>) -> TensorView<T> {
+public func log<T : FloatingPoint>(_ x: TensorView<T>) throws -> TensorView<T> {
     fatalError("Not implemented")
     // FunctionId.
 //    return Raw.log(x)
@@ -937,7 +937,7 @@ public func floor<T : FloatingPoint>(_ x: TensorView<T>) -> TensorView<T> {
 /// Computes the power of the first TensorView to the second TensorView.
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
-public func pow<T>(_ lhs: TensorView<T>, _ rhs: TensorView<T>) -> TensorView<T>
+public func pow<T>(_ lhs: TensorView<T>, _ rhs: TensorView<T>) throws -> TensorView<T>
     where T : FloatingPoint {
         fatalError("Not implemented")
         // FunctionId.
@@ -947,17 +947,17 @@ public func pow<T>(_ lhs: TensorView<T>, _ rhs: TensorView<T>) -> TensorView<T>
 /// Computes the power of the scalar to the TensorView, broadcasting the scalar.
 @inlinable @inline(__always)
 // @differentiable(where T : TensorFlowFloatingPoint)
-public func pow<T>(_ lhs: T, _ rhs: TensorView<T>) -> TensorView<T>
+public func pow<T>(_ lhs: T, _ rhs: TensorView<T>) throws -> TensorView<T>
     where T : FloatingPoint {
-        return pow(TensorView(lhs), rhs)
+        return try pow(TensorView(lhs), rhs)
 }
 
 /// Computes the power of the TensorView to the scalar, broadcasting the scalar.
 @inlinable @inline(__always)
 // @differentiable(where T : TensorFlowFloatingPoint)
-public func pow<T>(_ lhs: TensorView<T>, _ rhs: T) -> TensorView<T>
+public func pow<T>(_ lhs: TensorView<T>, _ rhs: T) throws -> TensorView<T>
     where T : FloatingPoint {
-        return pow(lhs, TensorView(rhs))
+        return try pow(lhs, TensorView(rhs))
 }
 
 /// Computes the element-wise maximum of two tensors.

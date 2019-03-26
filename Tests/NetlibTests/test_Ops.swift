@@ -23,13 +23,13 @@ class test_Ops: XCTestCase {
 
         do {
             //---------------------------------
-            // unscoped
+            // unscoped, uses Platform.defaultStream
             let c1 = a + b
             XCTAssert(c1 == expected)
             XCTAssert(_ThreadLocal.value.noError)
             
             //---------------------------------
-            // default scoped
+            // default stream scoped, uses Platform.defaultStream
             let c2 = try usingDefaultStream {
                 return a + b
             }
@@ -37,7 +37,7 @@ class test_Ops: XCTestCase {
 
             //---------------------------------
             // other scoped
-            // create 2 streams on the specified devices from the preferred service
+            // create a streams on each specified devices from the preferred service
             let stream = try Platform.global.createStreams(deviceIds: [0, 1])
             
             let c3 = try using(stream[0]) {
@@ -50,14 +50,16 @@ class test_Ops: XCTestCase {
             let aPlusB = try using(stream[0]) {
                 return a + b
             }
+            
             let aMinusB = try using(stream[1]) {
                 return a - b
             }
+            
             let c4 = try usingDefaultStream {
                 return aPlusB + aMinusB
             }
-            // all three streams auto sync at this point
             let c4expected = TensorView<Float>(scalars: [2, 4, 6, 8])
+            // all three streams auto sync at this point
             XCTAssert(c4 == c4expected)
 
             //---------------------------------
@@ -70,18 +72,24 @@ class test_Ops: XCTestCase {
                     let aMinusB = try using(stream[1]) {
                         return a - b
                     }
-                    return pow(a + b + aMinusB, y)
+                    // here stream[1] is synced with stream[0]
+                    return try pow(a + b + aMinusB, y)
                 }
-                let lnx = log(x)
+                // temporary results are okay!
+                // here stream[0] is synced with the defaultStream
+                let lnx = try log(x)
                 return lnx / (lnx + 1)
             }
+            
             // all three streams auto sync at this point
             let c5expected = TensorView<Float>(scalars: [0, 0.581, 0.782, 0.862])
-            let c5IsEqual = try c5.elementsApproximatelyEqual(c5expected).scalarized()
+            let c5IsEqual = try c5.elementsApproximatelyEqual(c5expected).scalar()
+            
+            // here the defaultStream is synced with the app thread
             XCTAssert(c5IsEqual)
 
         } catch {
-            
+            XCTFail(String(describing: error))
         }
     }
 }

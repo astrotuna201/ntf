@@ -57,8 +57,15 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     public static func Add(_ lhs: TensorView, _ rhs: TensorView,
                            result: inout TensorView,
                            using stream: DeviceStream? = nil) throws {
-        try (stream ?? Platform.defaultStream)
+        try (stream ?? _ThreadLocal.value.defaultStream)
             .execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
+    }
+    
+    public static func Add(_ lhs: TensorView, _ rhs: TensorView,
+                           using stream: DeviceStream? = nil) throws -> TensorView {
+        var result = TensorView(shape: lhs.shape)
+        try Add(lhs, rhs, result: &result, using: stream)
+        return result
     }
     
     @inlinable @inline(__always)
@@ -66,9 +73,7 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
 //        return Raw.add(lhs, rhs)
         return _ThreadLocal.value.catchError {
-            var result = TensorView(shape: lhs.shape)
-            try Add(lhs, rhs, result: &result)
-            return result
+            return try Add(lhs, rhs)
         }
     }
     
@@ -81,7 +86,7 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
                                 result: inout TensorView,
                                 using stream: DeviceStream? = nil) throws {
         //        return Raw.sub(lhs, rhs)
-        try (stream ?? Platform.defaultStream)
+        try (stream ?? _ThreadLocal.value.defaultStream)
             .execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
     }
 

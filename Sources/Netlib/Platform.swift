@@ -173,35 +173,48 @@ final public class Platform: ObjectTracking, Logging {
     }
 
     //--------------------------------------------------------------------------
-    // requestStreams
-    //	This will try to match the requested service and device ids returning
-    // substitutes if needed.
+    /// createStreams
     //
-    // If no service name is specified, then the default is used.
-    // If no ids are specified, then one stream per defaultDeviceCount is returned
-    public func requestStreams(label: String,
-                               serviceName: String? = nil,
-                               deviceIds: [Int]? = nil) throws -> [DeviceStream] {
+    /// This will try to match the requested service and device ids returning
+    /// substitutes if needed.
+    ///
+    /// Parameters
+    /// - Parameter label: The text label applied to the stream
+    /// - Parameter serviceName: (cpu, gpu, tpu, ...)
+    ///   If no service name is specified, then the default is used.
+    /// - Parameter deviceIds: (0, 1, 2, ...)
+    ///   If no ids are specified, then one stream per defaultDeviceCount
+    ///   is returned.
+    public func createStreams(label: String = "stream",
+                              serviceName: String? = nil,
+                              deviceIds: [Int]? = nil) throws -> [DeviceStream] {
 
         let serviceName = serviceName ?? defaultDevice.service.name
-        let maxDeviceCount = min(defaultDevicesToAllocate, defaultDevice.service.devices.count)
+        let maxDeviceCount = min(defaultDevicesToAllocate,
+                                 defaultDevice.service.devices.count)
         let ids = deviceIds ?? [Int](0..<maxDeviceCount)
 
         return try ids.map {
             let device = requestDevice(serviceName: serviceName,
-                    deviceId: $0, allowSubstitute: true)!
-            return try device.createStream(label: label)
+                                       deviceId: $0, allowSubstitute: true)!
+            let streamLabel = deviceIds?.count != 0 ? "\(label):\($0)" : label
+            return try device.createStream(label: streamLabel)
         }
     }
 
     //--------------------------------------------------------------------------
-    // requestDevices
-    public func requestDevices(serviceName: String?, deviceIds: [Int]) -> [ComputeDevice] {
+    /// requestDevices
+    ///
+    /// This will try to return the requested devices from the requested service
+    /// substituting if needed based on `servicePriority` and `deviceIdPriority`
+    ///
+    public func requestDevices(serviceName: String?,
+                               deviceIds: [Int]) -> [ComputeDevice] {
         // if no serviceName is specified then return the default
         let serviceName = serviceName ?? defaultDevice.service.name
         return deviceIds.map {
             requestDevice(serviceName: serviceName,
-                    deviceId: $0, allowSubstitute: true)!
+                          deviceId: $0, allowSubstitute: true)!
         }
     }
 

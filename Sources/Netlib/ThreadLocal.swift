@@ -17,11 +17,33 @@ import Glibc
 ///   - body: A closure whose operations are to be executed on the
 ///           specified stream
 @inline(never)
-public func using<R>(stream: DeviceStream, logInfo: LogInfo? = nil,
+public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
                      perform body: () throws -> R) throws -> R {
     // sets the default stream and logging info for the current scope
     _ThreadLocal.value.push(stream: stream, logInfo: logInfo)
     defer { _ThreadLocal.value.popStream() }
+    // execute the body
+    let result = try body()
+    // if one of the non-throwing operators like `+` within the scope
+    // fails, the error is recorded and is propagated
+    if let lastError = _ThreadLocal.value.lastError {
+        throw lastError
+    }
+    return result
+}
+
+//==============================================================================
+/// Executes a closure on the default stream. This is only necessary if
+/// catching Errors from operator expressions is desired `+`
+///
+/// - Parameters:
+///   - body: A closure whose operations are to be executed on the
+///           default stream
+@inline(never)
+public func usingDefaultStream<R>(
+    logInfo: LogInfo? = nil,
+    perform body: () throws -> R) throws -> R {
+    
     // execute the body
     let result = try body()
     // if one of the non-throwing operators like `+` within the scope
@@ -56,9 +78,11 @@ class _ThreadLocal {
     }()
     
     // there will always be the platform default stream and logInfo
-    var defaultStream: DeviceStream { return streamScope.last!.stream }
-    var defaultLogInfo: LogInfo { return streamScope.last!.logInfo }
-    var lastError: Error? { return streamScope.last!.error }
+    public var defaultStream: DeviceStream { return streamScope.last!.stream }
+    public var defaultLogInfo: LogInfo { return streamScope.last!.logInfo }
+    public var lastError: Error? { return streamScope.last!.error }
+    public var noError: Bool { return streamScope.last!.error == nil }
+    public var errorOccurred: Bool { return streamScope.last!.error != nil }
 
     //--------------------------------------------------------------------------
     // stack functions

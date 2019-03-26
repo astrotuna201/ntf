@@ -34,16 +34,12 @@ public func using<R>(stream: DeviceStream, logInfo: LogInfo? = nil,
 
 //==============================================================================
 // _ThreadLocal
-
-public typealias StreamScope =
-    (stream: DeviceStream, logInfo: LogInfo, error: Error?)
-
 @usableFromInline
 class _ThreadLocal {
     //--------------------------------------------------------------------------
     // properties
     /// stack of default device streams and logging
-    var streamScope: [StreamScope] =
+    var streamScope: [(stream: DeviceStream, logInfo: LogInfo, error: Error?)] =
         [(Platform.defaultStream, Platform.defaultStream.logging!, nil)]
 
     /// thread data key
@@ -65,7 +61,7 @@ class _ThreadLocal {
     var lastError: Error? { return streamScope.last!.error }
 
     //--------------------------------------------------------------------------
-    //
+    // stack functions
     @usableFromInline
     func push(stream: DeviceStream, logInfo: LogInfo? = nil) {
         let info = logInfo ?? streamScope.last!.logInfo
@@ -98,7 +94,7 @@ class _ThreadLocal {
     }
 
     //--------------------------------------------------------------------------
-    // shared singleton instance
+    // shared singleton initializer
     @usableFromInline
     static var value: _ThreadLocal {
         // try to get an existing state

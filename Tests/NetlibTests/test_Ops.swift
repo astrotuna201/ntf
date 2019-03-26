@@ -12,8 +12,16 @@ import TensorFlow
 
 class test_Ops: XCTestCase {
     static var allTests = [
+        ("test_GetDefaultStream", test_GetDefaultStream),
         ("test_PrimaryOps", test_PrimaryOps),
     ]
+    
+    func test_GetDefaultStream() {
+        let platform = Platform.global
+        let device = Platform.global.defaultDevice
+        let stream = Platform.defaultStream
+        print(stream.id)
+    }
     
     func test_PrimaryOps() {
         let a = TensorView<Float>(scalars: [1, 2, 3, 4])

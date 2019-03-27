@@ -248,9 +248,9 @@ where Scalar: AnyScalar & TensorFlowScalar {
         
         let eltOffset = viewOffset + shape.linearIndex(of: offset)
         let viewShape = DataShape(extents: extents,
-                              layout: shape.layout,
-                              strides: shape.strides,
-                              colMajor: shape.isColMajor)
+                                  layout: shape.layout,
+                                  strides: shape.strides,
+                                  isColMajor: shape.isColMajor)
         
         return TensorView(shape: viewShape,
                           tensorData: tensorData,

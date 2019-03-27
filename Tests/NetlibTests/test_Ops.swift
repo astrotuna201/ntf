@@ -12,9 +12,21 @@ import TensorFlow
 
 class test_Ops: XCTestCase {
     static var allTests = [
+        ("test_Casting", test_Casting),
         ("test_GetDefaultStream", test_GetDefaultStream),
         ("test_PrimaryOps", test_PrimaryOps),
     ]
+    
+    func test_Casting() {
+        do {
+            let a = TensorView<Float>(scalars: [1, 2, 3, 4])
+            let b = try TensorView<Float>(a)
+            XCTAssert(a == b)
+
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
     
     func test_GetDefaultStream() {
         let stream = Platform.defaultStream

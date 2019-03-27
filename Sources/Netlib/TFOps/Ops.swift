@@ -28,20 +28,33 @@ infix operator .=
 //   scalarization and rank getter are implemented.
 
 //==============================================================================
-// Scalar type cast
-public extension TensorView where Scalar : Numeric {
-  /// Perform an element-wise type conversion from a `Bool` TensorView.
-  @inlinable @inline(__always)
-  init(_ other: TensorView<Bool>) {
-    fatalError("Not implemented")
-    // FunctionId.Cast
-//    self = Raw.cast(other)
-  }
+// This will perform a Scalar type cast and return a dense view
+public extension TensorView {
+    /// Perform element-wise type conversion
+    @inlinable @inline(__always)
+    init<OtherScalar>(_ other: TensorView<OtherScalar>,
+         using deviceStream: DeviceStream? = nil) throws {
+        //    self = Raw.cast(other)
+        // omit strides argument to create dense shape
+        let dense = DataShape(extents: other.shape.extents,
+                              layout: other.shape.layout,
+                              channelLayout: other.shape.channelLayout,
+                              isColMajor: other.shape.isColMajor)
+
+        // create output view and bundle parameters
+        let result = TensorView(shape: dense)
+        let params = (input: other, output: result)
+        
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.execute(functionId: FunctionId.Cast, with: params)
+        self = result
+    }
 }
 
 //==============================================================================
 // Additive group
 extension TensorView: AdditiveArithmetic where Scalar: Numeric {
+    //--------------------------------------------------------------------------
     /// A scalar zero TensorView.
     @inlinable
     public static var zero: TensorView {
@@ -56,11 +69,13 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
     public static func Add(_ lhs: TensorView, _ rhs: TensorView,
                            result: inout TensorView,
-                           using stream: DeviceStream? = nil) throws {
-        try (stream ?? _ThreadLocal.value.defaultStream)
-            .execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
+                           using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
     }
     
+    // returns new view
     public static func Add(_ lhs: TensorView, _ rhs: TensorView,
                            using stream: DeviceStream? = nil) throws -> TensorView {
         var result = TensorView(shape: lhs.shape)
@@ -68,6 +83,7 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
         return result
     }
     
+    // operator
     @inlinable @inline(__always)
     //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
@@ -84,19 +100,30 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
     public static func Subtract(_ lhs: TensorView, _ rhs: TensorView,
                                 result: inout TensorView,
-                                using stream: DeviceStream? = nil) throws {
+                                using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
         //        return Raw.sub(lhs, rhs)
-        try (stream ?? _ThreadLocal.value.defaultStream)
-            .execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
     }
 
+    // returns new view
+    public static func Subtract(_ lhs: TensorView, _ rhs: TensorView,
+                                using stream: DeviceStream? = nil) throws -> TensorView {
+
+        var result = TensorView(shape: lhs.shape)
+        try Subtract(lhs, rhs, result: &result, using: stream)
+        return result
+    }
+    
+    // operator
     @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
     public static func - (lhs: TensorView, rhs: TensorView) -> TensorView {
 //        return Raw.sub(lhs, rhs)
-        var result = TensorView(shape: lhs.shape)
-        try! Subtract(lhs, rhs, result: &result)
-        return result
+        return _ThreadLocal.value.catchError {
+            return try Subtract(lhs, rhs)
+        }
     }
 }
 

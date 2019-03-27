@@ -23,15 +23,15 @@ public final class CpuStream : DeviceStream {
         self.device = device
         self.id = id
         self.name = name
-        trackingId = ObjectTracker.global.register(self,
-                                                   namePath: logging.namePath)
+        let path = logging.namePath
+        trackingId = ObjectTracker.global.register(self, namePath: path)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
     
     //--------------------------------------------------------------------------
     // createEvent
     public func execute<T>(functionId: UUID, with parameters: T) throws {
-        
+        print("queueing id: \(functionId) with: \(parameters)")
     }
     
     //--------------------------------------------------------------------------

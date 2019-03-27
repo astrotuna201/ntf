@@ -52,7 +52,7 @@ public struct DataShape: Equatable, Codable {
                 layout: TensorLayout? = nil,
                 channelLayout: ChannelLayout = .any,
                 strides: [Int]? = nil,
-                colMajor: Bool = false) {
+                isColMajor: Bool = false) {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
         let rank = extents.count
@@ -60,12 +60,12 @@ public struct DataShape: Equatable, Codable {
         self.extents = extents
         self.elementCount = extents.reduce(1, *)
         self.layout = layout ?? TensorLayout(defaultForRank: rank)
-        self.isColMajor = colMajor
+        self.isColMajor = isColMajor
 
         // strides
         if let userStrides = strides {
             self.strides = userStrides
-        } else if colMajor {
+        } else if isColMajor {
             var cmExtent = extents
             cmExtent.swapAt(self.layout.hAxis, self.layout.wAxis)
             var cmStrides = DataShape.denseStrides(for: cmExtent)

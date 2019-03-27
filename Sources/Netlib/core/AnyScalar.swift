@@ -53,7 +53,7 @@ public typealias AnyTensorFlowFloatingPoint = AnyScalar & TensorFlowFloatingPoin
 //------------------------------------------------------------------------------
 extension UInt8: AnyInteger {
 	public init(any: AnyScalar) { self = any.asUInt8 }
-	public var asUInt8  : UInt8  { return UInt8(self) }
+	public var asUInt8  : UInt8  { return self }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
 	public var asInt32  : Int32  { return Int32(self) }
@@ -93,7 +93,7 @@ extension UInt8: AnyInteger {
 extension UInt16 : AnyInteger {
 	public init(any: AnyScalar) { self = any.asUInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
-	public var asUInt16 : UInt16 { return UInt16(self) }
+	public var asUInt16 : UInt16 { return self }
 	public var asInt16  : Int16  { return Int16(self) }
 	public var asInt32  : Int32  { return Int32(self) }
 	public var asUInt   : UInt   { return UInt(self) }
@@ -133,7 +133,7 @@ extension Int16 : AnyInteger {
 	public init(any: AnyScalar) { self = any.asInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
-	public var asInt16  : Int16  { return Int16(self) }
+	public var asInt16  : Int16  { return self }
 	public var asInt32  : Int32  { return Int32(self) }
 	public var asUInt   : UInt   { return UInt(self) }
 	public var asInt    : Int    { return Int(self) }
@@ -173,7 +173,7 @@ extension Int32 : AnyInteger {
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
-	public var asInt32  : Int32  { return Int32(self) }
+	public var asInt32  : Int32  { return self }
 	public var asUInt   : UInt   { return UInt(self) }
 	public var asInt    : Int    { return Int(self) }
 	public var asFloat16: Float16{ return Float16(self) }
@@ -214,7 +214,7 @@ extension Int : AnyInteger {
 	public var asInt16  : Int16  { return Int16(self) }
 	public var asInt32  : Int32  { return Int32(self) }
 	public var asUInt   : UInt   { return UInt(self) }
-	public var asInt    : Int    { return Int(self) }
+	public var asInt    : Int    { return self }
 	public var asFloat16: Float16{ return Float16(self) }
 	public var asFloat  : Float  { return Float(self) }
 	public var asDouble : Double { return Double(self) }
@@ -252,7 +252,7 @@ extension UInt : AnyInteger {
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
 	public var asInt32  : Int32  { return Int32(self) }
-	public var asUInt   : UInt   { return UInt(self) }
+	public var asUInt   : UInt   { return self }
 	public var asInt    : Int    { return Int(self) }
 	public var asFloat16: Float16{ return Float16(any: self) }
 	public var asFloat  : Float  { return Float(self) }
@@ -333,7 +333,7 @@ extension Float16 : AnyFloatingPoint {
 	public var asInt32  : Int32  { return Int32(self) }
 	public var asUInt   : UInt   { return UInt(any: self) }
 	public var asInt    : Int    { return Int(self) }
-	public var asFloat16: Float16{ return Float16(self) }
+	public var asFloat16: Float16{ return self }
 	public var asFloat  : Float  { return Float(self) }
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return asFloat }
@@ -371,7 +371,7 @@ extension Float : AnyFloatingPoint {
 	public var asUInt   : UInt   { return UInt(self) }
 	public var asInt    : Int    { return Int(self) }
 	public var asFloat16: Float16{ return Float16(self) }
-	public var asFloat  : Float  { return Float(self) }
+	public var asFloat  : Float  { return self }
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
@@ -409,7 +409,7 @@ extension Double : AnyFloatingPoint {
 	public var asInt    : Int    { return Int(self) }
 	public var asFloat16: Float16{ return Float16(self) }
 	public var asFloat  : Float  { return Float(self) }
-	public var asDouble : Double { return Double(self) }
+	public var asDouble : Double { return self }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 

@@ -67,13 +67,13 @@ public protocol DeviceArray: ObjectTracking, Logging {
     /// asynchronously copies the contents of another device array
     func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
     /// asynchronously copies the contents of a memory buffer
-    func copyAsync(from buffer: UnsafeBufferPointer<UInt8>,
+    func copyAsync(from buffer: UnsafeRawBufferPointer,
                    using stream: DeviceStream) throws
     /// copies the contents to a memory buffer synchronously
-    func copy(to buffer: UnsafeMutableBufferPointer<UInt8>,
+    func copy(to buffer: UnsafeMutableRawBufferPointer,
               using stream: DeviceStream) throws
     /// copies the contents to a memory buffer asynchronously
-    func copyAsync(to buffer: UnsafeMutableBufferPointer<UInt8>,
+    func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                    using stream: DeviceStream) throws
 }
 

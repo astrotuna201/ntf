@@ -36,19 +36,19 @@ public class CpuDeviceArray : DeviceArray {
 	}
 
 	// copyAsync(from buffer
-	public func copyAsync(from buffer: UnsafeBufferPointer<UInt8>,
+	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
 
 	}
 
 	// copy(to buffer
-	public func copy(to buffer: UnsafeMutableBufferPointer<UInt8>,
+	public func copy(to buffer: UnsafeMutableRawBufferPointer,
                      using stream: DeviceStream) throws {
 
 	}
 
 	// copyAsync(to buffer
-	public func copyAsync(to buffer: UnsafeMutableBufferPointer<UInt8>,
+	public func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                           using stream: DeviceStream) throws {
 
 	}

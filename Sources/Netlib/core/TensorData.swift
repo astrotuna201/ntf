@@ -9,7 +9,8 @@ import TensorFlow
 public typealias BufferUInt8 = UnsafeBufferPointer<UInt8>
 public typealias MutableBufferUInt8 = UnsafeMutableBufferPointer<UInt8>
 
-public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
+public class TensorData<Scalar> : ObjectTracking, Logging
+where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
@@ -35,10 +36,36 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     // local
     private let streamRequired = "stream is required for device data transfers"
     private let isReadOnlyReference: Bool
-    private var hostArray = [UInt8]()
-    private var hostBuffer: MutableBufferUInt8!
+    
+    //-----------------------------------
+    // The host array is the host device data array. It is used when doing
+    // operations synced with the app thread.
     private var hostVersion = -1
+    private var _hostArray: [Scalar]? = nil
+//    private var hostArray: [Scalar] = {
+//        if _hostArray == nil { createHostArray() }
+//        return _hostArray!
+////        return [Scalar]()
+//    }()
+    
+    // The hostBuffer points to the host data used by this object. Usually it
+    // will point to the hostArray, but it can also point to a read only
+    // buffer specified during init. The purpose is to use data from something
+    // like a memory mapped file without copying it.
+    private var hostBuffer: UnsafeMutableRawBufferPointer!
+    
+    //-----------------------------------
+    // return a host array
+    public func array() throws -> [Scalar] {
+        try migrate(readOnly: true)
+        if isReadOnlyReference {
+            return [Scalar](hostBuffer!.bindMemory(to: Scalar.self))
+        } else {
+            return _hostArray!
+        }
+    }
 
+    //-----------------------------------
     // stream sync
     private var _streamSyncEvent: StreamEvent!
     private func getSyncEvent(using stream: DeviceStream) throws -> StreamEvent {
@@ -90,7 +117,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(logging: LogInfo?, readOnlyReferenceTo buffer: BufferUInt8) {
+    public init(logging: LogInfo?, readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         self.logging = logging
         isReadOnlyReference = true
         elementCount = buffer.count
@@ -98,10 +125,9 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         hostVersion = 0
 
         // we won't ever actually mutate in this case
-        hostBuffer = MutableBufferUInt8(
-                start: UnsafeMutablePointer(mutating: buffer.baseAddress),
-                count: buffer.count)
-
+        hostBuffer = UnsafeMutableRawBufferPointer(
+            start: UnsafeMutableRawPointer(OpaquePointer(buffer.baseAddress)),
+            count: buffer.count)
         register()
     }
 
@@ -206,7 +232,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
                 
             } else {
                 // uma to device
-                try array.copyAsync(from: other.roHostBufferUInt8(), using: stream)
+                try array.copyAsync(from: other.roHostRawBuffer(), using: stream)
             }
             
             // set the master
@@ -214,7 +240,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
             
         } else {
             // get pointer to this array's umaBuffer
-            let buffer = try rwHostBufferUInt8()
+            let buffer = try rwHostMutableRawBuffer()
             
             if let otherMaster = other.master {
                 // synchronous device to umaArray
@@ -222,7 +248,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
                 
             } else {
                 // umaArray to umaArray
-                _ = try buffer.initialize(from: other.roHostBufferUInt8())
+                try buffer.copyMemory(from: other.roHostRawBuffer())
             }
         }
     }
@@ -231,15 +257,12 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     // ro
     public func roHostBuffer() throws -> UnsafeBufferPointer<Scalar> {
         try migrate(readOnly: true)
-        return hostBuffer.baseAddress!
-            .withMemoryRebound(to: Scalar.self, capacity: elementCount) {
-                return UnsafeBufferPointer<Scalar>(start: $0, count: elementCount)
-        }
+        return UnsafeBufferPointer(hostBuffer.bindMemory(to: Scalar.self))
     }
 
-    public func roHostBufferUInt8() throws -> UnsafeBufferPointer<UInt8> {
+    public func roHostRawBuffer() throws -> UnsafeRawBufferPointer {
         try migrate(readOnly: true)
-        return UnsafeBufferPointer<UInt8>(hostBuffer)
+        return UnsafeRawBufferPointer(hostBuffer)
     }
     
     public func roDevicePointer(using stream: DeviceStream) throws -> UnsafeRawPointer {
@@ -252,17 +275,13 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     public func rwHostBuffer() throws -> UnsafeMutableBufferPointer<Scalar> {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
-        return hostBuffer.baseAddress!
-            .withMemoryRebound(to: Scalar.self, capacity: elementCount) {
-                return UnsafeMutableBufferPointer<Scalar>(start: $0,
-                                                          count: elementCount)
-        }
+        return hostBuffer.bindMemory(to: Scalar.self)
     }
 
-    public func rwHostBufferUInt8() throws -> UnsafeMutableBufferPointer<UInt8> {
+    public func rwHostMutableRawBuffer() throws -> UnsafeMutableRawBufferPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
-        return hostBuffer
+        return UnsafeMutableRawBufferPointer(hostBuffer)
     }
 
     public func rwDevicePointer(using stream: DeviceStream) throws ->
@@ -352,9 +371,9 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
                 "host array  elements: \(elementCount)", categories: .dataAlloc)
         }
-        hostArray = [UInt8](repeating: 0, count: byteCount)
-        hostBuffer = hostArray.withUnsafeMutableBufferPointer { $0 }
         hostVersion = -1
+        _hostArray = [Scalar](repeating: Scalar(any: 0), count: elementCount)
+        hostBuffer = _hostArray!.withUnsafeMutableBytes { $0 }
     }
 
     //-----------------------------------
@@ -366,7 +385,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
                 "\(releaseString) \(name) DataArray(\(trackingId)) host array " +
                 "elements: \(elementCount)", categories: .dataAlloc)
         }
-        hostArray = [UInt8]()
+        _hostArray = nil
         hostBuffer = nil
     }
 
@@ -375,7 +394,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     private func setDeviceDataPointerToHostBuffer(readOnly: Bool) throws {
         assert(!isReadOnlyReference)
         // lazily create the uma buffer if needed
-        if hostBuffer == nil { try createHostArray() }
+        if _hostArray == nil { try createHostArray() }
         deviceDataPointer = UnsafeMutableRawPointer(hostBuffer.baseAddress!)
         if !readOnly { master = nil; masterVersion += 1 }
         hostVersion = masterVersion
@@ -402,7 +421,8 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
                     categories: .dataCopy)
             }
 
-            try array.copyAsync(from: BufferUInt8(hostBuffer), using: stream)
+            try array.copyAsync(from: UnsafeRawBufferPointer(hostBuffer!),
+                                using: stream)
             lastAccessCopiedBuffer = true
 
             if autoReleaseUmaBuffer && !isReadOnlyReference {

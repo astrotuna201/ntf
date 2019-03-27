@@ -31,7 +31,7 @@ final public class Platform: ObjectTracking, Logging {
     /// a stream created on the default device
     public private(set) static var defaultStream: DeviceStream = {
         do {
-            return try global.defaultDevice.createStream(label: "Platform.defaultStream")
+            return try global.defaultDevice.createStream(name: "Platform.defaultStream")
         } catch {
             // this should never fail
             global.writeLog(String(describing: error))
@@ -53,12 +53,12 @@ final public class Platform: ObjectTracking, Logging {
     /// we only want to do it once per process and share it across all
     /// Platform instances.
     public lazy var services: [String: ComputeService] = {
-        if Platform._services.count == 0 { getServices() }
-        return Platform._services
+        if Platform._services == nil { Platform._services = loadServices() }
+        return Platform._services!
     }()
     
     /// this stores the global services collection initialized by getServices
-    private static var _services = [String: ComputeService]()
+    private static var _services: [String: ComputeService]?
 
     //--------------------------------------------------------------------------
     // initializers
@@ -70,11 +70,17 @@ final public class Platform: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
-    // getServices
-    private func getServices() {
+    // loadServices
+    private func loadServices() -> [String: ComputeService] {
+        var loadedServices = [String: ComputeService]()
         do {
+            func addService(_ service: ComputeService) {
+                service.id = loadedServices.count
+                loadedServices[service.name] = service
+            }
+            
             // add cpu service by default
-            try add(service: CpuComputeService(logging: logging!))
+            try addService(CpuComputeService(logging: logging!))
             //            #if os(Linux)
             //            try add(service: CudaComputeService(logging: logging))
             //            #endif
@@ -97,8 +103,7 @@ final public class Platform: ObjectTracking, Logging {
                     
                     if service.devices.count > 0 {
                         // add plugin service
-                        service.id = Platform._services.count
-                        Platform._services[service.name] = service
+                        addService(service)
                     } else {
                         if willLog(level: .warning) {
                             writeLog(
@@ -118,6 +123,7 @@ final public class Platform: ObjectTracking, Logging {
         } catch {
             writeLog(String(describing: error))
         }
+        return loadedServices
     }
     
     //--------------------------------------------------------------------------
@@ -186,7 +192,7 @@ final public class Platform: ObjectTracking, Logging {
     /// - Parameter deviceIds: (0, 1, 2, ...)
     ///   If no ids are specified, then one stream per defaultDeviceCount
     ///   is returned.
-    public func createStreams(label: String = "stream",
+    public func createStreams(name: String = "stream",
                               serviceName: String? = nil,
                               deviceIds: [Int]? = nil) throws -> [DeviceStream] {
 
@@ -198,8 +204,8 @@ final public class Platform: ObjectTracking, Logging {
         return try ids.map {
             let device = requestDevice(serviceName: serviceName,
                                        deviceId: $0, allowSubstitute: true)!
-            let streamLabel = deviceIds?.count != 0 ? "\(label):\($0)" : label
-            return try device.createStream(label: streamLabel)
+            let streamName = deviceIds?.count != 0 ? "\(name):\($0)" : name
+            return try device.createStream(name: streamName)
         }
     }
 

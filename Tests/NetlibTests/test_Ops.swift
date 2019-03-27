@@ -17,11 +17,8 @@ class test_Ops: XCTestCase {
     ]
     
     func test_GetDefaultStream() {
-        let platform = Platform.global
-        let services = platform.services
-        let device = Platform.global.defaultDevice
         let stream = Platform.defaultStream
-        print(stream.id)
+        XCTAssert(!stream.name.isEmpty)
     }
     
     func test_PrimaryOps() {

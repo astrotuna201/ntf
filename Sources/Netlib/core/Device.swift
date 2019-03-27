@@ -42,7 +42,7 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     /// creates an array on this device
     func createArray(count: Int) throws -> DeviceArray
     /// creates a named command stream for this device
-    func createStream(label: String) throws -> DeviceStream
+    func createStream(name: String) throws -> DeviceStream
 }
 
 //==============================================================================
@@ -104,8 +104,8 @@ public protocol DeviceStream: ObjectTracking, Logging {
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream
     var id: Int { get }
-    /// a label used to identify the stream
-    var label: String { get }
+    /// a name used to identify the stream
+    var name: String { get }
 
     //-------------------------------------
     /// execute function

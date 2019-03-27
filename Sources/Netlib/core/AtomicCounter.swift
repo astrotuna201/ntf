@@ -8,7 +8,7 @@ import Dispatch
 // Mutex
 public final class Mutex {
     // properties
-    private let semaphore = DispatchSemaphore(value: 0)
+    private let semaphore = DispatchSemaphore(value: 1)
 
     // functions
     func sync<R>(execute work: () throws -> R) rethrows -> R {
@@ -24,6 +24,7 @@ public final class AtomicCounter {
     // properties
     private var counter: Int
     private let mutex = Mutex()
+    
     public var value: Int {
         get { return mutex.sync { counter } }
         set { return mutex.sync { counter = newValue } }

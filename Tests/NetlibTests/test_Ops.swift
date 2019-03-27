@@ -18,6 +18,7 @@ class test_Ops: XCTestCase {
     
     func test_GetDefaultStream() {
         let platform = Platform.global
+        let services = platform.services
         let device = Platform.global.defaultDevice
         let stream = Platform.defaultStream
         print(stream.id)
@@ -72,11 +73,8 @@ class test_Ops: XCTestCase {
 
             //---------------------------------
             // nested multi scoped
-            // NOTE: for some reason I get this when nesting, any thoughts?
-            // "Unable to infer complex closure return type; add explicit type to disambiguate"
-            //
-            let c5 = try usingDefaultStream { () -> TensorView<Float> in
-                let x = try using(stream[0]) { () -> TensorView<Float> in
+            let c5: TensorView<Float> = try usingDefaultStream {
+                let x: TensorView<Float> = try using(stream[0]) {
                     let aMinusB = try using(stream[1]) {
                         return a - b
                     }

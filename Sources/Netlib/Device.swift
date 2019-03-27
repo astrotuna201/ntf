@@ -7,7 +7,7 @@ import Foundation
 //==============================================================================
 // ComputeService
 public protocol ComputeService: ObjectTracking, Logging {
-    init(logging: LogInfo?) throws
+    init(logging: LogInfo) throws
     var devices: [ComputeDevice] { get }
     var id: Int { get set }
     var name: String { get }
@@ -80,7 +80,7 @@ public protocol DeviceArray: ObjectTracking, Logging {
 //==============================================================================
 // StreamEvent
 /// Stream events are queued to enable stream synchronization
-public protocol StreamEvent: ObjectTracking {
+public protocol StreamEvent: ObjectTracking, Logging {
     /// is `true` if the even has occurred
     var occurred: Bool { get }
 

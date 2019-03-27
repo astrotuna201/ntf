@@ -10,12 +10,8 @@ import Glibc
 #endif
 
 public protocol ObjectTracking: class {
-    var namePath: String { get }
 	var trackingId: Int { get }
 }
-
-// singleton
-public var objectTracker = ObjectTracker()
 
 //==============================================================================
 /// ObjectTracker
@@ -25,21 +21,30 @@ final public class ObjectTracker {
 	//--------------------------------------------------------------------------
 	// types
 	public struct ItemInfo {
-        weak var object: ObjectTracking?
-		let typeName: String
-		let supplementalInfo: String
-		var isStatic: Bool
+        var isStatic: Bool
+        let namePath: String?
+		let supplementalInfo: String?
+        let typeName: String
 	}
 
+    // singleton
+    private init() {}
+    
 	//--------------------------------------------------------------------------
-	// properties TODO: document all these
+	// properties
 	/// global shared instance
 	public static let global = ObjectTracker()
+    /// thread access queue
 	private let queue = DispatchQueue(label: "ObjectTracker.queue")
+    /// counter to generate object ids
 	public let counter = AtomicCounter()
+    /// init registration tracking id to break on
 	public var debuggerRegisterBreakId = -1
+    /// deinit break id
 	public var debuggerRemoveBreakId = -1
+    // the list of currently registered objects
 	public private(set) var activeObjects = [Int: ItemInfo]()
+    /// true if there are currently unreleased objects
 	public var hasActiveObjects: Bool { return !activeObjects.isEmpty }
 
 	//--------------------------------------------------------------------------
@@ -63,67 +68,68 @@ final public class ObjectTracker {
 
 	// getObjectDescription
 	private func getObjectDescription(trackingId: Int, info: ItemInfo) -> String {
-		var description = "[\(info.typeName)(\(trackingId))"
-		if info.supplementalInfo.isEmpty {
-			description += "]"
-		} else {
-			description += " \(info.supplementalInfo)]"
-		}
-
-		if let propObject = info.object {
-			description += " path: \(propObject.namePath)"
-		}
-		return description
+        return "[\(info.typeName)(\(trackingId))" +
+            (info.supplementalInfo == nil ? "]":" \(info.supplementalInfo!)]") +
+            (info.namePath == nil ? "" : " path: \(info.namePath!)")
 	}
 
 	//--------------------------------------------------------------------------
 	// register(object:
-	public func register(object: ObjectTracking, info: String = "") -> Int {
-		#if ENABLE_TRACKING
-            let trackingId = counter.increment()
-            register(trackingId: trackingId, info:
-                ItemInfo(object: object, typeName: object.typeName,
-                         supplementalInfo: info, isStatic: false))
-            return id
+    public func register(_ object: ObjectTracking,
+                         namePath: String? = nil,
+                         supplementalInfo: String? = nil,
+                         isStatic: Bool = false) -> Int {
+        #if ENABLE_TRACKING
+        let info = ItemInfo(isStatic: isStatic,
+                            namePath: namePath,
+                            supplementalInfo: supplementalInfo,
+                            typeName: String(describing: object.self))
+        let trackingId = counter.increment()
+
+        register(trackingId: trackingId, info: info)
+        return trackingId
+        
         #else
-            return 0
+        return 0
         #endif
-	}
+    }
 
-	//--------------------------------------------------------------------------
-	// register(type:
-	public func register<T>(type: T, info: String = "") -> Int {
-		#if ENABLE_TRACKING
-            let trackingId = counter.increment()
-            register(trackingId: trackingId, info:
-                ItemInfo(object: nil,
-                         typeName: String(describing: Swift.type(of: T.self)),
-                         supplementalInfo: info, isStatic: false))
-            return id
-        #else
-            return 0
-		#endif
-	}
+    //--------------------------------------------------------------------------
+    // register
+    private func register(trackingId: Int, info: ItemInfo) {
+        queue.sync {
+            if trackingId == debuggerRegisterBreakId {
+                print("ObjectTracker debug break for id(\(trackingId))")
+                raise(SIGINT)
+            }
+            activeObjects[trackingId] = info
+        }
+    }
+    
+    // TODO: maybe remove this if unused? If so, combine register functions above
+//    //--------------------------------------------------------------------------
+//    // register(type:
+//    public func register<T>(type: T, info: String = "") -> Int {
+//        #if ENABLE_TRACKING
+//            let trackingId = counter.increment()
+//            register(trackingId: trackingId, info:
+//                ItemInfo(object: nil,
+//                         typeName: String(describing: Swift.type(of: T.self)),
+//                         supplementalInfo: info, isStatic: false))
+//            return id
+//        #else
+//            return 0
+//        #endif
+//    }
 
-	//--------------------------------------------------------------------------
-	// register
-	private func register(trackingId: Int, info: ItemInfo) {
-		queue.sync {
-			if trackingId == debuggerRegisterBreakId {
-				print("ObjectTracker debug break for id(\(trackingId))")
-				raise(SIGINT)
-			}
-			activeObjects[trackingId] = info
-		}
-	}
-
-	//--------------------------------------------------------------------------
-	// markStatic
-	public func markStatic(trackingId: Int) {
-		#if ENABLE_TRACKING
-            _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
-		#endif
-	}
+    // TODO: maybe remove this if unused?
+//    //--------------------------------------------------------------------------
+//    // markStatic
+//    public func markStatic(trackingId: Int) {
+//        #if ENABLE_TRACKING
+//            _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
+//        #endif
+//    }
 
 	//--------------------------------------------------------------------------
 	// remove

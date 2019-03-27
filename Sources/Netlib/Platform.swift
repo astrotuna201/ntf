@@ -17,6 +17,9 @@ import Foundation
 // Platform
 /// The root service to enumerate and select compute services and devices
 final public class Platform: ObjectTracking, Logging {
+    //--------------------------------------------------------------------------
+    // properties
+    
     /// global shared instance
     public static let global = Platform()
     /// a device automatically selected based on service priority
@@ -42,9 +45,6 @@ final public class Platform: ObjectTracking, Logging {
 
     // object tracking
     public private(set) var trackingId = 0
-    public var namePath = String(describing: Platform.self)
-
-    // logging
     public var logging: LogInfo?
 
     //--------------------------------------------------------------------------
@@ -60,13 +60,23 @@ final public class Platform: ObjectTracking, Logging {
     /// this stores the global services collection initialized by getServices
     private static var _services = [String: ComputeService]()
 
+    //--------------------------------------------------------------------------
+    // initializers
+    private init() {
+        let namePath = String(describing: Platform.self)
+        let info = LogInfo(log: Log(), logLevel: .error,
+                           namePath: namePath, nestingLevel: 0)
+        self.logging = info
+    }
+    
+    //--------------------------------------------------------------------------
+    // getServices
     private func getServices() {
         do {
             // add cpu service by default
-            // TODO: put back!
-            //            try add(service: CpuComputeService(log: currentLog))
+            try add(service: CpuComputeService(logging: logging!))
             //            #if os(Linux)
-            //            try add(service: CudaComputeService(log: currentLog))
+            //            try add(service: CudaComputeService(logging: logging))
             //            #endif
             //-------------------------------------
             // dynamically load services
@@ -76,7 +86,7 @@ final public class Platform: ObjectTracking, Logging {
                 
                 if let serviceType = bundle.principalClass as? ComputeService.Type {
                     // create the service
-                    let service = try serviceType.init(logging: logging)
+                    let service = try serviceType.init(logging: logging!)
                     
                     if willLog(level: .diagnostic) {
                         diagnostic(
@@ -108,15 +118,6 @@ final public class Platform: ObjectTracking, Logging {
         } catch {
             writeLog(String(describing: error))
         }
-    }
-    
-    //--------------------------------------------------------------------------
-    // initializers
-    private init() {
-        let namePath = String(describing: Platform.self)
-        let info = LogInfo(log: Log(parentNamePath: namePath), logLevel: .error,
-                           namePath: namePath, nestingLevel: 0)
-        self.logging = info
     }
     
     //--------------------------------------------------------------------------

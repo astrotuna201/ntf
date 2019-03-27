@@ -20,9 +20,6 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
 
     // object tracking
     public private(set) var trackingId = 0
-    public var namePath: String = "TODO"
-
-    // logging
     public var logging: LogInfo?
 
     /// an optional context specific name for logging
@@ -136,8 +133,10 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
     //----------------------------------------
     // object lifetime tracking for leak detection
     private func register() {
-        trackingId = objectTracker.register(
-                type: self, info: "elementCount: \(elementCount)")
+        trackingId = ObjectTracker.global
+            .register(self,
+                      namePath: logging?.namePath,
+                      supplementalInfo: "elementCount: \(elementCount)")
 
         if elementCount > 0 && willLog(level: .diagnostic) {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
@@ -160,7 +159,7 @@ public class TensorData<Scalar: TensorFlowScalar> : ObjectTracking, Logging {
         } catch {
             writeLog(String(describing: error))
         }
-        objectTracker.remove(trackingId: trackingId)
+        ObjectTracker.global.remove(trackingId: trackingId)
 
         if elementCount > 0 && willLog(level: .diagnostic) {
             diagnostic("\(releaseString) \(name)(\(trackingId)) " +

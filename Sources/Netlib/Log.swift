@@ -83,17 +83,14 @@ extension Logging {
 //==============================================================================
 // Log
 final public class Log: ObjectTracking {
-	//--------------------------------------------------------------------------
 	// properties
 	public var categories: LogCategories?
+    public var history = [LogEvent]()
+    public var logLevel: LogLevel = .error
 	public var maxHistory = 0
 	public var silent = false
 	public var tabSize = 2
 	public var url: URL?
-	public var history = [LogEvent]()
-    public var logLevel = LogLevel.error
-    public var nestingLevel = 0
-    public var namePath: String
 
     // ObjectTracking
     public private(set) var trackingId: Int = 0
@@ -104,17 +101,12 @@ final public class Log: ObjectTracking {
 	private static let levelColWidth =
 		String(describing: LogLevel.diagnostic).count
 
-	// initializer to allow for Log to be used as a parameter default
-	public init(parentNamePath: String) {
-		namePath = parentNamePath + ".Log"
-	}
-
-	//----------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	// functions
 	public func write(level: LogLevel, nestingLevel: Int,
 	                  trailing: String, minCount: Int, message: String) {
 		queue.sync { [unowned self] in
-			if self.maxHistory > 0 {
+			if maxHistory > 0 {
 				if self.history.count == self.maxHistory { self.history.removeFirst() }
 				self.history.append(LogEvent(level: level, nestingLevel: nestingLevel,
 				                             message: message))

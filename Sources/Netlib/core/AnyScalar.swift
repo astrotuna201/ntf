@@ -2,12 +2,26 @@
 //  Created by Edward Connell on 10/11/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
-/// The purpose of AnyScalar is to allow the use of constants and type
-/// conversions withing generics
-///
 import Foundation
 import TensorFlow
 
+//==============================================================================
+/// DataType
+/// Used primarily for serialization, C APIs, and Cuda kernels
+public enum DataType: Int {
+    // integers
+    case real8U, real8I, real16U, real16I, real32U, real32I, real64U, real64I
+    // floats
+    case real16F, real32F, real64F
+    // non numeric
+    case bool
+}
+
+//==============================================================================
+/// AnyScalar
+/// AnyScalar enables the use of constants, type conversion, and
+/// normalization within generics
+///
 public protocol AnyScalar {
 	// unchanged cast value
 	init(any: AnyScalar)
@@ -39,6 +53,7 @@ public protocol AnyScalar {
 
 	var isFiniteValue: Bool { get }
     static var isFiniteType: Bool { get }
+    static var dataType: DataType { get }
 }
 
 public protocol AnyNumeric: AnyScalar {}
@@ -82,6 +97,7 @@ extension UInt8: AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType { return .real8U }
 
 	public init?(string: String) {
         guard let value = UInt8(string) else { return nil }
@@ -89,7 +105,7 @@ extension UInt8: AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension UInt16 : AnyInteger {
 	public init(any: AnyScalar) { self = any.asUInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -121,6 +137,7 @@ extension UInt16 : AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType { return .real16U }
 
     public init?(string: String) {
         guard let value = UInt16(string) else { return nil }
@@ -128,7 +145,7 @@ extension UInt16 : AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Int16 : AnyInteger {
 	public init(any: AnyScalar) { self = any.asInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -160,6 +177,7 @@ extension Int16 : AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType { return .real16I }
 
 	public init?(string: String) {
         guard let value = Int16(string) else { return nil }
@@ -167,7 +185,7 @@ extension Int16 : AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Int32 : AnyInteger {
 	public init(any: AnyScalar) { self = any.asInt32 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -199,6 +217,7 @@ extension Int32 : AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType { return .real32I }
 
 	public init?(string: String) {
         guard let value = Int32(string) else { return nil }
@@ -206,7 +225,7 @@ extension Int32 : AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Int : AnyInteger {
 	public init(any: AnyScalar) { self = any.asInt }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -238,6 +257,10 @@ extension Int : AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType = {
+        let index: [DataType] = [.real8I, .real16I, .real32I, .real64I]
+        return index[MemoryLayout<Int>.size - 1]
+    }()
 
 	public init?(string: String) {
         guard let value = Int(string) else { return nil }
@@ -245,7 +268,7 @@ extension Int : AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension UInt : AnyInteger {
 	public init(any: AnyScalar) { self = any.asUInt }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -277,6 +300,10 @@ extension UInt : AnyInteger {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType = {
+        let index: [DataType] = [.real8U, .real16U, .real32U, .real64U]
+        return index[MemoryLayout<Int>.size - 1]
+    }()
 
 	public init?(string: String) {
         guard let value = UInt(string) else { return nil }
@@ -284,8 +311,8 @@ extension UInt : AnyInteger {
 	}
 }
 
-//----------------------------------------------------------------------------
-extension Bool : AnyScalar {
+//------------------------------------------------------------------------------
+extension Bool: AnyScalar {
 	public init(any: AnyScalar) { self = any.asBool }
 	public var asUInt8  : UInt8  { return self ? 1 : 0 }
 	public var asUInt16 : UInt16 { return self ? 1 : 0 }
@@ -317,6 +344,7 @@ extension Bool : AnyScalar {
 
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
+    public static var dataType: DataType { return .bool }
 
 	public init?(string: String) {
         guard let value = Bool(string) else { return nil }
@@ -324,7 +352,7 @@ extension Bool : AnyScalar {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Float16 : AnyFloatingPoint {
 	public init(any: AnyScalar) { self = any.asFloat16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -354,6 +382,7 @@ extension Float16 : AnyFloatingPoint {
 
 	public var isFiniteValue: Bool { return Float(self).isFinite }
     public static var isFiniteType: Bool { return false }
+    public static var dataType: DataType { return .real16F }
 
 	public init?(string: String) {
         guard let value = Float16(string) else { return nil }
@@ -361,7 +390,7 @@ extension Float16 : AnyFloatingPoint {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Float : AnyFloatingPoint {
 	public init(any: AnyScalar) { self = any.asFloat }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -391,6 +420,7 @@ extension Float : AnyFloatingPoint {
 
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
+    public static var dataType: DataType { return .real32F }
 
 	public init?(string: String) {
         guard let value = Float(string) else { return nil }
@@ -398,7 +428,7 @@ extension Float : AnyFloatingPoint {
 	}
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 extension Double : AnyFloatingPoint {
 	public init(any: AnyScalar) { self = any.asDouble }
 	public var asUInt8  : UInt8  { return UInt8(self) }
@@ -428,6 +458,7 @@ extension Double : AnyFloatingPoint {
 
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
+    public static var dataType: DataType { return .real64F }
 
 	public init?(string: String) {
         guard let value = Double(string) else { return nil }

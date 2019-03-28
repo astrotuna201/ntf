@@ -1,0 +1,30 @@
+//
+//  CodableTests.swift
+//  NetlibTests
+//
+//  Created by Edward Connell on 3/23/19.
+//
+import XCTest
+import Foundation
+import TensorFlow
+@testable import Netlib
+
+class test_DataShape: XCTestCase {
+    static var allTests = [
+        ("test_squeezed", test_squeezed),
+    ]
+
+    func test_squeezed() {
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().extents == [10,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().extents == [10,4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().extents == [4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().extents == [4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().extents == [4,3,5])
+        
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(squeezingAxes: [0,4]).extents == [10,1,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(squeezingAxes: [0,5]).extents == [10,1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(squeezingAxes: [1,3]).extents == [1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(squeezingAxes: [3,3]).extents == [1,1,4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(squeezingAxes: []).extents == [1, 1, 4, 1, 1, 3, 5])
+    }
+}

@@ -159,6 +159,22 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
+    // squeezed
+    public func squeezed(squeezingAxes: Set<Int>? = nil) -> DataShape {
+        assert(squeezingAxes == nil || squeezingAxes!.count <= rank)
+        var newExtents = [Int]()
+        var newStrides = [Int]()
+        let axes = squeezingAxes ?? Set<Int>(0..<rank)
+        for axis in 0..<rank where !(axes.contains(axis) && extents[axis] == 1) {
+            newExtents.append(extents[axis])
+            newStrides.append(strides[axis])
+        }
+        return DataShape(extents: newExtents, layout: layout,
+                         channelLayout: channelLayout, strides: newStrides,
+                         isColMajor: isColMajor)
+    }
+    
+    //--------------------------------------------------------------------------
     // flattened
     public func flattened(axis: Int = 0) -> DataShape {
         assert(isContiguous, "Cannot reshape strided data")
@@ -196,17 +212,20 @@ public extension TensorFlow.TensorShape {
 // TensorLayout
 public enum TensorLayout: Int, Codable {
     // warning: don't rearrange without also updating axis mapping below
-    case scalar, vector, matrix, volume, nchw, nhwc, ncdhw, ndhwc
+    case any, scalar, vector, matrix, volume, nchw, nhwc, ncdhw, ndhwc
 
-    // axis mapping                 s  ve m  vo nc nh nc nd
-    public var nAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 0][rawValue] }
-    public var cAxis: Int { return [0, 0, 0, 0, 1, 3, 1, 4][rawValue] }
-    public var dAxis: Int { return [0, 0, 0, 0, 0, 0, 2, 1][rawValue] }
-    public var hAxis: Int { return [0, 0, 0, 1, 2, 1, 3, 2][rawValue] }
-    public var wAxis: Int { return [0, 0, 1, 2, 3, 2, 4, 3][rawValue] }
+    // TODO: probably replace this scheme with specialized indexed types
+    // axis mapping                 a  s  ve m  vo nc nh nc nd
+    public var nAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 0, 0][rawValue] }
+    public var cAxis: Int { return [0, 0, 0, 0, 0, 1, 3, 1, 4][rawValue] }
+    public var dAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 2, 1][rawValue] }
+    public var hAxis: Int { return [0, 0, 0, 0, 1, 2, 1, 3, 2][rawValue] }
+    public var wAxis: Int { return [0, 0, 0, 1, 2, 3, 2, 4, 3][rawValue] }
 
     public init(defaultForRank rank: Int) {
-        self = [.scalar, .vector, .matrix, .volume, .nchw, .ncdhw][rank]
+        let defaults: [TensorLayout] =
+            [.scalar, .vector, .matrix, .volume, .nchw, .ncdhw]
+        self = rank >= defaults.count ? .any : defaults[rank]
     }
 }
 

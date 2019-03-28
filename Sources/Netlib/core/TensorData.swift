@@ -42,11 +42,6 @@ where Scalar: AnyScalar & TensorFlowScalar {
     // operations synced with the app thread.
     private var hostVersion = -1
     private var _hostArray: [Scalar]? = nil
-//    private var hostArray: [Scalar] = {
-//        if _hostArray == nil { createHostArray() }
-//        return _hostArray!
-////        return [Scalar]()
-//    }()
     
     // The hostBuffer points to the host data used by this object. Usually it
     // will point to the hostArray, but it can also point to a read only

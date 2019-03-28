@@ -18,8 +18,6 @@ where Scalar: AnyScalar & TensorFlowScalar {
     /// used by TensorViews to synchronize access to the data.
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
     public let elementCount: Int
-    public let elementSize = MemoryLayout<Scalar>.size
-    public var byteCount: Int { return elementSize * elementCount }
     public var autoReleaseUmaBuffer = false
 
     // object tracking
@@ -104,7 +102,9 @@ where Scalar: AnyScalar & TensorFlowScalar {
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(logging: LogInfo?, readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+    public init(logging: LogInfo?,
+                readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+        // store
         self.logging = logging
         isReadOnlyReference = true
         elementCount = buffer.count
@@ -343,6 +343,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
                     "allocating array on device(\(device.id)) elements: \(elementCount)",
                     categories: .dataAlloc)
             }
+            let byteCount = MemoryLayout<Scalar>.size * elementCount
             let array = try device.createArray(count: byteCount)
             array.version = -1
             let info = ArrayInfo(array: array, stream: stream)
@@ -489,6 +490,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
                 }
 
             } else {
+                // cross service
                 fatalError()
                 //                if willLog(level: .diagnostic) == true {
                 //                    diagnostic("\(copyString) \(name)(\(trackingId)) cross service from " +

@@ -55,17 +55,6 @@ where Scalar: AnyScalar & TensorFlowScalar {
     private var hostBuffer: UnsafeMutableRawBufferPointer!
     
     //-----------------------------------
-    // return a host array
-    public func array() throws -> [Scalar] {
-        try migrate(readOnly: true)
-        if isReadOnlyReference {
-            return [Scalar](hostBuffer!.bindMemory(to: Scalar.self))
-        } else {
-            return _hostArray!
-        }
-    }
-
-    //-----------------------------------
     // stream sync
     private var _streamSyncEvent: StreamEvent!
     private func getSyncEvent(using stream: DeviceStream) throws -> StreamEvent {

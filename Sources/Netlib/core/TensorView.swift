@@ -151,24 +151,19 @@ where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // Read only buffer access
     public func ro() throws -> UnsafeBufferPointer<Scalar> {
-        // get the queue, if we reference it as a dataArray member it
+        // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
-        
         return try queue.sync {
-            let buffer = try tensorData.roHostBuffer().baseAddress!
-            return UnsafeBufferPointer<Scalar>(
-                start: buffer.advanced(by: viewOffset),
-                count: shape.elementSpanCount)
+            return try tensorData.roHostBuffer()
         }
     }
     
     // this version is for accelerator APIs
     public func ro(using stream: DeviceStream) throws -> UnsafeRawPointer {
-        // get the queue, if we reference it as a dataArray member it
+        // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
-        
         return try queue.sync {
             let buffer = try tensorData.roDevicePointer(using: stream)
             return buffer.advanced(by: viewOffset)
@@ -181,13 +176,9 @@ where Scalar: AnyScalar & TensorFlowScalar {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
-        
         return try queue.sync {
             try copyIfMutates()
-            let buffer = try tensorData.rwHostBuffer().baseAddress!
-            return UnsafeMutableBufferPointer<Scalar>(
-                start: buffer.advanced(by: viewOffset),
-                count: shape.elementSpanCount)
+            return try tensorData.rwHostBuffer()
         }
     }
     

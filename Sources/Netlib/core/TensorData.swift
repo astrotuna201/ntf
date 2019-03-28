@@ -6,13 +6,16 @@ import Foundation
 import Dispatch
 import TensorFlow
 
-public typealias BufferUInt8 = UnsafeBufferPointer<UInt8>
-public typealias MutableBufferUInt8 = UnsafeMutableBufferPointer<UInt8>
-
-public class TensorData<Scalar> : ObjectTracking, Logging
+//==============================================================================
+/// TensorData
+/// The TensorData object is a flat array of scalars used by the TensorView.
+/// It is responsible for replication and syncing between devices.
+/// It is not created or directly used by end users.
+final public class TensorData<Scalar> : ObjectTracking, Logging
 where Scalar: AnyScalar & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
+    /// used by TensorViews to synchronize access to the data.
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
     public let elementCount: Int
     public let elementSize = MemoryLayout<Scalar>.size

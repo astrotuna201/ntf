@@ -64,19 +64,19 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     /// - Note: `+` supports broadcasting.
     @inlinable @inline(__always)
     //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-    public static func Add(_ lhs: TensorView, _ rhs: TensorView,
+    public static func add(_ lhs: TensorView, _ rhs: TensorView,
                            result: inout TensorView,
                            using deviceStream: DeviceStream? = nil) throws {
         assert(lhs.shape == rhs.shape)
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.execute(functionId: FunctionId.Add, with: (lhs, rhs, result))
+        try stream.add(lhs: lhs, rhs: rhs, result: &result)
     }
     
     // returns new view
-    public static func Add(_ lhs: TensorView, _ rhs: TensorView,
+    public static func add(_ lhs: TensorView, _ rhs: TensorView,
                            using stream: DeviceStream? = nil) throws -> TensorView {
         var result = TensorView(shape: lhs.shape)
-        try Add(lhs, rhs, result: &result, using: stream)
+        try add(lhs, rhs, result: &result, using: stream)
         return result
     }
     
@@ -84,9 +84,8 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     @inlinable @inline(__always)
     //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
     public static func + (lhs: TensorView, rhs: TensorView) -> TensorView {
-//        return Raw.add(lhs, rhs)
         return _ThreadLocal.value.catchError {
-            return try Add(lhs, rhs)
+            return try add(lhs, rhs)
         }
     }
     

@@ -279,18 +279,3 @@ public final class CpuStream : DeviceStream {
     
 
 }
-
-//==============================================================================
-// CpuStreamEvent
-final public class CpuStreamEvent : StreamEvent {
-	public required init(options: StreamEventOptions) {
-		trackingId = ObjectTracker.global.register(self, namePath: logging?.namePath)
-	}
-	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
-
-	//--------------------------------------------------------------------------
-	// properties
-	public private (set) var trackingId = 0
-	public var occurred: Bool { return true }
-    public var logging: LogInfo? = nil
-}

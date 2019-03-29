@@ -353,7 +353,7 @@ extension TensorView {
     // This will perform a Scalar type cast and return a dense view
     /// Perform element-wise type conversion
     @inlinable @inline(__always)
-    init<OtherScalar>(withContentsOf other: TensorView<OtherScalar>,
+    init<OtherScalar>(_ other: TensorView<OtherScalar>,
                       using deviceStream: DeviceStream? = nil) throws {
         //    self = Raw.cast(other)
         // omit strides argument to create dense shape
@@ -448,13 +448,6 @@ extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    // type cast
-    public init(_ other: TensorView<Bool>) {
-        // TODO
-        self = TensorView()
-    }
-
-    //--------------------------------------------------------------------------
     public func scalar() throws -> Scalar {
         return try tensorData.roHostBuffer()[0]
     }
@@ -467,7 +460,7 @@ public extension TensorFlow.Tensor where Scalar: AnyTensorFlowScalar {
     init<T: AnyTensorFlowScalar>(_ view: Netlib.TensorView<T>,
                                  using stream: DeviceStream? = nil) throws {
 
-        let denseView = try TensorView<Scalar>(withContentsOf: view, using: stream)
+        let denseView = try TensorView<Scalar>(view, using: stream)
         self = Tensor<Scalar>(shape: TensorFlow.TensorShape(denseView.shape),
                               scalars: try denseView.ro())
     }

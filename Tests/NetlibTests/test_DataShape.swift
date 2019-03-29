@@ -12,6 +12,7 @@ import TensorFlow
 class test_DataShape: XCTestCase {
     static var allTests = [
         ("test_squeezed", test_squeezed),
+        ("test_transposed", test_transposed),
     ]
 
     func test_squeezed() {
@@ -26,5 +27,11 @@ class test_DataShape: XCTestCase {
         XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(squeezingAxes: [1,3]).extents == [1,4,3,1])
         XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(squeezingAxes: [3,3]).extents == [1,1,4,3,5])
         XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(squeezingAxes: []).extents == [1, 1, 4, 1, 1, 3, 5])
+    }
+    
+    func test_transposed() {
+//        let avals = (0..<6).map { Float($0) }
+//        let a = TensorView<Float>(extents: 2,3, scalars: avals)
+        
     }
 }

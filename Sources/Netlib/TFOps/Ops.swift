@@ -28,27 +28,6 @@ infix operator .=
 //   scalarization and rank getter are implemented.
 
 //==============================================================================
-// This will perform a Scalar type cast and return a dense view
-public extension TensorView {
-    /// Perform element-wise type conversion
-    @inlinable @inline(__always)
-    init<OtherScalar>(_ other: TensorView<OtherScalar>,
-         using deviceStream: DeviceStream? = nil) throws {
-        //    self = Raw.cast(other)
-        // omit strides argument to create dense shape
-        let dense = DataShape(extents: other.shape.extents,
-                              layout: other.shape.layout,
-                              channelLayout: other.shape.channelLayout,
-                              isColMajor: other.shape.isColMajor)
-
-        // create output view and bundle parameters
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        self = TensorView(shape: dense)
-        try stream.cast(from: other, to: &self)
-    }
-}
-
-//==============================================================================
 // Additive group
 extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     //--------------------------------------------------------------------------

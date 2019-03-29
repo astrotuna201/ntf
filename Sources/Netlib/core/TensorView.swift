@@ -350,14 +350,24 @@ extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    // Copy from other to create a dense view
-    public init<OtherT>(withContentsOf other: TensorView<OtherT>,
-                        using stream: DeviceStream? = nil)
-        where OtherT: TensorFlowScalar {
-            // TODO
-            fatalError("Not implemented")
+    // This will perform a Scalar type cast and return a dense view
+    /// Perform element-wise type conversion
+    @inlinable @inline(__always)
+    init<OtherScalar>(withContentsOf other: TensorView<OtherScalar>,
+                      using deviceStream: DeviceStream? = nil) throws {
+        //    self = Raw.cast(other)
+        // omit strides argument to create dense shape
+        let dense = DataShape(extents: other.shape.extents,
+                              layout: other.shape.layout,
+                              channelLayout: other.shape.channelLayout,
+                              isColMajor: other.shape.isColMajor)
+        
+        // create output view and bundle parameters
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        self = TensorView(shape: dense)
+        try stream.cast(from: other, to: &self)
     }
-
+    
     //--------------------------------------------------------------------------
     // implicitly zero is the default
     public init(count: Int, logging: LogInfo? = nil) {
@@ -457,8 +467,8 @@ public extension TensorFlow.Tensor where Scalar: AnyTensorFlowScalar {
     init<T: AnyTensorFlowScalar>(_ view: Netlib.TensorView<T>,
                                  using stream: DeviceStream? = nil) throws {
 
-        let denseView = TensorView<Scalar>(withContentsOf: view, using: stream)
+        let denseView = try TensorView<Scalar>(withContentsOf: view, using: stream)
         self = Tensor<Scalar>(shape: TensorFlow.TensorShape(denseView.shape),
-                      scalars: try denseView.ro())
+                              scalars: try denseView.ro())
     }
 }

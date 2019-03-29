@@ -212,6 +212,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
                               result: inout TensorView<Bool>) throws
 
     /// Returns a padded TensorView according to the specified margins.
+    /// TODO: Probably don't need this. It can be accomplished via TensorView indexing
     func pad<T>(x: TensorView<T>,
                 with margins: [(before: Int32, after: Int32)],
                 fillValue: T,

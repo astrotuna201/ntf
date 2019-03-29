@@ -74,9 +74,9 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     
     // returns new view
     public static func add(_ lhs: TensorView, _ rhs: TensorView,
-                           using stream: DeviceStream? = nil) throws -> TensorView {
+                           using deviceStream: DeviceStream? = nil) throws -> TensorView {
         var result = TensorView(shape: lhs.shape)
-        try add(lhs, rhs, result: &result, using: stream)
+        try add(lhs, rhs, result: &result, using: deviceStream)
         return result
     }
     
@@ -94,21 +94,20 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     /// - Note: `-` supports broadcasting.
     @inlinable @inline(__always)
     //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
-    public static func Subtract(_ lhs: TensorView, _ rhs: TensorView,
+    public static func subtract(_ lhs: TensorView, _ rhs: TensorView,
                                 result: inout TensorView,
                                 using deviceStream: DeviceStream? = nil) throws {
         assert(lhs.shape == rhs.shape)
-        //        return Raw.sub(lhs, rhs)
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.execute(functionId: FunctionId.Subtract, with: (lhs, rhs, result))
+        try stream.subtract(lhs: lhs, rhs: rhs, result: &result)
     }
 
     // returns new view
-    public static func Subtract(_ lhs: TensorView, _ rhs: TensorView,
+    public static func subtract(_ lhs: TensorView, _ rhs: TensorView,
                                 using stream: DeviceStream? = nil) throws -> TensorView {
 
         var result = TensorView(shape: lhs.shape)
-        try Subtract(lhs, rhs, result: &result, using: stream)
+        try subtract(lhs, rhs, result: &result, using: stream)
         return result
     }
     
@@ -116,9 +115,8 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
     public static func - (lhs: TensorView, rhs: TensorView) -> TensorView {
-//        return Raw.sub(lhs, rhs)
         return _ThreadLocal.value.catchError {
-            return try Subtract(lhs, rhs)
+            return try subtract(lhs, rhs)
         }
     }
 }
@@ -1568,264 +1566,3 @@ public extension TensorView {
 //        lhs = rhs.broadcast(like: lhs)
 //    }
 //}
-
-//==============================================================================
-// Padding
-public extension TensorView where Scalar : Numeric {
-    /// Returns a padded TensorView according to the specified padding sizes.
-    @inlinable
-    func padded(forSizes sizes: [(before: Int32, after: Int32)],
-                with value: Scalar = 0) -> TensorView {
-//        let paddings = TensorView<Int32>(
-//            shape: DataShape(sizes.count, 2),
-//            scalars: sizes.flatMap { [$0.before, $0.after] }
-//        )
-        fatalError("Not implemented")
-        // FunctionId.Pad
-//        return Raw.padV2(self, paddings: paddings, constantValues: TensorView(value))
-    }
-}
-
-//==============================================================================
-// Indexing and slicing
-//public extension TensorView {
-//    /// Access the element TensorView specified by an index in the leading dimension.
-//    /// - Parameter index: Index of the element TensorView.
-//    @inlinable
-//    subscript(index: Int32) -> TensorView {
-//        get {
-//            // NOTE: Thought Gather exactly performs element indexing, it is an
-//            // allocating operation. Slice is used here instead even though the
-//            // implementation is more convoluted because it is non-allocating.
-//            // Actual performance/memory tests should be done for some empirical
-//            // comparison.
-//            // Gather implementation is below:
-//            // return #tfop("GatherV2", self, TensorView<Int32>(index), TensorView<Int32>(0),
-//            //              Tindices: Int32.self)
-//            let indexTensor = TensorView<Int32>(index).rankLifted()
-//            let remainingZeros: TensorView<Int32> = Raw.fill(
-//                dims: (rankTensor - 1).rankLifted(), value: TensorView<Int32>(0))
-//            let startIndices = indexTensor.concatenated(with: remainingZeros)
-//
-//            let firstDimension: TensorView<Float> = Raw.gatherV2(
-//                params: TensorView<Float>(shapeTensor),
-//                indices: TensorView<Int32>(0),
-//                axis: TensorView<Int32>(0)
-//            )
-//            let boundSize = TensorView<Float>([1]) - firstDimension
-//            let scatterIndices: TensorView<Int32> = [[0]]
-//            let offset: TensorView<Int32> = TensorView<Int32>(
-//                Raw.scatterNd(
-//                    indices: scatterIndices,
-//                    updates: boundSize,
-//                    shape: rankTensor.rankLifted()
-//                )
-//            )
-//            let boundSizes: TensorView<Int32> = shapeTensor + offset
-//            let slice: TensorView = Raw.slice(self, begin: startIndices, size: boundSizes)
-//            return slice.squeezingShape(at: 0)
-//        }
-//        set {
-//            let left = self[0..<index]
-//            let right = self[index+1..<_TFGetScalarOrDie(shapeTensor[0].handle)]
-//            self = Raw.concatV2([left, newValue.rankLifted(), right], axis: TensorView<Int32>(0))
-//        }
-//    }
-//
-//    /// Access the subtensor specified by a contiguous range of indices.
-//    /// - Parameter bounds: Contiguous range of indices.
-//    @inlinable
-//    subscript(bounds: Range<Int32>) -> TensorView {
-//        // NOTE: Though `tf.slice` and `tf.strided_slice` are not easy to use
-//        // because they require slice bounds for every dimension, they should be
-//        // used because the are non-allocating. Other slice implementations (like
-//        // combining Gather and Range) perform allocation and should not be used
-//        // even though they are easier to write.
-//
-//        // Let (lo, hi) represent lower and upper bounds respectively.
-//        // startIndices = [lo, 0, 0, ..., 0]
-//        // boundSizes = [hi - lo, d1, d2, ..., dn] where di = shape[i]
-//        // TODO: The horrendous mess of type-casting is necessary due to GPU ops
-//        // (Gather, ScatterNd) not accepting Int32 for particular inputs. Refactor
-//        // if possible.
-//        let lowerBound = TensorView<Int32>(bounds.lowerBound).rankLifted()
-//        let remainingZeros: TensorView<Int32> = Raw.fill(
-//            dims: (rankTensor - 1).rankLifted(), value: TensorView<Int32>(0))
-//        let startIndices = lowerBound.concatenated(with: remainingZeros)
-//
-//        let boundSize = TensorView<Int32>(bounds.upperBound).rankLifted()
-//            - lowerBound - TensorView<Int32>(TensorView<Float>(shapeTensor)[0])
-//        let scatterIndices: TensorView<Int32> = [[0]]
-//        let offset: TensorView<Int32> = TensorView<Int32>(
-//            Raw.scatterNd(
-//                indices: scatterIndices,
-//                updates: TensorView<Float>(boundSize),
-//                shape: rankTensor.rankLifted()
-//            )
-//        )
-//        let boundSizes: TensorView<Int32> = shapeTensor + offset
-//        return Raw.slice(self, begin: startIndices, size: boundSizes)
-//    }
-//
-//    // TODO(danielzheng): Add strided slices? (increment by something different
-//    // than 1)
-//    // Ideas for strided slice API: it could be another subscript method, or it
-//    // be a top level `stride` function like Swift's `stride(from:to:by:)`.
-//
-//    /// Extracts a slice from the TensorView defined by lower and upper bounds for
-//    /// each dimension.
-//    ///
-//    /// - Parameter lowerBounds: The lower bounds at each dimension.
-//    /// - Parameter upperBounds: The upper bounds at each dimension.
-//    @inlinable @inline(__always)
-//    func slice(lowerBounds: [Int32], upperBounds: [Int32]) -> TensorView {
-//        /// TODO: Precondition `lowerBounds.count == upperBounds.count`,
-//        /// preferably in graph.
-//        let lowerBoundsTensor = TensorView<Int32>(lowerBounds)
-//        return Raw.slice(
-//            self,
-//            begin: lowerBoundsTensor,
-//            size: TensorView<Int32>(upperBounds) - lowerBoundsTensor)
-//    }
-//}
-//
-
-//==============================================================================
-// Normalization
-public extension TensorView where Scalar : BinaryFloatingPoint {
-    /// Computes the batch normalized TensorView along the specified axis.
-    ///
-    /// Specifically, returns `(self - mu)/(var + epsilon) * gamma + beta` where
-    /// `mu` and `var` are respectively the mean and variance of `self` along
-    /// `axis`.
-    ///
-    /// - Parameters:
-    ///   - axis: The batch dimension.
-    ///   - offset: The offset, also known as beta.
-    ///   - scale: The scale, also known as gamma.
-    ///   - epsilon: A small value added to the denominator for numerical
-    ///     stability.
-    @inlinable
-//    @differentiable(
-//    wrt: (self, offset, scale), vjp: _vjpBatchNormalized
-//    where Scalar : TensorFlowFloatingPoint
-//    )
-    func batchNormalized(alongAxis axis: Int32,
-                         offset: TensorView = TensorView(0),
-                         scale: TensorView = TensorView(1),
-                         epsilon: Scalar = 0.001) -> TensorView {
-        fatalError("Not implemented")
-        // FunctionId.SquaredDifference
-
-//        let mean = self.mean(alongAxes: axis)
-//        let squaredDiff: TensorView = Raw.squaredDifference(self, mean)
-//        let variance = squaredDiff.mean(alongAxes: axis)
-//        let inv = rsqrt(variance + epsilon) * scale
-//        return self * inv + offset - mean * inv
-    }
-}
-
-//==============================================================================
-// Convolution and pooling
-/// A padding scheme. Used by padding, convolution, and pooling ops.
-// @_frozen // SR-9739
-public enum Padding {
-    /// The "valid" padding scheme.
-    case valid
-    /// The "same" padding scheme.
-    case same
-}
-
-internal extension Padding {
-    @inlinable
-    var raw: Raw.Padding {
-        switch self {
-        case .same: return .same
-        case .valid: return .valid
-        }
-    }
-}
-
-public extension TensorView where Scalar : FloatingPoint {
-    /// Computes a 2-D convolution using `self` as input, with the specified
-    /// filter, strides, and padding.
-    ///
-    /// - Parameters:
-    ///   - filter: The convolution filter.
-    ///   - strides: The strides of the sliding filter for each dimension of the
-    ///     input.
-    ///   - padding: The padding for the operation.
-    /// - Precondition: `self` must have rank 4.
-    /// - Precondition: `filter` must have rank 4.
-    @inlinable @inline(__always)
-//    @differentiable(
-//    wrt: (self, filter), vjp: _vjpConvolved2D(filter:strides:padding:)
-//    where Scalar : TensorFlowFloatingPoint
-//    )
-    func convolved2D(withFilter filter: TensorView,
-                     strides: (Int32, Int32, Int32, Int32),
-                     padding: Padding) -> TensorView {
-        
-        fatalError("Not implemented")
-        // FunctionId.conv2D
-//
-//        return Raw.conv2D(
-//            self,
-//            filter: filter,
-//            strides: [strides.0, strides.1, strides.2, strides.3],
-//            padding: padding.raw)
-    }
-
-    /// Computes a 2-D max pooling, with the specified kernel sizes, strides, and
-    /// padding.
-    ///
-    /// - Parameters:
-    ///   - kernelSize: The dimensions of the pooling kernel.
-    ///   - strides: The strides of the sliding filter for each dimension of the
-    ///     input.
-    ///   - padding: The padding for the operation.
-    @inlinable @inline(__always)
-//    @differentiable(
-//    wrt: self, vjp: _vjpMaxPooled(kernelSize:strides:padding:)
-//    where Scalar : TensorFlowFloatingPoint
-//    )
-    func maxPooled(kernelSize: (Int32, Int32, Int32, Int32),
-                   strides: (Int32, Int32, Int32, Int32),
-                   padding: Padding) -> TensorView {
-        
-        fatalError("Not implemented")
-        // FunctionId.MaxPool
-
-//        return Raw.maxPoolV2(
-//            self,
-//            ksize: TensorView<Int32>(kernelSize),
-//            strides: TensorView<Int32>(strides),
-//            padding: padding.raw)
-    }
-
-    /// Computes a 2-D average pooling, with the specified kernel sizes, strides,
-    /// and padding.
-    ///
-    /// - Parameters:
-    ///   - kernelSize: The dimensions of the pooling kernel.
-    ///   - strides: The strides of the sliding filter for each dimension of the
-    ///     input.
-    ///   - padding: The padding for the operation.
-    @inlinable @inline(__always)
-//    @differentiable(
-//    wrt: self, vjp: _vjpAveragePooled(kernelSize:strides:padding:)
-//    where Scalar : TensorFlowFloatingPoint
-//    )
-    func averagePooled(kernelSize: (Int32, Int32, Int32, Int32),
-                       strides: (Int32, Int32, Int32, Int32),
-                       padding: Padding) -> TensorView {
-
-        fatalError("Not implemented")
-        // FunctionId.MaxPool
-//        return Raw.avgPool(
-//            value: self,
-//            ksize: [kernelSize.0, kernelSize.1, kernelSize.2, kernelSize.3],
-//            strides: [strides.0, strides.1, strides.2, strides.3],
-//            padding: padding.raw)
-    }
-}

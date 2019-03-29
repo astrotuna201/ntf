@@ -165,12 +165,28 @@ public struct DataShape: Equatable, Codable {
         var newExtents = [Int]()
         var newStrides = [Int]()
         let axes = squeezingAxes ?? Set<Int>(0..<rank)
-        for axis in 0..<rank where !(axes.contains(axis) && extents[axis] == 1) {
+        for axis in 0..<rank where !(extents[axis] == 1 && axes.contains(axis)){
             newExtents.append(extents[axis])
             newStrides.append(strides[axis])
         }
         return DataShape(extents: newExtents, layout: layout,
                          channelLayout: channelLayout, strides: newStrides,
+                         isColMajor: isColMajor)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// transposed
+    /// Returns a new data shape where the rows and cols are transposed via
+    /// stride manipulation.
+    public func transposed() -> DataShape {
+        guard rank > 1 else { return self }
+        var transExtents = extents
+        var transStrides = strides
+        transExtents.swapAt(layout.wAxis, layout.hAxis)
+        transStrides.swapAt(layout.wAxis, layout.hAxis)
+
+        return DataShape(extents: transExtents, layout: layout,
+                         channelLayout: channelLayout, strides: transStrides,
                          isColMajor: isColMajor)
     }
     

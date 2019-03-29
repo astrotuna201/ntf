@@ -42,12 +42,9 @@ public extension TensorView {
                               isColMajor: other.shape.isColMajor)
 
         // create output view and bundle parameters
-        let result = TensorView(shape: dense)
-        let params = (input: other, output: result)
-        
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.execute(functionId: FunctionId.Cast, with: params)
-        self = result
+        self = TensorView(shape: dense)
+        try stream.cast(from: other, to: &self)
     }
 }
 

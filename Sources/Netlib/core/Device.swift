@@ -254,31 +254,80 @@ public protocol DeviceStream: ObjectTracking, Logging {
     func matmul<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
                             result: inout TensorView<T>) throws
 
-    /// max
-    /// maximum
-    /// mean
-    /// min
-    /// minimum
-    /// mod
+    /// Returns the maximum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    func max<T: Numeric>(x: TensorView<T>, squeezingAxes axes: [Int],
+                         result: inout TensorView<T>) throws
+    
+    /// Computes the element-wise maximum of two tensors.
+    /// - Note: `max` supports broadcasting.
+    func maximum<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
+                             result: inout TensorView<T>) throws
+
+    /// Returns the arithmetic mean along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
+    func mean<T: Numeric>(x: TensorView<T>, squeezingAxes axes: [Int],
+                          result: inout TensorView<T>) throws
+
+    /// Returns the minimum values along the specified axes. The reduced
+    /// dimensions are removed.
+    /// - Parameter axes: The dimensions to reduce.
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+    func min<T: Numeric>(x: TensorView<T>, squeezingAxes axes: [Int],
+                         result: inout TensorView<T>) throws
+    
+    /// Computes the element-wise minimum of two tensors.
+    /// - Note: `max` supports broadcasting.
+    func minimum<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
+                             result: inout TensorView<T>) throws
+
+    /// Returns the remainder of dividing the first TensorView by the second.
+    /// - Note: `%` supports broadcasting.
+    func mod<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
+                         result: inout TensorView<T>) throws
     /// mul
     func mul<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
                          result: inout TensorView<T>) throws
-    /// neg
-    
+
+    /// Computes the element-wise negation
+    func neg(x: TensorView<Bool>, result: inout TensorView<Bool>) throws
+
     /// Computes `lhs != rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
     func notEqual<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
                               result: inout TensorView<Bool>) throws
 
-    /// pad
-    /// pow
-    /// prod
+    /// Returns a padded TensorView according to the specified margins.
+    func pad<T>(x: TensorView<T>,
+                with margins: [(before: Int32, after: Int32)],
+                fillValue: T,
+                result: inout TensorView<T>) throws
+    
+    /// Computes the element-wise `x**y`
+    func pow<T: Numeric>(x: TensorView<T>, y: TensorView<T>,
+                                       result: inout TensorView<T>) throws
+
+    /// Product of the input elements to produce a scalar
+    func prod<T: Numeric>(x: TensorView<T>, result: inout TensorView<T>) throws
 
     /// Computes the element-wise `rsqrt`
     func rsqrt<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
 
-    /// select
+    /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
+    ///
+    /// - Precondition: `x` and `other` must have the same shape. If
+    ///   `x` and `other` are scalar, then `mask` must also be scalar. If
+    ///   `x` and `other` have rank greater than or equal to `1`, then `mask`
+    ///   must be either have the same shape as `self` or be a 1-D `TensorView` such
+    ///   that `mask.scalarCount == self.shape[0]`.
+    func replacing<T>(x: TensorView<T>, with other: TensorView<T>,
+                      where mask: TensorView<Bool>,
+                      result: inout TensorView<T>) throws
     
     /// Computes the element-wise `sin`
     func sin<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws

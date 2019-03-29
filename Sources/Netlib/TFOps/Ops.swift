@@ -52,6 +52,8 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     }
     
     // returns new view
+    @inlinable @inline(__always)
+    //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
     public static func add(_ lhs: TensorView, _ rhs: TensorView,
                            using deviceStream: DeviceStream? = nil) throws -> TensorView {
         var result = TensorView(shape: lhs.shape)
@@ -82,6 +84,8 @@ extension TensorView: AdditiveArithmetic where Scalar: Numeric {
     }
 
     // returns new view
+    @inlinable @inline(__always)
+    //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
     public static func subtract(_ lhs: TensorView, _ rhs: TensorView,
                                 using stream: DeviceStream? = nil) throws -> TensorView {
 
@@ -195,6 +199,7 @@ public extension TensorView where Scalar: Numeric {
         lhs = lhs - rhs
     }
     
+    //--------------------------------------------------------------------------
     /// Multiplies two tensors and produces their product.
     /// - Note: `*` supports broadcasting.
     @inlinable @inline(__always)
@@ -202,12 +207,40 @@ public extension TensorView where Scalar: Numeric {
     //    vjp: _vjpMultiply(lhs:rhs:)
     //    where Scalar : TensorFlowFloatingPoint
     //  )
-    static func * (lhs: TensorView, rhs: TensorView) -> TensorView {
-        fatalError("Not implemented")
-        // FunctionId.Mul
-        //    return Raw.mul(lhs, rhs)
+    static func mul(_ lhs: TensorView, _ rhs: TensorView,
+                    result: inout TensorView,
+                    using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.mul(lhs: lhs, rhs: rhs, result: &result)
+    }
+
+    // returns new view
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpMultiply(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    static func mul(_ lhs: TensorView, _ rhs: TensorView,
+                    using deviceStream: DeviceStream? = nil) throws -> TensorView {
+        var result = TensorView(shape: lhs.shape)
+        try add(lhs, rhs, result: &result, using: deviceStream)
+        return result
     }
     
+    // operator
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpMultiply(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    static func * (lhs: TensorView, rhs: TensorView) -> TensorView {
+        return _ThreadLocal.value.catchError {
+            return try mul(lhs, rhs)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// Multiplies the scalar with every scalar of the TensorView and produces the
     /// product.
     @inlinable @inline(__always)
@@ -232,6 +265,7 @@ public extension TensorView where Scalar: Numeric {
         lhs = lhs * rhs
     }
     
+    //--------------------------------------------------------------------------
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     @inlinable @inline(__always)
@@ -239,12 +273,40 @@ public extension TensorView where Scalar: Numeric {
     //    vjp: _vjpDivide(lhs:rhs:)
     //    where Scalar : TensorFlowFloatingPoint
     //  )
-    static func / (lhs: TensorView, rhs: TensorView) -> TensorView {
-        fatalError("Not implemented")
-        // FunctionId.Div
-        //    return Raw.div(lhs, rhs)
+    static func div(_ lhs: TensorView, _ rhs: TensorView,
+                    result: inout TensorView,
+                    using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.div(lhs: lhs, rhs: rhs, result: &result)
     }
     
+    // returns new view
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpDivide(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    static func div(_ lhs: TensorView, _ rhs: TensorView,
+                    using deviceStream: DeviceStream? = nil) throws -> TensorView {
+        var result = TensorView(shape: lhs.shape)
+        try div(lhs, rhs, result: &result, using: deviceStream)
+        return result
+    }
+    
+    // operator
+    @inlinable @inline(__always)
+    //  @differentiable(
+    //    vjp: _vjpDivide(lhs:rhs:)
+    //    where Scalar : TensorFlowFloatingPoint
+    //  )
+    static func / (lhs: TensorView, rhs: TensorView) -> TensorView {
+        return _ThreadLocal.value.catchError {
+            return try div(lhs, rhs)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// Returns the quotient of dividing the scalar by the TensorView, broadcasting
     /// the scalar.
     @inlinable @inline(__always)
@@ -281,15 +343,36 @@ public extension TensorView where Scalar: Numeric {
         lhs = lhs / rhs
     }
     
+    //--------------------------------------------------------------------------
     /// Returns the remainder of dividing the first TensorView by the second.
     /// - Note: `%` supports broadcasting.
     @inlinable @inline(__always)
-    static func % (lhs: TensorView, rhs: TensorView) -> TensorView {
-        fatalError("Not implemented")
-        // FunctionId.Mod
-        //    return Raw.mod(lhs, rhs)
+    static func mod(_ lhs: TensorView, _ rhs: TensorView,
+                    result: inout TensorView,
+                    using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.mod(lhs: lhs, rhs: rhs, result: &result)
     }
     
+    // returns new view
+    @inlinable @inline(__always)
+    static func mod(_ lhs: TensorView, _ rhs: TensorView,
+                    using deviceStream: DeviceStream? = nil) throws -> TensorView {
+        var result = TensorView(shape: lhs.shape)
+        try mod(lhs, rhs, result: &result, using: deviceStream)
+        return result
+    }
+    
+    // operator
+    @inlinable @inline(__always)
+    static func % (lhs: TensorView, rhs: TensorView) -> TensorView {
+        return _ThreadLocal.value.catchError {
+            return try mod(lhs, rhs)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// Returns the remainder of dividing the TensorView by the scalar, broadcasting
     /// the scalar.
     @inlinable @inline(__always)
@@ -329,14 +412,29 @@ public extension TensorView where Scalar: Numeric {
 //  vjp: _vjpMatmul(_:_:)
 //  where Scalar : TensorFlowFloatingPoint
 //)
-public func matmul<Scalar: Numeric>(_ lhs: TensorView<Scalar>,
-                                    _ rhs: TensorView<Scalar>) -> TensorView<Scalar> {
-    // Default arguments specified explicitly to avoid "external declarations of
-    // SILFunctions with shared visibility is not allowed" SILVerifier error in
-    // "tests/AutoDiff/tensor_autodiff_runtime.swift".
-    fatalError("Not implemented")
-    // FunctionId.MatMul
-    //  return Raw.matMul(lhs, rhs, transposeA: false, transposeB: false)
+public func matmul<Scalar: Numeric>(
+    _ lhs: TensorView<Scalar>, _ rhs: TensorView<Scalar>,
+    result: inout TensorView<Scalar>,
+    using deviceStream: DeviceStream? = nil) throws {
+    
+    assert(lhs.shape == rhs.shape)
+    let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+    try stream.matmul(lhs: lhs, rhs: rhs, result: &result)
+}
+
+// returns new view
+@inlinable @inline(__always)
+//@differentiable(
+//  vjp: _vjpMatmul(_:_:)
+//  where Scalar : TensorFlowFloatingPoint
+//)
+public func matmul<Scalar: Numeric>(
+    _ lhs: TensorView<Scalar>, _ rhs: TensorView<Scalar>,
+    using deviceStream: DeviceStream? = nil) throws -> TensorView<Scalar> {
+    
+    var result = TensorView<Scalar>(shape: lhs.shape)
+    try matmul(lhs, rhs, result: &result, using: deviceStream)
+    return result
 }
 
 infix operator • : MultiplicationPrecedence
@@ -353,22 +451,47 @@ public extension TensorView where Scalar : Numeric {
     //    vjp: _vjpMatmulOperator(lhs:rhs:)
     //    where Scalar : TensorFlowFloatingPoint
     //  )
-    static func • (lhs: TensorView, rhs: TensorView) -> TensorView {
-        return matmul(lhs, rhs)
+    static func • (lhs: TensorView, rhs: TensorView) throws -> TensorView {
+        return try matmul(lhs, rhs)
     }
 }
 
 //==============================================================================
 // Element-wise binary comparison
 public extension TensorView where Scalar : Numeric & Comparable {
+    //--------------------------------------------------------------------------
     /// Computes `lhs < rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     @inlinable @inline(__always)
-    static func .< (lhs: TensorView, rhs: TensorView) -> TensorView<Bool> {
-        fatalError("Not implemented")
-        // FunctionId.Less
-        //    return Raw.less(lhs, rhs)
+    static func less(_ lhs: TensorView, _ rhs: TensorView,
+                    result: inout TensorView<Bool>,
+                    using deviceStream: DeviceStream? = nil) throws {
+        assert(lhs.shape == rhs.shape)
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.less(lhs: lhs, rhs: rhs, result: &result)
     }
+    
+    // returns new view
+    @inlinable @inline(__always)
+    static func less(
+        _ lhs: TensorView, _ rhs: TensorView,
+        using deviceStream: DeviceStream? = nil) throws -> TensorView<Bool> {
+        
+        var result = TensorView<Bool>(shape: lhs.shape)
+        try less(lhs, rhs, result: &result, using: deviceStream)
+        return result
+    }
+    
+    // operator
+    @inlinable @inline(__always)
+    static func .< (lhs: TensorView, rhs: TensorView) -> TensorView<Bool> {
+        return _ThreadLocal.value.catchError {
+            return try less(lhs, rhs)
+        }
+    }
+    
+
+    
     
     /// Computes `lhs <= rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.

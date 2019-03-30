@@ -4,7 +4,6 @@
 //
 import Foundation
 import Dispatch
-import TensorFlow
 
 //==============================================================================
 /// TensorData

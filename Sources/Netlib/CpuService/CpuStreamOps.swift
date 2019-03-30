@@ -9,11 +9,11 @@ import TensorFlow
 extension CpuStream {
     //--------------------------------------------------------------------------
     // intrinsic ops
-    public func abs<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : SignedNumeric, T : TensorFlowScalar {
+    public func abs<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : SignedNumeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func add<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func add<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
@@ -25,75 +25,75 @@ extension CpuStream {
         fatalError("Not implemented")
     }
     
-    public func approximatelyEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, tolerance: Double, result: inout TensorView<Bool>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func approximatelyEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, tolerance: Double, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func argmax<T>(x: TensorView<T>, squeezingAxis axis: Int, result: inout TensorView<Int32>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func argmax<T>(x: TensorView<T>, squeezingAxis axis: Int, result: inout TensorView<Int32>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func argmin<T>(x: TensorView<T>, squeezingAxis axis: Int, result: inout TensorView<Int32>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func argmin<T>(x: TensorView<T>, squeezingAxis axis: Int, result: inout TensorView<Int32>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func broadcast<T>(x: TensorView<T>, toShape shape: DataShape, result: inout TensorView<T>) throws where T : AnyScalar, T : TensorFlowScalar {
+    public func broadcast<T>(x: TensorView<T>, toShape shape: DataShape, result: inout TensorView<T>) throws where T : AnyNumeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func cast<T, U>(from: TensorView<T>, to result: inout TensorView<U>) throws where T : AnyScalar, T : TensorFlowScalar, U : AnyScalar, U : TensorFlowScalar {
+    public func cast<T, U>(from: TensorView<T>, to result: inout TensorView<U>) throws where T : AnyNumeric, T : TensorFlowScalar, U : AnyNumeric, U : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func ceil<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func ceil<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func concatenate<T>(view: TensorView<T>, with other: TensorView<T>, alongAxis axis: Int, result: inout TensorView<T>) throws where T : AnyScalar, T : TensorFlowScalar {
+    public func concatenate<T>(view: TensorView<T>, with other: TensorView<T>, alongAxis axis: Int, result: inout TensorView<T>) throws where T : AnyNumeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func cos<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func cos<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func cohs<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func cohs<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func div<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func div<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func equal<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func equal<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func exp<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func exp<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func floor<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func floor<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func greater<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Comparable, T : Numeric, T : TensorFlowScalar {
+    public func greater<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Comparable, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func greaterOrEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Comparable, T : Numeric, T : TensorFlowScalar {
+    public func greaterOrEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Comparable, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func less<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Comparable, T : Numeric, T : TensorFlowScalar {
+    public func less<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Comparable, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func lessOrEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Comparable, T : Numeric, T : TensorFlowScalar {
+    public func lessOrEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Comparable, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func log<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func log<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
@@ -109,39 +109,39 @@ extension CpuStream {
         fatalError("Not implemented")
     }
     
-    public func logSoftmax<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func logSoftmax<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func matmul<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func matmul<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func max<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func max<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func maximum<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func maximum<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func mean<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func mean<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func min<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func min<T>(x: TensorView<T>, squeezingAxes axes: [Int], result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func minimum<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func minimum<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func mod<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func mod<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func mul<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func mul<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
@@ -149,64 +149,64 @@ extension CpuStream {
         fatalError("Not implemented")
     }
     
-    public func notEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func notEqual<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<Bool>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
     /// TODO: Probably don't need this. It can be accomplished via TensorView indexing
-    public func pad<T>(x: TensorView<T>, with margins: [(before: Int32, after: Int32)], fillValue: T, result: inout TensorView<T>) throws where T : AnyScalar, T : TensorFlowScalar {
+    public func pad<T>(x: TensorView<T>, with margins: [(before: Int32, after: Int32)], fillValue: T, result: inout TensorView<T>) throws where T : AnyNumeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func pow<T>(x: TensorView<T>, y: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func pow<T>(x: TensorView<T>, y: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func prod<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func prod<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func rsqrt<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func rsqrt<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func replacing<T>(x: TensorView<T>, with other: TensorView<T>, where mask: TensorView<Bool>, result: inout TensorView<T>) throws where T : AnyScalar, T : TensorFlowScalar {
+    public func replacing<T>(x: TensorView<T>, with other: TensorView<T>, where mask: TensorView<Bool>, result: inout TensorView<T>) throws where T : AnyNumeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func sin<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func sin<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func sinh<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func sinh<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func square<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func square<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func squaredDifference<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func squaredDifference<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func sqrt<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func sqrt<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func subtract<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func subtract<T>(lhs: TensorView<T>, rhs: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func sum<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : Numeric, T : TensorFlowScalar {
+    public func sum<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : Numeric, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func tan<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func tan<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
     
-    public func tanh<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyScalar, T : FloatingPoint, T : TensorFlowScalar {
+    public func tanh<T>(x: TensorView<T>, result: inout TensorView<T>) throws where T : AnyNumeric, T : FloatingPoint, T : TensorFlowScalar {
         fatalError("Not implemented")
     }
 }

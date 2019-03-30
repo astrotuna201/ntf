@@ -12,7 +12,7 @@ import TensorFlow
 /// It is responsible for replication and syncing between devices.
 /// It is not created or directly used by end users.
 final public class TensorData<Scalar> : ObjectTracking, Logging
-where Scalar: AnyScalar & TensorFlowScalar {
+where Scalar: AnyNumeric & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
     /// used by TensorViews to synchronize access to the data.
@@ -360,7 +360,7 @@ where Scalar: AnyScalar & TensorFlowScalar {
                 "host array  elements: \(elementCount)", categories: .dataAlloc)
         }
         hostVersion = -1
-        _hostArray = [Scalar](repeating: Scalar(any: 0), count: elementCount)
+        _hostArray = [Scalar](repeating: Scalar(), count: elementCount)
         hostBuffer = _hostArray!.withUnsafeMutableBytes { $0 }
     }
 

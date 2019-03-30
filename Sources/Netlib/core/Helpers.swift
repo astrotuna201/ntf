@@ -29,7 +29,7 @@ extension String {
 
 //==============================================================================
 // almostEquals
-public func almostEquals<T: AnyScalar>(_ a: T, _ b: T,
+public func almostEquals<T: AnyNumeric>(_ a: T, _ b: T,
                                        tolerance: Double = 0.00001) -> Bool {
     return abs(a.asDouble - b.asDouble) < tolerance
 }

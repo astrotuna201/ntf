@@ -6,7 +6,7 @@ import Foundation
 import TensorFlow
 
 public struct TensorView<Scalar>: Logging, Equatable
-where Scalar: AnyScalar & TensorFlowScalar {
+where Scalar: AnyNumeric & TensorFlowScalar {
     //--------------------------------------------------------------------------
     // properties
     private var tensorData: TensorData<Scalar>
@@ -416,7 +416,7 @@ extension TensorView {
     
     //--------------------------------------------------------------------------
     // copy from host buffer pointer
-    public init<T>(_ value: T, logging: LogInfo? = nil) where T: AnyScalar {
+    public init<T>(_ value: T, logging: LogInfo? = nil) where T: AnyNumeric {
         self.init(extents: 1, logging: logging)
         try! rw()[0] = Scalar(any: value)
     }

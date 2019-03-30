@@ -11,8 +11,7 @@ import TensorFlow
 /// The TensorData object is a flat array of scalars used by the TensorView.
 /// It is responsible for replication and syncing between devices.
 /// It is not created or directly used by end users.
-final public class TensorData<Scalar> : ObjectTracking, Logging
-where Scalar: AnyNumeric & TensorFlowScalar {
+final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
     /// used by TensorViews to synchronize access to the data.

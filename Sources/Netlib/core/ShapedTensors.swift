@@ -62,13 +62,12 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(_ value: Scalar? = nil, name: String? = nil, logging: LogInfo? = nil) {
+    public init(value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
         self.shape = DataShape(extents: [1], layout: .scalar)
         self.logging = logging
         tensorData = TensorData(elementCount: shape.elementCount,
                                 logging: logging, name: name)
-        // TODO
-        //        try! rw()[0] = Scalar(any: value)
+        try! rw()[0] = value
     }
     
     // empty

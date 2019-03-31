@@ -67,6 +67,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
         self.logging = logging
         tensorData = TensorData(elementCount: shape.elementCount,
                                 logging: logging, name: name)
+        // it's being initialized in host memory so it can't fail
         try! rw()[0] = value
     }
     

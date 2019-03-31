@@ -10,29 +10,6 @@ import TensorFlow
 @testable import Netlib
 @testable import DeepLearning
 
-public struct FredTensor<Scalar>: TensorDataView, _TensorDataViewImpl
-where Scalar: AnyScalar {
-    public init(rows: Int, cols: Int,
-                name: String? = nil, logging: LogInfo? = nil) {
-        
-        self.shape = DataShape(extents: [rows, cols])
-        self.logging = logging
-        tensorData = TensorData(elementCount: shape.elementCount,
-                                logging: logging, name: name)
-    }
-    
-    //--------------------------------------------------------------------------
-    // properties
-    public var isShared: Bool = false
-    public var lastAccessMutated: Bool = false
-    public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData<Scalar>
-    
-}
-
-
 class test_Ops: XCTestCase {
     static var allTests = [
         ("test_Casting", test_Casting),
@@ -40,7 +17,14 @@ class test_Ops: XCTestCase {
         ("test_PrimaryOps", test_PrimaryOps),
     ]
     
+    func fn<T>(m: T) where T: MatrixTensorView, T.Scalar: AnyRGBA {
+        print(m.rows)
+    }
+    
     func test_Casting() {
+        let m = MatrixTensor<RGBA<Float>>()
+        fn(m: m)
+        
         do {
             let a = TensorView<Float>(scalars: [1, 2, 3, 4])
             let b = try TensorView<Float>(a)

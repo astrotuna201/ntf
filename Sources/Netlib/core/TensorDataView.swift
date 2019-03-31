@@ -6,7 +6,7 @@ import Foundation
 
 //==============================================================================
 // TensorDataView
-public protocol TensorDataView: AnyScalar, Logging {
+public protocol TensorDataView: AnyScalar, Logging, Equatable {
     // types
     associatedtype Scalar: AnyScalar
 
@@ -56,6 +56,29 @@ public extension TensorDataViewImpl {
         set { tensorData.name = newValue }
     }
     
+    //--------------------------------------------------------------------------
+    // Equal values
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        if lhs.tensorData === rhs.tensorData {
+            // If they both reference the same tensorData then compare the views
+            return lhs.viewOffset == rhs.viewOffset && lhs.shape == rhs.shape
+            
+        } else if lhs.shape.extents == rhs.shape.extents {
+            // if the extents are equal then compare values
+            // TODO use indexing
+            fatalError("Not implemented")
+        } else {
+            return false
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    // Equal references
+    static func === (lhs: Self, rhs: Self) -> Bool {
+        return lhs.tensorData === rhs.tensorData && lhs == rhs
+    }
+    
+
     //--------------------------------------------------------------------------
     // copyIfMutates
     //  Note: this should be called from inside the accessQueue.sync block

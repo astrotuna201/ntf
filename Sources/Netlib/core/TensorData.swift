@@ -94,7 +94,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     
     // Empty
     public convenience init() {
-        self.init(logging: nil, elementCount: 0)
+        self.init(elementCount: 0, logging: nil)
     }
 
     // All initializers retain the data except this one
@@ -133,7 +133,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // create new space
-    public init(logging: LogInfo?, elementCount: Int, name: String? = nil) {
+    public init(elementCount: Int, logging: LogInfo?, name: String? = nil) {
         isReadOnlyReference = false
         self.logging = logging
         self.elementCount = elementCount

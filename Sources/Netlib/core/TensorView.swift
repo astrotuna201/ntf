@@ -77,7 +77,7 @@ where Scalar: AnyNumeric & TensorFlowScalar {
         self.viewOffset = viewOffset
         self.logging = logging
         self.tensorData = tensorData ?? TensorData(
-                logging: logging, elementCount: shape.elementCount, name: name)
+                elementCount: shape.elementCount, logging: logging, name: name)
 
         assert(viewOffset + shape.elementCount <= self.tensorData.elementCount)
     }

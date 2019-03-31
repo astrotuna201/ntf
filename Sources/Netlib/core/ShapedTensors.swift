@@ -11,7 +11,14 @@ import Foundation
 /// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>
 ///
 public protocol AnyDenseChannelScalar: AnyScalar {
-    associatedtype ChannelScalar
+    associatedtype ChannelScalar: AnyFixedSizeScalar
+    static var channels: Int { get }
+}
+
+public extension AnyDenseChannelScalar {
+    static var channels: Int {
+        return MemoryLayout<Self>.size / MemoryLayout<ChannelScalar>.size
+    }
 }
 
 //==============================================================================
@@ -22,7 +29,7 @@ public protocol AnyRGBImageSample: AnyDenseChannelScalar {
     var b: ChannelScalar { get set }
 }
 
-public struct RGBSample<T: AnyNumeric>: AnyRGBImageSample {
+public struct RGBSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyRGBImageSample {
     public typealias ChannelScalar = T
     public var r, g, b: T
     public init() { r = T(); g = T(); b = T() }
@@ -35,7 +42,7 @@ public protocol AnyRGBAImageSample: AnyDenseChannelScalar {
     var a: ChannelScalar { get set }
 }
 
-public struct RGBASample<T: AnyNumeric>: AnyRGBAImageSample {
+public struct RGBASample<T: AnyNumeric & AnyFixedSizeScalar>: AnyRGBAImageSample {
     public typealias ChannelScalar = T
     public var r, g, b, a: T
     public init() { r = T(); g = T(); b = T(); a = T() }
@@ -48,7 +55,7 @@ public protocol AnyStereoAudioSample: AnyDenseChannelScalar {
     var right: ChannelScalar { get set }
 }
 
-public struct StereoSample<T: AnyNumeric>: AnyStereoAudioSample {
+public struct StereoSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyStereoAudioSample {
     public typealias ChannelScalar = T
     public var left, right: T
     public init() { left = T(); right = T() }
@@ -290,7 +297,7 @@ public struct NDTensor<Scalar: AnyScalar>: TensorDataViewImpl {
 }
 
 //==============================================================================
-// NCHWTensorView
+/// NCHWTensorView
 /// An NCHW tensor is a standard layout for use with cuDNN.
 /// It has a layout of numerics organized as:
 /// n: items
@@ -315,9 +322,9 @@ public extension NCHWTensorViewImpl {
     var cols: Int { return shape.extents[3] }
     
     var itemStride: Int { return shape.strides[0] }
-    var channelStride: Int { return shape.strides[1]  }
+    var channelStride: Int { return shape.strides[1] }
     var rowStride: Int { return shape.strides[2] }
-    var colStride: Int { return shape.strides[3]  }
+    var colStride: Int { return shape.strides[3] }
 }
 
 //------------------------------------------------------------------------------
@@ -333,8 +340,7 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(extents: [Int], name: String? = nil,
-                logging: LogInfo? = nil, isColMajor: Bool = false) {
+    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
         assert(extents.count == 4)
         self.shape = DataShape(extents: extents, layout: .nchw)
         self.logging = logging
@@ -355,3 +361,81 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
         tensorData = TensorData()
     }
 }
+
+//==============================================================================
+/// NHWCTensorView
+/// An NHWC tensor is a standard layout for use with cuDNN.
+/// It has a layout of numerics organized as:
+/// n: items
+/// h: rows
+/// w: cols
+/// c: channels
+public protocol NHWCTensorView: TensorDataView {
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NHWCTensorViewImpl
+public protocol NHWCTensorViewImpl: TensorDataViewImpl, NHWCTensorView {}
+
+public extension NHWCTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1] }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3] }
+}
+
+//------------------------------------------------------------------------------
+// NHWCTensor
+public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nhwc)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+//public extension NHWCTensor {
+//    /// zero copy cast of a matrix of dense scalars
+//    init<M: MatrixTensorViewImpl>(_ matrix: M, name: String? = nil) where
+//        M.Scalar: AnyDenseChannelScalar,
+//        M.Scalar.ChannelScalar == Scalar {
+//            let extents = [1, matrix.rows, matrix.cols, M.Scalar.channels]
+//            self.shape = DataShape(extents: extents, layout: .nhwc)
+//            self.logging = matrix.logging
+//            self.tensorData = TensorData<Scalar>(matrix.tensorData)
+//    }
+//}

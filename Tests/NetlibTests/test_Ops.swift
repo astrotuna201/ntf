@@ -17,13 +17,16 @@ class test_Ops: XCTestCase {
         ("test_PrimaryOps", test_PrimaryOps),
     ]
     
-    func fn<T>(m: T) where T: MatrixTensorView, T.Scalar: AnyRGBAImageSample {
-        print(m.rows)
+    func fn<T>(m: T) where T: AnyRGBImageSample {
+        print(MemoryLayout<T>.size)
+        print(MemoryLayout<T>.alignment)
+        print(MemoryLayout<T>.stride)
     }
     
     func test_Casting() {
-        let m = MatrixTensor<RGBASample<Float>>()
-        fn(m: m)
+        fn(m: RGBSample<UInt8>())
+        fn(m: RGBSample<UInt32>())
+        fn(m: RGBSample<Float>())
         
         do {
             let a = TensorView<Float>(scalars: [1, 2, 3, 4])

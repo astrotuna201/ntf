@@ -14,14 +14,15 @@ public struct Float16: Equatable, Comparable {
 		bits = floatToFloat16_rn(value).bits
 	}
 
-	public init(_ value: UInt8) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: UInt8)  { bits = floatToFloat16_rn(Float(value)).bits}
 	public init(_ value: UInt16) { bits = floatToFloat16_rn(Float(value)).bits}
-	public init(_ value: Int16) { bits = floatToFloat16_rn(Float(value)).bits}
-	public init(_ value: Int32) { bits = floatToFloat16_rn(Float(value)).bits}
-	public init(_ value: Int) { bits = floatToFloat16_rn(Float(value)).bits}
-	public init(_ value: Float) { bits = floatToFloat16_rn(value).bits}
+	public init(_ value: Int16)  { bits = floatToFloat16_rn(Float(value)).bits}
+    public init(_ value: UInt32) { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Int32)  { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Int)    { bits = floatToFloat16_rn(Float(value)).bits}
+	public init(_ value: Float)  { bits = floatToFloat16_rn(value).bits}
 	public init(_ value: Double) { bits = floatToFloat16_rn(Float(value)).bits}
-	public init(double: Double) { bits = floatToFloat16_rn(Float(double)).bits}
+	public init(double: Double)  { bits = floatToFloat16_rn(Float(double)).bits}
 
 	// properties
 	var bits: UInt16
@@ -106,6 +107,10 @@ extension UInt16 {
 
 extension Int16 {
 	public init(_ fp16: Float16) { self = Int16(Float(fp16)) }
+}
+
+extension UInt32 {
+    public init(_ fp16: Float16) { self = UInt32(Float(fp16)) }
 }
 
 extension Int32 {

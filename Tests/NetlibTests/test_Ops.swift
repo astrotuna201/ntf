@@ -17,12 +17,12 @@ class test_Ops: XCTestCase {
         ("test_PrimaryOps", test_PrimaryOps),
     ]
     
-    func fn<T>(m: T) where T: MatrixTensorView, T.Scalar: AnyRGBA {
+    func fn<T>(m: T) where T: MatrixTensorView, T.Scalar: AnyRGBAImageSample {
         print(m.rows)
     }
     
     func test_Casting() {
-        let m = MatrixTensor<RGBA<Float>>()
+        let m = MatrixTensor<RGBASample<Float>>()
         fn(m: m)
         
         do {

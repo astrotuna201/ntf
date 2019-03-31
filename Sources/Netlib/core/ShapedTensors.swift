@@ -5,36 +5,53 @@
 import Foundation
 
 //==============================================================================
-// Non numeric Scalar types
-public protocol AnyChannelScalar: AnyScalar {
+/// conformance assures that scalar components are of the same type and
+/// densely packed. This is necessary for zero copy view type casting of
+/// non numeric scalar types.
+/// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>
+///
+public protocol AnyDenseChannelScalar: AnyScalar {
     associatedtype ChannelScalar
 }
 
 //==============================================================================
-// Non numeric Scalar types
-public protocol AnyRGB: AnyChannelScalar {
+// Image Scalar types
+public protocol AnyRGBImageSample: AnyDenseChannelScalar {
     var r: ChannelScalar { get set }
     var g: ChannelScalar { get set }
     var b: ChannelScalar { get set }
 }
 
-public struct RGB<T: AnyNumeric>: AnyRGB {
+public struct RGBSample<T: AnyNumeric>: AnyRGBImageSample {
     public typealias ChannelScalar = T
     public var r, g, b: T
     public init() { r = T(); g = T(); b = T() }
 }
 
-public protocol AnyRGBA: AnyChannelScalar {
+public protocol AnyRGBAImageSample: AnyDenseChannelScalar {
     var r: ChannelScalar { get set }
     var g: ChannelScalar { get set }
     var b: ChannelScalar { get set }
     var a: ChannelScalar { get set }
 }
 
-public struct RGBA<T: AnyNumeric>: AnyRGBA {
+public struct RGBASample<T: AnyNumeric>: AnyRGBAImageSample {
     public typealias ChannelScalar = T
     public var r, g, b, a: T
     public init() { r = T(); g = T(); b = T(); a = T() }
+}
+
+//==============================================================================
+// Audio sample types
+public protocol AnyStereoAudioSample: AnyDenseChannelScalar {
+    var left: ChannelScalar { get set }
+    var right: ChannelScalar { get set }
+}
+
+public struct StereoSample<T: AnyNumeric>: AnyStereoAudioSample {
+    public typealias ChannelScalar = T
+    public var left, right: T
+    public init() { left = T(); right = T() }
 }
 
 //==============================================================================

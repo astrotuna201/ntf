@@ -92,16 +92,18 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // initializers
     
+    //----------------------------------------
     // Empty
     public convenience init() {
         self.init(elementCount: 0, logging: nil)
     }
 
+    //----------------------------------------
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(logging: LogInfo?,
-                readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer,
+                logging: LogInfo?) {
         // store
         self.logging = logging
         isReadOnlyReference = true

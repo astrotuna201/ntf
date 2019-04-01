@@ -10,12 +10,11 @@ import Dispatch
 /// The TensorData object is a flat array of scalars used by the TensorView.
 /// It is responsible for replication and syncing between devices.
 /// It is not created or directly used by end users.
-final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
+final public class TensorData: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // properties
     /// used by TensorViews to synchronize access to the data.
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
-    public let elementCount: Int
     public var autoReleaseUmaBuffer = false
 
     // object tracking
@@ -25,7 +24,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     /// an optional context specific name for logging
     private var _name: String?
     public var name: String {
-        get { return _name ?? String(describing: TensorData<Scalar>.self) }
+        get { return _name ?? String(describing: TensorData.self) }
         set { _name = newValue }
     }
 
@@ -37,17 +36,16 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     private let isReadOnlyReference: Bool
     
     //-----------------------------------
-    // The host array is the host device data array. It is used when doing
-    // operations synced with the app thread.
+    /// The hostBuffer is the app thread synced data array.
+    ///
+    /// The hostBuffer points to the host data used by this object. Usually it
+    /// will point to the hostArray, but it can also point to a read only
+    /// buffer specified during init. The purpose is to use data from something
+    /// like a memory mapped file without copying it.
     private var hostVersion = -1
-    private var _hostArray: [Scalar]? = nil
-    
-    // The hostBuffer points to the host data used by this object. Usually it
-    // will point to the hostArray, but it can also point to a read only
-    // buffer specified during init. The purpose is to use data from something
-    // like a memory mapped file without copying it.
     private var hostBuffer: UnsafeMutableRawBufferPointer!
-    
+    public  let byteCount: Int
+
     //-----------------------------------
     // stream sync
     private var _streamSyncEvent: StreamEvent!
@@ -95,7 +93,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     //----------------------------------------
     // Empty
     public convenience init() {
-        self.init(elementCount: 0, logging: nil)
+        self.init(byteCount: 0, logging: nil)
     }
 
     //----------------------------------------
@@ -107,7 +105,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
         // store
         self.logging = logging
         isReadOnlyReference = true
-        elementCount = buffer.count
+        byteCount = buffer.count
         masterVersion = 0
         hostVersion = 0
 
@@ -120,12 +118,14 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(logging: LogInfo?, buffer: UnsafeBufferPointer<Scalar>) {
+    public init(logging: LogInfo?, buffer: UnsafeRawBufferPointer) {
         self.logging = logging
         isReadOnlyReference = false
-        self.elementCount = buffer.count
+        byteCount = buffer.count
+        
         do {
-            _ = try rwHostBuffer().initialize(from: buffer)
+            _ = try rwHostMutableRawBuffer()
+                .initializeMemory(as: UInt8.self, from: buffer)
         } catch {
             // TODO: what do we want to do here when it should never fail
         }
@@ -135,10 +135,10 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
 
     //----------------------------------------
     // create new space
-    public init(elementCount: Int, logging: LogInfo?, name: String? = nil) {
+    public init(byteCount: Int, logging: LogInfo?, name: String? = nil) {
         isReadOnlyReference = false
         self.logging = logging
-        self.elementCount = elementCount
+        self.byteCount = byteCount
         self._name = name
         register()
     }
@@ -149,11 +149,11 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
         trackingId = ObjectTracker.global
             .register(self,
                       namePath: logging?.namePath,
-                      supplementalInfo: "elementCount: \(elementCount)")
+                      supplementalInfo: "byteCount: \(byteCount)")
 
-        if elementCount > 0 && willLog(level: .diagnostic) {
+        if byteCount > 0 && willLog(level: .diagnostic) {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "elements: \(elementCount)", categories: .dataAlloc)
+                    "bytes: \(byteCount)", categories: .dataAlloc)
         }
     }
 
@@ -174,9 +174,9 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
         }
         ObjectTracker.global.remove(trackingId: trackingId)
 
-        if elementCount > 0 && willLog(level: .diagnostic) {
+        if byteCount > 0 && willLog(level: .diagnostic) {
             diagnostic("\(releaseString) \(name)(\(trackingId)) " +
-                "elements: \(elementCount)", categories: .dataAlloc)
+                "bytes: \(byteCount)", categories: .dataAlloc)
         }
     }
 
@@ -186,7 +186,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
                 using stream: DeviceStream? = nil) throws {
         // init
         isReadOnlyReference = other.isReadOnlyReference
-        elementCount = other.elementCount
+        byteCount = other.byteCount
         name = other.name
         masterVersion = 0
         hostVersion = masterVersion
@@ -196,7 +196,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
             let streamIdStr = stream == nil ? "nil" : "\(stream!.id)"
             diagnostic("\(createString) \(name)(\(trackingId)) init" +
                 "\(setText(" copying ", color: .blue))" +
-                "DataArray(\(other.trackingId)) elements: \(other.elementCount) " +
+                "DataArray(\(other.trackingId)) bytes: \(other.byteCount) " +
                 "stream id(\(streamIdStr))", categories: [.dataAlloc, .dataCopy])
         }
         
@@ -242,11 +242,6 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     // ro
-    public func roHostBuffer() throws -> UnsafeBufferPointer<Scalar> {
-        try migrate(readOnly: true)
-        return UnsafeBufferPointer(hostBuffer.bindMemory(to: Scalar.self))
-    }
-
     public func roHostRawBuffer() throws -> UnsafeRawBufferPointer {
         try migrate(readOnly: true)
         return UnsafeRawBufferPointer(hostBuffer)
@@ -259,12 +254,6 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // rw
-    public func rwHostBuffer() throws -> UnsafeMutableBufferPointer<Scalar> {
-        assert(!isReadOnlyReference)
-        try migrate(readOnly: false)
-        return hostBuffer.bindMemory(to: Scalar.self)
-    }
-
     public func rwHostMutableRawBuffer() throws -> UnsafeMutableRawBufferPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
@@ -283,7 +272,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     // This migrates
     private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {
         // if the array is empty then there is nothing to do
-        guard !isReadOnlyReference && elementCount > 0 else { return }
+        guard !isReadOnlyReference && byteCount > 0 else { return }
         let srcUsesUMA = master?.stream.device.usesUnifiedAddressing ?? true
         let dstUsesUMA = stream?.device.usesUnifiedAddressing ?? true
 
@@ -340,10 +329,9 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
             // create the device array
             if willLog(level: .diagnostic) {
                 diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "allocating array on device(\(device.id)) elements: \(elementCount)",
+                    "allocating array on device(\(device.id)) bytes: \(byteCount)",
                     categories: .dataAlloc)
             }
-            let byteCount = MemoryLayout<Scalar>.size * elementCount
             let array = try device.createArray(count: byteCount)
             array.version = -1
             let info = ArrayInfo(array: array, stream: stream)
@@ -357,11 +345,12 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     private func createHostArray() throws {
         if willLog(level: .diagnostic) {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
-                "host array  elements: \(elementCount)", categories: .dataAlloc)
+                "host array  bytes: \(byteCount)", categories: .dataAlloc)
         }
         hostVersion = -1
-        _hostArray = [Scalar](repeating: Scalar(), count: elementCount)
-        hostBuffer = _hostArray!.withUnsafeMutableBytes { $0 }
+        hostBuffer = UnsafeMutableRawBufferPointer.allocate(
+            byteCount: byteCount,
+            alignment: MemoryLayout<Double>.alignment)
     }
 
     //-----------------------------------
@@ -371,9 +360,9 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
         if willLog(level: .diagnostic) {
             diagnostic(
                 "\(releaseString) \(name) DataArray(\(trackingId)) host array " +
-                "elements: \(elementCount)", categories: .dataAlloc)
+                "bytes: \(byteCount)", categories: .dataAlloc)
         }
-        _hostArray = nil
+        hostBuffer.deallocate()
         hostBuffer = nil
     }
 
@@ -382,7 +371,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
     private func setDeviceDataPointerToHostBuffer(readOnly: Bool) throws {
         assert(!isReadOnlyReference)
         // lazily create the uma buffer if needed
-        if _hostArray == nil { try createHostArray() }
+        if hostBuffer == nil { try createHostArray() }
         deviceDataPointer = UnsafeMutableRawPointer(hostBuffer.baseAddress!)
         if !readOnly { master = nil; masterVersion += 1 }
         hostVersion = masterVersion
@@ -405,7 +394,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) host" +
                     "\(setText(" ---> ", color: .blue))" +
-                    "d\(stream.device.id)_s\(stream.id) elements: \(elementCount)",
+                    "d\(stream.device.id)_s\(stream.id) bytes: \(byteCount)",
                     categories: .dataCopy)
             }
 
@@ -444,7 +433,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "d\(master.stream.device.id)_s\(master.stream.id)" +
                     "\(setText(" ---> ", color: .blue)) host" +
-                    " elements: \(elementCount)", categories: .dataCopy)
+                    " bytes: \(byteCount)", categories: .dataCopy)
             }
 
             // synchronous copy
@@ -482,7 +471,7 @@ final public class TensorData<Scalar: AnyScalar> : ObjectTracking, Logging {
                         diagnostic("\(copyString) \(name)(\(trackingId)) " +
                             "device(\(master.stream.device.id))" +
                             "\(setText(" ---> ", color: .blue))" +
-                            "device(\(stream.device.id)) elements: \(elementCount)",
+                            "device(\(stream.device.id)) bytes: \(byteCount)",
                             categories: .dataCopy)
                     }
                     try array.copyAsync(from: master.array, using: stream)

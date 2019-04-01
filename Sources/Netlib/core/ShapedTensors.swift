@@ -82,7 +82,297 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
-    public var tensorData: TensorData<Scalar>
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -126,7 +416,239 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -175,7 +697,239 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -230,7 +984,239 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -265,12 +1251,476 @@ public struct NDTensor<Scalar: AnyScalar>: TensorDataViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
     
     //--------------------------------------------------------------------------
     // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
     public init(shape: DataShape,
-                tensorData: TensorData<Scalar>? = nil,
+                tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+? = nil,
                 viewOffset: Int = 0,
                 isShared: Bool = false,
                 name: String? = nil,
@@ -336,7 +1786,239 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -402,7 +2084,239 @@ public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
     public var logging: LogInfo?
     public var shape: DataShape
     public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
     public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
     
     //--------------------------------------------------------------------------
     // initializers
@@ -436,6 +2350,238 @@ public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
 //            let extents = [1, matrix.rows, matrix.cols, M.Scalar.channels]
 //            self.shape = DataShape(extents: extents, layout: .nhwc)
 //            self.logging = matrix.logging
-//            self.tensorData = TensorData<Scalar>(matrix.tensorData)
+//            self.tensorData = TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData
+    var rows: Int { get }
+    var cols: Int { get }
+    var rowStride: Int { get }
+    var colStride: Int { get }
+}
+
+//--------------------------------------------------------------------------
+// NCHWTensorViewImpl
+public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+
+public extension NCHWTensorViewImpl {
+    var items: Int { return shape.extents[0] }
+    var channels: Int { return shape.extents[1] }
+    var rows: Int { return shape.extents[2] }
+    var cols: Int { return shape.extents[3] }
+    
+    var itemStride: Int { return shape.strides[0] }
+    var channelStride: Int { return shape.strides[1]  }
+    var rowStride: Int { return shape.strides[2] }
+    var colStride: Int { return shape.strides[3]  }
+}
+
+//------------------------------------------------------------------------------
+// NCHWTensor
+public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+    // properties
+    public var isShared: Bool = false
+    public var lastAccessMutated: Bool = false
+    public var logging: LogInfo?
+    public var shape: DataShape
+    public var viewOffset: Int = 0
+    public var tensorData: TensorData<Scalar>
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init(extents: [Int], name: String? = nil,
+                logging: LogInfo? = nil, isColMajor: Bool = false) {
+        assert(extents.count == 4)
+        self.shape = DataShape(extents: extents, layout: .nchw)
+        self.logging = logging
+        tensorData = TensorData(elementCount: shape.elementCount,
+                                logging: logging, name: name)
+    }
+    
+    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, depths, rows, cols],
+                  name: name, logging: logging)
+    }
+    
+    // empty
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
+    }
+}
+(matrix.tensorData)
 //    }
 //}

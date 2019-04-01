@@ -38,7 +38,7 @@ public protocol TensorDataViewImpl: TensorDataView {
     var logging: LogInfo? { get set }
     var name: String { get set }
     var shape: DataShape { get set }
-    var tensorData: TensorData<Scalar> { get set }
+    var tensorData: TensorData { get set }
     var viewOffset: Int { get set }
     
     /// determines if the view holds a unique reference to the underlying
@@ -91,7 +91,7 @@ public extension TensorDataViewImpl {
         if willLog(level: .diagnostic) == true {
             diagnostic("""
                 \(mutationString) \(logging?.namePath ?? "")
-                (\(tensorData.trackingId))  elements: \(tensorData.elementCount)
+                (\(tensorData.trackingId))  elements: \(shape.elementCount)
                 """, categories: [.dataCopy, .dataMutation])
         }
         
@@ -105,7 +105,8 @@ public extension TensorDataViewImpl {
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
         return try queue.sync {
-            return try tensorData.roHostBuffer()
+            let buffer = try tensorData.roHostRawBuffer()
+            return buffer.bindMemory(to: Scalar.self)
         }
     }
     
@@ -128,7 +129,8 @@ public extension TensorDataViewImpl {
         let queue = tensorData.accessQueue
         return try queue.sync {
             try copyIfMutates()
-            return try tensorData.rwHostBuffer()
+            let buffer = try tensorData.rwHostMutableRawBuffer()
+            return buffer.bindMemory(to: Scalar.self)
         }
     }
     

@@ -17,8 +17,15 @@ public protocol TensorDataView: AnyScalar, Logging, Equatable {
     var logging: LogInfo? { get set }
     var name: String { get set }
     var rank: Int { get }
+    var shape: DataShape { get }
     
-    init(denseLike other: Self)
+    init<T>(shapedLike other: T) where T: TensorDataView
+}
+
+public extension TensorDataView {
+    var isContiguous: Bool { return shape.isContiguous }
+    var isEmpty: Bool { return shape.isEmpty }
+    var rank: Int { return shape.rank }
 }
 
 public extension TensorDataView where Self: TensorDataViewImpl {
@@ -26,9 +33,11 @@ public extension TensorDataView where Self: TensorDataViewImpl {
         get { return tensorData.name }
         set { tensorData.name = newValue }
     }
-    var isContiguous: Bool { return shape.isContiguous }
-    var isEmpty: Bool { return shape.isEmpty }
-    var rank: Int { return shape.rank }
+    
+    func scalarized() throws -> Scalar {
+        assert(shape.elementCount == 1)
+        return try ro()[0]
+    }
 }
 
 //==============================================================================

@@ -66,6 +66,12 @@ public struct StereoSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyStereoAudioSa
 public protocol ScalarTensorView: TensorDataView {
 }
 
+public extension ScalarTensorView where Self: ScalarTensorViewImpl {
+    func value() throws -> Scalar {
+        return try ro()[0]
+    }
+}
+
 //--------------------------------------------------------------------------
 // ScalarTensorViewImpl
 public protocol ScalarTensorViewImpl: TensorDataViewImpl, ScalarTensorView { }
@@ -97,7 +103,8 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init(denseLike other: ScalarTensor<Scalar>) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 0, "other rank must equal: 0")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -152,7 +159,8 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: VectorTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 1, "other rank must equal: 1")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -230,7 +238,8 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: MatrixTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 2, "other rank must equal: 2")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -273,6 +282,7 @@ public extension VolumeTensorViewImpl {
 //------------------------------------------------------------------------------
 /// VolumeTensor
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
+    // properties
     public var isShared: Bool = false
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
@@ -298,7 +308,8 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: VolumeTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 3, "other rank must equal: 3")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -351,7 +362,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: NDTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -430,7 +441,9 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: NCHWTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 4, "other rank must equal: 4")
+        assert(other.shape.layout == .nchw, "other shape layout must be: .nchw")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -508,7 +521,9 @@ public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
     }
     
     /// copy properties but not any data
-    public init<T: NHWCTensorViewImpl>(denseLike other: T) {
+    public init<T: TensorDataView>(shapedLike other: T) {
+        assert(other.rank == 4, "other rank must equal: 4")
+        assert(other.shape.layout == .nhwc, "other shape layout must be: .nhwc")
         self.shape = other.shape.dense
         self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size

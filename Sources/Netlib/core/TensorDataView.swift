@@ -34,7 +34,7 @@ public extension TensorDataView where Self: TensorDataViewImpl {
         set { tensorData.name = newValue }
     }
     
-    func scalarized() throws -> Scalar {
+    func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
         return try ro()[0]
     }

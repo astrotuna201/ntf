@@ -66,12 +66,6 @@ public struct StereoSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyStereoAudioSa
 public protocol ScalarTensorView: TensorDataView {
 }
 
-public extension ScalarTensorView where Self: ScalarTensorViewImpl {
-    func value() throws -> Scalar {
-        return try ro()[0]
-    }
-}
-
 //--------------------------------------------------------------------------
 // ScalarTensorViewImpl
 public protocol ScalarTensorViewImpl: TensorDataViewImpl, ScalarTensorView { }

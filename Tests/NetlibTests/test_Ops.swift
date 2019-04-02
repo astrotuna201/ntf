@@ -98,7 +98,7 @@ class test_Ops: XCTestCase {
             
             // all three streams auto sync at this point
             let c5expected = VectorTensor<Float>(scalars: [0, 0.581, 0.782, 0.862])
-            let c5IsEqual = try c5.elementsApproximatelyEqual(c5expected).value()
+            let c5IsEqual = try c5.elementsApproximatelyEqual(c5expected).scalarValue()
             
             // here the defaultStream is synced with the app thread
             XCTAssert(c5IsEqual)

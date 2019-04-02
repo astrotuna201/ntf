@@ -26,13 +26,13 @@ public protocol AnyScalar {
 public protocol AnyFixedSizeScalar: AnyScalar { }
 
 //==============================================================================
-/// AnyNumeric
+/// AnyConvertable
 /// AnyNumeric enables the use of constants, type conversion, and
 /// normalization within generics
 ///
-public protocol AnyNumeric: AnyScalar {
+public protocol AnyConvertable: AnyScalar {
 	// unchanged cast value
-	init(any: AnyNumeric)
+	init(any: AnyConvertable)
 	init?(string: String)
 	var asUInt8  : UInt8   { get }
 	var asUInt16 : UInt16  { get }
@@ -48,7 +48,7 @@ public protocol AnyNumeric: AnyScalar {
 	var asBool   : Bool    { get }
 
 	// values are normalized to the new type during a cast
-	init(norm any: AnyNumeric)
+	init(norm any: AnyConvertable)
 	var normUInt8  : UInt8   { get }
 	var normUInt16 : UInt16  { get }
 	var normInt16  : Int16   { get }
@@ -66,6 +66,7 @@ public protocol AnyNumeric: AnyScalar {
     static var dataType: DataType { get }
 }
 
+public protocol AnyNumeric: AnyConvertable, AnyFixedSizeScalar {}
 public protocol AnyInteger: AnyNumeric {}
 public protocol AnyFloatingPoint: AnyNumeric {}
 
@@ -75,8 +76,8 @@ public typealias AnyTensorFlowInteger = AnyNumeric & TensorFlowInteger
 public typealias AnyTensorFlowFloatingPoint = AnyNumeric & TensorFlowFloatingPoint
 
 //------------------------------------------------------------------------------
-extension UInt8: AnyInteger, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asUInt8 }
+extension UInt8: AnyInteger {
+	public init(any: AnyConvertable) { self = any.asUInt8 }
 	public var asUInt8  : UInt8  { return self }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -90,7 +91,7 @@ extension UInt8: AnyInteger, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normUInt8 }
+	public init(norm any: AnyConvertable) { self = any.normUInt8 }
 	public static var normScale: Double = 1.0 / (Double(UInt8.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(UInt8.max) + 1)
 	
@@ -117,8 +118,8 @@ extension UInt8: AnyInteger, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension UInt16 : AnyInteger, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asUInt16 }
+extension UInt16 : AnyInteger {
+	public init(any: AnyConvertable) { self = any.asUInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return self }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -132,7 +133,7 @@ extension UInt16 : AnyInteger, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normUInt16 }
+	public init(norm any: AnyConvertable) { self = any.normUInt16 }
 	public static var normScale: Double = 1.0 / (Double(UInt16.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(UInt16.max) + 1)
 
@@ -159,8 +160,8 @@ extension UInt16 : AnyInteger, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension Int16 : AnyInteger, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asInt16 }
+extension Int16 : AnyInteger {
+	public init(any: AnyConvertable) { self = any.asInt16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return self }
@@ -174,7 +175,7 @@ extension Int16 : AnyInteger, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normInt16 }
+	public init(norm any: AnyConvertable) { self = any.normInt16 }
 	public static var normScale: Double = 1.0 / (Double(Int16.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(Int16.max) + 1)
 	
@@ -201,8 +202,8 @@ extension Int16 : AnyInteger, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension Int32 : AnyInteger, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asInt32 }
+extension Int32 : AnyInteger {
+	public init(any: AnyConvertable) { self = any.asInt32 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -216,7 +217,7 @@ extension Int32 : AnyInteger, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normInt32 }
+	public init(norm any: AnyConvertable) { self = any.normInt32 }
 	public static var normScale: Double = 1.0 / (Double(Int32.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(Int32.max) + 1)
 
@@ -243,8 +244,8 @@ extension Int32 : AnyInteger, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension UInt32 : AnyInteger, AnyFixedSizeScalar {
-    public init(any: AnyNumeric) { self = any.asUInt32 }
+extension UInt32 : AnyInteger {
+    public init(any: AnyConvertable) { self = any.asUInt32 }
     public var asUInt8  : UInt8  { return UInt8(self) }
     public var asUInt16 : UInt16 { return UInt16(self) }
     public var asInt16  : Int16  { return Int16(self) }
@@ -258,7 +259,7 @@ extension UInt32 : AnyInteger, AnyFixedSizeScalar {
     public var asCVarArg: CVarArg{ return self }
     public var asBool   : Bool   { return self != 0 }
     
-    public init(norm any: AnyNumeric) { self = any.normUInt32 }
+    public init(norm any: AnyConvertable) { self = any.normUInt32 }
     public static var normScale: Double = 1.0 / (Double(UInt32.max) + 1)
     public static var normScalef: Float = Float(1.0) / (Float(UInt32.max) + 1)
     
@@ -286,7 +287,7 @@ extension UInt32 : AnyInteger, AnyFixedSizeScalar {
 
 //------------------------------------------------------------------------------
 extension Int : AnyInteger {
-	public init(any: AnyNumeric) { self = any.asInt }
+	public init(any: AnyConvertable) { self = any.asInt }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -300,7 +301,7 @@ extension Int : AnyInteger {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normInt }
+	public init(norm any: AnyConvertable) { self = any.normInt }
 	public static var normScale: Double = 1.0 / (Double(Int.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(Int.max) + 1)
 	
@@ -331,7 +332,7 @@ extension Int : AnyInteger {
 
 //------------------------------------------------------------------------------
 extension UInt : AnyInteger {
-	public init(any: AnyNumeric) { self = any.asUInt }
+	public init(any: AnyConvertable) { self = any.asUInt }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -345,7 +346,7 @@ extension UInt : AnyInteger {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normUInt }
+	public init(norm any: AnyConvertable) { self = any.normUInt }
 	public static var normScale: Double = 1.0 / (Double(UInt.max) + 1)
 	public static var normScalef: Float = Float(1.0) / (Float(UInt.max) + 1)
 
@@ -375,8 +376,8 @@ extension UInt : AnyInteger {
 }
 
 //------------------------------------------------------------------------------
-extension Bool: AnyNumeric, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asBool }
+extension Bool: AnyConvertable {
+	public init(any: AnyConvertable) { self = any.asBool }
 	public var asUInt8  : UInt8  { return self ? 1 : 0 }
 	public var asUInt16 : UInt16 { return self ? 1 : 0 }
 	public var asInt16  : Int16  { return self ? 1 : 0 }
@@ -391,7 +392,7 @@ extension Bool: AnyNumeric, AnyFixedSizeScalar {
 	public var asBool   : Bool   { return self }
 	public var asString : String { return self ? "true" : "false" }
 
-	public init(norm any: AnyNumeric) { self = any.normBool }
+	public init(norm any: AnyConvertable) { self = any.normBool }
 	public static var normScale: Double = 1
 	public static var normScalef : Float = 1
 
@@ -418,8 +419,8 @@ extension Bool: AnyNumeric, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension Float16 : AnyFloatingPoint, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asFloat16 }
+extension Float16 : AnyFloatingPoint {
+	public init(any: AnyConvertable) { self = any.asFloat16 }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -433,7 +434,7 @@ extension Float16 : AnyFloatingPoint, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return asFloat }
 	public var asBool   : Bool   { return Float(self) != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normFloat16 }
+	public init(norm any: AnyConvertable) { self = any.normFloat16 }
 	
 	public var normUInt8  : UInt8  { return UInt8(Float(self)  * Float(UInt8.max))}
 	public var normUInt16 : UInt16 { return UInt16(Float(self) * Float(UInt16.max))}
@@ -458,8 +459,8 @@ extension Float16 : AnyFloatingPoint, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension Float : AnyFloatingPoint, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asFloat }
+extension Float : AnyFloatingPoint {
+	public init(any: AnyConvertable) { self = any.asFloat }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -473,7 +474,7 @@ extension Float : AnyFloatingPoint, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normFloat }
+	public init(norm any: AnyConvertable) { self = any.normFloat }
 	
 	public var normUInt8  : UInt8  { return UInt8(Float(self)  * Float(UInt8.max))}
 	public var normUInt16 : UInt16 { return UInt16(Float(self) * Float(UInt16.max))}
@@ -498,8 +499,8 @@ extension Float : AnyFloatingPoint, AnyFixedSizeScalar {
 }
 
 //------------------------------------------------------------------------------
-extension Double : AnyFloatingPoint, AnyFixedSizeScalar {
-	public init(any: AnyNumeric) { self = any.asDouble }
+extension Double : AnyFloatingPoint {
+	public init(any: AnyConvertable) { self = any.asDouble }
 	public var asUInt8  : UInt8  { return UInt8(self) }
 	public var asUInt16 : UInt16 { return UInt16(self) }
 	public var asInt16  : Int16  { return Int16(self) }
@@ -513,7 +514,7 @@ extension Double : AnyFloatingPoint, AnyFixedSizeScalar {
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
 
-	public init(norm any: AnyNumeric) { self = any.normDouble }
+	public init(norm any: AnyConvertable) { self = any.normDouble }
 	
 	public var normUInt8  : UInt8  { return UInt8(Float(self)  * Float(UInt8.max))}
 	public var normUInt16 : UInt16 { return UInt16(Float(self) * Float(UInt16.max))}

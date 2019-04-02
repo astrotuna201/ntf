@@ -34,6 +34,7 @@ class test_Ops: XCTestCase {
     }
     
     func test_PrimaryOps() {
+        let _ = MatrixTensor<RGBASample<UInt8>>(4, 3)
         let a = VectorTensor<Float>(scalars: [1, 2, 3, 4])
         let b = VectorTensor<Float>(scalars: [4, 3, 2, 1])
         let y = VectorTensor<Float>(scalars: [0, 1, 2, 3])

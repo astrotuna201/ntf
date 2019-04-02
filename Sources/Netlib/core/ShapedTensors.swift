@@ -29,7 +29,8 @@ public protocol AnyRGBImageSample: AnyDenseChannelScalar {
     var b: ChannelScalar { get set }
 }
 
-public struct RGBSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyRGBImageSample {
+public struct RGBSample<T>: AnyRGBImageSample
+    where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ChannelScalar = T
     public var r, g, b: T
     public init() { r = T(); g = T(); b = T() }
@@ -42,7 +43,8 @@ public protocol AnyRGBAImageSample: AnyDenseChannelScalar {
     var a: ChannelScalar { get set }
 }
 
-public struct RGBASample<T: AnyNumeric & AnyFixedSizeScalar>: AnyRGBAImageSample {
+public struct RGBASample<T> : AnyRGBAImageSample
+where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ChannelScalar = T
     public var r, g, b, a: T
     public init() { r = T(); g = T(); b = T(); a = T() }
@@ -55,7 +57,8 @@ public protocol AnyStereoAudioSample: AnyDenseChannelScalar {
     var right: ChannelScalar { get set }
 }
 
-public struct StereoSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyStereoAudioSample {
+public struct StereoSample<T>: AnyStereoAudioSample
+where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ChannelScalar = T
     public var left, right: T
     public init() { left = T(); right = T() }

@@ -77,7 +77,8 @@ public extension ScalarTensorViewImpl {
 // ScalarTensor
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -86,28 +87,25 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
-        self.shape = DataShape(extents: [1], layout: .scalar)
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 0, "rank must equal: 0")
+        self.shape = shape
         self.logging = logging
-        self.tensorData = TensorData(
-            byteCount: shape.elementSpanCount * MemoryLayout<Scalar>.size,
-            logging: logging, name: name)
-        // it's being initialized in host memory so it can't fail
-        try! rw()[0] = value
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 0, "other rank must equal: 0")
-        self.shape = other.shape.dense
-        self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
     }
     
-    // TODO: figure out how to move to extension TensorDataViewImpl and
-    // remove all duplicates in this file
+    /// shaped init
+    public init(value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
+        self.init(shape: DataShape(extents: [1], layout: .scalar),
+                  name: name, logging: logging)
+    }
+    
     /// creates an empty view
     public init() {
         logging = nil
@@ -135,7 +133,8 @@ public extension VectorTensorViewImpl {
 // VectorTensor
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -144,35 +143,35 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(count: Int, name: String? = nil, logging: LogInfo? = nil) {
-        self.shape = DataShape(extents: [count])
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 1, "rank must equal: 1")
+        self.shape = shape
         self.logging = logging
-        self.tensorData = TensorData(
-            byteCount: shape.elementSpanCount * MemoryLayout<Scalar>.size,
-            logging: logging, name: name)
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 1, "other rank must equal: 1")
-        self.shape = other.shape.dense
-        self.logging = other.logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
     }
     
-    /// creates an empty view
-    public init() {
-        logging = nil
-        shape = DataShape()
-        tensorData = TensorData()
+    /// shaped init
+    public init(count: Int, name: String? = nil, logging: LogInfo? = nil) {
+        self.init(shape: DataShape(extents: [count]), name: name, logging: logging)
     }
     
     /// initialize with scalar array
     public init(scalars: [Scalar], name: String? = nil, logging: LogInfo? = nil) {
         self.init(count: scalars.count, name: name, logging: logging)
         _ = try! rw().initialize(from: scalars)
+    }
+
+    /// creates an empty view
+    public init() {
+        logging = nil
+        shape = DataShape()
+        tensorData = TensorData()
     }
 }
 
@@ -201,7 +200,8 @@ public extension MatrixTensorViewImpl {
 // MatrixTensor
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -210,14 +210,25 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 2, "rank must equal: 2")
+        self.shape = shape
+        self.logging = logging
+        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+    }
+
+    /// shaped init
     public init(extents: [Int], scalars: [Scalar]? = nil, name: String? = nil,
                 logging: LogInfo? = nil, isColMajor: Bool = false) {
-        assert(extents.count == 2)
-        self.shape = DataShape(extents: extents, isColMajor: isColMajor)
-        self.logging = logging
-        self.tensorData = TensorData(
-            byteCount: shape.elementSpanCount * MemoryLayout<Scalar>.size,
-            logging: logging, name: name)
+
+        self.init(shape: DataShape(extents: extents, isColMajor: isColMajor),
+                  name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
         if let scalars = scalars {
@@ -226,19 +237,10 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     }
     
     /// initialize with explicit labels
-    public init(_ rows: Int, _ cols: Int,
+    public init(_ rows: Int, _ cols: Int, isColMajor: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
-        self.init(extents: [rows, cols], name: name, logging: logging)
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 2, "other rank must equal: 2")
-        self.shape = other.shape.dense
-        self.logging = other.logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
+        self.init(extents: [rows, cols], name: name,
+                  logging: logging, isColMajor: isColMajor)
     }
     
     /// creates an empty view
@@ -277,7 +279,8 @@ public extension VolumeTensorViewImpl {
 /// VolumeTensor
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -286,29 +289,29 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        assert(extents.count == 2)
-        self.shape = DataShape(extents: extents)
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 3, "rank must equal: 3")
+        self.shape = shape
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+    }
+
+    /// shaped init
+    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
+        self.init(shape: DataShape(extents: extents), name: name, logging: logging)
     }
     
     /// initialize with explicit labels
     public init(_ depths: Int, _ rows: Int, _ cols: Int,
                 name: String? = nil, logging: LogInfo? = nil) {
-        self.init(extents: [depths, rows, cols], name: name, logging: logging)
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 3, "other rank must equal: 3")
-        self.shape = other.shape.dense
-        self.logging = other.logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
+        self.init(shape: DataShape(extents: [depths, rows, cols]),
+                  name: name, logging: logging)
     }
     
     /// creates an empty view
@@ -336,7 +339,8 @@ public extension NDTensorViewImpl {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -345,23 +349,16 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(shape: DataShape, name: String? = nil, logging: LogInfo? = nil) {
-        // assign
-        self.logging = logging
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
         self.shape = shape
+        self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
         assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        self.shape = other.shape.dense
-        self.logging = other.logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
     }
     
     /// creates an empty view
@@ -407,7 +404,8 @@ public extension NCHWTensorViewImpl {
 // NCHWTensor
 public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -417,32 +415,31 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        assert(extents.count == 4)
-        self.shape = DataShape(extents: extents, layout: .nchw)
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 4, "other rank must equal: 4")
+        assert(shape.layout == .nchw, "other shape layout must be: .nchw")
+        self.shape = shape
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+    }
+
+    // shaped
+    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
+        let shape = DataShape(extents: extents, layout: .nchw)
+        self.init(shape: shape, name: name, logging: logging)
     }
     
     /// initialize with explicit labels
-    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
+    public init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
                 name: String? = nil, logging: LogInfo? = nil) {
-        
-        self.init(extents: [items, depths, rows, cols],
+        self.init(extents: [items, channels, rows, cols],
                   name: name, logging: logging)
-    }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 4, "other rank must equal: 4")
-        assert(other.shape.layout == .nchw, "other shape layout must be: .nchw")
-        self.shape = other.shape.dense
-        self.logging = other.logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
     }
     
     // empty
@@ -488,7 +485,8 @@ public extension NHWCTensorViewImpl {
 // NHWCTensor
 public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
     // properties
-    public var isShared: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String?
     public var lastAccessMutated: Bool = false
     public var logging: LogInfo?
     public var shape: DataShape
@@ -497,34 +495,33 @@ public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
     
     //--------------------------------------------------------------------------
     // initializers
-    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        assert(extents.count == 4)
-        self.shape = DataShape(extents: extents, layout: .nhwc)
+    /// fully specified to support generic init
+    public init(shape: DataShape, tensorData: TensorData? = nil,
+                viewOffset: Int = 0, isShared: Bool = false,
+                name: String? = nil, logging: LogInfo? = nil) {
+        assert(shape.rank == 4, "other rank must equal: 4")
+        assert(shape.layout == .nchw, "other shape layout must be: .nchw")
+        self.shape = shape
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: name)
+        self.tensorData = tensorData ??
+            TensorData(byteCount: spanCount, logging: logging, name: name)
+        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+    }
+    
+    // shaped
+    public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
+        let shape = DataShape(extents: extents, layout: .nhwc)
+        self.init(shape: shape, name: name, logging: logging)
     }
     
     /// initialize with explicit labels
-    public init(_ items: Int, _ depths: Int, _ rows: Int, _ cols: Int,
-         name: String? = nil, logging: LogInfo? = nil) {
-        
-        self.init(extents: [items, depths, rows, cols],
+    public init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
+                name: String? = nil, logging: LogInfo? = nil) {
+        self.init(extents: [items, rows, cols, channels],
                   name: name, logging: logging)
     }
-    
-    /// copy properties but not any data
-    public init<T: TensorDataView>(shapedLike other: T) {
-        assert(other.rank == 4, "other rank must equal: 4")
-        assert(other.shape.layout == .nhwc, "other shape layout must be: .nhwc")
-        self.shape = other.shape.dense
-        self.logging = other.logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = TensorData(byteCount: spanCount,
-                                     logging: logging, name: other.name)
-    }
-    
+
     /// creates an empty view
     public init() {
         logging = nil

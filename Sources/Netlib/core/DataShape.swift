@@ -185,25 +185,25 @@ public struct DataShape: Equatable, Codable {
 //                         channelLayout: channelLayout, strides: transStrides,
 //                         isColMajor: isColMajor)
 //    }
-//
-//    //--------------------------------------------------------------------------
-//    // flattened
-//    public func flattened(axis: Int = 0) -> DataShape {
-//        assert(isContiguous, "Cannot reshape strided data")
-//        assert(axis < rank)
-//
-//        // create a new flat view
-//        var extent: [Int]
-//        switch axis {
-//        case 0: extent = [elementCount]
-//        case 1: extent = [items, elementCount / items]
-//        default:
-//            extent = [Int](extents.prefix(upTo: axis)) +
-//                [extents.suffix(from: axis).reduce(1, *)] +
-//                [Int](repeating: 1, count: rank - axis - 1)
-//        }
-//        return DataShape(extent)
-//    }
+
+    //--------------------------------------------------------------------------
+    // flattened
+    public func flattened(axis: Int = 0) -> DataShape {
+        assert(isContiguous, "Cannot reshape strided data")
+        assert(axis < rank)
+
+        // create a new flat view
+        var extent: [Int]
+        switch axis {
+        case 0: extent = [elementCount]
+        case 1: extent = [extents[0], elementCount / extents[0]]
+        default:
+            extent = [Int](extents.prefix(upTo: axis)) +
+                [extents.suffix(from: axis).reduce(1, *)] +
+                [Int](repeating: 1, count: rank - axis - 1)
+        }
+        return DataShape(extent)
+    }
 }
 
 //==============================================================================

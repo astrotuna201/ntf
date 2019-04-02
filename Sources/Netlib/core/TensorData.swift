@@ -27,7 +27,8 @@ final public class TensorData: ObjectTracking, Logging {
         get { return _name ?? String(describing: TensorData.self) }
         set { _name = newValue }
     }
-
+    public var hasName: Bool { return _name != nil }
+    
     // testing
     public private(set) var lastAccessCopiedBuffer = false
 

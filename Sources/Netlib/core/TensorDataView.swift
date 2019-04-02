@@ -17,6 +17,8 @@ public protocol TensorDataView: AnyScalar, Logging, Equatable {
     var logging: LogInfo? { get set }
     var name: String { get set }
     var rank: Int { get }
+    
+    init(denseLike other: Self)
 }
 
 public extension TensorDataView where Self: TensorDataViewImpl {
@@ -40,7 +42,9 @@ public protocol TensorDataViewImpl: TensorDataView {
     var shape: DataShape { get set }
     var tensorData: TensorData { get set }
     var viewOffset: Int { get set }
-    
+    var viewByteOffset: Int { get }
+    var viewSpanByteCount: Int { get }
+
     /// determines if the view holds a unique reference to the underlying
     /// TensorData array
     mutating func isUniqueReference() -> Bool
@@ -56,6 +60,9 @@ public extension TensorDataViewImpl {
         set { tensorData.name = newValue }
     }
     
+    var viewByteOffset: Int { return viewOffset * MemoryLayout<Scalar>.size }
+    var viewSpanByteCount: Int { return shape.elementSpanCount * MemoryLayout<Scalar>.size }
+
     //--------------------------------------------------------------------------
     // Equal values
     static func == (lhs: Self, rhs: Self) -> Bool {

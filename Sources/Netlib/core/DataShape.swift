@@ -28,18 +28,13 @@ public struct DataShape: Equatable, Codable {
     public var isEmpty: Bool { return elementCount == 0 }
     public var isScalar: Bool { return layout == .scalar }
     public var rank: Int { return extents.count }
-
-    public var items: Int { return extents[layout.nAxis] }
-    public var channels: Int { return extents[layout.cAxis] }
-    public var depths: Int { return extents[layout.dAxis] }
-    public var rows: Int { return extents[layout.hAxis] }
-    public var cols: Int { return extents[layout.wAxis] }
-
-    public var itemStride: Int { return strides[layout.nAxis] }
-    public var channelStride: Int { return strides[layout.cAxis] }
-    public var depthStride: Int { return strides[layout.dAxis] }
-    public var rowStride: Int { return strides[layout.hAxis] }
-    public var colStride: Int { return strides[layout.wAxis] }
+    
+    /// returns a dense version of self
+    public var dense: DataShape {
+        guard !isContiguous else { return self }
+        return DataShape(extents: extents, layout: layout,
+                         channelLayout: channelLayout, isColMajor: isColMajor)
+    }
 
     //--------------------------------------------------------------------------
     /// Initialize with all options
@@ -173,41 +168,42 @@ public struct DataShape: Equatable, Codable {
                          channelLayout: channelLayout, strides: newStrides,
                          isColMajor: isColMajor)
     }
-    
-    //--------------------------------------------------------------------------
-    /// transposed
-    /// Returns a new data shape where the rows and cols are transposed via
-    /// stride manipulation.
-    public func transposed() -> DataShape {
-        guard rank > 1 else { return self }
-        var transExtents = extents
-        var transStrides = strides
-        transExtents.swapAt(layout.wAxis, layout.hAxis)
-        transStrides.swapAt(layout.wAxis, layout.hAxis)
 
-        return DataShape(extents: transExtents, layout: layout,
-                         channelLayout: channelLayout, strides: transStrides,
-                         isColMajor: isColMajor)
-    }
-    
-    //--------------------------------------------------------------------------
-    // flattened
-    public func flattened(axis: Int = 0) -> DataShape {
-        assert(isContiguous, "Cannot reshape strided data")
-        assert(axis < rank)
-        
-        // create a new flat view
-        var extent: [Int]
-        switch axis {
-        case 0: extent = [elementCount]
-        case 1: extent = [items, elementCount / items]
-        default:
-            extent = [Int](extents.prefix(upTo: axis)) +
-                [extents.suffix(from: axis).reduce(1, *)] +
-                [Int](repeating: 1, count: rank - axis - 1)
-        }
-        return DataShape(extent)
-    }
+    // TODO: move to shaped types
+//    //--------------------------------------------------------------------------
+//    /// transposed
+//    /// Returns a new data shape where the rows and cols are transposed via
+//    /// stride manipulation.
+//    public func transposed() -> DataShape {
+//        guard rank > 1 else { return self }
+//        var transExtents = extents
+//        var transStrides = strides
+//        transExtents.swapAt(layout.wAxis, layout.hAxis)
+//        transStrides.swapAt(layout.wAxis, layout.hAxis)
+//
+//        return DataShape(extents: transExtents, layout: layout,
+//                         channelLayout: channelLayout, strides: transStrides,
+//                         isColMajor: isColMajor)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    // flattened
+//    public func flattened(axis: Int = 0) -> DataShape {
+//        assert(isContiguous, "Cannot reshape strided data")
+//        assert(axis < rank)
+//
+//        // create a new flat view
+//        var extent: [Int]
+//        switch axis {
+//        case 0: extent = [elementCount]
+//        case 1: extent = [items, elementCount / items]
+//        default:
+//            extent = [Int](extents.prefix(upTo: axis)) +
+//                [extents.suffix(from: axis).reduce(1, *)] +
+//                [Int](repeating: 1, count: rank - axis - 1)
+//        }
+//        return DataShape(extent)
+//    }
 }
 
 //==============================================================================

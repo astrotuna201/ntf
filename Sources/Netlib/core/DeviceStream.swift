@@ -42,8 +42,9 @@ public protocol DeviceStream: ObjectTracking, Logging {
 
     /// Adds two tensors and produces their sum.
     /// - Note: `+` supports broadcasting.
-    func add<T>(lhs: T, rhs: T, result: inout T) throws
-        where T: TensorDataView, T.Scalar: Numeric
+    func add<TL, TR>(lhs: TL, rhs: TR, result: inout TL) throws where
+        TL: TensorDataView, TL.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
 
     /// Returns `true` if all scalars are equal to `true`. Otherwise, returns
     /// `false`.
@@ -108,13 +109,14 @@ public protocol DeviceStream: ObjectTracking, Logging {
         T: TensorDataView, T.Scalar: FloatingPoint
 
     /// Computes the element-wise `cosh`
-    func cohs<T>(x: T, result: inout T) throws where
+    func cosh<T>(x: T, result: inout T) throws where
         T: TensorDataView, T.Scalar: FloatingPoint
 
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
-    func div<T>(lhs: T, rhs: T, result: inout T) throws where
-        T: TensorDataView, T.Scalar: Numeric
+    func div<TL, TR>(lhs: TL, rhs: TR, result: inout TL) throws where
+        TL: TensorDataView, TL.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
 
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
@@ -178,7 +180,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
 
     /// Performs matrix multiplication with another TensorView and produces the
     /// result.
-    func matmul<T: Numeric>(lhs: T, rhs: T, result: inout T) throws where
+    func matmul<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorDataView, T.Scalar: Numeric
 
     /// Returns the maximum values along the specified axes. The reduced
@@ -197,59 +199,63 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-    func mean<T: Numeric>(x: TensorView<T>, squeezingAxes axes: [Int],
-                          result: inout TensorView<T>) throws where
+    func mean<T>(x: T, squeezingAxes axes: [Int], result: inout T) throws where
         T: TensorDataView, T.Scalar: Numeric
 
     /// Returns the minimum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func min<T: Numeric>(x: TensorView<T>, squeezingAxes axes: [Int],
-                         result: inout TensorView<T>) throws where
+    func min<T>(x: T, squeezingAxes axes: [Int], result: inout T) throws where
         T: TensorDataView, T.Scalar: Numeric
     
     /// Computes the element-wise minimum of two tensors.
     /// - Note: `max` supports broadcasting.
-    func minimum<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                             result: inout TensorView<T>) throws where
+    func minimum<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorDataView, T.Scalar: Numeric
 
     /// Returns the remainder of dividing the first TensorView by the second.
     /// - Note: `%` supports broadcasting.
-    func mod<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                         result: inout TensorView<T>) throws where
-        T: TensorDataView, T.Scalar: Numeric
+    func mod<TL, TR>(lhs: TL, rhs: TR, result: inout TL) throws where
+        TL: TensorDataView, TL.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
+
     /// mul
-    func mul<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                         result: inout TensorView<T>) throws where
-        T: TensorDataView, T.Scalar: Numeric
+    func mul<TL, TR>(lhs: TL, rhs: TR, result: inout TL) throws where
+        TL: TensorDataView, TL.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
 
     /// Computes the element-wise negation
-    func neg(x: TensorView<Bool>, result: inout TensorView<Bool>) throws
+    func neg<T>(x: T, result: inout T) throws where
+    T: TensorDataView, T.Scalar: SignedNumeric
 
     /// Computes `lhs != rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
-    func notEqual<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                              result: inout TensorView<Bool>) throws
-
+    func notEqual<TL, TR, R>(lhs: TL, rhs: TR, result: inout R) throws where
+        TL: TensorDataView, TL.Scalar: Numeric & Comparable,
+        TR: TensorDataView, TR.Scalar: Numeric & Comparable,
+        R: TensorDataView, R.Scalar == Bool
+    
     /// Returns a padded TensorView according to the specified margins.
     /// TODO: Probably don't need this. It can be accomplished via TensorView indexing
-    func pad<T>(x: TensorView<T>,
-                with margins: [(before: Int32, after: Int32)],
-                fillValue: T,
-                result: inout TensorView<T>) throws
+    func pad<T>(x: T, with margins: [(before: Int, after: Int)],
+                fillValue: T.Scalar, result: inout T) throws where
+        T: TensorDataView
     
     /// Computes the element-wise `x**y`
-    func pow<T: Numeric>(x: TensorView<T>, y: TensorView<T>,
-                                       result: inout TensorView<T>) throws
+    func pow<TX, TY, TR>(x: TX, y: TY, result: inout TR) throws where
+        TX: TensorDataView, TX.Scalar: Numeric,
+        TY: TensorDataView, TY.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
 
     /// Product of the input elements to produce a scalar
-    func prod<T: Numeric>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func prod<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: Numeric
 
     /// Computes the element-wise `rsqrt`
-    func rsqrt<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func rsqrt<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
 
     /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
     ///
@@ -258,36 +264,45 @@ public protocol DeviceStream: ObjectTracking, Logging {
     ///   `x` and `other` have rank greater than or equal to `1`, then `mask`
     ///   must be either have the same shape as `self` or be a 1-D `TensorView` such
     ///   that `mask.scalarCount == self.shape[0]`.
-    func replacing<T>(x: TensorView<T>, with other: TensorView<T>,
-                      where mask: TensorView<Bool>,
-                      result: inout TensorView<T>) throws
+    func replacing<T, R>(x: T, with other: T, where mask: R,
+                      result: inout T) throws where
+        T: TensorDataView,
+        R: TensorDataView, R.Scalar == Bool
     
     /// Computes the element-wise `sin`
-    func sin<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func sin<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
     
     /// Computes the element-wise `sinh`
-    func sinh<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func sinh<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
     
     /// Computes the element-wise `square`
-    func square<T: Numeric>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func square<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: Numeric
 
     /// Computes the element-wise `(lhs - rhs)**2`
-    func squaredDifference<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                                       result: inout TensorView<T>) throws
+    func squaredDifference<T>(lhs: T, rhs: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: Numeric
 
     /// Computes the element-wise `sqrt`
-    func sqrt<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func sqrt<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
 
     /// subtract
-    func subtract<T: Numeric>(lhs: TensorView<T>, rhs: TensorView<T>,
-                              result: inout TensorView<T>) throws
-    
+    func subtract<TL, TR>(lhs: TL, rhs: TR, result: inout TL) throws where
+        TL: TensorDataView, TL.Scalar: Numeric,
+        TR: TensorDataView, TR.Scalar: Numeric
+
     /// Sums the input to produce a scalar
-    func sum<T: Numeric>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func sum<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: Numeric
 
     /// Computes the element-wise `tan`
-    func tan<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func tan<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
     
     /// Computes the element-wise `tanh`
-    func tanh<T: FloatingPoint>(x: TensorView<T>, result: inout TensorView<T>) throws
+    func tanh<T>(x: T, result: inout T) throws where
+        T: TensorDataView, T.Scalar: FloatingPoint
 }

@@ -6,75 +6,75 @@ import Foundation
 import TensorFlow
 import Netlib
 
-/// A densely-connected neural network layer.
-///
-/// `Dense` implements the operation `activation(matmul(input, weight) + bias)`, where `weight` is
-/// a weight matrix, `bias` is a bias vector, and `activation` is an element-wise activation
-/// function.
-@_fixed_layout
-public struct Dense_<Scalar: AnyTensorFlowFloatingPoint>: Function, Logging {
-    /// activation function to apply
-    public typealias Activation =
-        (TensorView<Scalar>, DeviceStream) -> TensorView<Scalar>
-    /// The element-wise activation function.
-    @noDerivative public let activation: Activation
-    /// The bias vector.
-    public var bias: TensorView<Scalar>
-    /// the output view for this instance
-    public var output: TensorView<Scalar>
-    /// The weight matrix.
-    public var weight: TensorView<Scalar>
-    // Logging
-    @noDerivative public var logging: LogInfo?
-
-    //--------------------------------------------------------------------------
-    // initializers
-    public init(weight: TensorView<Scalar>,
-                bias: TensorView<Scalar>,
-                activation: @escaping Activation,
-                input: DataShape,
-                logging: LogInfo? = nil,
-                using deviceStream: DeviceStream? = nil) {
-        // store parameters
-        self.activation = activation
-        self.bias = bias
-        self.weight = weight
-        self.logging = logging
-        let flatInput = input.flattened(axis: 1)
-        output = TensorView<Scalar>(extents: [flatInput.rows, weight.cols],
-                                    logging: logging)
-    }
-
-    @differentiable
-    public func evaluate(input: TensorView<Scalar>,
-                         using stream: DeviceStream?) -> TensorView<Scalar> {
-//        let dataStream = stream ?? Platform.defaultStream
-        return output // activation(matmul(input, weight) + bias)
-    }
-}
-
-public extension Dense {
-    /// Creates a `Dense` layer with the specified input size, output size, and element-wise
-    /// activation function. The weight matrix is created with shape `[inputSize, outputSize]` and
-    /// is initialized using Glorot uniform initialization with the specified generator. The bias
-    /// vector is created with shape `[outputSize]` and is initialized with zeros.
-    init<G: RandomNumberGenerator>(
-            inputSize: Int,
-            outputSize: Int,
-            activation: @escaping Activation = identity,
-            generator: inout G
-    ) {
-        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
-                generator: &generator),
-                bias: Tensor(zeros: [Int32(outputSize)]),
-                activation: activation)
-    }
-
-    init(inputSize: Int, outputSize: Int, activation: @escaping Activation = identity) {
-        self.init(inputSize: inputSize, outputSize: outputSize, activation: activation,
-                generator: &PhiloxRandomNumberGenerator.global)
-    }
-}
+///// A densely-connected neural network layer.
+/////
+///// `Dense` implements the operation `activation(matmul(input, weight) + bias)`, where `weight` is
+///// a weight matrix, `bias` is a bias vector, and `activation` is an element-wise activation
+///// function.
+//@_fixed_layout
+//public struct Dense_<Scalar: AnyTensorFlowFloatingPoint>: Function, Logging {
+//    /// activation function to apply
+//    public typealias Activation =
+//        (TensorView<Scalar>, DeviceStream) -> TensorView<Scalar>
+//    /// The element-wise activation function.
+//    @noDerivative public let activation: Activation
+//    /// The bias vector.
+//    public var bias: TensorView<Scalar>
+//    /// the output view for this instance
+//    public var output: TensorView<Scalar>
+//    /// The weight matrix.
+//    public var weight: TensorView<Scalar>
+//    // Logging
+//    @noDerivative public var logging: LogInfo?
+//
+//    //--------------------------------------------------------------------------
+//    // initializers
+//    public init(weight: TensorView<Scalar>,
+//                bias: TensorView<Scalar>,
+//                activation: @escaping Activation,
+//                input: DataShape,
+//                logging: LogInfo? = nil,
+//                using deviceStream: DeviceStream? = nil) {
+//        // store parameters
+//        self.activation = activation
+//        self.bias = bias
+//        self.weight = weight
+//        self.logging = logging
+//        let flatInput = input.flattened(axis: 1)
+//        output = TensorView<Scalar>(extents: [flatInput.rows, weight.cols],
+//                                    logging: logging)
+//    }
+//
+//    @differentiable
+//    public func evaluate(input: TensorView<Scalar>,
+//                         using stream: DeviceStream?) -> TensorView<Scalar> {
+////        let dataStream = stream ?? Platform.defaultStream
+//        return output // activation(matmul(input, weight) + bias)
+//    }
+//}
+//
+//public extension Dense {
+//    /// Creates a `Dense` layer with the specified input size, output size, and element-wise
+//    /// activation function. The weight matrix is created with shape `[inputSize, outputSize]` and
+//    /// is initialized using Glorot uniform initialization with the specified generator. The bias
+//    /// vector is created with shape `[outputSize]` and is initialized with zeros.
+//    init<G: RandomNumberGenerator>(
+//            inputSize: Int,
+//            outputSize: Int,
+//            activation: @escaping Activation = identity,
+//            generator: inout G
+//    ) {
+//        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
+//                generator: &generator),
+//                bias: Tensor(zeros: [Int32(outputSize)]),
+//                activation: activation)
+//    }
+//
+//    init(inputSize: Int, outputSize: Int, activation: @escaping Activation = identity) {
+//        self.init(inputSize: inputSize, outputSize: outputSize, activation: activation,
+//                generator: &PhiloxRandomNumberGenerator.global)
+//    }
+//}
 
 //public extension Dense {
 //    /// Creates a `Dense` layer with the specified input size, output size, and element-wise

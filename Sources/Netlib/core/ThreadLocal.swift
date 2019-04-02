@@ -103,17 +103,17 @@ class _ThreadLocal {
     /// like AdditiveArithmetic. If an exception is thrown, this catches and
     /// stores the first Error and subsequent body calls are skipped. The
     /// error is then thrown by the using(stream function.
-    public func catchError<Scalar>(
-        perform body: () throws -> TensorView<Scalar>) -> TensorView<Scalar> {
+    public func catchError<T: TensorDataView>(
+        perform body: () throws -> T) -> T {
         // if there is an outstanding error than just return
-        guard lastError == nil else { return TensorView<Scalar>() }
+        guard lastError == nil else { return T() }
         // try the body
         do {
             return try body()
         } catch {
             // record the error
             streamScope[(streamScope.count - 1)].error = error
-            return TensorView<Scalar>()
+            return T()
         }
     }
 

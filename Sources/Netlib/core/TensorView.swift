@@ -5,8 +5,8 @@
 import Foundation
 
 //==============================================================================
-// TensorDataView
-public protocol TensorDataView: AnyScalar, Logging, Equatable {
+// TensorView
+public protocol TensorView: AnyScalar, Logging, Equatable {
     /// The type of scalar referenced by the view
     associatedtype Scalar: AnyScalar
     /// `true` if the scalars are densely packed in memory
@@ -35,20 +35,20 @@ public protocol TensorDataView: AnyScalar, Logging, Equatable {
          name: String?,
          logging: LogInfo?)
     
-    init<T>(shapedLike other: T) where T: TensorDataView
+    init<T>(shapedLike other: T) where T: TensorView
 }
 
-public extension TensorDataView {
+public extension TensorView {
     var isContiguous: Bool { return shape.isContiguous }
     var isEmpty: Bool { return shape.isEmpty }
     var rank: Int { return shape.rank }
 }
 
-public extension TensorDataView where Self: TensorDataViewImpl {
+public extension TensorView where Self: TensorViewImpl {
     //--------------------------------------------------------------------------
     // init<T>(shapedLike other:
     // convenience initializer used by generics
-    init<T>(shapedLike other: T) where T: TensorDataView {
+    init<T>(shapedLike other: T) where T: TensorView {
         self.init(shape: other.shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil,
                   logging: other.logging)
@@ -73,8 +73,8 @@ public extension TensorDataView where Self: TensorDataViewImpl {
 }
 
 //==============================================================================
-// TensorDataViewImpl
-public protocol TensorDataViewImpl: TensorDataView {
+// TensorViewImpl
+public protocol TensorViewImpl: TensorView {
     /// `true` if this view is a reference view and does not cause mutation
     /// during write access. Primarily to support multi-threaded writes
     var isShared: Bool { get set }
@@ -90,7 +90,7 @@ public protocol TensorDataViewImpl: TensorDataView {
     /// the number of bytes spanned by the view
     var viewSpanByteCount: Int { get }
 
-    /// restated from TensorDataView with broader access control
+    /// restated from TensorView with broader access control
     var lastAccessMutated: Bool { get set }
     var logging: LogInfo? { get set }
     var shape: DataShape { get set }
@@ -101,9 +101,9 @@ public protocol TensorDataViewImpl: TensorDataView {
 }
 
 //==============================================================================
-// TensorDataViewImpl extension
+// TensorViewImpl extension
 //
-public extension TensorDataViewImpl {
+public extension TensorViewImpl {
     //--------------------------------------------------------------------------
     // shared memory
     var isShared: Bool {

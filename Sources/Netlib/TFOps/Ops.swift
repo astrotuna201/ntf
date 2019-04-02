@@ -28,7 +28,7 @@ infix operator .=
 //   scalarization and rank getter are implemented.
 
 // Additive operators
-public extension TensorDataView where Self.Scalar: Numeric & AnyNumeric {
+public extension TensorView where Self.Scalar: Numeric & AnyNumeric {
     //==========================================================================
     /// Adds two tensors and produces their sum.
     /// - Note: `+` supports broadcasting.
@@ -92,8 +92,8 @@ public extension TensorDataView where Self.Scalar: Numeric & AnyNumeric {
 public func add<TL, TR>(_ lhs: TL, _ rhs: TR, result: inout TL,
                 using deviceStream: DeviceStream? = nil) throws
     where
-    TL: TensorDataView, TL.Scalar: Numeric,
-    TR: TensorDataView, TR.Scalar: Numeric
+    TL: TensorView, TL.Scalar: Numeric,
+    TR: TensorView, TR.Scalar: Numeric
 {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.add(lhs: lhs, rhs: rhs, result: &result)
@@ -105,8 +105,8 @@ public func add<TL, TR>(_ lhs: TL, _ rhs: TR, result: inout TL,
 public func add<TL, TR>(_ lhs: TL, _ rhs: TR,
                         using deviceStream: DeviceStream? = nil) throws -> TL
     where
-    TL: TensorDataView, TL.Scalar: Numeric,
-    TR: TensorDataView, TR.Scalar: Numeric
+    TL: TensorView, TL.Scalar: Numeric,
+    TR: TensorView, TR.Scalar: Numeric
 {
     var result = TL.init(shapedLike: lhs)
     try add(lhs, rhs, result: &result, using: deviceStream)
@@ -286,8 +286,8 @@ public func add<TL, TR>(_ lhs: TL, _ rhs: TR,
 //  )
 public func div<TL, TR>(_ lhs: TL, _ rhs: TR, result: inout TL,
                         using deviceStream: DeviceStream? = nil) throws where
-        TL: TensorDataView, TL.Scalar: Numeric,
-        TR: TensorDataView, TR.Scalar: Numeric {
+        TL: TensorView, TL.Scalar: Numeric,
+        TR: TensorView, TR.Scalar: Numeric {
             assert(lhs.shape == rhs.shape || rhs.shape.layout == .scalar)
             let stream = deviceStream ?? _ThreadLocal.value.defaultStream
             try stream.div(lhs: lhs, rhs: rhs, result: &result)
@@ -302,8 +302,8 @@ public func div<TL, TR>(_ lhs: TL, _ rhs: TR, result: inout TL,
 public func div<TL, TR>(_ lhs: TL, _ rhs: TR,
                         using deviceStream: DeviceStream? = nil) throws -> TL
     where
-    TL: TensorDataView, TL.Scalar: Numeric,
-    TR: TensorDataView, TR.Scalar: Numeric {
+    TL: TensorView, TL.Scalar: Numeric,
+    TR: TensorView, TR.Scalar: Numeric {
         var result = TL.init(shapedLike: lhs)
         try div(lhs, rhs, result: &result, using: deviceStream)
         return result
@@ -316,8 +316,8 @@ public func div<TL, TR>(_ lhs: TL, _ rhs: TR,
 //    where Scalar : TensorFlowFloatingPoint
 //  )
 public func /<TL, TR>(_ lhs: TL, _ rhs: TR) -> TL where
-    TL: TensorDataView, TL.Scalar: Numeric,
-    TR: TensorDataView, TR.Scalar: Numeric {
+    TL: TensorView, TL.Scalar: Numeric,
+    TR: TensorView, TR.Scalar: Numeric {
         
     return _ThreadLocal.value.catchError {
         return try div(lhs, rhs)
@@ -734,7 +734,7 @@ public func /<TL, TR>(_ lhs: TL, _ rhs: TR) -> TL where
 //}
 infix operator ≈ : ComparisonPrecedence
 
-public extension TensorDataView where Scalar: FloatingPoint & Equatable {
+public extension TensorView where Scalar: FloatingPoint & Equatable {
     /// Returns a `TensorView` of Boolean values indicating whether the elements of
     /// `self` are approximately equal to those of `other`.
     @inlinable @inline(__always)
@@ -948,7 +948,7 @@ public extension TensorDataView where Scalar: FloatingPoint & Equatable {
 // #endif
 
 // SignedNumeric
-public extension TensorDataView where Scalar: SignedNumeric {
+public extension TensorView where Scalar: SignedNumeric {
     //==========================================================================
     /// Computes the negation of the specified TensorView element-wise.
     @inlinable @inline(__always)
@@ -1012,7 +1012,7 @@ public extension TensorDataView where Scalar: SignedNumeric {
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T,
                 using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.log(x: x, result: &result)
 }
@@ -1021,7 +1021,7 @@ public func log<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try log(x, result: &result, using: stream)
     return result
@@ -1033,7 +1033,7 @@ public func log<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpSin(_:) where T : TensorFlowFloatingPoint)
 public func sin<T>(_ x: T, result: inout T,
                 using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.sin(x: x, result: &result)
 }
@@ -1042,7 +1042,7 @@ public func sin<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpSin(_:) where T : TensorFlowFloatingPoint)
 public func sin<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try sin(x, result: &result, using: stream)
     return result
@@ -1054,7 +1054,7 @@ public func sin<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpCos(_:) where T : TensorFlowFloatingPoint)
 public func cos<T>(_ x: T, result: inout T,
                 using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.cos(x: x, result: &result)
 }
@@ -1063,7 +1063,7 @@ public func cos<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpCos(_:) where T : TensorFlowFloatingPoint)
 public func cos<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try cos(x, result: &result, using: stream)
     return result
@@ -1075,7 +1075,7 @@ public func cos<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpTan(_:) where T : TensorFlowFloatingPoint)
 public func tan<T>(_ x: T, result: inout T,
                 using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.tan(x: x, result: &result)
 }
@@ -1084,7 +1084,7 @@ public func tan<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpTan(_:) where T : TensorFlowFloatingPoint)
 public func tan<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try tan(x, result: &result, using: stream)
     return result
@@ -1096,7 +1096,7 @@ public func tan<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpSinh(_:) where T : TensorFlowFloatingPoint)
 public func sinh<T>(_ x: T, result: inout T,
                  using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.sinh(x: x, result: &result)
 }
@@ -1105,7 +1105,7 @@ public func sinh<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpSinh(_:) where T : TensorFlowFloatingPoint)
 public func sinh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try sinh(x, result: &result, using: stream)
     return result
@@ -1117,7 +1117,7 @@ public func sinh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpCosh(_:) where T : TensorFlowFloatingPoint)
 public func cosh<T>(_ x: T, result: inout T,
                  using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.cosh(x: x, result: &result)
 }
@@ -1126,7 +1126,7 @@ public func cosh<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpCosh(_:) where T : TensorFlowFloatingPoint)
 public func cosh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try cosh(x, result: &result, using: stream)
     return result
@@ -1138,7 +1138,7 @@ public func cosh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpTanh(_:) where T : TensorFlowFloatingPoint)
 public func tanh<T>(_ x: T, result: inout T,
                  using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.tanh(x: x, result: &result)
 }
@@ -1147,7 +1147,7 @@ public func tanh<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpTanh(_:) where T : TensorFlowFloatingPoint)
 public func tanh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try tanh(x, result: &result, using: stream)
     return result
@@ -1159,7 +1159,7 @@ public func tanh<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpSqrt(_:) where T : TensorFlowFloatingPoint)
 public func sqrt<T>(_ x: T, result: inout T,
                  using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     let stream = deviceStream ?? _ThreadLocal.value.defaultStream
     try stream.sqrt(x: x, result: &result)
 }
@@ -1168,7 +1168,7 @@ public func sqrt<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpSqrt(_:) where T : TensorFlowFloatingPoint)
 public func sqrt<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
     var result = T.init(shapedLike: x)
     try sqrt(x, result: &result, using: stream)
     return result
@@ -1180,7 +1180,7 @@ public func sqrt<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpRsqrt(_:) where T : TensorFlowFloatingPoint)
 public func rsqrt<T>(_ x: T, result: inout T,
                      using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.rsqrt(x: x, result: &result)
 }
@@ -1189,7 +1189,7 @@ public func rsqrt<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpRsqrt(_:) where T : TensorFlowFloatingPoint)
 public func rsqrt<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: x)
         try rsqrt(x, result: &result, using: stream)
         return result
@@ -1201,7 +1201,7 @@ public func rsqrt<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpExp(_:) where T : TensorFlowFloatingPoint)
 public func exp<T>(_ x: T, result: inout T,
                    using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.exp(x: x, result: &result)
 }
@@ -1210,7 +1210,7 @@ public func exp<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpExp(_:) where T : TensorFlowFloatingPoint)
 public func exp<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: x)
         try exp(x, result: &result, using: stream)
         return result
@@ -1222,7 +1222,7 @@ public func exp<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpCeil(_:) where T : TensorFlowFloatingPoint)
 public func ceil<T>(_ x: T, result: inout T,
                     using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.ceil(x: x, result: &result)
 }
@@ -1231,7 +1231,7 @@ public func ceil<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpCeil(_:) where T : TensorFlowFloatingPoint)
 public func ceil<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: x)
         try ceil(x, result: &result, using: stream)
         return result
@@ -1243,7 +1243,7 @@ public func ceil<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 //@differentiable(vjp: _vjpFloor(_:) where T : TensorFlowFloatingPoint)
 public func floor<T>(_ x: T, result: inout T,
                      using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.floor(x: x, result: &result)
 }
@@ -1252,7 +1252,7 @@ public func floor<T>(_ x: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpFloor(_:) where T : TensorFlowFloatingPoint)
 public func floor<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: x)
         try floor(x, result: &result, using: stream)
         return result
@@ -1264,7 +1264,7 @@ public func floor<T>(_ x: T, using stream: DeviceStream? = nil) throws -> T
 // @differentiable(where T : TensorFlowFloatingPoint)
 public func pow<T>(_ lhs: T.Scalar, _ rhs: T, result: inout T,
                    using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.pow(x: ScalarTensor(value: lhs), y: rhs, result: &result)
 }
@@ -1274,7 +1274,7 @@ public func pow<T>(_ lhs: T.Scalar, _ rhs: T, result: inout T,
 // @differentiable(where T : TensorFlowFloatingPoint)
 public func pow<T>(_ lhs: T.Scalar, _ rhs: T,
                    using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: rhs)
         try pow(lhs, rhs, result: &result, using: stream)
         return result
@@ -1286,7 +1286,7 @@ public func pow<T>(_ lhs: T.Scalar, _ rhs: T,
 // @differentiable(where T : TensorFlowFloatingPoint)
 public func pow<T>(_ lhs: T, _ rhs: T.Scalar, result: inout T,
                    using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.pow(x: lhs, y: ScalarTensor(value: rhs), result: &result)
 }
@@ -1296,7 +1296,7 @@ public func pow<T>(_ lhs: T, _ rhs: T.Scalar, result: inout T,
 // @differentiable(where T : TensorFlowFloatingPoint)
 public func pow<T>(_ lhs: T, _ rhs: T.Scalar,
                    using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: lhs)
         try pow(lhs, rhs, result: &result, using: stream)
         return result
@@ -1308,7 +1308,7 @@ public func pow<T>(_ lhs: T, _ rhs: T.Scalar,
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T,
                    using deviceStream: DeviceStream? = nil) throws
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         let stream = deviceStream ?? _ThreadLocal.value.defaultStream
         try stream.pow(x: x, y: y, result: &result)
 }
@@ -1317,7 +1317,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T,
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, using stream: DeviceStream? = nil) throws -> T
-    where T: TensorDataView, T.Scalar: FloatingPoint {
+    where T: TensorView, T.Scalar: FloatingPoint {
         var result = T.init(shapedLike: x)
         try pow(x, y, result: &result, using: stream)
         return result

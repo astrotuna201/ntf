@@ -63,12 +63,12 @@ public struct StereoSample<T: AnyNumeric & AnyFixedSizeScalar>: AnyStereoAudioSa
 
 //==============================================================================
 // ScalarTensorView
-public protocol ScalarTensorView: TensorDataView {
+public protocol ScalarTensorView: TensorView {
 }
 
 //--------------------------------------------------------------------------
 // ScalarTensorViewImpl
-public protocol ScalarTensorViewImpl: TensorDataViewImpl, ScalarTensorView { }
+public protocol ScalarTensorViewImpl: TensorViewImpl, ScalarTensorView { }
 
 public extension ScalarTensorViewImpl {
 }
@@ -116,13 +116,13 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
 
 //==============================================================================
 // VectorTensorView
-public protocol VectorTensorView: TensorDataView {
+public protocol VectorTensorView: TensorView {
     var count: Int { get }
 }
 
 //------------------------------------------------------------------------------
 // VectorTensorViewImpl
-public protocol VectorTensorViewImpl: TensorDataViewImpl, VectorTensorView {}
+public protocol VectorTensorViewImpl: TensorViewImpl, VectorTensorView {}
 
 public extension VectorTensorViewImpl {
     /// the number of elements in the vector
@@ -158,11 +158,13 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     
     /// shaped init
     public init(count: Int, name: String? = nil, logging: LogInfo? = nil) {
-        self.init(shape: DataShape(extents: [count]), name: name, logging: logging)
+        self.init(shape: DataShape(extents: [count]),
+                  name: name, logging: logging)
     }
     
     /// initialize with scalar array
-    public init(scalars: [Scalar], name: String? = nil, logging: LogInfo? = nil) {
+    public init(scalars: [Scalar], name: String? = nil,
+                logging: LogInfo? = nil) {
         self.init(count: scalars.count, name: name, logging: logging)
         _ = try! rw().initialize(from: scalars)
     }
@@ -177,7 +179,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
 
 //==============================================================================
 // MatrixTensorView
-public protocol MatrixTensorView: TensorDataView {
+public protocol MatrixTensorView: TensorView {
     var rows: Int { get }
     var cols: Int { get }
     var rowStride: Int { get }
@@ -186,7 +188,7 @@ public protocol MatrixTensorView: TensorDataView {
 
 //--------------------------------------------------------------------------
 // MatrixTensorViewImpl
-public protocol MatrixTensorViewImpl: TensorDataViewImpl, MatrixTensorView {}
+public protocol MatrixTensorViewImpl: TensorViewImpl, MatrixTensorView {}
 
 public extension MatrixTensorViewImpl {
     var rows: Int { return shape.extents[0] }
@@ -253,7 +255,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
 
 //==============================================================================
 // VolumeTensorView
-public protocol VolumeTensorView: TensorDataView {
+public protocol VolumeTensorView: TensorView {
     var depths: Int { get }
     var rows: Int { get }
     var cols: Int { get }
@@ -264,7 +266,7 @@ public protocol VolumeTensorView: TensorDataView {
 
 //------------------------------------------------------------------------------
 // VolumeTensorViewImpl
-public protocol VolumeTensorViewImpl: TensorDataViewImpl, VolumeTensorView {}
+public protocol VolumeTensorViewImpl: TensorViewImpl, VolumeTensorView {}
 
 public extension VolumeTensorViewImpl {
     var depths: Int { return shape.extents[0] }
@@ -304,7 +306,8 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
 
     /// shaped init
     public init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        self.init(shape: DataShape(extents: extents), name: name, logging: logging)
+        self.init(shape: DataShape(extents: extents),
+                  name: name, logging: logging)
     }
     
     /// initialize with explicit labels
@@ -324,12 +327,12 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
 
 //==============================================================================
 // NDTensorView
-public protocol NDTensorView: TensorDataView {
+public protocol NDTensorView: TensorView {
 }
 
 //------------------------------------------------------------------------------
 // NDTensorViewImpl
-public protocol NDTensorViewImpl: TensorDataViewImpl, NDTensorView {}
+public protocol NDTensorViewImpl: TensorViewImpl, NDTensorView {}
 
 public extension NDTensorViewImpl {
 }
@@ -377,7 +380,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
 /// c: channels
 /// h: rows
 /// w: cols
-public protocol NCHWTensorView: TensorDataView {
+public protocol NCHWTensorView: TensorView {
     var rows: Int { get }
     var cols: Int { get }
     var rowStride: Int { get }
@@ -386,7 +389,7 @@ public protocol NCHWTensorView: TensorDataView {
 
 //--------------------------------------------------------------------------
 // NCHWTensorViewImpl
-public protocol NCHWTensorViewImpl: TensorDataViewImpl, NCHWTensorView {}
+public protocol NCHWTensorViewImpl: TensorViewImpl, NCHWTensorView {}
 
 public extension NCHWTensorViewImpl {
     var items: Int { return shape.extents[0] }
@@ -458,7 +461,7 @@ public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
 /// h: rows
 /// w: cols
 /// c: channels
-public protocol NHWCTensorView: TensorDataView {
+public protocol NHWCTensorView: TensorView {
     var rows: Int { get }
     var cols: Int { get }
     var rowStride: Int { get }
@@ -467,7 +470,7 @@ public protocol NHWCTensorView: TensorDataView {
 
 //--------------------------------------------------------------------------
 // NHWCTensorViewImpl
-public protocol NHWCTensorViewImpl: TensorDataViewImpl, NHWCTensorView {}
+public protocol NHWCTensorViewImpl: TensorViewImpl, NHWCTensorView {}
 
 public extension NHWCTensorViewImpl {
     var items: Int { return shape.extents[0] }

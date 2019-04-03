@@ -5,14 +5,6 @@
 import Foundation
 
 public final class CpuStream : DeviceStream {
-    public func all<T>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
-        
-    }
-    
-    public func any<T>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
-        
-    }
-    
     public func abs<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : SignedNumeric {
         
     }
@@ -21,11 +13,11 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func all<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar == Bool {
+    public func all<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
-    public func any<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar == Bool {
+    public func any<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
@@ -33,11 +25,11 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func argmax<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
+    public func argmax<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
         
     }
     
-    public func argmin<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
+    public func argmin<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
         
     }
     
@@ -129,7 +121,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func mean<T>(x: T, squeezingAxes axes: [Int], result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    public func mean<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     
@@ -161,7 +153,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func prod<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    public func prod<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     
@@ -197,7 +189,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func sum<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    public func sum<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     

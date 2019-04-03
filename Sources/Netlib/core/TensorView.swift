@@ -7,6 +7,7 @@ import Foundation
 //==============================================================================
 // TensorView
 public protocol TensorView: AnyScalar, Logging, Equatable {
+    //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
     associatedtype Scalar: AnyScalar
     /// A concrete type used in generics to pass Boolean values
@@ -14,10 +15,13 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// A concrete type used in generics to return index results
     associatedtype IndexView: TensorView
 
+    //--------------------------------------------------------------------------
     /// `true` if the scalars are densely packed in memory
     var isContiguous: Bool { get }
     /// `true` if the view contains zero elements
     var isEmpty: Bool { get }
+    /// during write access. Primarily to support multi-threaded writes
+    var isShared: Bool { get }
     /// lastAccessMutated is `true` if the last data access caused the view
     /// to mutate, which causes the underlying tensorData object to be copied
     /// It's primary use is in debugging and unit testing
@@ -30,7 +34,12 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var rank: Int { get }
     /// the shape of the view
     var shape: DataShape { get }
-    
+    /// class reference to the underlying byte buffer
+    var tensorData: TensorData { get }
+    /// the linear element offset where the view begins
+    var viewOffset: Int { get }
+
+    //--------------------------------------------------------------------------
     /// creates a new concrete view instance. This is required to enable
     /// extension methods to create typed return values
     init(shape: DataShape,
@@ -45,6 +54,11 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// convenience initializer used to create type compatible tensors from
     /// from a scalar in op functions.
     init(asScalar value: Scalar)
+    
+    //--------------------------------------------------------------------------
+    /// performs a dynamic rank reduction by removing extents of 1
+    /// along the specified axes
+    func squeezed(axes: [Int]?) -> NDTensor<Scalar>
 }
 
 /// The type used for indexing
@@ -73,6 +87,18 @@ public extension TensorView {
             currentColor = normalColor
         }
         #endif
+    }
+
+    //--------------------------------------------------------------------------
+    /// performs a dynamic rank reduction by removing extents of 1
+    /// along the specified axes
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
+    func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
+        let posAxes = axes?.map { $0 < 0 ? $0 + rank : $0 } ?? [Int](0..<rank)
+        return NDTensor<Scalar>(
+            shape: shape.squeezed(axes: Set(posAxes)),
+            tensorData: tensorData, viewOffset: viewOffset,
+            isShared: isShared, name: name, logging: logging)
     }
 }
 
@@ -119,25 +145,20 @@ public extension TensorView where Self: TensorViewImpl {
 //==============================================================================
 // TensorViewImpl
 public protocol TensorViewImpl: TensorView {
-    /// `true` if this view is a reference view and does not cause mutation
-    /// during write access. Primarily to support multi-threaded writes
-    var isShared: Bool { get set }
-    var _isShared: Bool { get set }
-    /// optional name for the view
-    var _name: String? { get set }
-    /// class reference to the underlying byte buffer
-    var tensorData: TensorData { get set }
-    /// the linear element offset where the view begins
-    var viewOffset: Int { get set }
     /// the linear byte offset where the view begins
     var viewByteOffset: Int { get }
     /// the number of bytes spanned by the view
     var viewSpanByteCount: Int { get }
 
-    /// restated from TensorView with broader access control
+    /// restated from TensorView with broader access
+    var _isShared: Bool { get set }
+    var _name: String? { get set }
+    var isShared: Bool { get set }
     var lastAccessMutated: Bool { get set }
     var logging: LogInfo? { get set }
     var shape: DataShape { get set }
+    var tensorData: TensorData { get set }
+    var viewOffset: Int { get set }
 
     /// determines if the view holds a unique reference to the underlying
     /// TensorData array

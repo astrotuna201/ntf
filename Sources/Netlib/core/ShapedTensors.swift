@@ -82,6 +82,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     // associated types
     public typealias BoolView = ScalarTensor<Bool>
     public typealias IndexView = ScalarTensor<Int32>
+    public typealias ScalarView = ScalarTensor<Scalar>
 
     // properties
     public var _isShared: Bool = false
@@ -108,7 +109,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     }
     
     /// shaped init
-    public init(value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
+    public init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
         self.init(shape: DataShape(extents: [1], layout: .scalar),
                   name: name, logging: logging)
     }

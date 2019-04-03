@@ -14,7 +14,7 @@ class test_Ops: XCTestCase {
     static var allTests = [
         ("test_Casting", test_Casting),
         ("test_GetDefaultStream", test_GetDefaultStream),
-        ("test_PrimaryOps", test_PrimaryOps),
+        ("test_AddSubMulDiv", test_AddSubMulDiv),
     ]
     
     func test_Casting() {
@@ -33,7 +33,7 @@ class test_Ops: XCTestCase {
         XCTAssert(!stream.name.isEmpty)
     }
     
-    func test_PrimaryOps() {
+    func test_AddSubMulDiv() {
         let _ = MatrixTensor<RGBASample<UInt8>>(4, 3)
         let a = VectorTensor<Float>(scalars: [1, 2, 3, 4])
         let b = VectorTensor<Float>(scalars: [4, 3, 2, 1])
@@ -43,14 +43,13 @@ class test_Ops: XCTestCase {
         do {
             //---------------------------------
             // unscoped, uses Platform.defaultStream
-            let c1 = a + b
+            let c1 = try a + b
             XCTAssert(c1 == expected)
-            XCTAssert(_ThreadLocal.value.noError)
             
             //---------------------------------
             // default stream scoped, uses Platform.defaultStream
             let c2 = try usingDefaultStream {
-                return a + b
+                return try a + b
             }
             XCTAssert(c2 == expected)
 
@@ -60,22 +59,22 @@ class test_Ops: XCTestCase {
             let stream = try Platform.global.createStreams(deviceIds: [0, 1])
             
             let c3 = try using(stream[0]) {
-                return a + b
+                return try a + b
             }
             XCTAssert(c3 == expected)
 
             //---------------------------------
             // sequential multi scoped
             let aPlusB = try using(stream[0]) {
-                return a + b
+                return try a + b
             }
             
             let aMinusB = try using(stream[1]) {
-                return a - b
+                return try a - b
             }
             
             let c4 = try usingDefaultStream {
-                return aPlusB + aMinusB
+                return try aPlusB + aMinusB
             }
             let c4expected = VectorTensor<Float>(scalars: [2, 4, 6, 8])
             // all three streams auto sync at this point
@@ -86,7 +85,7 @@ class test_Ops: XCTestCase {
             let c5: VectorTensor<Float> = try usingDefaultStream {
                 let x: VectorTensor<Float> = try using(stream[0]) {
                     let aMinusB = try using(stream[1]) {
-                        return a - b
+                        return try a - b
                     }
                     // here stream[1] is synced with stream[0]
                     return try pow(a + b + aMinusB, y)
@@ -94,13 +93,13 @@ class test_Ops: XCTestCase {
                 // temporary results are okay!
                 // here stream[0] is synced with the defaultStream
                 let lnx = try log(x)
-                return lnx / (lnx + 1)
+                return try lnx / (lnx + 1)
             }
-            
+
             // all three streams auto sync at this point
             let c5expected = VectorTensor<Float>(scalars: [0, 0.581, 0.782, 0.862])
-            let c5IsEqual = try c5.elementsApproximatelyEqual(c5expected).scalarValue()
-            
+            let c5IsEqual = try c5.approximatelyEqual(c5expected).all().scalarValue()
+
             // here the defaultStream is synced with the app thread
             XCTAssert(c5IsEqual)
 

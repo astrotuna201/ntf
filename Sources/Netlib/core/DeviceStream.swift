@@ -49,13 +49,26 @@ public protocol DeviceStream: ObjectTracking, Logging {
     func all<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
+    /// Returns `true` if all scalars are equal to `true`. Otherwise, returns
+    /// `false`.
+    func all<T>(x: T, reductionAxes: VectorTensor<Int32>,
+                result: inout T) throws
+        where T: TensorView, T.Scalar == Bool
+    
     /// Returns a `true` scalar if any scalars are equal to `true`.
     /// Otherwise returns a `false` scalar
     func any<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
+    /// Returns a `true` scalar if any scalars are equal to `true`.
+    /// Otherwise returns a `false` scalar
+    func any<T>(x: T, reductionAxes: VectorTensor<Int32>,
+                result: inout T) throws
+        where T: TensorView, T.Scalar == Bool
+    
     /// Performs a pointwise comparison within the specified tolerance
-    func approximatelyEqual<T>(lhs: T, rhs: T, tolerance: Double,
+    func approximatelyEqual<T>(lhs: T, rhs: T,
+                               tolerance: ScalarTensor<T.Scalar>,
                                result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: FloatingPoint
 

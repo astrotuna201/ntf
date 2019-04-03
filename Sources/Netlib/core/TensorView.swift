@@ -35,25 +35,61 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
          name: String?,
          logging: LogInfo?)
     
+    /// convenience initializer used to create result views in op functions
     init<T>(shapedLike other: T) where T: TensorView
+    /// convenience initializer used to create type compatible tensors from
+    /// from a scalar in op functions.
+    init(asScalar value: Scalar)
 }
 
 public extension TensorView {
     var isContiguous: Bool { return shape.isContiguous }
     var isEmpty: Bool { return shape.isEmpty }
     var rank: Int { return shape.rank }
+
+    //--------------------------------------------------------------------------
+    // helper to flip highlight color back and forth
+    // it doesn't work in the Xcode console for some reason,
+    // but it's nice when using CLion
+    func setStringColor(text: inout String, highlight: Bool,
+                        currentColor: inout LogColor,
+                        normalColor: LogColor = .white,
+                        highlightColor: LogColor = .blue) {
+        #if os(Linux)
+        if currentColor == normalColor && highlight {
+            text += highlightColor.rawValue
+            currentColor = highlightColor
+            
+        } else if currentColor == highlightColor && !highlight {
+            text += normalColor.rawValue
+            currentColor = normalColor
+        }
+        #endif
+    }
 }
 
 public extension TensorView where Self: TensorViewImpl {
     //--------------------------------------------------------------------------
-    // init<T>(shapedLike other:
-    // convenience initializer used by generics
+    /// init<T>(shapedLike other:
+    /// convenience initializer used by generics
     init<T>(shapedLike other: T) where T: TensorView {
         self.init(shape: other.shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil,
                   logging: other.logging)
     }
     
+    //--------------------------------------------------------------------------
+    /// init<S>(asScalar value:
+    /// convenience initializer used by generics
+    init(asScalar value: Scalar) {
+        // create scalar version of the shaped view type
+        self.init(shape: DataShape(extents: [1]),
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, name: nil, logging: nil)
+        // set the value
+        try! rw()[0] = value
+    }
+
     //--------------------------------------------------------------------------
     // name
     var name: String {

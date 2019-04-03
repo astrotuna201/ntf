@@ -28,6 +28,7 @@ public struct DataShape: Equatable, Codable {
     public var isEmpty: Bool { return elementCount == 0 }
     public var isScalar: Bool { return layout == .scalar }
     public var rank: Int { return extents.count }
+    public var items: Int { return extents[0] }
     
     /// returns a dense version of self
     public var dense: DataShape {

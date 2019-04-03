@@ -98,25 +98,6 @@ class _ThreadLocal {
         _ = streamScope.popLast()
     }
 
-    /// this helper is used for static operators that perform throwing
-    /// operations but cannot throw themselves due to protocol conformance
-    /// like AdditiveArithmetic. If an exception is thrown, this catches and
-    /// stores the first Error and subsequent body calls are skipped. The
-    /// error is then thrown by the using(stream function.
-    public func catchError<T: TensorView>(
-        perform body: () throws -> T) -> T {
-        // if there is an outstanding error than just return
-        guard lastError == nil else { return T() }
-        // try the body
-        do {
-            return try body()
-        } catch {
-            // record the error
-            streamScope[(streamScope.count - 1)].error = error
-            return T()
-        }
-    }
-
     //--------------------------------------------------------------------------
     // shared singleton initializer
     @usableFromInline

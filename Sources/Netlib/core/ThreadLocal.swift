@@ -23,13 +23,7 @@ public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
     _ThreadLocal.value.push(stream: stream, logInfo: logInfo)
     defer { _ThreadLocal.value.popStream() }
     // execute the body
-    let result = try body()
-    // if one of the non-throwing operators like `+` within the scope
-    // fails, the error is recorded and is propagated
-    if let lastError = _ThreadLocal.value.lastError {
-        throw lastError
-    }
-    return result
+    return try body()
 }
 
 //==============================================================================
@@ -43,15 +37,8 @@ public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
 public func usingDefaultStream<R>(
     logInfo: LogInfo? = nil,
     perform body: () throws -> R) throws -> R {
-    
     // execute the body
-    let result = try body()
-    // if one of the non-throwing operators like `+` within the scope
-    // fails, the error is recorded and is propagated
-    if let lastError = _ThreadLocal.value.lastError {
-        throw lastError
-    }
-    return result
+    return try body()
 }
 
 //==============================================================================
@@ -61,8 +48,8 @@ class _ThreadLocal {
     //--------------------------------------------------------------------------
     // properties
     /// stack of default device streams and logging
-    var streamScope: [(stream: DeviceStream, logInfo: LogInfo, error: Error?)] =
-        [(Platform.defaultStream, Platform.defaultStream.logging!, nil)]
+    var streamScope: [(stream: DeviceStream, logInfo: LogInfo)] =
+        [(Platform.defaultStream, Platform.defaultStream.logging!)]
 
     /// thread data key
     private static let key: pthread_key_t = {
@@ -80,16 +67,13 @@ class _ThreadLocal {
     // there will always be the platform default stream and logInfo
     public var defaultStream: DeviceStream { return streamScope.last!.stream }
     public var defaultLogInfo: LogInfo { return streamScope.last!.logInfo }
-    public var lastError: Error? { return streamScope.last!.error }
-    public var noError: Bool { return streamScope.last!.error == nil }
-    public var errorOccurred: Bool { return streamScope.last!.error != nil }
 
     //--------------------------------------------------------------------------
     // stack functions
     @usableFromInline
     func push(stream: DeviceStream, logInfo: LogInfo? = nil) {
         let info = logInfo ?? streamScope.last!.logInfo
-        streamScope.append((stream, info, nil))
+        streamScope.append((stream, info))
     }
     
     @usableFromInline

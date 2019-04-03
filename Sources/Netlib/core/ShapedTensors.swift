@@ -10,56 +10,56 @@ import Foundation
 /// non numeric scalar types.
 /// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol AnyDenseChannelScalar: AnyScalar {
-    associatedtype ChannelScalar: AnyFixedSizeScalar
-    static var channels: Int { get }
+public protocol AnyUniformDenseScalar: AnyScalar {
+    associatedtype ComponentScalar: AnyFixedSizeScalar
+    static var componentCount: Int { get }
 }
 
-public extension AnyDenseChannelScalar {
-    static var channels: Int {
-        return MemoryLayout<Self>.size / MemoryLayout<ChannelScalar>.size
+public extension AnyUniformDenseScalar {
+    static var componentCount: Int {
+        return MemoryLayout<Self>.size / MemoryLayout<ComponentScalar>.size
     }
 }
 
 //==============================================================================
 // Image Scalar types
-public protocol AnyRGBImageSample: AnyDenseChannelScalar {
-    var r: ChannelScalar { get set }
-    var g: ChannelScalar { get set }
-    var b: ChannelScalar { get set }
+public protocol AnyRGBImageSample: AnyUniformDenseScalar {
+    var r: ComponentScalar { get set }
+    var g: ComponentScalar { get set }
+    var b: ComponentScalar { get set }
 }
 
 public struct RGBSample<T>: AnyRGBImageSample
     where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ChannelScalar = T
+    public typealias ComponentScalar = T
     public var r, g, b: T
     public init() { r = T(); g = T(); b = T() }
 }
 
-public protocol AnyRGBAImageSample: AnyDenseChannelScalar {
-    var r: ChannelScalar { get set }
-    var g: ChannelScalar { get set }
-    var b: ChannelScalar { get set }
-    var a: ChannelScalar { get set }
+public protocol AnyRGBAImageSample: AnyUniformDenseScalar {
+    var r: ComponentScalar { get set }
+    var g: ComponentScalar { get set }
+    var b: ComponentScalar { get set }
+    var a: ComponentScalar { get set }
 }
 
 public struct RGBASample<T> : AnyRGBAImageSample
 where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ChannelScalar = T
+    public typealias ComponentScalar = T
     public var r, g, b, a: T
     public init() { r = T(); g = T(); b = T(); a = T() }
 }
 
 //==============================================================================
 // Audio sample types
-public protocol AnyStereoAudioSample: AnyDenseChannelScalar {
-    var left: ChannelScalar { get set }
-    var right: ChannelScalar { get set }
+public protocol AnyStereoAudioSample: AnyUniformDenseScalar {
+    var left: ComponentScalar { get set }
+    var right: ComponentScalar { get set }
 }
 
 public struct StereoSample<T>: AnyStereoAudioSample
 where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ChannelScalar = T
+    public typealias ComponentScalar = T
     public var left, right: T
     public init() { left = T(); right = T() }
 }
@@ -586,10 +586,10 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
 public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M: MatrixTensorViewImpl>(_ matrix: M, name: String? = nil) where
-        M.Scalar: AnyDenseChannelScalar,
-        M.Scalar.ChannelScalar == Scalar {
+        M.Scalar: AnyUniformDenseScalar,
+        M.Scalar.ComponentScalar == Scalar {
             let extents = [1, matrix.shape.extents[0],
-                           matrix.shape.extents[1], M.Scalar.channels]
+                           matrix.shape.extents[1], M.Scalar.componentCount]
             self.shape = DataShape(extents: extents, layout: .nhwc)
             self.logging = matrix.logging
             self.tensorData = matrix.tensorData

@@ -9,6 +9,11 @@ import Foundation
 public protocol TensorView: AnyScalar, Logging, Equatable {
     /// The type of scalar referenced by the view
     associatedtype Scalar: AnyScalar
+    /// A concrete type used in generics to return Boolean results
+    associatedtype BoolView: TensorView
+    /// A concrete type used in generics to return index results
+    associatedtype IndexView: TensorView
+    
     /// `true` if the scalars are densely packed in memory
     var isContiguous: Bool { get }
     /// `true` if the view contains zero elements

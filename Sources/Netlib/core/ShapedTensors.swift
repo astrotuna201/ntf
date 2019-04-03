@@ -79,6 +79,10 @@ public extension ScalarTensorViewImpl {
 //------------------------------------------------------------------------------
 // ScalarTensor
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
+    // associated types
+    public typealias BoolView = ScalarTensor<Bool>
+    public typealias IndexView = ScalarTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -176,6 +180,10 @@ public extension VectorTensorViewImpl {
 //------------------------------------------------------------------------------
 // VectorTensor
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
+    // associated types
+    public typealias BoolView = VectorTensor<Bool>
+    public typealias IndexView = VectorTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -245,6 +253,10 @@ public extension MatrixTensorViewImpl {
 //--------------------------------------------------------------------------
 // MatrixTensor
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
+    // associated types
+    public typealias BoolView = MatrixTensor<Bool>
+    public typealias IndexView = MatrixTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -324,6 +336,10 @@ public extension VolumeTensorViewImpl {
 //------------------------------------------------------------------------------
 /// VolumeTensor
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
+    // associated types
+    public typealias BoolView = VolumeTensor<Bool>
+    public typealias IndexView = VolumeTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -385,6 +401,10 @@ public extension NDTensorViewImpl {
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
+    // associated types
+    public typealias BoolView = NDTensor<Bool>
+    public typealias IndexView = NDTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -449,7 +469,11 @@ public extension NCHWTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // NCHWTensor
-public struct NCHWTensor<Scalar: AnyNumeric>: NCHWTensorViewImpl {
+public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorViewImpl {
+    // associated types
+    public typealias BoolView = NCHWTensor<Bool>
+    public typealias IndexView = NCHWTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?
@@ -530,7 +554,11 @@ public extension NHWCTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // NHWCTensor
-public struct NHWCTensor<Scalar: AnyNumeric>: NHWCTensorViewImpl {
+public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
+    // associated types
+    public typealias BoolView = NHWCTensor<Bool>
+    public typealias IndexView = NHWCTensor<Int32>
+
     // properties
     public var _isShared: Bool = false
     public var _name: String?

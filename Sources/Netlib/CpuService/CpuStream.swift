@@ -201,7 +201,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-  
+ 
     //--------------------------------------------------------------------------
 	// properties
 	public private(set) var trackingId = 0

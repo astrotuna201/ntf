@@ -44,28 +44,26 @@ public protocol DeviceStream: ObjectTracking, Logging {
     func add<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
 
-    /// Returns `true` if all scalars are equal to `true`. Otherwise, returns
-    /// `false`.
+    /// Returns `true` if all scalars are`true`. Otherwise, returns `false`.
     func all<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
-    /// Returns `true` if all scalars are equal to `true`. Otherwise, returns
-    /// `false`.
-    func all<T>(x: T, reductionAxes: VectorTensor<Int32>,
-                result: inout T) throws
-        where T: TensorView, T.Scalar == Bool
+    /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
+    func all<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>,
+                   result: inout R) throws where
+        T: TensorView, T.Scalar == Bool,
+        R: TensorView, R.Scalar == Bool
     
-    /// Returns a `true` scalar if any scalars are equal to `true`.
-    /// Otherwise returns a `false` scalar
+    /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
     func any<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
-    /// Returns a `true` scalar if any scalars are equal to `true`.
-    /// Otherwise returns a `false` scalar
-    func any<T>(x: T, reductionAxes: VectorTensor<Int32>,
-                result: inout T) throws
-        where T: TensorView, T.Scalar == Bool
-    
+    /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
+    func any<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>,
+                   result: inout R) throws where
+        T: TensorView, T.Scalar == Bool,
+        R: TensorView, R.Scalar == Bool
+
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
                                tolerance: ScalarTensor<T.Scalar>,
@@ -76,16 +74,19 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// reduced dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func argmax<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws
-        where T: TensorView, T.Scalar: Numeric, T.IndexView.Scalar == Int32
+    func argmax<T>(x: T, squeezingAxis axis: Int,
+                   result: inout T.IndexView) throws where
+        T: TensorView, T.Scalar: Numeric,
+        T.IndexView.Scalar == TensorIndex
 
     /// Returns the indices of the minimum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     func argmin<T>(x: T, squeezingAxis axis: Int,
-                   result: inout T.IndexView) throws
-        where T: TensorView, T.Scalar: Numeric, T.IndexView.Scalar == Int32
+                   result: inout T.IndexView) throws where
+        T: TensorView, T.Scalar: Numeric,
+        T.IndexView.Scalar == TensorIndex
 
     /// Broadcast x to the specified shape
     /// - Parameter x: the pattern to broadcast

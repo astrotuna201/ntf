@@ -22,11 +22,11 @@ class test_DataShape: XCTestCase {
         XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().extents == [4,3,5])
         XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().extents == [4,3,5])
         
-        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(squeezingAxes: [0,4]).extents == [10,1,4,3])
-        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(squeezingAxes: [0,5]).extents == [10,1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(squeezingAxes: [1,3]).extents == [1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(squeezingAxes: [3,3]).extents == [1,1,4,3,5])
-        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(squeezingAxes: []).extents == [1, 1, 4, 1, 1, 3, 5])
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).extents == [10,1,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).extents == [10,1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).extents == [1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).extents == [1,1,4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).extents == [1, 1, 4, 1, 1, 3, 5])
     }
     
     func test_transposed() {

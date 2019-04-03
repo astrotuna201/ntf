@@ -21,7 +21,6 @@ public func all<T>(_ x: T, result: inout T,
 }
 
 /// returns new view
-/// - Parameter x: value tensor
 /// - Returns: a new tensor containing the result
 public extension TensorView where Self.Scalar == Bool {
     @inlinable @inline(__always)
@@ -32,3 +31,42 @@ public extension TensorView where Self.Scalar == Bool {
         return result
     }
 }
+
+//==============================================================================
+/// all(x:alongAxes:)
+/// Returns `true` if all scalars are equal to `true` along the specified
+/// axes. Otherwise returns `false`. The result extent along the specified
+/// axes will be 1. Rank is not reduced.
+
+/// in place
+/// - Parameter x: value tensor
+/// - Parameter alongAxes: the axes to operate on
+/// - Parameter result: the scalar tensor where the result will be written
+/// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+@inlinable @inline(__always)
+public func all<T>(_ x: T,
+                   alongAxes axes: VectorTensor<TensorIndex>,
+                   result: inout T,
+                   using deviceStream: DeviceStream? = nil) throws
+    where T: TensorView, T.Scalar == Bool {
+        
+        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
+        try stream.all(x: x, reductionAxes: axes, result: &result)
+}
+
+/// returns new view
+/// - Parameter alongAxes: the axes to operate on
+/// - Returns: a new tensor containing the result
+/// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+public extension TensorView where Self.Scalar == Bool {
+    @inlinable @inline(__always)
+    func all(alongAxes axes: VectorTensor<TensorIndex>,
+             using deviceStream: DeviceStream? = nil) throws -> Self {
+        
+        var result = Self.init(shapedLike: self)
+        try Netlib.all(self, alongAxes: axes,
+                       result: &result, using: deviceStream)
+        return result
+    }
+}
+

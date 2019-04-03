@@ -13,7 +13,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
     associatedtype IndexView: TensorView
-    
+
     /// `true` if the scalars are densely packed in memory
     var isContiguous: Bool { get }
     /// `true` if the view contains zero elements
@@ -46,6 +46,9 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// from a scalar in op functions.
     init(asScalar value: Scalar)
 }
+
+/// The type used for indexing
+public typealias TensorIndex = Int32
 
 public extension TensorView {
     var isContiguous: Bool { return shape.isContiguous }

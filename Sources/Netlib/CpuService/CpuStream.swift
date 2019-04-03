@@ -5,6 +5,14 @@
 import Foundation
 
 public final class CpuStream : DeviceStream {
+    public func all<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout R) throws where T : TensorView, R : TensorView, T.Scalar == Bool, R.Scalar == Bool {
+        
+    }
+    
+    public func any<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout R) throws where T : TensorView, R : TensorView, T.Scalar == Bool, R.Scalar == Bool {
+        
+    }
+    
     public func abs<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : SignedNumeric {
         
     }
@@ -17,15 +25,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func all<T>(x: T, reductionAxes: VectorTensor<Int32>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
-        
-    }
-    
     public func any<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar == Bool {
-        
-    }
-    
-    public func any<T>(x: T, reductionAxes: VectorTensor<Int32>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
@@ -33,11 +33,11 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    public func argmax<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == Int32 {
+    public func argmax<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
         
     }
     
-    public func argmin<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == Int32 {
+    public func argmin<T>(x: T, squeezingAxis axis: Int, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
         
     }
     
@@ -209,7 +209,7 @@ public final class CpuStream : DeviceStream {
         
     }
     
-    
+  
     //--------------------------------------------------------------------------
 	// properties
 	public private(set) var trackingId = 0

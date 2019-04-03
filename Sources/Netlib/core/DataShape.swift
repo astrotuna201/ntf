@@ -156,11 +156,11 @@ public struct DataShape: Equatable, Codable {
 
     //--------------------------------------------------------------------------
     // squeezed
-    public func squeezed(squeezingAxes: Set<Int>? = nil) -> DataShape {
-        assert(squeezingAxes == nil || squeezingAxes!.count <= rank)
+    public func squeezed(axes: Set<Int>? = nil) -> DataShape {
+        assert(axes == nil || axes!.count <= rank)
         var newExtents = [Int]()
         var newStrides = [Int]()
-        let axes = squeezingAxes ?? Set<Int>(0..<rank)
+        let axes = axes ?? Set<Int>(0..<rank)
         for axis in 0..<rank where !(extents[axis] == 1 && axes.contains(axis)){
             newExtents.append(extents[axis])
             newStrides.append(strides[axis])

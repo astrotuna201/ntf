@@ -81,7 +81,7 @@ public extension ScalarTensorViewImpl {
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
     // associated types
     public typealias BoolView = ScalarTensor<Bool>
-    public typealias IndexView = ScalarTensor<Int32>
+    public typealias IndexView = ScalarTensor<TensorIndex>
     public typealias ScalarView = ScalarTensor<Scalar>
 
     // properties
@@ -183,7 +183,7 @@ public extension VectorTensorViewImpl {
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
     // associated types
     public typealias BoolView = VectorTensor<Bool>
-    public typealias IndexView = VectorTensor<Int32>
+    public typealias IndexView = VectorTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -256,7 +256,7 @@ public extension MatrixTensorViewImpl {
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
     // associated types
     public typealias BoolView = MatrixTensor<Bool>
-    public typealias IndexView = MatrixTensor<Int32>
+    public typealias IndexView = MatrixTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -339,7 +339,7 @@ public extension VolumeTensorViewImpl {
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
     // associated types
     public typealias BoolView = VolumeTensor<Bool>
-    public typealias IndexView = VolumeTensor<Int32>
+    public typealias IndexView = VolumeTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -404,7 +404,7 @@ public extension NDTensorViewImpl {
 public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
     // associated types
     public typealias BoolView = NDTensor<Bool>
-    public typealias IndexView = NDTensor<Int32>
+    public typealias IndexView = NDTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -473,7 +473,7 @@ public extension NCHWTensorViewImpl {
 public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorViewImpl {
     // associated types
     public typealias BoolView = NCHWTensor<Bool>
-    public typealias IndexView = NCHWTensor<Int32>
+    public typealias IndexView = NCHWTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -558,7 +558,7 @@ public extension NHWCTensorViewImpl {
 public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
     // associated types
     public typealias BoolView = NHWCTensor<Bool>
-    public typealias IndexView = NHWCTensor<Int32>
+    public typealias IndexView = NHWCTensor<TensorIndex>
 
     // properties
     public var _isShared: Bool = false
@@ -608,7 +608,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
 
 //------------------------------------------------------------------------------
 public extension NHWCTensor {
-    /// zero copy cast of a matrix of dense scalars to channel components
+    /// zero copy cast of a matrix of dense uniform scalars to channels
     init<M: MatrixTensorViewImpl>(_ matrix: M, name: String? = nil) where
         M.Scalar: AnyDenseChannelScalar,
         M.Scalar.ChannelScalar == Scalar {

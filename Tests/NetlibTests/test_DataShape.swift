@@ -6,7 +6,6 @@
 //
 import XCTest
 import Foundation
-import TensorFlow
 @testable import Netlib
 
 class test_DataShape: XCTestCase {

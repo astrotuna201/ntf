@@ -24,11 +24,8 @@ let package = Package(
         .target(
             name: "Netlib",
             dependencies: ["Jpeg", "Png", "ZLib"]),
-        .target(
-            name: "DeepLearning",
-            dependencies: ["Netlib"]),
         .testTarget(
             name: "NetlibTests",
-            dependencies: ["DeepLearning"])
+            dependencies: [])
     ]
 )

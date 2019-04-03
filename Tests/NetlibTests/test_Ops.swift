@@ -6,9 +6,7 @@
 //
 import XCTest
 import Foundation
-//import TensorFlow
 @testable import Netlib
-//@testable import DeepLearning
 
 class test_Ops: XCTestCase {
     static var allTests = [

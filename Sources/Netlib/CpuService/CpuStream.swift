@@ -5,11 +5,11 @@
 import Foundation
 
 public final class CpuStream : DeviceStream {
-    public func all<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout R) throws where T : TensorView, R : TensorView, T.Scalar == Bool, R.Scalar == Bool {
+    public func all<T>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
-    public func any<T, R>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout R) throws where T : TensorView, R : TensorView, T.Scalar == Bool, R.Scalar == Bool {
+    public func any<T>(x: T, reductionAxes: VectorTensor<TensorIndex>, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     

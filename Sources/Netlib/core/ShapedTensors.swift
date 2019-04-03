@@ -233,8 +233,6 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
 //==============================================================================
 // MatrixTensorView
 public protocol MatrixTensorView: TensorView {
-    var rows: Int { get }
-    var cols: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
 }
@@ -244,8 +242,6 @@ public protocol MatrixTensorView: TensorView {
 public protocol MatrixTensorViewImpl: TensorViewImpl, MatrixTensorView {}
 
 public extension MatrixTensorViewImpl {
-    var rows: Int { return shape.extents[0] }
-    var cols: Int { return shape.extents[1] }
     var rowStride: Int { return shape.strides[0] }
     var colStride: Int { return shape.strides[1]  }
     var isColMajor: Bool { return shape.isColMajor }
@@ -313,9 +309,6 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
 //==============================================================================
 // VolumeTensorView
 public protocol VolumeTensorView: TensorView {
-    var depths: Int { get }
-    var rows: Int { get }
-    var cols: Int { get }
     var depthStride: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
@@ -326,9 +319,6 @@ public protocol VolumeTensorView: TensorView {
 public protocol VolumeTensorViewImpl: TensorViewImpl, VolumeTensorView {}
 
 public extension VolumeTensorViewImpl {
-    var depths: Int { return shape.extents[0] }
-    var rows: Int { return shape.extents[1] }
-    var cols: Int { return shape.extents[2] }
     var depthStride: Int { return shape.strides[0] }
     var rowStride: Int { return shape.strides[1] }
     var colStride: Int { return shape.strides[2] }
@@ -446,8 +436,6 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
 /// h: rows
 /// w: cols
 public protocol NCHWTensorView: TensorView {
-    var rows: Int { get }
-    var cols: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
 }
@@ -457,11 +445,6 @@ public protocol NCHWTensorView: TensorView {
 public protocol NCHWTensorViewImpl: TensorViewImpl, NCHWTensorView {}
 
 public extension NCHWTensorViewImpl {
-    var items: Int { return shape.extents[0] }
-    var channels: Int { return shape.extents[1] }
-    var rows: Int { return shape.extents[2] }
-    var cols: Int { return shape.extents[3] }
-    
     var itemStride: Int { return shape.strides[0] }
     var channelStride: Int { return shape.strides[1] }
     var rowStride: Int { return shape.strides[2] }
@@ -531,8 +514,6 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorViewImpl {
 /// w: cols
 /// c: channels
 public protocol NHWCTensorView: TensorView {
-    var rows: Int { get }
-    var cols: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
 }
@@ -542,11 +523,6 @@ public protocol NHWCTensorView: TensorView {
 public protocol NHWCTensorViewImpl: TensorViewImpl, NHWCTensorView {}
 
 public extension NHWCTensorViewImpl {
-    var items: Int { return shape.extents[0] }
-    var channels: Int { return shape.extents[1] }
-    var rows: Int { return shape.extents[2] }
-    var cols: Int { return shape.extents[3] }
-    
     var itemStride: Int { return shape.strides[0] }
     var channelStride: Int { return shape.strides[1] }
     var rowStride: Int { return shape.strides[2] }
@@ -608,11 +584,12 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
 
 //------------------------------------------------------------------------------
 public extension NHWCTensor {
-    /// zero copy cast of a matrix of dense uniform scalars to channels
+    /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M: MatrixTensorViewImpl>(_ matrix: M, name: String? = nil) where
         M.Scalar: AnyDenseChannelScalar,
         M.Scalar.ChannelScalar == Scalar {
-            let extents = [1, matrix.rows, matrix.cols, M.Scalar.channels]
+            let extents = [1, matrix.shape.extents[0],
+                           matrix.shape.extents[1], M.Scalar.channels]
             self.shape = DataShape(extents: extents, layout: .nhwc)
             self.logging = matrix.logging
             self.tensorData = matrix.tensorData

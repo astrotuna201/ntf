@@ -40,6 +40,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     //--------------------------------------------------------------------------
     // initializers
     
+    /// Fully specified initializer
     /// creates a new concrete view instance. This is required to enable
     /// extension methods to create typed return values
     init(shape: DataShape,

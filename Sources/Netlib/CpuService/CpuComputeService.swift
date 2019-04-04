@@ -2,6 +2,8 @@
 //  Created by Edward Connell on 4/4/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
+import Foundation
+
 public class CpuComputeService : ComputeService {
     //--------------------------------------------------------------------------
     // properties
@@ -19,10 +21,13 @@ public class CpuComputeService : ComputeService {
         // this is held statically by the Platform
         trackingId = ObjectTracker.global.register(self, isStatic: true)
         
-        // by default add device cpu:0
-        let device = CpuDevice(logging: logging.child("cpu:0"),
-                               service: self, deviceId: 0)
-        devices.append(device)
+        // add a device for each logical core
+        let processInfo = ProcessInfo()
+        for id in 0..<processInfo.activeProcessorCount {
+            let device = CpuDevice(logging: logging.child("cpu:\(id)"),
+                                   service: self, deviceId: id)
+            devices.append(device)
+        }
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

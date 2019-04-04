@@ -10,17 +10,20 @@ public class CpuDevice : ComputeDevice {
     // properties
     public private(set) var trackingId = 0
     public let attributes = [String : String]()
-    public let availableMemory: UInt64 = 0  // TODO
     public let id: Int
     public var logging: LogInfo?
-    /* TODO this should be number of logical cores*/
     public var maxThreadsPerBlock: Int { return 1 }
     public let name: String = "cpu"
     public weak var service: ComputeService!
     private let streamId = AtomicCounter()
     public let usesUnifiedAddressing = true
     public var utilization: Float = 0
-    
+
+    // TODO this should be currently available and not physicalMemory
+    public lazy var availableMemory: UInt64 = {
+        return ProcessInfo().physicalMemory
+    }()
+
     //--------------------------------------------------------------------------
 	// initializers
 	public init(logging: LogInfo, service: CpuComputeService, deviceId: Int) {

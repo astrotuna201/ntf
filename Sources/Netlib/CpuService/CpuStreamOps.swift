@@ -4,7 +4,7 @@
 //
 import Foundation
 import TensorFlow
-
+import simd
 
 extension CpuStream {
     public func abs<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : SignedNumeric {

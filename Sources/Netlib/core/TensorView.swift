@@ -70,6 +70,13 @@ public extension TensorView {
     var rank: Int { return shape.rank }
 
     //--------------------------------------------------------------------------
+    /// creates an empty view
+    init() {
+        self.init(shape: DataShape(), tensorData: TensorData(),
+                  viewOffset: 0, isShared: false, name: nil, logging: nil)
+    }
+
+    //--------------------------------------------------------------------------
     // helper to flip highlight color back and forth
     // it doesn't work in the Xcode console for some reason,
     // but it's nice when using CLion
@@ -121,7 +128,7 @@ public extension TensorView where Self: TensorViewImpl {
                   tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil, logging: nil)
         // set the value
-        try! rw()[0] = value
+        try! readWrite()[0] = value
     }
 
     //--------------------------------------------------------------------------
@@ -138,7 +145,7 @@ public extension TensorView where Self: TensorViewImpl {
     // scalarValue
     func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
-        return try ro()[0]
+        return try readOnly()[0]
     }
 }
 
@@ -203,7 +210,7 @@ public extension TensorViewImpl {
     func isFinite() throws -> Bool {
         var isfiniteValue = true
         func check<T: AnyNumeric>(_ type: T.Type) throws {
-            try ro().withMemoryRebound(to: AnyNumeric.self) {
+            try readOnly().withMemoryRebound(to: AnyNumeric.self) {
                 $0.forEach {
                     if !$0.isFiniteValue {
                         isfiniteValue = false
@@ -260,11 +267,11 @@ public extension TensorViewImpl {
     }
     
     //--------------------------------------------------------------------------
-    /// ro
+    /// readOnly
     /// Returns a read only tensorData buffer pointer synced with the
     /// applicaiton thread. It's purpose is to be used by shaped subscript
     /// functions
-    func ro() throws -> UnsafeBufferPointer<Scalar> {
+    func readOnly() throws -> UnsafeBufferPointer<Scalar> {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
@@ -274,10 +281,10 @@ public extension TensorViewImpl {
         }
     }
     
-    /// ro(using stream:
+    /// readOnly(using stream:
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is by accelerator APIs
-    func ro(using stream: DeviceStream) throws -> UnsafeRawPointer {
+    func readOnly(using stream: DeviceStream) throws -> UnsafeRawPointer {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
@@ -288,11 +295,11 @@ public extension TensorViewImpl {
     }
     
     //--------------------------------------------------------------------------
-    /// rw
+    /// readWrite
     /// Returns a read write tensorData buffer pointer synced with the
     /// applicaiton thread. It's purpose is to be used by shaped subscript
     /// functions
-    mutating func rw() throws -> UnsafeMutableBufferPointer<Scalar> {
+    mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
@@ -303,10 +310,11 @@ public extension TensorViewImpl {
         }
     }
     
-    /// rw(using stream:
+    /// readWrite(using stream:
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is by accelerator APIs
-    mutating func rw(using stream: DeviceStream) throws -> UnsafeMutableRawPointer {
+    mutating func readWrite(using stream: DeviceStream) throws
+        -> UnsafeMutableRawPointer {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue

@@ -20,6 +20,7 @@ public enum DataType: Int {
 //==============================================================================
 /// AnyScalar
 public protocol AnyScalar {
+    // zero or empty
     init()
 }
 

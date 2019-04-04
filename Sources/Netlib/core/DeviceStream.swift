@@ -17,6 +17,8 @@ public protocol DeviceStream: ObjectTracking, Logging {
     var id: Int { get }
     /// a name used to identify the stream
     var name: String { get }
+    /// the internval of time to wait for an operation to complete
+    var timeout: TimeInterval? { get set }
 
     //--------------------------------------------------------------------------
     // synchronization functions

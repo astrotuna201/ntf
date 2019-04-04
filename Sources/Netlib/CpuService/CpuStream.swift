@@ -6,19 +6,25 @@ import Foundation
 
 public final class CpuStream : DeviceStream {
     //--------------------------------------------------------------------------
-	// properties
+	// protocol properties
 	public private(set) var trackingId = 0
 	public let device: ComputeDevice
     public let id: Int
 	public let name: String
     public var logging: LogInfo?
+    public var timeout: TimeInterval?
+
+    // serial queue
+    let commandQueue: DispatchQueue
+    let completionEvent = CpuStreamEvent(options: StreamEventOptions())
 
     //--------------------------------------------------------------------------
     // initializers
     public init(logging: LogInfo,
                 device: ComputeDevice,
                 name: String, id: Int) throws {
-        // init
+        // create serial queue
+        commandQueue = DispatchQueue(label: "\(name).commandQueue")
         self.logging = logging
         self.device = device
         self.id = id
@@ -28,49 +34,56 @@ public final class CpuStream : DeviceStream {
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
     
-    //--------------------------------------------------------------------------
-    // createEvent
-    public func execute<T>(functionId: UUID, with parameters: T) throws {
-        print("queueing id: \(functionId) with: \(parameters)")
-    }
-    
-    //--------------------------------------------------------------------------
-    // createEvent
-    public func setup<T>(functionId: UUID, instanceId: UUID,
-                         with parameters: T) throws {
-        
-    }
-    
-    //--------------------------------------------------------------------------
-    // createEvent
-    public func release(instanceId: UUID) throws {
-        
-    }
-
 	//--------------------------------------------------------------------------
-	// createEvent
+	/// createEvent
+    /// creates an event object used for stream synchronization
 	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
 		return CpuStreamEvent(options: options)
 	}
 
+    /// introduces a delay into command queue processing to simulate workloads
+    /// to aid in debugging
 	public func debugDelay(seconds: Double) throws {
-        
+        commandQueue.async {
+            Thread.sleep(forTimeInterval: TimeInterval(seconds))
+        }
 	}
 
-	// blockCallerUntilComplete
-	public func blockCallerUntilComplete() throws {
-		
-	}
+    //--------------------------------------------------------------------------
+    /// blockCallerUntilComplete
+    /// blocks the calling thread until the command queue is empty
+    public func blockCallerUntilComplete() throws {
+        let event = completionEvent
+        commandQueue.async {
+            event.signal()
+        }
+        try event.wait(until: timeout)
+    }
 	
+    //--------------------------------------------------------------------------
+    /// wait(for event:
+    /// waits for 
 	public func wait(for event: StreamEvent) throws {
-		
+        let streamEvent = event as! CpuStreamEvent
+        try streamEvent.wait(until: timeout)
 	}
 
-	// sync(with other
-	public func sync(with other: DeviceStream, event: StreamEvent) throws {
+    //--------------------------------------------------------------------------
+	/// sync(with other
+	public func sync(with otherStream: DeviceStream, event: StreamEvent) throws{
+        // wait on event to make sure it is clear
+        try wait(for: event)
+        // record on other stream and wait on event to make sure it is clear
+        try wait(for: otherStream.record(event: event))
 	}
 
+    //--------------------------------------------------------------------------
+    /// record(event:
 	public func record(event: StreamEvent) throws  -> StreamEvent {
+        commandQueue.async {
+            let streamEvent = event as! CpuStreamEvent
+            streamEvent.signal()
+        }
 		return event
 	}
 }

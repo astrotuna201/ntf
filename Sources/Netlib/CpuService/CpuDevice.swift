@@ -16,6 +16,7 @@ public class CpuDevice : ComputeDevice {
     public let name: String = "cpu"
     public weak var service: ComputeService!
     private let streamId = AtomicCounter()
+    public var timeout: TimeInterval?
     public let usesUnifiedAddressing = true
     public var utilization: Float = 0
 
@@ -26,10 +27,12 @@ public class CpuDevice : ComputeDevice {
 
     //--------------------------------------------------------------------------
 	// initializers
-	public init(logging: LogInfo, service: CpuComputeService, deviceId: Int) {
+	public init(logging: LogInfo, service: CpuComputeService,
+                deviceId: Int, timeout: TimeInterval? = nil) {
 		self.logging = logging
 		self.id = deviceId
 		self.service = service
+        self.timeout = timeout
 
 		// devices are statically held by the Platform.service
         trackingId = ObjectTracker.global.register(self,

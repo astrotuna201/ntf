@@ -31,6 +31,8 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     var name: String { get }
     /// the service this device belongs to
     var service: ComputeService! { get }
+    /// the maximum amount of time allowed for an operation to complete
+    var timeout: TimeInterval? { get set }
     /// is `true` if the device is configured to use unified memory addressing
     /// with the host CPU
     var usesUnifiedAddressing: Bool { get }
@@ -81,9 +83,10 @@ public protocol DeviceArray: ObjectTracking, Logging {
 // StreamEvent
 /// Stream events are queued to enable stream synchronization
 public protocol StreamEvent: ObjectTracking, Logging {
-    /// is `true` if the even has occurred
+    /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
-
+    
+    // TODO: consider adding time outs for failed remote events
     init(options: StreamEventOptions) throws
 }
 
@@ -93,4 +96,8 @@ public struct StreamEventOptions: OptionSet {
     public static let hostSync     = StreamEventOptions(rawValue: 1 << 0)
     public static let timing       = StreamEventOptions(rawValue: 1 << 1)
     public static let interprocess = StreamEventOptions(rawValue: 1 << 2)
+}
+
+public enum StreamEventError: Error {
+    case timedOut
 }

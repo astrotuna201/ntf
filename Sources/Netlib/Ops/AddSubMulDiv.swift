@@ -76,7 +76,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
+public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -84,6 +84,19 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        return try add(lhs, scalarTensor)
+    }
+}
+
+public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+    /// operator (Self + scalar)
+    /// - Parameter lhs: left hand tensor
+    /// - Parameter rhs: right hand scalar. If the extents are smaller than
+    ///   `lhs` then broadcasting is performed via modulo indexing.
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    static func +<S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
         let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
         return try add(lhs, scalarTensor)
     }
@@ -135,7 +148,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
+public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -143,6 +156,19 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        return try subtract(lhs, scalarTensor)
+    }
+}
+
+public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+    /// operator (Self - scalar)
+    /// - Parameter lhs: left hand tensor
+    /// - Parameter rhs: right hand scalar. If the extents are smaller than
+    ///   `lhs` then broadcasting is performed via modulo indexing.
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    static func - <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
         let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
         return try subtract(lhs, scalarTensor)
     }
@@ -193,7 +219,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
+public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -201,6 +227,19 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        return try mul(lhs, scalarTensor)
+    }
+}
+
+public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+    /// operator (Self - scalar)
+    /// - Parameter lhs: left hand tensor
+    /// - Parameter rhs: right hand scalar. If the extents are smaller than
+    ///   `lhs` then broadcasting is performed via modulo indexing.
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    static func * <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
         let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
         return try mul(lhs, scalarTensor)
     }
@@ -251,7 +290,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
+public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -259,6 +298,19 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        return try div(lhs, scalarTensor)
+    }
+}
+
+public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+    /// operator (Self - scalar)
+    /// - Parameter lhs: left hand tensor
+    /// - Parameter rhs: right hand scalar. If the extents are smaller than
+    ///   `lhs` then broadcasting is performed via modulo indexing.
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    static func / <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
         let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
         return try div(lhs, scalarTensor)
     }

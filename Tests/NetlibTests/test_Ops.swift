@@ -33,6 +33,9 @@ class test_Ops: XCTestCase {
     
     func test_AddSubMulDiv() {
         let _ = MatrixTensor<RGBASample<UInt8>>(4, 3)
+        let _ = VectorTensor<StereoSample<Int16>>(count: 1024)
+
+        let m = MatrixTensor<UInt8>(4, 3)
         let a = VectorTensor<Float>(scalars: [1, 2, 3, 4])
         let b = VectorTensor<Float>(scalars: [4, 3, 2, 1])
         let y = VectorTensor<Float>(scalars: [0, 1, 2, 3])
@@ -79,6 +82,18 @@ class test_Ops: XCTestCase {
             XCTAssert(c4 == c4expected)
 
             //---------------------------------
+            // syntax variations
+            // transparent type conversion if the Scalar is compatible
+            let _ = try a.pow(3)
+            let _ = try a.pow(3.5)
+            // integer array
+            let _ = try m.pow(2) // okay
+            // let _ = try m.pow(2.5)  Ints raised to float power won't compile
+            let _ = try a + 1    // floats + broadcast Int is okay
+            let _ = try m + 1
+            // let _ = try m + 1.5  won't compile
+
+            //---------------------------------
             // nested multi scoped
             let c5: VectorTensor<Float> = try usingDefaultStream {
                 let x: VectorTensor<Float> = try using(stream[0]) {
@@ -88,15 +103,18 @@ class test_Ops: XCTestCase {
                     // here stream[1] is synced with stream[0]
                     return try pow(a + b + aMinusB, y)
                 }
+                // can compose easily (but log(x) is computed twice in this case)
+                let _ = try x.log() / (x.log() + 1)
+                
                 // temporary results are okay!
+                let logx = try log(x)
                 // here stream[0] is synced with the defaultStream
-                let lnx = try log(x)
-                return try lnx / (lnx + 1)
+                return try logx / (logx + 1)
             }
 
             // all three streams auto sync at this point
             let c5expected = VectorTensor<Float>(scalars: [0, 0.581, 0.782, 0.862])
-            let c5IsEqual = try c5.approximatelyEqual(c5expected).all().scalarValue()
+            let c5IsEqual = try c5.approximatelyEqual(to: c5expected).all().scalarValue()
 
             // here the defaultStream is synced with the app thread
             XCTAssert(c5IsEqual)

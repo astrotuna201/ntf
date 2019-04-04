@@ -53,7 +53,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     init<T>(shapedLike other: T) where T: TensorView
 
     /// convenience initializer used to create type compatible tensors from
-    /// from a scalar in op functions.
+    /// from a scalar used in generic op functions.
     init(asScalar value: Scalar)
     
     //--------------------------------------------------------------------------

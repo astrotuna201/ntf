@@ -33,7 +33,7 @@ public func approximatelyEqual<T>(
 /// - Returns: a new tensor containing the result
 public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     @inlinable @inline(__always)
-    func approximatelyEqual(_ rhs: Self, tolerance: Double = 0.00001,
+    func approximatelyEqual(to rhs: Self, tolerance: Double = 0.00001,
                             using deviceStream: DeviceStream? = nil) throws
         -> Self.BoolView {
             var result = Self.BoolView.init(shapedLike: self)

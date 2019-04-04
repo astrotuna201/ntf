@@ -5,7 +5,7 @@
 import Foundation
 
 //==============================================================================
-// TensorView
+// TensorView protocol
 public protocol TensorView: AnyScalar, Logging, Equatable {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
@@ -16,30 +16,30 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     associatedtype IndexView: TensorView
 
     //--------------------------------------------------------------------------
-    /// `true` if the scalars are densely packed in memory
-    var isContiguous: Bool { get }
-    /// `true` if the view contains zero elements
-    var isEmpty: Bool { get }
+    // Properties that should be user readonly begin with _xyz, and accessor
+    // functions with correct access are exposed as protocol extensions.
+    // this gives full access to protocol default implementations.
+    
     /// during write access. Primarily to support multi-threaded writes
-    var isShared: Bool { get }
+    var _isShared: Bool { get set }
     /// lastAccessMutated is `true` if the last data access caused the view
     /// to mutate, which causes the underlying tensorData object to be copied
     /// It's primary use is in debugging and unit testing
-    var lastAccessMutated: Bool { get }
+    var _lastAccessMutated: Bool { get set }
+    /// the name of the view, which can optionally be set to aid in debugging
+    var _name: String? { get set }
+    /// the shape of the view
+    var _shape: DataShape { get set }
+    /// class reference to the underlying byte buffer
+    var _tensorData: TensorData { get set }
+    /// the linear element offset where the view begins
+    var _viewOffset: Int { get set }
     /// the logging information for the view
     var logging: LogInfo? { get set }
-    /// the name of the view, which can optionally be set to aid in debugging
-    var name: String { get set }
-    /// the number of dimensions in the view
-    var rank: Int { get }
-    /// the shape of the view
-    var shape: DataShape { get }
-    /// class reference to the underlying byte buffer
-    var tensorData: TensorData { get }
-    /// the linear element offset where the view begins
-    var viewOffset: Int { get }
 
     //--------------------------------------------------------------------------
+    // initializers
+    
     /// creates a new concrete view instance. This is required to enable
     /// extension methods to create typed return values
     init(shape: DataShape,
@@ -51,23 +51,66 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     
     /// convenience initializer used to create result views in op functions
     init<T>(shapedLike other: T) where T: TensorView
+
     /// convenience initializer used to create type compatible tensors from
     /// from a scalar in op functions.
     init(asScalar value: Scalar)
     
     //--------------------------------------------------------------------------
+    // functions
+    
+    /// determines if the view holds a unique reference to the underlying
+    /// TensorData array
+    mutating func isUniqueReference() -> Bool
+
     /// performs a dynamic rank reduction by removing extents of 1
     /// along the specified axes
     func squeezed(axes: [Int]?) -> NDTensor<Scalar>
 }
 
+//------------------------------------------------------------------------------
 /// The type used for indexing
 public typealias TensorIndex = Int32
 
+//==============================================================================
+// TensorView default implementation
 public extension TensorView {
+    //--------------------------------------------------------------------------
+    // public property accessors
+
+    /// `true` if the scalars are densely packed in memory
     var isContiguous: Bool { return shape.isContiguous }
+    /// `true` if the view contains zero elements
     var isEmpty: Bool { return shape.isEmpty }
-    var rank: Int { return shape.rank }
+    /// lastAccessMutated is `true` if the last data access caused the view
+    /// to mutate, which causes the underlying tensorData object to be copied
+    /// It's primary use is in debugging and unit testing
+    var lastAccessMutated: Bool { return _lastAccessMutated }
+    /// the number of dimensions in the view
+    var rank: Int { return _shape.rank }
+    /// the shape of the view
+    var shape: DataShape { return _shape }
+    
+    //--------------------------------------------------------------------------
+    // shared memory
+    var isShared: Bool {
+        get { return _isShared }
+        set {
+            assert(!newValue || isShared || isUniqueReference(),
+                   "to set memory to shared it must already be shared or unique")
+            _isShared = newValue
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // name
+    var name: String {
+        get { return _name ?? String(describing: self) }
+        set {
+            _name = newValue
+            if !_tensorData.hasName { _tensorData.name = newValue }
+        }
+    }
 
     //--------------------------------------------------------------------------
     /// creates an empty view
@@ -76,40 +119,6 @@ public extension TensorView {
                   viewOffset: 0, isShared: false, name: nil, logging: nil)
     }
 
-    //--------------------------------------------------------------------------
-    // helper to flip highlight color back and forth
-    // it doesn't work in the Xcode console for some reason,
-    // but it's nice when using CLion
-    func setStringColor(text: inout String, highlight: Bool,
-                        currentColor: inout LogColor,
-                        normalColor: LogColor = .white,
-                        highlightColor: LogColor = .blue) {
-        #if os(Linux)
-        if currentColor == normalColor && highlight {
-            text += highlightColor.rawValue
-            currentColor = highlightColor
-            
-        } else if currentColor == highlightColor && !highlight {
-            text += normalColor.rawValue
-            currentColor = normalColor
-        }
-        #endif
-    }
-
-    //--------------------------------------------------------------------------
-    /// performs a dynamic rank reduction by removing extents of 1
-    /// along the specified axes
-    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
-    func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
-        let posAxes = axes?.map { $0 < 0 ? $0 + rank : $0 } ?? [Int](0..<rank)
-        return NDTensor<Scalar>(
-            shape: shape.squeezed(axes: Set(posAxes)),
-            tensorData: tensorData, viewOffset: viewOffset,
-            isShared: isShared, name: name, logging: logging)
-    }
-}
-
-public extension TensorView where Self: TensorViewImpl {
     //--------------------------------------------------------------------------
     /// init<T>(shapedLike other:
     /// convenience initializer used by generics
@@ -132,71 +141,34 @@ public extension TensorView where Self: TensorViewImpl {
     }
 
     //--------------------------------------------------------------------------
-    // name
-    var name: String {
-        get { return _name ?? String(describing: self) }
-        set {
-            _name = newValue
-            if !tensorData.hasName { tensorData.name = newValue }
-        }
-    }
-    
-    //--------------------------------------------------------------------------
     // scalarValue
     func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
     }
-}
 
-//==============================================================================
-// TensorViewImpl
-public protocol TensorViewImpl: TensorView {
-    /// the linear byte offset where the view begins
-    var viewByteOffset: Int { get }
-    /// the number of bytes spanned by the view
-    var viewSpanByteCount: Int { get }
-
-    /// restated from TensorView with broader access
-    var _isShared: Bool { get set }
-    var _name: String? { get set }
-    var isShared: Bool { get set }
-    var lastAccessMutated: Bool { get set }
-    var logging: LogInfo? { get set }
-    var shape: DataShape { get set }
-    var tensorData: TensorData { get set }
-    var viewOffset: Int { get set }
-
-    /// determines if the view holds a unique reference to the underlying
-    /// TensorData array
-    mutating func isUniqueReference() -> Bool
-}
-
-//==============================================================================
-// TensorViewImpl extension
-//
-public extension TensorViewImpl {
     //--------------------------------------------------------------------------
-    // shared memory
-    var isShared: Bool {
-        get { return _isShared }
-        set {
-            assert(!newValue || isShared || isUniqueReference(),
-                   "to set memory to shared it must already be shared or unique")
-            _isShared = newValue
-        }
+    /// performs a dynamic rank reduction by removing extents of 1
+    /// along the specified axes
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
+    func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
+        let posAxes = axes?.map { $0 < 0 ? $0 + rank : $0 } ?? [Int](0..<rank)
+        return NDTensor<Scalar>(
+            shape: shape.squeezed(axes: Set(posAxes)),
+            tensorData: _tensorData, viewOffset: _viewOffset,
+            isShared: isShared, name: name, logging: logging)
     }
 
     //--------------------------------------------------------------------------
     /// isUniqueReference
     /// `true` if this view is the only view holding a reference to tensorData
     mutating func isUniqueReference() -> Bool {
-        return isKnownUniquelyReferenced(&tensorData)
+        return isKnownUniquelyReferenced(&_tensorData)
     }
     
     //--------------------------------------------------------------------------
     /// viewByteOffset
-    var viewByteOffset: Int { return viewOffset * MemoryLayout<Scalar>.size }
+    var viewByteOffset: Int { return _viewOffset * MemoryLayout<Scalar>.size }
     
     //--------------------------------------------------------------------------
     // viewSpanByteCount
@@ -225,9 +197,9 @@ public extension TensorViewImpl {
     /// Equal values
     /// performs an element wise value comparison
     static func == (lhs: Self, rhs: Self) -> Bool {
-        if lhs.tensorData === rhs.tensorData {
+        if lhs._tensorData === rhs._tensorData {
             // If they both reference the same tensorData then compare the views
-            return lhs.viewOffset == rhs.viewOffset && lhs.shape == rhs.shape
+            return lhs._viewOffset == rhs._viewOffset && lhs.shape == rhs.shape
             
         } else if lhs.shape.extents == rhs.shape.extents {
             // if the extents are equal then compare values
@@ -242,7 +214,7 @@ public extension TensorViewImpl {
     /// Equal references
     /// `true` if the views reference the same elements
     static func === (lhs: Self, rhs: Self) -> Bool {
-        return lhs.tensorData === rhs.tensorData && lhs == rhs
+        return lhs._tensorData === rhs._tensorData && lhs == rhs
     }
     
     //--------------------------------------------------------------------------
@@ -252,18 +224,18 @@ public extension TensorViewImpl {
     /// NOTE: this must be called from inside the accessQueue.sync block
     private mutating func copyIfMutates(using stream: DeviceStream? = nil) throws {
         // for unit tests
-        lastAccessMutated = false
+        _lastAccessMutated = false
         guard !isShared && !isUniqueReference() else { return }
         
-        lastAccessMutated = true
+        _lastAccessMutated = true
         if willLog(level: .diagnostic) == true {
             diagnostic("""
                 \(mutationString) \(logging?.namePath ?? "")
-                (\(tensorData.trackingId))  elements: \(shape.elementCount)
+                (\(_tensorData.trackingId))  elements: \(shape.elementCount)
                 """, categories: [.dataCopy, .dataMutation])
         }
         
-        tensorData = try TensorData(withContentsOf: tensorData, using: stream)
+        _tensorData = try TensorData(withContentsOf: _tensorData, using: stream)
     }
     
     //--------------------------------------------------------------------------
@@ -274,9 +246,9 @@ public extension TensorViewImpl {
     func readOnly() throws -> UnsafeBufferPointer<Scalar> {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         return try queue.sync {
-            let buffer = try tensorData.roHostRawBuffer()
+            let buffer = try _tensorData.roHostRawBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
     }
@@ -287,10 +259,10 @@ public extension TensorViewImpl {
     func readOnly(using stream: DeviceStream) throws -> UnsafeRawPointer {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         return try queue.sync {
-            let buffer = try tensorData.roDevicePointer(using: stream)
-            return buffer.advanced(by: viewOffset)
+            let buffer = try _tensorData.roDevicePointer(using: stream)
+            return buffer.advanced(by: _viewOffset)
         }
     }
     
@@ -302,10 +274,10 @@ public extension TensorViewImpl {
     mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         return try queue.sync {
             try copyIfMutates()
-            let buffer = try tensorData.rwHostMutableRawBuffer()
+            let buffer = try _tensorData.rwHostMutableRawBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
     }
@@ -317,12 +289,12 @@ public extension TensorViewImpl {
         -> UnsafeMutableRawPointer {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            let buffer = try tensorData.rwDevicePointer(using: stream)
-            return buffer.advanced(by: viewOffset)
+            let buffer = try _tensorData.rwDevicePointer(using: stream)
+            return buffer.advanced(by: _viewOffset)
         }
     }
     
@@ -338,7 +310,7 @@ public extension TensorViewImpl {
                               shape: DataShape(extents: extents,
                                                layout: shape.layout)))
         // find subview relative offset and shape
-        let elementOffset = viewOffset + shape.linearIndex(of: offset)
+        let elementOffset = _viewOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents,
                                      layout: shape.layout,
                                      channelLayout: shape.channelLayout,
@@ -346,7 +318,7 @@ public extension TensorViewImpl {
                                      isColMajor: shape.isColMajor)
         
         return Self.init(shape: subViewShape,
-                         tensorData: tensorData,
+                         tensorData: _tensorData,
                          viewOffset: elementOffset,
                          isShared: isReference,
                          name: "\(name).subview",
@@ -405,7 +377,7 @@ public extension TensorViewImpl {
         
         // create flattened view
         return Self.init(shape: shape.flattened(),
-                         tensorData: tensorData, viewOffset: viewOffset,
+                         tensorData: _tensorData, viewOffset: _viewOffset,
                          isShared: isShared, name: name, logging: logging)
     }
     
@@ -418,12 +390,12 @@ public extension TensorViewImpl {
     mutating func reference(using stream: DeviceStream?) throws -> Self {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
             return Self.init(shape: shape,
-                             tensorData: tensorData, viewOffset: viewOffset,
+                             tensorData: _tensorData, viewOffset: _viewOffset,
                              isShared: true, name: name, logging: logging)
         }
     }
@@ -437,7 +409,7 @@ public extension TensorViewImpl {
                                 using stream: DeviceStream?) throws -> Self {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
@@ -454,7 +426,7 @@ public extension TensorViewImpl {
                                      using stream: DeviceStream?) throws -> Self {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)

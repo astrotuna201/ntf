@@ -66,16 +66,10 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // ScalarTensorView
-public protocol ScalarTensorView: TensorView {
-}
+public protocol ScalarTensorView: TensorView
+    where BoolView == ScalarTensor<Bool>, IndexView == ScalarTensor<TensorIndex>{}
 
-//------------------------------------------------------------------------------
-// ScalarTensorViewImpl
-public protocol ScalarTensorViewImpl: TensorViewImpl, ScalarTensorView where
-    BoolView == ScalarTensor<Bool>,
-    IndexView == ScalarTensor<TensorIndex>{ }
-
-public extension ScalarTensorViewImpl {
+public extension ScalarTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
@@ -87,15 +81,15 @@ public extension ScalarTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // ScalarTensor
-public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
+public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
 
     //--------------------------------------------------------------------------
     // initializers
@@ -104,68 +98,27 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorViewImpl {
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 0, "rank must equal: 0")
-        self.shape = shape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
 //==============================================================================
 // VectorTensorView
-public protocol VectorTensorView: TensorView {
+public protocol VectorTensorView: TensorView
+where BoolView == VectorTensor<Bool>, IndexView == VectorTensor<TensorIndex> {
+    // properties
     var count: Int { get }
 }
 
-public extension VectorTensorView
-where Self: VectorTensorViewImpl, Scalar: AnyConvertable {
-//    //--------------------------------------------------------------------------
-//    // formatted
-//    func formatted(
-//        precision: Int = 6,
-//        columnWidth: Int = 9,
-//        maxCols: Int = 10,
-//        maxItems: Int = Int.max,
-//        highlightThreshold: Float = Float.greatestFiniteMagnitude) -> String {
-//
-//        // setup
-//        let itemCount = min(shape.items, maxItems)
-//        let itemStride = shape.strides[0]
-//        var string = "DataView extent \(shape.extents.description)\n"
-//        var currentColor = LogColor.white
-//        string += currentColor.rawValue
-//
-//        do {
-//            let buffer = try ro()
-//            string = "DataView extent [\(shape.items)]\n"
-//            let pad = itemCount > 9 ? " " : ""
-//            
-//            for item in 0..<itemCount {
-//                if item < 10 { string += pad }
-//                string += "[\(item)] "
-//                
-//                let value = buffer[item * itemStride]
-//                setStringColor(text: &string,
-//                               highlight: value.asFloat > highlightThreshold,
-//                               currentColor: &currentColor)
-//                string += "\(String(format: format, value.asCVarArg))\n"
-//            }
-//            string += "\n"
-//        } catch {
-//            string += String(describing: error)
-//        }
-//        return string
-//    }
-}
-
-//------------------------------------------------------------------------------
-// VectorTensorViewImpl
-public protocol VectorTensorViewImpl: TensorViewImpl, VectorTensorView
-    where BoolView == VectorTensor<Bool>, IndexView == VectorTensor<TensorIndex>{}
-
-public extension VectorTensorViewImpl {
+public extension VectorTensorView {
     /// the number of elements in the vector
     var count: Int { return shape.extents[0] }
 
@@ -187,16 +140,16 @@ public extension VectorTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // VectorTensor
-public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
+public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
-    
+
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
@@ -204,28 +157,28 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorViewImpl {
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 1, "rank must equal: 1")
-        self.shape = shape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
 //==============================================================================
 // MatrixTensorView
-public protocol MatrixTensorView: TensorView {
+public protocol MatrixTensorView: TensorView
+where BoolView == MatrixTensor<Bool>, IndexView == MatrixTensor<TensorIndex> {
+    // properties
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-//------------------------------------------------------------------------------
-// MatrixTensorViewImpl
-public protocol MatrixTensorViewImpl: TensorViewImpl, MatrixTensorView
-where BoolView == MatrixTensor<Bool>, IndexView == MatrixTensor<TensorIndex>{}
-
-public extension MatrixTensorViewImpl {
+public extension MatrixTensorView {
     var rowStride: Int { return shape.strides[0] }
     var colStride: Int { return shape.strides[1]  }
     var isColMajor: Bool { return shape.isColMajor }
@@ -255,20 +208,16 @@ public extension MatrixTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // MatrixTensor
-public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
-    // associated types
-    public typealias BoolView = MatrixTensor<Bool>
-    public typealias IndexView = MatrixTensor<TensorIndex>
-
+public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
-    
+
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
@@ -276,29 +225,29 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorViewImpl {
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 2, "rank must equal: 2")
-        self.shape = shape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
 //==============================================================================
 // VolumeTensorView
-public protocol VolumeTensorView: TensorView {
+public protocol VolumeTensorView: TensorView
+where BoolView == VolumeTensor<Bool>, IndexView == VolumeTensor<TensorIndex> {
     var depthStride: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-//------------------------------------------------------------------------------
-// VolumeTensorViewImpl
-public protocol VolumeTensorViewImpl: TensorViewImpl, VolumeTensorView
-where BoolView == VolumeTensor<Bool>, IndexView == VolumeTensor<TensorIndex>{}
-
-public extension VolumeTensorViewImpl {
+public extension VolumeTensorView {
+    // properties
     var depthStride: Int { return shape.strides[0] }
     var rowStride: Int { return shape.strides[1] }
     var colStride: Int { return shape.strides[2] }
@@ -323,15 +272,15 @@ public extension VolumeTensorViewImpl {
 
 //------------------------------------------------------------------------------
 /// VolumeTensor
-public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
+public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
 
     //--------------------------------------------------------------------------
     // initializers
@@ -340,53 +289,53 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorViewImpl {
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 3, "rank must equal: 3")
-        self.shape = shape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
 //==============================================================================
 // NDTensorView
-public protocol NDTensorView: TensorView {
-}
-
-//------------------------------------------------------------------------------
-// NDTensorViewImpl
-public protocol NDTensorViewImpl: TensorViewImpl, NDTensorView
-where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex>{}
-
-public extension NDTensorViewImpl {
+public protocol NDTensorView: TensorView
+where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
+    
 }
 
 //------------------------------------------------------------------------------
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
-public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
+public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
-    
+
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
     public init(shape: DataShape, tensorData: TensorData? = nil,
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
-        self.shape = shape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
@@ -398,17 +347,14 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorViewImpl {
 /// c: channels
 /// h: rows
 /// w: cols
-public protocol NCHWTensorView: TensorView {
+public protocol NCHWTensorView: TensorView
+where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<TensorIndex> {
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-//------------------------------------------------------------------------------
-// NCHWTensorViewImpl
-public protocol NCHWTensorViewImpl: TensorViewImpl, NCHWTensorView
-where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<TensorIndex>{}
-
-public extension NCHWTensorViewImpl {
+public extension NCHWTensorView {
+    // properties
     var itemStride: Int { return shape.strides[0] }
     var channelStride: Int { return shape.strides[1] }
     var rowStride: Int { return shape.strides[2] }
@@ -432,31 +378,32 @@ public extension NCHWTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // NCHWTensor
-public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorViewImpl {
+public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
 
-    
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
     public init(shape: DataShape, tensorData: TensorData? = nil,
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 4, "other rank must equal: 4")
-        assert(shape.layout == .nchw, "other shape layout must be: .nchw")
-        self.shape = shape
+        assert(shape.rank == 4, "rank must equal: 4")
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
@@ -468,17 +415,14 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorViewImpl {
 /// h: rows
 /// w: cols
 /// c: channels
-public protocol NHWCTensorView: TensorView {
+public protocol NHWCTensorView: TensorView
+where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<TensorIndex> {
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-//--------------------------------------------------------------------------
-// NHWCTensorViewImpl
-public protocol NHWCTensorViewImpl: TensorViewImpl, NHWCTensorView
-where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<TensorIndex>{}
-
-public extension NHWCTensorViewImpl {
+public extension NHWCTensorView {
+    // properties
     var itemStride: Int { return shape.strides[0] }
     var channelStride: Int { return shape.strides[1] }
     var rowStride: Int { return shape.strides[2] }
@@ -502,43 +446,45 @@ public extension NHWCTensorViewImpl {
 
 //------------------------------------------------------------------------------
 // NHWCTensor
-public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorViewImpl {
+public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     // properties
-    public var _isShared: Bool = false
+    public var _isShared: Bool
     public var _name: String?
-    public var lastAccessMutated: Bool = false
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape
+    public var _tensorData: TensorData
+    public var _viewOffset: Int
     public var logging: LogInfo?
-    public var shape: DataShape
-    public var viewOffset: Int = 0
-    public var tensorData: TensorData
-    
+
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
     public init(shape: DataShape, tensorData: TensorData? = nil,
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 4, "other rank must equal: 4")
-        assert(shape.layout == .nchw, "other shape layout must be: .nchw")
-        self.shape = shape
+        assert(shape.rank == 4, "rank must equal: 4")
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        self.tensorData = tensorData ??
+        _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= self.tensorData.byteCount)
+        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
     }
 }
 
 //------------------------------------------------------------------------------
 public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
-    init<M: MatrixTensorViewImpl>(_ matrix: M, name: String? = nil) where
+    init<M: MatrixTensorView>(_ matrix: M, name: String? = nil) where
         M.Scalar: AnyUniformDenseScalar,
         M.Scalar.ComponentScalar == Scalar {
             let extents = [1, matrix.shape.extents[0],
                            matrix.shape.extents[1], M.Scalar.componentCount]
-            self.shape = DataShape(extents: extents, layout: .nhwc)
-            self.logging = matrix.logging
-            self.tensorData = matrix.tensorData
+            self.init(shape: DataShape(extents: extents, layout: .nhwc),
+                      tensorData: matrix._tensorData, viewOffset: 0,
+                      isShared: false, name: nil, logging: matrix.logging)
     }
 }

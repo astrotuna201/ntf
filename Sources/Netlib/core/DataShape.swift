@@ -109,10 +109,15 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    // normalize(indices:
-    public func normalize(indices: [Int]?) -> [Int]? {
-        guard let indices = indices else { return nil }
-        return indices.map { $0 < 0 ? $0 + rank : $0 }
+    /// ensurePositive(indices:
+    /// The user can specify indices from `-rank..<rank`.
+    /// Negative numbers reference indexes from the end of `extents`
+    /// This ensures they are resolved to positive values.
+    public func ensurePositive(indices: [Int]) -> [Int] {
+        return indices.map {
+            assert(-rank..<rank ~= $0)
+            return $0 < 0 ? $0 + rank : $0
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -126,8 +131,8 @@ public struct DataShape: Equatable, Codable {
     }
     
     //--------------------------------------------------------------------------
-    // linearIndex
-    //    returns the linear element index
+    /// linearIndex
+    ///    returns the linear element index
     public func linearIndex(of index: [Int]) -> Int {
         assert(rank > 0 && index.count == rank)
         var result: Int
@@ -178,15 +183,36 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    /// transposed
+    /// transposed(with permutations:
     /// Returns a new data shape where the extents and strides are permuted
-    /// - Parameter permutations: an array of extent indices to permute.
-    /// By default the last two extents are operated on.
-    public func transposed(withPermutations permutations: [Int] = [-1, -2])
-        -> DataShape {
-            
-//        let perm = normalize(indices: permutations)
-        return DataShape()
+    /// - Parameter permutations: the indice order mapping. `count` must
+    ///   equal `rank`
+    /// - Returns: transposed/permuted shape
+    public func transposed(with permutations: [Int]? = nil) -> DataShape {
+        assert(rank > 1)
+        assert(permutations == nil || permutations?.count == rank)
+        var newExtents = [Int]()
+        var newStrides = [Int]()
+
+        // determine the new extents and strides
+        if let perm = permutations {
+            let mapping = ensurePositive(indices: perm)
+            for index in 0..<rank {
+                newExtents[index] = extents[mapping[index]]
+                newStrides[index] = strides[mapping[index]]
+            }
+        } else {
+            // simple swap
+            newExtents = extents
+            newStrides = strides
+            newExtents.swapAt(rank-1, rank-2)
+            newStrides.swapAt(rank-1, rank-2)
+        }
+
+        // return the new shape
+        return DataShape(extents: newExtents, layout: .any,
+                         channelLayout: channelLayout, strides: newStrides,
+                         isColMajor: isColMajor)
     }
 
     //--------------------------------------------------------------------------

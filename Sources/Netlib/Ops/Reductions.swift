@@ -35,7 +35,7 @@ public extension TensorView where Self.Scalar == Bool {
     func all(alongAxes: Int...,
         using deviceStream: DeviceStream? = nil) throws -> Self {
         // make sure to handle negative axes
-        let axes = shape.ensurePositive(indices: alongAxes).map {
+        let axes = shape.makePositive(indices: alongAxes).map {
             TensorIndex($0)
         }
         // turn into a vector
@@ -62,7 +62,7 @@ public extension TensorView where Self.Scalar == Bool {
     func all(squeezingAxes: Int...,
         using deviceStream: DeviceStream? = nil) throws -> NDTensor<Scalar> {
         
-        let axes = shape.ensurePositive(indices: squeezingAxes)
+        let axes = shape.makePositive(indices: squeezingAxes)
         let axesVec = VectorTensor<TensorIndex>(
             scalars: axes.map {TensorIndex($0)})
         

@@ -149,13 +149,14 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// performs a dynamic rank reduction by removing extents of 1
-    /// along the specified axes
+    /// squeezed(axes:
+    /// performs a rank reduction by removing dimensions with an extent of 1
+    /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
+    /// - Returns: the new data shape
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
     func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
-        let posAxes = shape.ensurePositive(indices: axes ?? [Int](0..<rank))
         return NDTensor<Scalar>(
-            shape: shape.squeezed(axes: Set(posAxes)),
+            shape: shape.squeezed(axes: axes),
             tensorData: _tensorData, viewOffset: _viewOffset,
             isShared: isShared, name: name, logging: logging)
     }

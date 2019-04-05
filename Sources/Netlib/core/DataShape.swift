@@ -109,11 +109,11 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    /// ensurePositive(indices:
+    /// makePositive(indices:
     /// The user can specify indices from `-rank..<rank`.
     /// Negative numbers reference indexes from the end of `extents`
     /// This ensures they are resolved to positive values.
-    public func ensurePositive(indices: [Int]) -> [Int] {
+    public func makePositive(indices: [Int]) -> [Int] {
         return indices.map {
             assert(-rank..<rank ~= $0)
             return $0 < 0 ? $0 + rank : $0
@@ -151,6 +151,7 @@ public struct DataShape: Equatable, Codable {
 
     //--------------------------------------------------------------------------
     // contains
+    // TODO maybe we don't need these
     public func contains(index: [Int]) -> Bool {
         assert(index.count == rank, "rank mismatch")
         return linearIndex(of: index) <= elementSpanCount
@@ -167,16 +168,24 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    // squeezed
-    public func squeezed(axes: Set<Int>? = nil) -> DataShape {
+    /// squeezed(axes:
+    /// performs a rank reduction by removing dimensions with an extent of 1
+    /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
+    /// - Returns: the new data shape
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
+    public func squeezed(axes: [Int]? = nil) -> DataShape {
         assert(axes == nil || axes!.count <= rank)
+        let axesSet = Set(makePositive(indices: axes ?? [Int](0..<rank)))
         var newExtents = [Int]()
         var newStrides = [Int]()
-        let axes = axes ?? Set<Int>(0..<rank)
-        for axis in 0..<rank where !(extents[axis] == 1 && axes.contains(axis)){
+        
+        for axis in 0..<rank
+            where !(extents[axis] == 1 && axesSet.contains(axis)) {
+                
             newExtents.append(extents[axis])
             newStrides.append(strides[axis])
         }
+        
         return DataShape(extents: newExtents, layout: layout,
                          channelLayout: channelLayout, strides: newStrides,
                          isColMajor: isColMajor)
@@ -188,6 +197,8 @@ public struct DataShape: Equatable, Codable {
     /// - Parameter permutations: the indice order mapping. `count` must
     ///   equal `rank`
     /// - Returns: transposed/permuted shape
+    /// - Precondition: Each value in `permutations` must be in the range
+    ///   `-rank..<rank`
     public func transposed(with permutations: [Int]? = nil) -> DataShape {
         assert(rank > 1)
         assert(permutations == nil || permutations?.count == rank)
@@ -196,7 +207,7 @@ public struct DataShape: Equatable, Codable {
 
         // determine the new extents and strides
         if let perm = permutations {
-            let mapping = ensurePositive(indices: perm)
+            let mapping = makePositive(indices: perm)
             for index in 0..<rank {
                 newExtents[index] = extents[mapping[index]]
                 newStrides[index] = strides[mapping[index]]

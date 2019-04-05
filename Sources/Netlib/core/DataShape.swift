@@ -16,29 +16,36 @@ public struct DataShape: Equatable, Codable {
     public let elementCount: Int
     /// The sparse number of elements spanned by the shape
     public let elementSpanCount: Int
-    /// True if rows and cols are arranged in column major order
+    /// `true` if the underlying data is arranged in column major order
     public let isColMajor: Bool
     /// The interpretation of each extent in the shape
     public let layout: TensorLayout
+    /// The virtual space before and after a dimension
+    public let padding: [Padding]?
     /// The distance to the next element for each dimension
     public let strides: [Int]
-
-    // convenience shorthand
-    public var isContiguous: Bool { return elementCount == elementSpanCount }
-    public var isEmpty: Bool { return elementCount == 0 }
-    public var isScalar: Bool { return layout == .scalar }
-    public var rank: Int { return extents.count }
-    public var items: Int { return extents[0] }
-    
-    /// returns a dense version of self
-    public var dense: DataShape {
-        guard !isContiguous else { return self }
-        return DataShape(extents: extents, layout: layout,
-                         channelLayout: channelLayout, isColMajor: isColMajor)
-    }
+    /// The virtual extents of the shape including padding. These are the
+    /// extents used by iterators and indexing
+    public let virtualExtents: [Int]
 
     //--------------------------------------------------------------------------
-    /// Initialize with all options
+    // computed properties
+
+    /// `true` if the underlying data is dense
+    public var isContiguous: Bool { return elementCount == elementSpanCount }
+    /// `true` if the shape has zero elements
+    public var isEmpty: Bool { return elementCount == 0 }
+    /// `true` if the shape is readonly because it is a virtual shape
+    public var isReadOnly: Bool { return padding != nil }
+    /// `true` if the shape has one element
+    public var isScalar: Bool { return elementCount == 1 }
+    /// the number of sahpe extents
+    public var rank: Int { return extents.count }
+    /// the number of items in extent 0
+    public var items: Int { return extents[0] }
+
+    //--------------------------------------------------------------------------
+    /// Fully specified initializer
     /// - Parameter extents: extent of the shape in each dimension
     /// - Parameter layout: defines the interpretation of each dimension
     /// - Parameter strides: the distance to the next element in each dimension
@@ -48,6 +55,7 @@ public struct DataShape: Equatable, Codable {
                 layout: TensorLayout? = nil,
                 channelLayout: ChannelLayout = .any,
                 strides: [Int]? = nil,
+                padding: [Padding]? = nil,
                 isColMajor: Bool = false) {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
@@ -56,7 +64,13 @@ public struct DataShape: Equatable, Codable {
         self.extents = extents
         self.elementCount = extents.reduce(1, *)
         self.layout = layout ?? TensorLayout(defaultForRank: rank)
+        self.padding = padding
         self.isColMajor = isColMajor
+        
+        // padding
+        virtualExtents = padding == nil ? extents : {
+            zip(padding!, extents).map { $0.0.before + $0.1 + $0.0.after }
+        }()
 
         // strides
         if let userStrides = strides {
@@ -71,9 +85,10 @@ public struct DataShape: Equatable, Codable {
             self.strides = DataShape.denseStrides(for: extents)
         }
         elementSpanCount = DataShape.spanCount(for: extents,
-                                                 with: self.strides)
+                                               with: self.strides)
     }
 
+    //--------------------------------------------------------------------------
     /// Initialize with an array literal representing the shape extents.
     /// The rank of the tensor is the number of extents.
     /// - Parameter elements: The shape extents.
@@ -82,6 +97,7 @@ public struct DataShape: Equatable, Codable {
         self.init(extents: elements)
     }
 
+    //--------------------------------------------------------------------------
     /// Initialize with variadic elements representing the shape extents.
     /// The rank of the tensor is the number of elements.
     /// - Parameter elements: The shape extents.
@@ -90,6 +106,7 @@ public struct DataShape: Equatable, Codable {
         self.init(extents: elements)
     }
 
+    //--------------------------------------------------------------------------
     /// Initialize with an array representing the shape extents.
     /// The rank of the tensor is the number of elements.
     /// - Parameter elements: The shape extents.
@@ -98,6 +115,14 @@ public struct DataShape: Equatable, Codable {
         self.init(extents: elements)
     }
 
+    //--------------------------------------------------------------------------
+    /// returns a dense version of self
+    public var dense: DataShape {
+        guard !isContiguous else { return self }
+        return DataShape(extents: extents, layout: layout,
+                         channelLayout: channelLayout, isColMajor: isColMajor)
+    }
+    
     //--------------------------------------------------------------------------
     // denseStrides
     private static func denseStrides(for extents: [Int]) -> [Int] {
@@ -244,6 +269,13 @@ public struct DataShape: Equatable, Codable {
         }
         return DataShape(extent)
     }
+}
+
+//==============================================================================
+// pad
+public struct Padding: Equatable, Codable {
+    let before: Int
+    let after: Int
 }
 
 //==============================================================================

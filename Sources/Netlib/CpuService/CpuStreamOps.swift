@@ -12,7 +12,11 @@ extension CpuStream {
     }
     
     public func add<T>(lhs: T, rhs: T, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
-        let _ = try lhs.readOnly()[0] + rhs.readOnly()[0]
+        try queue {
+            let lbuff = try lhs.readOnly()
+            print(lbuff)
+            let _ = try lhs.readOnly()[0] + rhs.readOnly()[0]
+        }
     }
     
     public func all<T>(x: T, axes: VectorTensor<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {

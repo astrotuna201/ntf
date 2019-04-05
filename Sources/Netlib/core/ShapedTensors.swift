@@ -10,12 +10,12 @@ import Foundation
 /// non numeric scalar types.
 /// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol AnyUniformDenseScalar: AnyScalar {
+public protocol UniformDenseScalar: AnyScalar {
     associatedtype ComponentScalar: AnyFixedSizeScalar
     static var componentCount: Int { get }
 }
 
-public extension AnyUniformDenseScalar {
+public extension UniformDenseScalar {
     static var componentCount: Int {
         return MemoryLayout<Self>.size / MemoryLayout<ComponentScalar>.size
     }
@@ -23,7 +23,7 @@ public extension AnyUniformDenseScalar {
 
 //==============================================================================
 // Image Scalar types
-public protocol AnyRGBImageSample: AnyUniformDenseScalar {
+public protocol AnyRGBImageSample: UniformDenseScalar {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
@@ -36,7 +36,7 @@ public struct RGBSample<T>: AnyRGBImageSample
     public init() { r = T(); g = T(); b = T() }
 }
 
-public protocol AnyRGBAImageSample: AnyUniformDenseScalar {
+public protocol AnyRGBAImageSample: UniformDenseScalar {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
@@ -52,7 +52,7 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // Audio sample types
-public protocol AnyStereoAudioSample: AnyUniformDenseScalar {
+public protocol AnyStereoAudioSample: UniformDenseScalar {
     var left: ComponentScalar { get set }
     var right: ComponentScalar { get set }
 }
@@ -479,7 +479,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
 public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M: MatrixTensorView>(_ matrix: M, name: String? = nil) where
-        M.Scalar: AnyUniformDenseScalar,
+        M.Scalar: UniformDenseScalar,
         M.Scalar.ComponentScalar == Scalar {
             let extents = [1, matrix.shape.extents[0],
                            matrix.shape.extents[1], M.Scalar.componentCount]

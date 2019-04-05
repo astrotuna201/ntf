@@ -13,9 +13,13 @@ public final class CpuStream : DeviceStream {
 	public let name: String
     public var logging: LogInfo?
     public var timeout: TimeInterval?
+    /// the last error thrown by a stream function
+    public private(set) var lastStreamError: Error?
+    public var executeAsync: Bool = false
 
     // serial queue
     let commandQueue: DispatchQueue
+    let errorQueue: DispatchQueue
     let completionEvent = CpuStreamEvent(options: StreamEventOptions())
 
     //--------------------------------------------------------------------------
@@ -25,6 +29,7 @@ public final class CpuStream : DeviceStream {
                 name: String, id: Int) throws {
         // create serial queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
+        errorQueue = DispatchQueue(label: "\(name).errorQueue")
         self.logging = logging
         self.device = device
         self.id = id
@@ -33,7 +38,35 @@ public final class CpuStream : DeviceStream {
         trackingId = ObjectTracker.global.register(self, namePath: path)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
-    
+
+    //--------------------------------------------------------------------------
+    /// queues a closure on the stream for execution
+    ///
+    /// This will catch and propagate the last asynchronous error thrown.
+    /// I wish there was a better way to do this!
+    public func queue(_ body: @escaping () throws -> Void) throws {
+        // check for a pending error from the last operation
+        try errorQueue.sync {
+            guard lastStreamError == nil else { throw lastStreamError! }
+        }
+        
+        // queue the work
+        if executeAsync {
+            commandQueue.async {
+                do {
+                    try body()
+                } catch {
+                    self.errorQueue.sync {
+                        self.lastStreamError = error
+                        self.writeLog(String(describing: error))
+                    }
+                }
+            }
+        } else {
+            try body()
+        }
+    }
+
 	//--------------------------------------------------------------------------
 	/// createEvent
     /// creates an event object used for stream synchronization

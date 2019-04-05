@@ -8,8 +8,6 @@ import TensorFlow
 public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // properties
-    /// The interpretation of each channel in the shape
-    public let channelLayout: ChannelLayout
     /// The extent of the shape in each dimension
     public let extents: [Int]
     /// The dense number of elements defined by the shape
@@ -18,8 +16,6 @@ public struct DataShape: Equatable, Codable {
     public let elementSpanCount: Int
     /// `true` if the underlying data is arranged in column major order
     public let isColMajor: Bool
-    /// The interpretation of each extent in the shape
-    public let layout: TensorLayout
     /// The virtual space before and after a dimension
     public let padding: [Padding]?
     /// The distance to the next element for each dimension
@@ -49,21 +45,20 @@ public struct DataShape: Equatable, Codable {
     /// - Parameter extents: extent of the shape in each dimension
     /// - Parameter layout: defines the interpretation of each dimension
     /// - Parameter strides: the distance to the next element in each dimension
-    /// - Parameter colMajor: if `true` it allows normal indexing of imported
-    ///             row major data, such as matrices from Matlab or Octave
+    /// - Parameter isColMajor: if `true`, the underlying `tensorData` is
+    ///   interpreted as being layed out in column major order but will
+    ///   present itself as if it is row major. This is to support importing
+    ///   of row major data, such as matrices from Matlab or Octave.
+    ///   It is assumed the last two extents are rows and columns.
     public init(extents: [Int],
-                layout: TensorLayout? = nil,
-                channelLayout: ChannelLayout = .any,
                 strides: [Int]? = nil,
                 padding: [Padding]? = nil,
                 isColMajor: Bool = false) {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
         let rank = extents.count
-        self.channelLayout = channelLayout
         self.extents = extents
         self.elementCount = extents.reduce(1, *)
-        self.layout = layout ?? TensorLayout(defaultForRank: rank)
         self.padding = padding
         self.isColMajor = isColMajor
         
@@ -77,9 +72,9 @@ public struct DataShape: Equatable, Codable {
             self.strides = userStrides
         } else if isColMajor {
             var cmExtent = extents
-            cmExtent.swapAt(self.layout.hAxis, self.layout.wAxis)
+            cmExtent.swapAt(rank-1, rank-2)
             var cmStrides = DataShape.denseStrides(for: cmExtent)
-            cmStrides.swapAt(self.layout.hAxis, self.layout.wAxis)
+            cmStrides.swapAt(rank-1, rank-2)
             self.strides = cmStrides
         } else {
             self.strides = DataShape.denseStrides(for: extents)
@@ -119,8 +114,7 @@ public struct DataShape: Equatable, Codable {
     /// returns a dense version of self
     public var dense: DataShape {
         guard !isContiguous else { return self }
-        return DataShape(extents: extents, layout: layout,
-                         channelLayout: channelLayout, isColMajor: isColMajor)
+        return DataShape(extents: extents, isColMajor: isColMajor)
     }
     
     //--------------------------------------------------------------------------
@@ -211,8 +205,7 @@ public struct DataShape: Equatable, Codable {
             newStrides.append(strides[axis])
         }
         
-        return DataShape(extents: newExtents, layout: layout,
-                         channelLayout: channelLayout, strides: newStrides,
+        return DataShape(extents: newExtents, strides: newStrides,
                          isColMajor: isColMajor)
     }
 
@@ -246,8 +239,7 @@ public struct DataShape: Equatable, Codable {
         }
 
         // return the new shape
-        return DataShape(extents: newExtents, layout: .any,
-                         channelLayout: channelLayout, strides: newStrides,
+        return DataShape(extents: newExtents, strides: newStrides,
                          isColMajor: isColMajor)
     }
 
@@ -290,36 +282,4 @@ public extension TensorFlow.TensorShape {
     init(_ shape: Netlib.DataShape) {
         self = TensorFlow.TensorShape(shape.extents.map { Int32($0) })
     }
-}
-
-//==============================================================================
-// TensorLayout
-public enum TensorLayout: Int, Codable {
-    // warning: don't rearrange without also updating axis mapping below
-    case any, scalar, vector, matrix, volume, nchw, nhwc, ncdhw, ndhwc
-
-    // TODO: probably replace this scheme with specialized indexed types
-    // axis mapping                 a  s  ve m  vo nc nh nc nd
-    public var nAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 0, 0][rawValue] }
-    public var cAxis: Int { return [0, 0, 0, 0, 0, 1, 3, 1, 4][rawValue] }
-    public var dAxis: Int { return [0, 0, 0, 0, 0, 0, 0, 2, 1][rawValue] }
-    public var hAxis: Int { return [0, 0, 0, 0, 1, 2, 1, 3, 2][rawValue] }
-    public var wAxis: Int { return [0, 0, 0, 1, 2, 3, 2, 4, 3][rawValue] }
-
-    public init(defaultForRank rank: Int) {
-        let defaults: [TensorLayout] =
-            [.scalar, .vector, .matrix, .volume, .nchw, .ncdhw]
-        self = rank >= defaults.count ? .any : defaults[rank]
-    }
-}
-
-//==============================================================================
-/// ChannelLayout
-/// This is used to label channel to aid in automated format conversion
-public enum ChannelLayout: Int, Codable {
-    // other
-    case any
-    // image
-    case gray, grayAlpha, rgb, rgba
-    // etc...
 }

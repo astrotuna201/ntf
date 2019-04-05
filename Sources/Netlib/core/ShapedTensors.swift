@@ -73,7 +73,7 @@ public extension ScalarTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
-        let shape = DataShape(extents: [1], layout: .scalar)
+        let shape = DataShape(extents: [1])
         self.init(shape: shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
@@ -363,7 +363,7 @@ public extension NCHWTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        let shape = DataShape(extents: extents, layout: .nchw)
+        let shape = DataShape(extents: extents)
         self.init(shape: shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
@@ -431,7 +431,7 @@ public extension NHWCTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        let shape = DataShape(extents: extents, layout: .nhwc)
+        let shape = DataShape(extents: extents)
         self.init(shape: shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
@@ -483,7 +483,7 @@ public extension NHWCTensor {
         M.Scalar.ComponentScalar == Scalar {
             let extents = [1, matrix.shape.extents[0],
                            matrix.shape.extents[1], M.Scalar.componentCount]
-            self.init(shape: DataShape(extents: extents, layout: .nhwc),
+            self.init(shape: DataShape(extents: extents),
                       tensorData: matrix._tensorData, viewOffset: 0,
                       isShared: false, name: nil, logging: matrix.logging)
     }

@@ -95,7 +95,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// shared memory
     /// `true` if the underlying `tensorData` is being referenced by
-    /// `reference` views. 
+    /// `reference` views.
     var isShared: Bool {
         get { return _isShared }
         set {
@@ -317,13 +317,10 @@ public extension TensorView {
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(extents[0] <= shape.extents[0])
         assert(shape.contains(offset: offset,
-                              shape: DataShape(extents: extents,
-                                               layout: shape.layout)))
+                              shape: DataShape(extents: extents)))
         // find subview relative offset and shape
         let elementOffset = _viewOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents,
-                                     layout: shape.layout,
-                                     channelLayout: shape.channelLayout,
                                      strides: shape.strides,
                                      isColMajor: shape.isColMajor)
         

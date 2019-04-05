@@ -109,6 +109,13 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
+    // normalize(indices:
+    public func normalize(indices: [Int]?) -> [Int]? {
+        guard let indices = indices else { return nil }
+        return indices.map { $0 < 0 ? $0 + rank : $0 }
+    }
+    
+    //--------------------------------------------------------------------------
     // spanCount
     // A sub view may cover a wider range of parent element indexes
     // than the number of elements defined by the extent of this view
@@ -170,22 +177,17 @@ public struct DataShape: Equatable, Codable {
                          isColMajor: isColMajor)
     }
 
-    // TODO: move to shaped types
-//    //--------------------------------------------------------------------------
-//    /// transposed
-//    /// Returns a new data shape where the rows and cols are transposed via
-//    /// stride manipulation.
-//    public func transposed() -> DataShape {
-//        guard rank > 1 else { return self }
-//        var transExtents = extents
-//        var transStrides = strides
-//        transExtents.swapAt(layout.wAxis, layout.hAxis)
-//        transStrides.swapAt(layout.wAxis, layout.hAxis)
-//
-//        return DataShape(extents: transExtents, layout: layout,
-//                         channelLayout: channelLayout, strides: transStrides,
-//                         isColMajor: isColMajor)
-//    }
+    //--------------------------------------------------------------------------
+    /// transposed
+    /// Returns a new data shape where the extents and strides are permuted
+    /// - Parameter permutations: an array of extent indices to permute.
+    /// By default the last two extents are operated on.
+    public func transposed(withPermutations permutations: [Int] = [-1, -2])
+        -> DataShape {
+            
+//        let perm = normalize(indices: permutations)
+        return DataShape()
+    }
 
     //--------------------------------------------------------------------------
     // flattened

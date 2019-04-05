@@ -13,9 +13,6 @@ extension CpuStream {
     
     public func add<T>(lhs: T, rhs: T, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         try queue {
-            let lbuff = try lhs.readOnly()
-            print(lbuff)
-            let _ = try lhs.readOnly()[0] + rhs.readOnly()[0]
         }
     }
     

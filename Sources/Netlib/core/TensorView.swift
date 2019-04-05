@@ -153,7 +153,7 @@ public extension TensorView {
     /// along the specified axes
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
     func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
-        let posAxes = axes?.map { $0 < 0 ? $0 + rank : $0 } ?? [Int](0..<rank)
+        let posAxes = shape.normalize(indices: axes) ?? [Int](0..<rank)
         return NDTensor<Scalar>(
             shape: shape.squeezed(axes: Set(posAxes)),
             tensorData: _tensorData, viewOffset: _viewOffset,

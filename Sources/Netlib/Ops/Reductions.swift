@@ -34,8 +34,11 @@ public extension TensorView where Self.Scalar == Bool {
     @inlinable @inline(__always)
     func all(alongAxes: Int...,
         using deviceStream: DeviceStream? = nil) throws -> Self {
-        
-        let axes = alongAxes.map { TensorIndex($0 < 0 ? $0 + rank : $0) }
+        // make sure to handle negative axes
+        let axes = shape.normalize(indices: alongAxes)!.map {
+            TensorIndex($0)
+        }
+        // turn into a vector
         let axesVec = VectorTensor<TensorIndex>(scalars: axes)
         var result = Self.init(shapedLike: self)
         try Netlib.all(self, alongAxes: axesVec,
@@ -59,7 +62,7 @@ public extension TensorView where Self.Scalar == Bool {
     func all(squeezingAxes: Int...,
         using deviceStream: DeviceStream? = nil) throws -> NDTensor<Scalar> {
         
-        let axes = squeezingAxes.map { $0 < 0 ? $0 + rank : $0 }
+        let axes = shape.normalize(indices: squeezingAxes)!
         let axesVec = VectorTensor<TensorIndex>(
             scalars: axes.map {TensorIndex($0)})
         

@@ -5,7 +5,7 @@
 import Foundation
 
 //==============================================================================
-/// conformance assures that scalar components are of the same type and
+/// conformance indicates that scalar components are of the same type and
 /// densely packed. This is necessary for zero copy view type casting of
 /// non numeric scalar types.
 /// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>

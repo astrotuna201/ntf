@@ -93,7 +93,9 @@ public extension TensorView {
     var shape: DataShape { return _shape }
     
     //--------------------------------------------------------------------------
-    // shared memory
+    /// shared memory
+    /// `true` if the underlying `tensorData` is being referenced by
+    /// `reference` views. 
     var isShared: Bool {
         get { return _isShared }
         set {
@@ -104,7 +106,8 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    // name
+    /// name
+    /// an optional view name used for logging
     var name: String {
         get { return _name ?? String(describing: self) }
         set {
@@ -123,6 +126,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// init<T>(shapedLike other:
     /// convenience initializer used by generics
+    /// - Parameter other: the other object whose shape and logging to use
     init<T>(shapedLike other: T) where T: TensorView {
         self.init(shape: other.shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil,
@@ -132,6 +136,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// init<S>(asScalar value:
     /// convenience initializer used by generics
+    /// - Parameter value: the initial value to set
     init(asScalar value: Scalar) {
         // create scalar version of the shaped view type
         self.init(shape: DataShape(extents: [1]),
@@ -142,7 +147,8 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    // scalarValue
+    /// scalarValue
+    /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
@@ -170,10 +176,12 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// viewByteOffset
+    /// the byte offset into the `tensorData` buffer where this view begins
     var viewByteOffset: Int { return _viewOffset * MemoryLayout<Scalar>.size }
     
     //--------------------------------------------------------------------------
-    // viewSpanByteCount
+    /// viewSpanByteCount
+    /// the number of bytes in the `tensorData` spanned by this view
     var viewSpanByteCount: Int {
         return shape.elementSpanCount * MemoryLayout<Scalar>.size
     }

@@ -29,8 +29,8 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // computed properties
 
-    /// `true` if the underlying data is dense
-    public var isContiguous: Bool { return elementCount == elementSpanCount }
+    /// `true` if the underlying data is densely packed
+    public var isDense: Bool { return elementCount == elementSpanCount }
     /// `true` if the shape has zero elements
     public var isEmpty: Bool { return elementCount == 0 }
     /// `true` if the shape is readonly because it is a virtual shape
@@ -115,7 +115,7 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     /// returns a dense version of self
     public var dense: DataShape {
-        guard !isContiguous else { return self }
+        guard !isDense else { return self }
         return DataShape(extents: extents, isColMajor: isColMajor)
     }
     
@@ -248,7 +248,7 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // flattened
     public func flattened(axis: Int = 0) -> DataShape {
-        assert(isContiguous, "Cannot reshape strided data")
+        assert(isDense, "Cannot reshape strided data")
         assert(axis < rank)
 
         // create a new flat view

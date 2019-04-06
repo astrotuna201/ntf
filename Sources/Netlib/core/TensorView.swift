@@ -80,7 +80,7 @@ public extension TensorView {
     // public property accessors
 
     /// `true` if the scalars are densely packed in memory
-    var isContiguous: Bool { return shape.isContiguous }
+    var isDense: Bool { return shape.isDense }
     /// `true` if the view contains zero elements
     var isEmpty: Bool { return shape.isEmpty }
     /// lastAccessMutated is `true` if the last data access caused the view

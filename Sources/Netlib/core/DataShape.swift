@@ -59,10 +59,12 @@ public struct DataShape: Equatable, Codable {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
         let rank = extents.count
-        self.extents = extents
-        self.elementCount = extents.reduce(1, *)
         self.padding = padding
         self.isColMajor = isColMajor
+
+        // extents
+        self.extents = extents
+        self.elementCount = extents.count == 0 ? 0 : extents.reduce(1, *)
         
         // padding
         virtualExtents = padding == nil ? extents : {
@@ -122,6 +124,7 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // denseStrides
     private static func denseStrides(for extents: [Int]) -> [Int] {
+        guard extents.count > 0 else { return [] }
         var strides = [Int](repeating: 1, count: extents.count)
         for index in (1..<extents.count).reversed() {
             strides[index-1] = extents[index] * strides[index]
@@ -148,6 +151,7 @@ public struct DataShape: Equatable, Codable {
     // The span of the extent is the linear index of the last index + 1
     private static func spanCount(for extents: [Int],
                                   with strides: [Int]) -> Int {
+        guard extents.count > 0 else { return 0 }
         return zip(extents, strides).reduce(0) { $0 + ($1.0 - 1) * $1.1 } + 1
     }
     

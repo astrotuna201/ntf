@@ -4,6 +4,24 @@
 //
 import Foundation
 
+
+//==============================================================================
+// NDIndexSequence
+//public struct NDIndexSequence: Sequence {
+//    let nextpos: [(currentPos: Int, pastEndPos: Int)]?
+//    
+//    init(shape: DataShape, dim: Int, offset: Int) {
+//    }
+//    
+//    public func makeIterator() -> IndexIterator {
+//        return IndexIterator(shape: shape, dim: dim, offset: offset)
+//    }
+//}
+
+
+
+
+
 //==============================================================================
 // DataShape
 extension DataShape: Sequence {

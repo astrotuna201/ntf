@@ -12,8 +12,12 @@ class test_DataShape: XCTestCase {
     static var allTests = [
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
+        ("test_iterateSequence", test_iterateSequence),
+        ("test_iterateShaped", test_iterateShaped),
     ]
 
+    //==========================================================================
+    // test_squeezed
     func test_squeezed() {
         XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().extents == [10,4,3])
         XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().extents == [10,4,3])
@@ -28,13 +32,30 @@ class test_DataShape: XCTestCase {
         XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).extents == [1, 1, 4, 1, 1, 3, 5])
     }
     
+    //==========================================================================
+    // test_transposed
     func test_transposed() {
 //        let avals = (0..<6).map { Float($0) }
 //        let a = TensorView<Float>(extents: 2,3, scalars: avals)
         
     }
 
-    func test_iterate() {
+    //==========================================================================
+    // test_iterateSequence
+    func test_iterateSequence() {
+        let a = DataShape()
+        print(a.elementSpanCount)
+//        do {
+//            let m = VolumeTensor<Int32>(extents: [2, 3, 4],
+//                                        scalars: [Int32](0..<24))
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+    }
+
+    //==========================================================================
+    // test_iterateShaped
+    func test_iterateShaped() {
         do {
             let m = VolumeTensor<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
             for depth in m.shape {

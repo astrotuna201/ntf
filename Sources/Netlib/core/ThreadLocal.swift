@@ -27,21 +27,6 @@ public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
 }
 
 //==============================================================================
-/// Executes a closure on the default stream. This is only necessary if
-/// catching Errors from operator expressions is desired `+`
-///
-/// - Parameters:
-///   - body: A closure whose operations are to be executed on the
-///           default stream
-@inline(never)
-public func usingDefaultStream<R>(
-    logInfo: LogInfo? = nil,
-    perform body: () throws -> R) throws -> R {
-    // execute the body
-    return try body()
-}
-
-//==============================================================================
 // _ThreadLocal
 @usableFromInline
 class _ThreadLocal {
@@ -66,7 +51,7 @@ class _ThreadLocal {
     
     // there will always be the platform default stream and logInfo
     public var defaultStream: DeviceStream { return streamScope.last!.stream }
-    public var defaultLogInfo: LogInfo { return streamScope.last!.logInfo }
+    public var defaultLogging: LogInfo { return streamScope.last!.logInfo }
 
     //--------------------------------------------------------------------------
     // stack functions

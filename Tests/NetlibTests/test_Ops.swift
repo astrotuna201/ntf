@@ -46,13 +46,6 @@ class test_Ops: XCTestCase {
             // unscoped, uses Platform.defaultStream
             let c1 = try a + b
             XCTAssert(c1 == expected)
-            
-            //---------------------------------
-            // default stream scoped, uses Platform.defaultStream
-            let c2 = try usingDefaultStream {
-                return try a + b
-            }
-            XCTAssert(c2 == expected)
 
             //---------------------------------
             // other scoped
@@ -74,9 +67,7 @@ class test_Ops: XCTestCase {
                 return try a - b
             }
             
-            let c4 = try usingDefaultStream {
-                return try aPlusB + aMinusB
-            }
+            let c4 = try aPlusB + aMinusB
             let c4expected = VectorTensor<Float>(scalars: [2, 4, 6, 8])
             // all three streams auto sync at this point
             XCTAssert(c4 == c4expected)
@@ -92,26 +83,24 @@ class test_Ops: XCTestCase {
             let _ = try a + 1    // floats + broadcast Int is okay
             let _ = try m + 1
             // let _ = try m + 1.5  won't compile
-
+            
             //---------------------------------
             // nested multi scoped
-            let c5: VectorTensor<Float> = try usingDefaultStream {
-                let x: VectorTensor<Float> = try using(stream[0]) {
-                    let aMinusB = try using(stream[1]) {
-                        return try a - b
-                    }
-                    // here stream[1] is synced with stream[0]
-                    return try pow(a + b + aMinusB, y)
+            let x: VectorTensor<Float> = try using(stream[0]) {
+                let aMinusB = try using(stream[1]) {
+                    return try a - b
                 }
-                // can compose easily (but log(x) is computed twice in this case)
-                let _ = try x.log() / (x.log() + 1)
-                
-                // temporary results are okay!
-                let logx = try log(x)
-                // here stream[0] is synced with the defaultStream
-                return try logx / (logx + 1)
+                // here stream[1] is synced with stream[0]
+                return try pow(a + b + aMinusB, y)
             }
-
+            // can compose easily (but log(x) is computed twice in this case)
+            let _ = try x.log() / (x.log() + 1)
+            
+            // temporary results are okay!
+            let logx = try log(x)
+            // here stream[0] is synced with the defaultStream
+            let c5 = try logx / (logx + 1)
+            
             // all three streams auto sync at this point
             let c5expected = VectorTensor<Float>(scalars: [0, 0.581, 0.782, 0.862])
             let c5IsEqual = try c5.approximatelyEqual(to: c5expected).all().scalarValue()

@@ -43,33 +43,38 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_iterateSequence
     func test_iterateSequence() {
-        let a = DataShape()
-        print(a.elementSpanCount)
-//        do {
-//            let m = VolumeTensor<Int32>(extents: [2, 3, 4],
-//                                        scalars: [Int32](0..<24))
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
+        // try to iterate empty shape
+        let empty = VolumeTensor<Int32>()
+        for _ in empty.shape.relativeIndices {
+            XCTFail("an empty shape should have an empty sequence")
+        }
+        
+        // try volume with shape
+//        let expected = [Int](0..<24)
+        let expected = [Int](0..<8)
+        let m = VolumeTensor<Int32>(extents: [1, 2, 4],
+                                    scalars: expected.map { Int32($0) })
+        let indices = [Int](m.shape.relativeIndices)
+        XCTAssert(indices == expected, "indices do not match")
     }
 
     //==========================================================================
     // test_iterateShaped
     func test_iterateShaped() {
-        do {
-            let m = VolumeTensor<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
-            for depth in m.shape {
-                print("depth")
-                for row in depth {
-                    print("row")
-                    for index in row.tensorIndices {
-                        let value = try m.readOnly()[index]
-                        print("index: \(index) value: \(value)")
-                    }
-                }
-            }
-        } catch {
-            XCTFail(String(describing: error))
-        }
+//        do {
+//            let m = VolumeTensor<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
+//            for depth in m.shape {
+//                print("depth")
+//                for row in depth {
+//                    print("row")
+//                    for index in row.tensorIndices {
+//                        let value = try m.readOnly()[index]
+//                        print("index: \(index) value: \(value)")
+//                    }
+//                }
+//            }
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
     }
 }

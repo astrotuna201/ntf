@@ -293,7 +293,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     public init(shape: DataShape, tensorData: TensorData? = nil,
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 3, "rank must equal: 3")
+        assert(shape.isEmpty || shape.rank == 3, "rank must equal: 3")
         _isShared = isShared
         _name = name
         _shape = shape

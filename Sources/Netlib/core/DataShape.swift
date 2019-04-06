@@ -39,8 +39,6 @@ public struct DataShape: Equatable, Codable {
     public var isReadOnly: Bool { return padding != nil }
     /// `true` if the shape has one element
     public var isScalar: Bool { return elementCount == 1 }
-    /// `true` if the shape's `virtualExtents` are greater than `extents`
-    public var isVirtualShape: Bool { return padding != nil }
     /// the number of sahpe extents
     public var rank: Int { return extents.count }
     /// the number of items in extent 0

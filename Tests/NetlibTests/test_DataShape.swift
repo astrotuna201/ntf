@@ -51,10 +51,29 @@ class test_DataShape: XCTestCase {
         
         // try volume with shape
         let expected = [Int](0..<24)
-        let m = VolumeTensor<Int32>(extents: [2, 3, 4],
-                                    scalars: expected.map { Int32($0) })
-        let indices = [Int](m.shape.indices())
+        let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
+                                     scalars: expected.map { Int32($0) })
+        let indices = [Int](v1.shape.indices())
         XCTAssert(indices == expected, "indices do not match")
+        
+        // try volume with shape and padding
+        let v2 = VolumeTensor<Int32>(extents: [1, 3, 4],
+                                     padding: [Padding(before: 2, after: 3)],
+                                     scalars: [Int32](0..<12))
+        let expectedPadded = [
+            -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1,  0,  1,  2,  3, -1, -1, -1,
+            -1, -1,  4,  5,  6,  7, -1, -1, -1,
+            -1, -1,  8,  9, 10, 11, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        ]
+        
+        let v2Indices = [Int](v2.shape.indices())
+        XCTAssert(v2Indices == expectedPadded, "indices do not match")
+
     }
 
     //==========================================================================

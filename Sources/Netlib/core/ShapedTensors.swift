@@ -254,10 +254,11 @@ public extension VolumeTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int], scalars: [Scalar]? = nil,
+    init(extents: [Int], padding: [Padding]? = nil,
+         scalars: [Scalar]? = nil,
          name: String? = nil, logging: LogInfo? = nil) {
         
-        self.init(shape: DataShape(extents: extents),
+        self.init(shape: DataShape(extents: extents, padding: padding),
                   tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
         
@@ -294,6 +295,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
                 viewOffset: Int = 0, isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.isEmpty || shape.rank == 3, "rank must equal: 3")
+        
         _isShared = isShared
         _name = name
         _shape = shape

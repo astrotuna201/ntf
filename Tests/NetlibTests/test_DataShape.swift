@@ -33,4 +33,22 @@ class test_DataShape: XCTestCase {
 //        let a = TensorView<Float>(extents: 2,3, scalars: avals)
         
     }
+
+    func test_iterate() {
+        do {
+            let m = VolumeTensor<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
+            for depth in m.shape {
+                print("depth")
+                for row in depth {
+                    print("row")
+                    for index in row.tensorIndices {
+                        let value = try m.readOnly()[index]
+                        print("index: \(index) value: \(value)")
+                    }
+                }
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
 }

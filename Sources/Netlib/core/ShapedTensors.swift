@@ -254,19 +254,24 @@ public extension VolumeTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+    init(extents: [Int], scalars: [Scalar]? = nil,
+         name: String? = nil, logging: LogInfo? = nil) {
+        
+        self.init(shape: DataShape(extents: extents),
+                  tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
+        
+        // it's being initialized in host memory so it can't fail
+        if let scalars = scalars {
+            _ = try! readWrite().initialize(from: scalars)
+        }
     }
     
     /// initialize with explicit labels
-    init(_ depths: Int, _ rows: Int, _ cols: Int,
+    init(_ depths: Int, _ rows: Int, _ cols: Int, scalars: [Scalar]? = nil,
          name: String? = nil, logging: LogInfo? = nil) {
-        
-        let shape = DataShape(extents: [depths, rows, cols])
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
-                  isShared: false, name: name, logging: logging)
+        self.init(extents: [depths, rows, cols], scalars: scalars,
+                  name: name, logging: logging)
     }
 }
 

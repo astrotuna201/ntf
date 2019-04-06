@@ -45,16 +45,15 @@ class test_DataShape: XCTestCase {
     func test_iterateSequence() {
         // try to iterate empty shape
         let empty = VolumeTensor<Int32>()
-        for _ in empty.shape.relativeIndices {
+        for _ in empty.shape.indices() {
             XCTFail("an empty shape should have an empty sequence")
         }
         
         // try volume with shape
-//        let expected = [Int](0..<24)
-        let expected = [Int](0..<8)
-        let m = VolumeTensor<Int32>(extents: [1, 2, 4],
+        let expected = [Int](0..<24)
+        let m = VolumeTensor<Int32>(extents: [2, 3, 4],
                                     scalars: expected.map { Int32($0) })
-        let indices = [Int](m.shape.relativeIndices)
+        let indices = [Int](m.shape.indices())
         XCTAssert(indices == expected, "indices do not match")
     }
 

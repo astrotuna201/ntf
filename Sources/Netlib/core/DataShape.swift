@@ -18,6 +18,8 @@ public struct DataShape: Equatable, Codable {
     public let elementSpanCount: Int
     /// `true` if the underlying data is arranged in column major order
     public let isColMajor: Bool
+    /// the index of the last dimension
+    public let lastDimension: Int
     /// The virtual space before and after a dimension
     public let padding: [Padding]?
     /// The distance to the next element for each dimension
@@ -37,6 +39,8 @@ public struct DataShape: Equatable, Codable {
     public var isReadOnly: Bool { return padding != nil }
     /// `true` if the shape has one element
     public var isScalar: Bool { return elementCount == 1 }
+    /// `true` if the shape's `virtualExtents` are greater than `extents`
+    public var isVirtualShape: Bool { return padding != nil }
     /// the number of sahpe extents
     public var rank: Int { return extents.count }
     /// the number of items in extent 0
@@ -59,6 +63,7 @@ public struct DataShape: Equatable, Codable {
         // validate and assign
         assert(strides == nil || strides?.count == extents.count)
         let rank = extents.count
+        self.lastDimension = rank - 1
         self.padding = padding
         self.isColMajor = isColMajor
 

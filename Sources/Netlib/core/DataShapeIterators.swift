@@ -8,73 +8,106 @@ import Foundation
 // DataShapeSequenceIterable
 // This is a recursive iterator that works it's way through N dimensions
 public protocol DataShapeSequenceIterable: IteratorProtocol {
+    /// the relative offset to add to each index
+    var offset: Int { get set }
     /// the current position in nD space
-    var currentPosition: [ExtentPosition]? { get set }
-    /// the initial position in nD space
-    var initialPosition: [ExtentPosition]? { get set }
-    /// the index of the last dimension
-    var lastDimension: Int { get set }
+    var position: [ExtentPosition]? { get set }
+    /// the shape being iterated
+    var shape: DataShape { get set }
     /// fully specified initializer
-    init()
+    init(shape: DataShape, at offset: Int)
 }
 
 public struct ExtentPosition {
-    var position: Int
-    let stride: Int
-    let pastEnd: Int
+    let span: Int
+    var current: Int
+    var pastEnd: Int
 }
 
 public extension DataShapeSequenceIterable {
     //--------------------------------------------------------------------------
-    /// initializer
-    init(shape: DataShape, dimension: Int, startingIndex: Int) {
-        self.init()
-        guard !shape.isEmpty else { return }
-        assert(dimension < shape.rank)
-        lastDimension = shape.rank - dimension - 1
-        initialPosition = []
+    /// advancePosition(for dim:
+    /// advances the lastDimension. If it can't, then `currentPosition`
+    /// is set to `nil` this is a recursive function
+    /// - Returns: the index of the next position
+    mutating func advancePosition(for dim: Int) -> Int? {
+        assert(!shape.isVirtualShape, "use advanceVirtualPosition")
         
-        for dim in dimension..<shape.rank {
-            // the initial end position along each dimension
-            let span = shape.extents[dim] * shape.strides[dim]
-            
-            // record the starting point for each dimension
-            initialPosition!.append(
-                ExtentPosition(position: startingIndex,
-                               stride: shape.strides[dim],
-                               pastEnd: startingIndex + span))
+        var nextPos: Int?
+        if position == nil {
+            // initialize position
+            if !shape.isEmpty {
+                var initial = [ExtentPosition]()
+                
+                // record the starting point for each dimension
+                for dim in 0..<shape.rank {
+                    let span = shape.extents[dim] * shape.strides[dim]
+                    initial.append(ExtentPosition(
+                        span: span, current: offset, pastEnd: span))
+                }
+                
+                // return the first position
+                position = initial
+                nextPos = 0
+            }
+        } else {
+            // advance the position for this dimension by it's stride
+            position![dim].current += shape.strides[dim]
+
+            // if past the end then go back a dimension and advance
+            if position![dim].current == position![dim].pastEnd {
+                // make a recursive call
+                if dim > 0, let start = advancePosition(for: dim - 1) {
+                    nextPos = start
+                    position![dim].current = start
+                    position![dim].pastEnd = start + position![dim].span
+                }
+            } else {
+                nextPos = position![dim].current
+            }
         }
+        return nextPos
     }
     
     //--------------------------------------------------------------------------
+    /// advanceVirtualPosition(for dim:
     /// advances the lastDimension. If it can't, then `currentPosition`
     /// is set to `nil` this is a recursive function
-    /// - Returns: the new position
-    mutating func advancePosition(for dimension: Int) -> Int? {
-        guard dimension >= 0 else {
-            currentPosition = nil
-            return nil
-        }
-
+    /// - Returns: the index of the next position
+    mutating func advanceVirtualPosition(for dim: Int) -> Int? {
+        assert(shape.isVirtualShape, "use advancePosition")
+        
         var nextPos: Int?
-        if currentPosition == nil {
-            nextPos = initialPosition == nil ? nil : 0
-            currentPosition = initialPosition
+        if position == nil {
+            // initialize position
+            if !shape.isEmpty {
+                var initial = [ExtentPosition]()
+                
+                // record the starting point for each dimension
+                for dim in 0..<shape.rank {
+                    let span = shape.extents[dim] * shape.strides[dim]
+                    initial.append(ExtentPosition(
+                        span: span, current: offset, pastEnd: span))
+                }
+                
+                // return the first position
+                position = initial
+                nextPos = 0
+            }
         } else {
             // advance the position for this dimension by it's stride
-            currentPosition![dimension].position
-                += currentPosition![dimension].stride
+            position![dim].current += shape.strides[dim]
             
             // if past the end then go back a dimension and advance
-            if currentPosition![dimension].position ==
-                currentPosition![dimension].pastEnd {
+            if position![dim].current == position![dim].pastEnd {
                 // make a recursive call
-                if let start = advancePosition(for: dimension - 1) {
-                    currentPosition![dimension].position = start
+                if dim > 0, let start = advancePosition(for: dim - 1) {
                     nextPos = start
+                    position![dim].current = start
+                    position![dim].pastEnd = start + position![dim].span
                 }
             } else {
-                nextPos = currentPosition![dimension].position
+                nextPos = position![dim].current
             }
         }
         return nextPos
@@ -86,13 +119,19 @@ public extension DataShapeSequenceIterable {
 /// This iterates the tensorData indexes described by
 /// an N dimensional DataShape as a single linear Sequence
 public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
-    public var currentPosition: [ExtentPosition]?
-    public var initialPosition: [ExtentPosition]?
-    public var lastDimension: Int = 0
-    public init() {}
+    public var offset: Int
+    public var position: [ExtentPosition]?
+    public var shape: DataShape
+    
+    public init(shape: DataShape, at offset: Int) {
+        self.shape = shape
+        self.offset = offset
+    }
     
     public mutating func next() -> Int? {
-        return advancePosition(for: lastDimension)
+        return shape.isVirtualShape ?
+            advanceVirtualPosition(for: shape.lastDimension) :
+            advancePosition(for: shape.lastDimension)
     }
 }
 
@@ -100,20 +139,23 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
 // DataShapeSequence
 public struct DataShapeSequence: Sequence {
     let shape: DataShape
-    let dimension: Int
-    let startingIndex: Int
+    let offset: Int
+    
+    public init(shape: DataShape, at offset: Int) {
+        self.shape = shape
+        self.offset = offset
+    }
     
     public func makeIterator() -> DataShapeSequenceIterator {
-        return DataShapeSequenceIterator(shape: shape, dimension: dimension,
-                                         startingIndex: startingIndex)
+        return DataShapeSequenceIterator(shape: shape, at: offset)
     }
 }
 
 extension DataShape {
     /// returns a Sequence of `tensorData` element indices relative to
-    /// the shape. Absolute indices are TensorView.viewOffset + these values
-    var relativeIndices: DataShapeSequence {
-        return DataShapeSequence(shape: self, dimension: 0, startingIndex: 0)
+    /// the specified offset
+    func indices(relativeTo offset: Int = 0) -> DataShapeSequence {
+        return DataShapeSequence(shape: self, at: offset)
     }
 }
 

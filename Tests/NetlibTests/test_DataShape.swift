@@ -13,6 +13,7 @@ class test_DataShape: XCTestCase {
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
         ("test_iterateModuloSequence", test_iterateModuloSequence),
+        ("test_iterateModuloView", test_iterateModuloView),
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
@@ -83,6 +84,28 @@ class test_DataShape: XCTestCase {
             
             let indices = [Int](shape.indices(modulo: dataShape))
             XCTAssert(indices == expected, "indices do not match")
+        }
+    }
+    
+    //==========================================================================
+    // test_iterateModuloView
+    func test_iterateModuloView() {
+        do {
+            // try broadcasting a scalar
+            let data: [Int32] = [
+                1, 0,
+                0, 1,
+            ]
+            let pattern = MatrixTensor<Int32>(extents: [2,2], scalars: data)
+            let _ = MatrixTensor<Int32>(extents: [3, 4], modulo: pattern)
+
+//            let expected = [
+//                0, 0, 0,
+//                0, 0, 0,
+//            ]
+            
+//            let values = [Int](view.indices(modulo: dataShape))
+//            XCTAssert(indices == expected, "indices do not match")
         }
     }
     

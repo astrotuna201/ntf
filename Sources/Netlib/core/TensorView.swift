@@ -99,6 +99,21 @@ public extension TensorView {
     var shape: DataShape { return _shape }
     
     //--------------------------------------------------------------------------
+    /// modulo view
+    /// This is used to enable broadcasting
+    init(extents: [Int], modulo other: Self,
+         padding: [Padding]? = nil) {
+
+        self.init(shape: DataShape(extents: extents, padding: padding),
+                  dataShape: other.shape,
+                  tensorData: other._tensorData,
+                  viewOffset: other._viewOffset,
+                  isShared: other._isShared,
+                  name: other.name,
+                  logging: other.logging)
+    }
+
+    //--------------------------------------------------------------------------
     /// shared memory
     /// `true` if the underlying `tensorData` is being referenced by
     /// `reference` views.

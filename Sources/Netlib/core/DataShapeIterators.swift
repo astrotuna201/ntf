@@ -43,7 +43,7 @@ public extension DataShapeSequenceIterable {
     }
 
     //--------------------------------------------------------------------------
-    /// advanceInitialPosition(position:for:
+    /// advanceInitial(position:for:
     /// sets up the initial position and advances the lastDimension.
     /// If the shape is empty then `nil` is returned
     /// - Returns: the index of the next position
@@ -73,7 +73,7 @@ public extension DataShapeSequenceIterable {
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
     func advance(_ position: inout [ExtentPosition]?, for dim: Int) -> Int? {
-        guard position != nil else { return advanceInitial(&position, for: dim) }
+        guard position != nil else { return advanceInitial(&position, for: dim)}
         var nextPos: Int?
         
         // advance the position for this dimension by it's stride
@@ -95,13 +95,40 @@ public extension DataShapeSequenceIterable {
     }
     
     //--------------------------------------------------------------------------
+    /// advanceInitialVirtual(position:for:
+    /// sets up the initial position and advances the lastDimension.
+    /// If the shape is empty then `nil` is returned
+    /// - Returns: the index of the next position
+    func advanceInitialVirtual(_ position: inout [ExtentPosition]?,
+                               for dim: Int) -> Int? {
+        guard !shape.isEmpty else { return nil }
+        var initial = [ExtentPosition]()
+        
+        // record the starting point for each dimension
+        for dim in 0..<shape.rank {
+            let span = shape.dataExtents[dim] * shape.strides[dim]
+            initial.append(ExtentPosition(span: span,
+                                          current: offset,
+                                          end: span,
+                                          startData: offset,
+                                          endData: span))
+        }
+        
+        // return the first position
+        position = initial
+        return 0
+    }
+    
+    //--------------------------------------------------------------------------
     /// advanceVirtual(position:for:
     /// advances the lastDimension. If it can't, then `position`
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
     func advanceVirtual(_ position: inout [ExtentPosition]?,
                         for dim: Int) -> Int? {
-        guard position != nil else { return advanceInitial(&position, for: dim) }
+        guard position != nil else {
+            return advanceInitialVirtual(&position, for: dim)
+        }
         
         // advance the position for this dimension by it's stride
         position![dim].current += shape.strides[dim]

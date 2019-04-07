@@ -7,11 +7,10 @@ import Foundation
 //==============================================================================
 //
 public struct ExtentPosition {
-    let span: Int
     var current: Int
-    var end: Int
-    var startData: Int
-    var endData: Int
+    let spanView: Int
+    var endView: Int
+    var spanData: Int
 }
 
 public typealias DataShapeAdvanceFn =
@@ -46,7 +45,7 @@ public extension DataShapeSequenceIterable {
 
     //--------------------------------------------------------------------------
     /// advanceInitial(position:for:
-    /// sets up the initial position and advances the lastDimension.
+    /// sets up the initial position for normal indexing
     /// If the shape is empty then `nil` is returned
     /// - Returns: the index of the next position
     func advanceInitial(_ position: inout [ExtentPosition]?,
@@ -56,12 +55,12 @@ public extension DataShapeSequenceIterable {
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
-            let span = shape.extents[dim] * shape.strides[dim]
-            initial.append(ExtentPosition(span: span,
-                                          current: offset,
-                                          end: span,
-                                          startData: offset,
-                                          endData: span))
+            let spanView = shape.extents[dim] * shape.strides[dim]
+            let spanData = moduloShape.extents[dim] * shape.strides[dim]
+            initial.append(ExtentPosition(current: offset,
+                                          spanView: spanView,
+                                          endView: spanView,
+                                          spanData: spanData))
         }
         
         // return the first position
@@ -71,8 +70,8 @@ public extension DataShapeSequenceIterable {
 
     //--------------------------------------------------------------------------
     /// advancePosition(position:for:
-    /// advances the lastDimension. If it can't, then `position`
-    /// is set to `nil` this is a recursive function
+    /// Advances the last dimension. If it can't, then `nil` is returned
+    /// This function is called recursively.
     /// - Returns: the index of the next position
     func advance(_ position: inout [ExtentPosition]?, for dim: Int) -> Int? {
         // check for initial position
@@ -83,11 +82,11 @@ public extension DataShapeSequenceIterable {
         position![dim].current += shape.strides[dim]
         
         // if past the end then go back a dimension and advance
-        if position![dim].current == position![dim].end {
+        if position![dim].current == position![dim].endView {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advance(&position, for: dim - 1) {
                 position![dim].current = start
-                position![dim].end = start + position![dim].span
+                position![dim].endView = start + position![dim].spanView
                 nextPos = start
             }
         } else {
@@ -98,55 +97,33 @@ public extension DataShapeSequenceIterable {
     }
     
     //--------------------------------------------------------------------------
-    /// advanceInitialVirtual(position:for:
-    /// sets up the initial position and advances the lastDimension.
-    /// If the shape is empty then `nil` is returned
-    /// - Returns: the index of the next position
-    func advanceInitialVirtual(_ position: inout [ExtentPosition]?,
-                               for dim: Int) -> Int? {
-        guard !shape.isEmpty else { return nil }
-        var initial = [ExtentPosition]()
-        
-        // record the starting point for each dimension
-        for dim in 0..<shape.rank {
-            let span = shape.extents[dim] * shape.strides[dim]
-            initial.append(ExtentPosition(span: span,
-                                          current: offset,
-                                          end: span,
-                                          startData: offset,
-                                          endData: span))
-        }
-        
-        // return the first position
-        position = initial
-        return 0
-    }
-    
-    //--------------------------------------------------------------------------
-    /// advanceVirtual(position:for:
+    /// advanceModulo(position:for:
     /// advances the lastDimension. If it can't, then `position`
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
-    func advanceVirtual(_ position: inout [ExtentPosition]?,
+    func advanceModulo(_ position: inout [ExtentPosition]?,
                         for dim: Int) -> Int? {
         // check for initial position
         var nextPos: Int?
-        guard position != nil else
-        { return advanceInitialVirtual(&position, for: dim) }
+        guard position != nil else { return advanceInitial(&position, for: dim)}
         
         // advance the position for this dimension by it's stride
         position![dim].current += shape.strides[dim]
         
         // if past the end then go back a dimension and advance
-        if position![dim].current == position![dim].end {
+        if position![dim].current == position![dim].endView {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advance(&position, for: dim - 1) {
                 position![dim].current = start
-                position![dim].end = start + position![dim].span
+                position![dim].endView = start + position![dim].spanView
                 nextPos = start
             }
         } else {
-            nextPos = position![dim].current
+            // take the virtual current position and mod
+            // with the actual data range
+            let zeroRelativeCurrent = position![dim].current - offset
+            let dataIndex = zeroRelativeCurrent % position![dim].spanData
+            nextPos = dataIndex + offset
         }
         
         return nextPos
@@ -168,8 +145,18 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
         self.moduloShape = moduloShape ?? shape
         self.shape = shape
         self.offset = offset
-        let isVirtual = moduloShape != nil || shape.hasPadding
-        advanceFn = isVirtual ? advanceVirtual(_:for:) : advance(_:for:)
+        
+        if shape.hasPadding {
+            // TODO created padded version
+            fatalError("not implemented")
+//            if moduloShape != nil {
+//            } else {
+//            }
+        } else if moduloShape != nil {
+            advanceFn = advanceModulo(_:for:)
+        } else {
+            advanceFn = advance(_:for:)
+        }
     }
 }
 

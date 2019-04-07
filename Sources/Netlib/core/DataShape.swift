@@ -41,7 +41,7 @@ public struct DataShape: Equatable, Codable {
     /// the number of items in extent 0
     public var items: Int { return extents[0] }
 
-    //----------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // empty shape
     public init() {
         self.extents = []

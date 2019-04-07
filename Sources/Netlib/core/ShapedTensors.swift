@@ -91,6 +91,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -153,6 +154,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -223,6 +225,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -297,6 +300,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -339,6 +343,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -409,6 +414,7 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers
@@ -480,6 +486,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     public var _tensorData: TensorData
     public var _viewOffset: Int
     public var logging: LogInfo?
+    public var padValue: Scalar = Scalar()
 
     //--------------------------------------------------------------------------
     // initializers

@@ -30,6 +30,8 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var _lastAccessMutated: Bool { get set }
     /// the name of the view, which can optionally be set to aid in debugging
     var _name: String? { get set }
+    /// the scalar value to be returned for indexes with padding regions
+    var padValue: Scalar { get set }
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` differ, the modulo indexing is performed
     var _shape: DataShape { get set }
@@ -97,6 +99,8 @@ public extension TensorView {
     var rank: Int { return _shape.rank }
     /// the shape of the view
     var shape: DataShape { return _shape }
+    /// the linear element offset where the view begins
+    var viewOffset: Int { return _viewOffset }
     
     //--------------------------------------------------------------------------
     /// modulo view

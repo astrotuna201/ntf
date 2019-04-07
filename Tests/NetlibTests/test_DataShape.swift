@@ -97,15 +97,19 @@ class test_DataShape: XCTestCase {
                 0, 1,
             ]
             let pattern = MatrixTensor<Int32>(extents: [2,2], scalars: data)
-            let _ = MatrixTensor<Int32>(extents: [3, 4], modulo: pattern)
+            let view = MatrixTensor<Int32>(extents: [3, 4], modulo: pattern)
 
-//            let expected = [
-//                0, 0, 0,
-//                0, 0, 0,
-//            ]
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+            ]
             
-//            let values = [Int](view.indices(modulo: dataShape))
-//            XCTAssert(indices == expected, "indices do not match")
+            let values = try [Int32](view.values())
+            XCTAssert(values == expected, "indices do not match")
+        } catch {
+            XCTFail(String(describing: error))
         }
     }
     

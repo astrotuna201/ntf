@@ -44,6 +44,8 @@ public struct DataShape: Equatable, Codable {
     public let isColMajor: Bool
     /// the index of the last dimension
     public let lastDimension: Int
+    /// `true` if the shape is padded or the `extent` != `dataExtent`
+    public let isVirtual: Bool
 
     //--------------------------------------------------------------------------
     // computed properties
@@ -75,11 +77,30 @@ public struct DataShape: Equatable, Codable {
                 dataExtents: [Int]? = nil,
                 padding: [Padding]? = nil,
                 isColMajor: Bool = false) {
-        // validate and assign
+        // validate
         assert(strides == nil || strides?.count == extents.count)
+        
+        //----------------------------------------------------------------------
+        // check for empty
+        if extents.isEmpty {
+            self.isColMajor = false
+            self.extents = []
+            self.dataExtents = []
+            self.strides = []
+            isVirtual = false
+            lastDimension = 0
+            elementCount = 0
+            elementSpanCount = 0
+            return
+        }
+
+        //----------------------------------------------------------------------
+        // initialize shape
         let rank = extents.count
         self.lastDimension = rank - 1
         self.isColMajor = isColMajor
+        self.isVirtual = padding != nil ||
+            (dataExtents != nil && dataExtents! != extents)
 
         // extents
         self.extents = extents

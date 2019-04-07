@@ -81,8 +81,7 @@ class test_DataShape: XCTestCase {
         // This is an example of a performance test case.
         self.measure {
             for _ in 0..<10000 {
-                let v1 = VolumeTensor<Float>(extents: [2, 3, 4],
-                                             scalars: scalars)
+                let _ = VolumeTensor<Float>(extents: [2, 3, 4], scalars: scalars)
             }
         }
     }

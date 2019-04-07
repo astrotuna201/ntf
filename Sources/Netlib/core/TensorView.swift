@@ -20,6 +20,8 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     // functions with correct access are exposed as protocol extensions.
     // this gives full access to protocol default implementations.
     
+    /// the shape of the view for the actual underlying data
+    var _dataShape: DataShape { get set }
     /// during write access. Primarily to support multi-threaded writes
     var _isShared: Bool { get set }
     /// lastAccessMutated is `true` if the last data access caused the view
@@ -28,7 +30,8 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var _lastAccessMutated: Bool { get set }
     /// the name of the view, which can optionally be set to aid in debugging
     var _name: String? { get set }
-    /// the shape of the view
+    /// the virtual shape of the view used for indexing
+    /// if `shape` and `dataShape` differ, the modulo indexing is performed
     var _shape: DataShape { get set }
     /// class reference to the underlying byte buffer
     var _tensorData: TensorData { get set }
@@ -44,6 +47,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// creates a new concrete view instance. This is required to enable
     /// extension methods to create typed return values
     init(shape: DataShape,
+         dataShape: DataShape?,
          tensorData: TensorData?,
          viewOffset: Int,
          isShared: Bool,
@@ -79,6 +83,8 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     // public property accessors
 
+    /// the shape of the view for the actual underlying data
+    var dataShape: DataShape { return _dataShape }
     /// `true` if the scalars are densely packed in memory
     var isDense: Bool { return shape.isContiguous }
     /// `true` if the view contains zero elements
@@ -119,8 +125,9 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// creates an empty view
     init() {
-        self.init(shape: DataShape(), tensorData: TensorData(),
-                  viewOffset: 0, isShared: false, name: nil, logging: nil)
+        self.init(shape: DataShape(), dataShape: nil,
+                  tensorData: TensorData(), viewOffset: 0,
+                  isShared: false, name: nil, logging: nil)
     }
 
     //--------------------------------------------------------------------------
@@ -128,7 +135,8 @@ public extension TensorView {
     /// convenience initializer used by generics
     /// - Parameter other: the other object whose shape and logging to use
     init<T>(shapedLike other: T) where T: TensorView {
-        self.init(shape: other.shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: other.shape, dataShape: nil,
+                  tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil,
                   logging: other.logging)
     }
@@ -139,7 +147,7 @@ public extension TensorView {
     /// - Parameter value: the initial value to set
     init(asScalar value: Scalar) {
         // create scalar version of the shaped view type
-        self.init(shape: DataShape(extents: [1]),
+        self.init(shape: DataShape(extents: [1]), dataShape: nil,
                   tensorData: nil, viewOffset: 0,
                   isShared: false, name: nil, logging: nil)
         // set the value
@@ -323,6 +331,7 @@ public extension TensorView {
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
         
         return Self.init(shape: subViewShape,
+                         dataShape: nil,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
                          isShared: isReference,
@@ -381,7 +390,7 @@ public extension TensorView {
         }
         
         // create flattened view
-        return Self.init(shape: shape.flattened(),
+        return Self.init(shape: shape.flattened(), dataShape: nil,
                          tensorData: _tensorData, viewOffset: _viewOffset,
                          isShared: isShared, name: name, logging: logging)
     }
@@ -399,7 +408,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return Self.init(shape: shape,
+            return Self.init(shape: shape, dataShape: nil,
                              tensorData: _tensorData, viewOffset: _viewOffset,
                              isShared: true, name: name, logging: logging)
         }

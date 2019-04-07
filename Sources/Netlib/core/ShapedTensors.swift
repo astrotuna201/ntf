@@ -74,7 +74,7 @@ public extension ScalarTensorView {
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
         let shape = DataShape(extents: [1])
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
 }
@@ -83,6 +83,7 @@ public extension ScalarTensorView {
 // ScalarTensor
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -94,10 +95,12 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 0, "rank must equal: 0")
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -126,7 +129,7 @@ public extension VectorTensorView {
     /// shaped initializers
     init(count: Int, name: String? = nil, logging: LogInfo? = nil) {
         let shape = DataShape(extents: [count])
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
     
@@ -142,6 +145,7 @@ public extension VectorTensorView {
 // VectorTensor
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -153,10 +157,12 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 1, "rank must equal: 1")
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -188,7 +194,7 @@ public extension MatrixTensorView {
          logging: LogInfo? = nil, isColMajor: Bool = false) {
         
         let shape = DataShape(extents: extents)
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -209,6 +215,7 @@ public extension MatrixTensorView {
 // MatrixTensor
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -220,10 +227,12 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 2, "rank must equal: 2")
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -258,6 +267,7 @@ public extension VolumeTensorView {
          name: String? = nil, logging: LogInfo? = nil) {
         
         self.init(shape: DataShape(extents: extents, padding: padding),
+                  dataShape: nil,
                   tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
         
@@ -279,6 +289,7 @@ public extension VolumeTensorView {
 /// VolumeTensor
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -290,11 +301,12 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.isEmpty || shape.rank == 3, "rank must equal: 3")
-        
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -319,6 +331,7 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -330,9 +343,11 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -370,7 +385,7 @@ public extension NCHWTensorView {
     /// shaped initializers
     init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
         let shape = DataShape(extents: extents)
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
     
@@ -386,6 +401,7 @@ public extension NCHWTensorView {
 // NCHWTensor
 public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -397,10 +413,12 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 4, "rank must equal: 4")
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -438,7 +456,7 @@ public extension NHWCTensorView {
     /// shaped initializers
     init(extents: [Int], name: String? = nil, logging: LogInfo? = nil) {
         let shape = DataShape(extents: extents)
-        self.init(shape: shape, tensorData: nil, viewOffset: 0,
+        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
     }
     
@@ -454,6 +472,7 @@ public extension NHWCTensorView {
 // NHWCTensor
 public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     // properties
+    public var _dataShape: DataShape
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool = false
@@ -465,10 +484,12 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     //--------------------------------------------------------------------------
     // initializers
     /// fully specified to support generic init
-    public init(shape: DataShape, tensorData: TensorData? = nil,
-                viewOffset: Int = 0, isShared: Bool = false,
+    public init(shape: DataShape, dataShape: DataShape? = nil,
+                tensorData: TensorData? = nil, viewOffset: Int = 0,
+                isShared: Bool = false,
                 name: String? = nil, logging: LogInfo? = nil) {
         assert(shape.rank == 4, "rank must equal: 4")
+        _dataShape = dataShape ?? shape
         _isShared = isShared
         _name = name
         _shape = shape

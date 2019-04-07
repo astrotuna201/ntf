@@ -91,7 +91,7 @@ class test_DataShape: XCTestCase {
     // test_iterateModuloView
     func test_iterateModuloView() {
         do {
-            // try broadcasting a scalar
+            // try broadcasting a pattern of values
             let data: [Int32] = [
                 1, 0,
                 0, 1,

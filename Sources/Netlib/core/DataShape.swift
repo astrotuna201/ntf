@@ -41,6 +41,17 @@ public struct DataShape: Equatable, Codable {
     /// the number of items in extent 0
     public var items: Int { return extents[0] }
 
+    //----------------------------------------------------------------------
+    // empty shape
+    public init() {
+        self.extents = []
+        self.strides = []
+        self.padding = nil
+        lastDimension = 0
+        elementCount = 0
+        elementSpanCount = 0
+    }
+
     //--------------------------------------------------------------------------
     /// Fully specified initializer
     /// - Parameter extents: extent of the shape in each dimension
@@ -50,22 +61,9 @@ public struct DataShape: Equatable, Codable {
                 padding: [Padding]? = nil,
                 strides: [Int]? = nil) {
         // validate
-        assert(strides == nil || strides?.count == extents.count)
-        
-        //----------------------------------------------------------------------
-        // check for empty shape
-        if extents.isEmpty {
-            self.extents = []
-            self.strides = []
-            self.padding = nil
-            lastDimension = 0
-            elementCount = 0
-            elementSpanCount = 0
-            return
-        }
-
-        //----------------------------------------------------------------------
-        // initialize shape
+        assert(extents.count > 0, "use init() to create empty shape")
+        assert(strides == nil || strides?.count == extents.count,
+               "the stride count must equal the extent count")
         let rank = extents.count
         self.lastDimension = rank - 1
         self.padding = padding
@@ -249,7 +247,7 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // flattened
     public func flattened(axis: Int = 0) -> DataShape {
-        assert(isContiguous, "Cannot reshape strided data")
+        assert(isContiguous, "Cannot flatten strided data")
         assert(axis < rank)
 
         // create a new flat view

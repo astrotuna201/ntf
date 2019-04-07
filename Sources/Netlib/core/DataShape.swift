@@ -6,50 +6,28 @@ import Foundation
 import TensorFlow
 
 //==============================================================================
-// DataShapeExtent
-public struct DataShapeExtent: Equatable, Codable {
-    /// void space before the shape
-    let before: Int
-    /// void space after the shape
-    let after: Int
-    /// the extent of the data
-    let dataExtent: Int
-    /// the stride of the data
-    let datastride: Int
-    /// the virtual extent of the data including before and after
-    let virtualExtent: Int
-    /// the virtual stride of the data including before and after
-    let virtualStride: Int
-}
-
-//==============================================================================
 // DataShape
 public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // properties
-    /// The extent of the data associated with this shape in each dimension
-    public let dataExtents: [Int]
-    /// The extent of the indexable range in each dimension. Usually they will
-    /// be equal to the `dataExtent`. Iterators and direct indexing will map
-    /// memory indexes modulo the `dataExtent`. This is to support transparent
-    /// broadcasting and to simplify operator implementation.
-    public let extents: [Int]
-    /// The distance to the next element for each dimension
-    public let strides: [Int]
     /// The dense number of elements defined by the shape
     public let elementCount: Int
     /// The sparse number of elements spanned by the shape
     public let elementSpanCount: Int
-    /// `true` if the underlying data is arranged in column major order
-    public let isColMajor: Bool
+    /// The extent of the shape in each dimension
+    public let extents: [Int]
     /// the index of the last dimension
     public let lastDimension: Int
-    /// `true` if the shape is padded or the `extent` != `dataExtent`
-    public let isVirtual: Bool
+    /// optional void space before and after each dimension
+    public let padding: [Padding]?
+    /// The distance to the next element for each dimension
+    public let strides: [Int]
 
     //--------------------------------------------------------------------------
     // computed properties
 
+    /// `true` if the shape has padding
+    public var hasPadding: Bool { return padding != nil }
     /// `true` if the underlying data for the whole shape has a stride of 1.
     public var isContiguous: Bool { return elementCount == elementSpanCount }
     /// `true` if the shape has zero elements
@@ -59,35 +37,27 @@ public struct DataShape: Equatable, Codable {
     /// `true` if the shape has one element
     public var isScalar: Bool { return elementCount == 1 }
     /// the number of sahpe extents
-    public var rank: Int { return dataExtents.count }
+    public var rank: Int { return extents.count }
     /// the number of items in extent 0
-    public var items: Int { return dataExtents[0] }
+    public var items: Int { return extents[0] }
 
     //--------------------------------------------------------------------------
     /// Fully specified initializer
     /// - Parameter extents: extent of the shape in each dimension
+    /// - Parameter padding: padding before and after each dimension
     /// - Parameter strides: the distance to the next element in each dimension
-    /// - Parameter isColMajor: if `true`, the underlying `tensorData` is
-    ///   interpreted as being layed out in column major order but will
-    ///   present itself as if it is row major. This is to support importing
-    ///   of row major data, such as matrices from Matlab or Octave.
-    ///   It is assumed the last two extents are rows and columns.
     public init(extents: [Int],
-                strides: [Int]? = nil,
-                dataExtents: [Int]? = nil,
                 padding: [Padding]? = nil,
-                isColMajor: Bool = false) {
+                strides: [Int]? = nil) {
         // validate
         assert(strides == nil || strides?.count == extents.count)
         
         //----------------------------------------------------------------------
         // check for empty shape
         if extents.isEmpty {
-            self.isColMajor = false
             self.extents = []
-            self.dataExtents = []
             self.strides = []
-            isVirtual = false
+            self.padding = nil
             lastDimension = 0
             elementCount = 0
             elementSpanCount = 0
@@ -98,30 +68,11 @@ public struct DataShape: Equatable, Codable {
         // initialize shape
         let rank = extents.count
         self.lastDimension = rank - 1
-        self.isColMajor = isColMajor
-        self.isVirtual = padding != nil || dataExtents != nil
-
-        // extents
+        self.padding = padding
         self.extents = extents
-        self.dataExtents = dataExtents ?? extents
         self.elementCount = extents.count == 0 ? 0 : extents.reduce(1, *)
-
-        // strides
-        if let userStrides = strides {
-            self.strides = userStrides
-        } else if isColMajor {
-            // compute column major strides for the last 2 dimensions
-            var cmExtent = extents
-            cmExtent.swapAt(rank-1, rank-2)
-            var cmStrides = DataShape.denseStrides(for: cmExtent)
-            cmStrides.swapAt(rank-1, rank-2)
-            self.strides = cmStrides
-
-        } else {
-            self.strides = DataShape.denseStrides(for: extents)
-        }
-        elementSpanCount = DataShape.spanCount(for: extents,
-                                               with: self.strides)
+        self.strides = strides ?? DataShape.denseStrides(for: extents)
+        elementSpanCount = DataShape.spanCount(for: extents, with: self.strides)
     }
 
     //--------------------------------------------------------------------------
@@ -155,7 +106,7 @@ public struct DataShape: Equatable, Codable {
     /// returns a dense version of self
     public var dense: DataShape {
         guard !isContiguous else { return self }
-        return DataShape(extents: dataExtents, isColMajor: isColMajor)
+        return DataShape(extents: extents)
     }
     
     //--------------------------------------------------------------------------
@@ -201,7 +152,7 @@ public struct DataShape: Equatable, Codable {
         switch rank {
         case 0: result = 0
         case 1: result = index[0]
-        default: result = zip(dataExtents, strides).reduce(0) { $0 + $1.0 * $1.1 }
+        default: result = zip(extents, strides).reduce(0) { $0 + $1.0 * $1.1 }
         }
         assert(result <= elementSpanCount)
         return result
@@ -230,6 +181,17 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
+    /// columnMajor
+    public func columnMajor() -> DataShape {
+        // compute column major strides for the last 2 dimensions
+        var cmExtent = extents
+        cmExtent.swapAt(rank-1, rank-2)
+        var cmStrides = DataShape.denseStrides(for: cmExtent)
+        cmStrides.swapAt(rank-1, rank-2)
+        return DataShape(extents: extents, padding: padding, strides: cmStrides)
+    }
+    
+    //--------------------------------------------------------------------------
     /// squeezed(axes:
     /// performs a rank reduction by removing dimensions with an extent of 1
     /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
@@ -242,14 +204,13 @@ public struct DataShape: Equatable, Codable {
         var newStrides = [Int]()
         
         for axis in 0..<rank
-            where !(dataExtents[axis] == 1 && axesSet.contains(axis)) {
+            where !(extents[axis] == 1 && axesSet.contains(axis)) {
                 
-            newExtents.append(dataExtents[axis])
+            newExtents.append(extents[axis])
             newStrides.append(strides[axis])
         }
         
-        return DataShape(extents: newExtents, strides: newStrides,
-                         isColMajor: isColMajor)
+        return DataShape(extents: newExtents, strides: newStrides)
     }
 
     //--------------------------------------------------------------------------
@@ -270,20 +231,19 @@ public struct DataShape: Equatable, Codable {
         if let perm = permutations {
             let mapping = makePositive(indices: perm)
             for index in 0..<rank {
-                newExtents[index] = dataExtents[mapping[index]]
+                newExtents[index] = extents[mapping[index]]
                 newStrides[index] = strides[mapping[index]]
             }
         } else {
             // simple swap
-            newExtents = dataExtents
+            newExtents = extents
             newStrides = strides
             newExtents.swapAt(rank-1, rank-2)
             newStrides.swapAt(rank-1, rank-2)
         }
 
         // return the new shape
-        return DataShape(extents: newExtents, strides: newStrides,
-                         isColMajor: isColMajor)
+        return DataShape(extents: newExtents, strides: newStrides)
     }
 
     //--------------------------------------------------------------------------
@@ -296,10 +256,10 @@ public struct DataShape: Equatable, Codable {
         var extent: [Int]
         switch axis {
         case 0: extent = [elementCount]
-        case 1: extent = [dataExtents[0], elementCount / dataExtents[0]]
+        case 1: extent = [extents[0], elementCount / extents[0]]
         default:
-            extent = [Int](dataExtents.prefix(upTo: axis)) +
-                [dataExtents.suffix(from: axis).reduce(1, *)] +
+            extent = [Int](extents.prefix(upTo: axis)) +
+                [extents.suffix(from: axis).reduce(1, *)] +
                 [Int](repeating: 1, count: rank - axis - 1)
         }
         return DataShape(extent)
@@ -323,6 +283,6 @@ public extension DataShape {
 
 public extension TensorFlow.TensorShape {
     init(_ shape: Netlib.DataShape) {
-        self = TensorFlow.TensorShape(shape.dataExtents.map { Int32($0) })
+        self = TensorFlow.TensorShape(shape.extents.map { Int32($0) })
     }
 }

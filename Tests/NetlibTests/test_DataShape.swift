@@ -12,6 +12,7 @@ class test_DataShape: XCTestCase {
     static var allTests = [
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
+        ("test_iterateModuloSequence", test_iterateModuloSequence),
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
@@ -20,17 +21,17 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_squeezed
     func test_squeezed() {
-        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().dataExtents == [10,4,3])
-        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().dataExtents == [10,4,3])
-        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().dataExtents == [4,3])
-        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().dataExtents == [4,3,5])
-        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().dataExtents == [4,3,5])
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().extents == [10,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().extents == [10,4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().extents == [4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().extents == [4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().extents == [4,3,5])
         
-        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).dataExtents == [10,1,4,3])
-        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).dataExtents == [10,1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).dataExtents == [1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).dataExtents == [1,1,4,3,5])
-        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).dataExtents == [1, 1, 4, 1, 1, 3, 5])
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).extents == [10,1,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).extents == [10,1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).extents == [1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).extents == [1,1,4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).extents == [1, 1, 4, 1, 1, 3, 5])
     }
     
     //==========================================================================
@@ -42,42 +43,45 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // test_iterateVirtualSequence
-    func test_iterateVirtualSequence() {
+    // test_iterateModuloSequence
+    func test_iterateModuloSequence() {
         do {
             // try broadcasting a scalar
-            let shape = DataShape(extents: [2, 3], dataExtents: [1, 1])
+            let shape = DataShape(extents: [2, 3])
+            let dataShape = DataShape(extents: [1, 1])
             let expected = [
                 0, 0, 0,
                 0, 0, 0,
             ]
 
-            let indices = [Int](shape.indices())
+            let indices = [Int](shape.indices(modulo: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
         
         do {
             // try broadcasting a row vector
-            let shape = DataShape(extents: [2, 3], dataExtents: [1, 3])
+            let shape = DataShape(extents: [2, 3])
+            let dataShape = DataShape(extents: [1, 3])
             let expected = [
                 0, 1, 2,
                 0, 1, 2,
             ]
             
-            let indices = [Int](shape.indices())
+            let indices = [Int](shape.indices(modulo: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
         
         do {
             // try broadcasting a col vector
-            let shape = DataShape(extents: [3, 2], dataExtents: [3, 1])
+            let shape = DataShape(extents: [3, 2])
+            let dataShape = DataShape(extents: [3, 1])
             let expected = [
                 0, 0,
                 1, 1,
                 2, 2,
             ]
             
-            let indices = [Int](shape.indices())
+            let indices = [Int](shape.indices(modulo: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
     }

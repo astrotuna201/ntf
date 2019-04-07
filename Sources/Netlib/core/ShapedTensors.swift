@@ -120,7 +120,7 @@ where BoolView == VectorTensor<Bool>, IndexView == VectorTensor<TensorIndex> {
 
 public extension VectorTensorView {
     /// the number of elements in the vector
-    var count: Int { return shape.dataExtents[0] }
+    var count: Int { return shape.extents[0] }
 
     //--------------------------------------------------------------------------
     /// shaped initializers
@@ -181,14 +181,13 @@ where BoolView == MatrixTensor<Bool>, IndexView == MatrixTensor<TensorIndex> {
 public extension MatrixTensorView {
     var rowStride: Int { return shape.strides[0] }
     var colStride: Int { return shape.strides[1]  }
-    var isColMajor: Bool { return shape.isColMajor }
     
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(extents: [Int], scalars: [Scalar]? = nil, name: String? = nil,
          logging: LogInfo? = nil, isColMajor: Bool = false) {
         
-        let shape = DataShape(extents: extents, isColMajor: isColMajor)
+        let shape = DataShape(extents: extents)
         self.init(shape: shape, tensorData: nil, viewOffset: 0,
                   isShared: false, name: name, logging: logging)
         
@@ -202,7 +201,7 @@ public extension MatrixTensorView {
     init(_ rows: Int, _ cols: Int, isColMajor: Bool = false,
          name: String? = nil, logging: LogInfo? = nil) {
         self.init(extents: [rows, cols], name: name,
-                  logging: logging, isColMajor: isColMajor)
+                  logging: logging)
     }
 }
 
@@ -488,8 +487,8 @@ public extension NHWCTensor {
     init<M: MatrixTensorView>(_ matrix: M, name: String? = nil) where
         M.Scalar: UniformDenseScalar,
         M.Scalar.ComponentScalar == Scalar {
-            let extents = [1, matrix.shape.dataExtents[0],
-                           matrix.shape.dataExtents[1], M.Scalar.componentCount]
+            let extents = [1, matrix.shape.extents[0],
+                           matrix.shape.extents[1], M.Scalar.componentCount]
             self.init(shape: DataShape(extents: extents),
                       tensorData: matrix._tensorData, viewOffset: 0,
                       isShared: false, name: nil, logging: matrix.logging)

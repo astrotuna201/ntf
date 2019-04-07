@@ -24,6 +24,8 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// function used to advance the position. This can be for concrete or
     /// virtual shapes.
     var advanceFn: DataShapeAdvanceFn! { get set }
+    /// shape indexes will be modulo this shape to support broadcasting
+    var moduloShape: DataShape { get set }
     /// the relative offset to add to each index
     var offset: Int { get set }
     /// the current position in nD space
@@ -31,7 +33,7 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// the shape being iterated
     var shape: DataShape { get set }
     /// fully specified initializer
-    init(shape: DataShape, at offset: Int)
+    init(shape: DataShape, at offset: Int, moduloShape: DataShape?)
 }
 
 public extension DataShapeSequenceIterable {
@@ -54,7 +56,7 @@ public extension DataShapeSequenceIterable {
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
-            let span = shape.dataExtents[dim] * shape.strides[dim]
+            let span = shape.extents[dim] * shape.strides[dim]
             initial.append(ExtentPosition(span: span,
                                           current: offset,
                                           end: span,
@@ -107,7 +109,7 @@ public extension DataShapeSequenceIterable {
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
-            let span = shape.dataExtents[dim] * shape.strides[dim]
+            let span = shape.extents[dim] * shape.strides[dim]
             initial.append(ExtentPosition(span: span,
                                           current: offset,
                                           end: span,
@@ -159,36 +161,44 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
     public var advanceFn: DataShapeAdvanceFn!
     public var offset: Int
     public var position: [ExtentPosition]?
+    public var moduloShape: DataShape
     public var shape: DataShape
-    
-    public init(shape: DataShape, at offset: Int) {
+
+    public init(shape: DataShape, at offset: Int, moduloShape: DataShape?) {
+        self.moduloShape = moduloShape ?? shape
         self.shape = shape
         self.offset = offset
-        advanceFn = shape.isVirtual ? advanceVirtual(_:for:) : advance(_:for:)
+        let isVirtual = moduloShape != nil || shape.hasPadding
+        advanceFn = isVirtual ? advanceVirtual(_:for:) : advance(_:for:)
     }
 }
 
 //==============================================================================
 // DataShapeSequence
 public struct DataShapeSequence: Sequence {
+    let moduloShape: DataShape?
     let shape: DataShape
     let offset: Int
     
-    public init(shape: DataShape, at offset: Int) {
+    public init(shape: DataShape, at offset: Int,
+                modulo moduloShape: DataShape?) {
+        self.moduloShape = moduloShape
         self.shape = shape
         self.offset = offset
     }
     
     public func makeIterator() -> DataShapeSequenceIterator {
-        return DataShapeSequenceIterator(shape: shape, at: offset)
+        return DataShapeSequenceIterator(shape: shape, at: offset,
+                                         moduloShape: moduloShape)
     }
 }
 
 extension DataShape {
     /// returns a Sequence of `tensorData` element indices relative to
     /// the specified offset
-    func indices(relativeTo offset: Int = 0) -> DataShapeSequence {
-        return DataShapeSequence(shape: self, at: offset)
+    func indices(modulo shape: DataShape? = nil,
+                 relativeTo offset: Int = 0) -> DataShapeSequence {
+        return DataShapeSequence(shape: self, at: offset, modulo: shape)
     }
 }
 

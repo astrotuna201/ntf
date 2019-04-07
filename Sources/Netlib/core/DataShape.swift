@@ -81,7 +81,7 @@ public struct DataShape: Equatable, Codable {
         assert(strides == nil || strides?.count == extents.count)
         
         //----------------------------------------------------------------------
-        // check for empty
+        // check for empty shape
         if extents.isEmpty {
             self.isColMajor = false
             self.extents = []
@@ -99,8 +99,7 @@ public struct DataShape: Equatable, Codable {
         let rank = extents.count
         self.lastDimension = rank - 1
         self.isColMajor = isColMajor
-        self.isVirtual = padding != nil ||
-            (dataExtents != nil && dataExtents! != extents)
+        self.isVirtual = padding != nil || dataExtents != nil
 
         // extents
         self.extents = extents
@@ -111,11 +110,13 @@ public struct DataShape: Equatable, Codable {
         if let userStrides = strides {
             self.strides = userStrides
         } else if isColMajor {
+            // compute column major strides for the last 2 dimensions
             var cmExtent = extents
             cmExtent.swapAt(rank-1, rank-2)
             var cmStrides = DataShape.denseStrides(for: cmExtent)
             cmStrides.swapAt(rank-1, rank-2)
             self.strides = cmStrides
+
         } else {
             self.strides = DataShape.denseStrides(for: extents)
         }

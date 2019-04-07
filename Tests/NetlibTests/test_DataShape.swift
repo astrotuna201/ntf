@@ -12,6 +12,7 @@ class test_DataShape: XCTestCase {
     static var allTests = [
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
+        ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
     ]
@@ -41,21 +42,49 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // test_iterateSequence
-    func test_iterateSequence() {
-        // try to iterate empty shape
-        let empty = VolumeTensor<Int32>()
-        for _ in empty.shape.indices() {
-            XCTFail("an empty shape should have an empty sequence")
+    // test_iterateVirtualSequence
+    func test_iterateVirtualSequence() {
+        do {
+            // try broadcasting a scalar
+            let shape = DataShape(extents: [2, 3], dataExtents: [1, 1])
+            let expected = [
+                0, 0, 0,
+                0, 0, 0,
+            ]
+
+            let indices = [Int](shape.indices())
+            XCTAssert(indices == expected, "indices do not match")
         }
         
-        // try volume with shape
-        let expected = [Int](0..<24)
-        let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
-                                     scalars: expected.map { Int32($0) })
-        let indices = [Int](v1.shape.indices())
-        XCTAssert(indices == expected, "indices do not match")
+        do {
+            // try broadcasting a row vector
+            let shape = DataShape(extents: [2, 3], dataExtents: [1, 3])
+            let expected = [
+                0, 1, 2,
+                0, 1, 2,
+            ]
+            
+            let indices = [Int](shape.indices())
+            XCTAssert(indices == expected, "indices do not match")
+        }
         
+        do {
+            // try broadcasting a col vector
+            let shape = DataShape(extents: [3, 2], dataExtents: [3, 1])
+            let expected = [
+                0, 0,
+                1, 1,
+                2, 2,
+            ]
+            
+            let indices = [Int](shape.indices())
+            XCTAssert(indices == expected, "indices do not match")
+        }
+    }
+    
+    //==========================================================================
+    // test_iteratePaddedSequence
+    func test_iteratePaddedSequence() {
         // try volume with shape and padding
         let v2 = VolumeTensor<Int32>(extents: [1, 3, 4],
                                      padding: [Padding(before: 2, after: 3)],
@@ -73,7 +102,23 @@ class test_DataShape: XCTestCase {
         
         let v2Indices = [Int](v2.shape.indices())
         XCTAssert(v2Indices == expectedPadded, "indices do not match")
+    }
+    
+    //==========================================================================
+    // test_iterateSequence
+    func test_iterateSequence() {
+        // try to iterate empty shape
+        let empty = VolumeTensor<Int32>()
+        for _ in empty.shape.indices() {
+            XCTFail("an empty shape should have an empty sequence")
+        }
 
+        // try volume with shape
+        let expected = [Int](0..<24)
+        let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
+                                     scalars: expected.map { Int32($0) })
+        let indices = [Int](v1.shape.indices())
+        XCTAssert(indices == expected, "indices do not match")
     }
 
     func testPerformanceExample() {

@@ -80,7 +80,7 @@ public extension TensorView {
     // public property accessors
 
     /// `true` if the scalars are densely packed in memory
-    var isDense: Bool { return shape.isDense }
+    var isDense: Bool { return shape.isContiguous }
     /// `true` if the view contains zero elements
     var isEmpty: Bool { return shape.isEmpty }
     /// lastAccessMutated is `true` if the last data access caused the view
@@ -211,7 +211,7 @@ public extension TensorView {
             // If they both reference the same tensorData then compare the views
             return lhs._viewOffset == rhs._viewOffset && lhs.shape == rhs.shape
             
-        } else if lhs.shape.extents == rhs.shape.extents {
+        } else if lhs.shape.dataExtents == rhs.shape.dataExtents {
             // if the extents are equal then compare values
             // TODO use Ops
             fatalError("Not implemented")
@@ -315,7 +315,7 @@ public extension TensorView {
                                isReference: Bool) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
-        assert(extents[0] <= shape.extents[0])
+        assert(extents[0] <= shape.dataExtents[0])
         assert(shape.contains(offset: offset,
                               shape: DataShape(extents: extents)))
         // find subview relative offset and shape
@@ -354,7 +354,7 @@ public extension TensorView {
             viewExtents = [count]
         } else {
             index = [offset] + [Int](repeating: 0, count: rank - 1)
-            viewExtents = [count] + shape.extents.suffix(from: 1)
+            viewExtents = [count] + shape.dataExtents.suffix(from: 1)
         }
         
         return createSubView(at: index, with: viewExtents, isReference: isShared)

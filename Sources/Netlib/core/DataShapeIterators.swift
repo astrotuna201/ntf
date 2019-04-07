@@ -35,13 +35,6 @@ public extension DataShapeSequenceIterable {
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
     mutating func advancePosition(for dim: Int) -> Int? {
-        return shape.padding == nil ?
-            advanceRealPosition(for: dim) : advanceVirtualPosition(for: dim)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// advanceRealPosition(for dim:
-    private mutating func advanceRealPosition(for dim: Int) -> Int? {
         var nextPos: Int?
         if position == nil {
             // initialize position
@@ -50,7 +43,7 @@ public extension DataShapeSequenceIterable {
                 
                 // record the starting point for each dimension
                 for dim in 0..<shape.rank {
-                    let span = shape.extents[dim] * shape.strides[dim]
+                    let span = shape.dataExtents[dim] * shape.strides[dim]
                     initial.append(ExtentPosition(span: span,
                                                   current: offset,
                                                   end: span,
@@ -79,12 +72,6 @@ public extension DataShapeSequenceIterable {
             }
         }
         return nextPos
-    }
-    
-    //--------------------------------------------------------------------------
-    /// advanceVirtualPosition(for dim:
-    private mutating func advanceVirtualPosition(for dim: Int) -> Int? {
-        return nil
     }
 }
 

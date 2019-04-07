@@ -19,17 +19,17 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_squeezed
     func test_squeezed() {
-        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().extents == [10,4,3])
-        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().extents == [10,4,3])
-        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().extents == [4,3])
-        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().extents == [4,3,5])
-        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().extents == [4,3,5])
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().dataExtents == [10,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().dataExtents == [10,4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().dataExtents == [4,3])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().dataExtents == [4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().dataExtents == [4,3,5])
         
-        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).extents == [10,1,4,3])
-        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).extents == [10,1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).extents == [1,4,3,1])
-        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).extents == [1,1,4,3,5])
-        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).extents == [1, 1, 4, 1, 1, 3, 5])
+        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).dataExtents == [10,1,4,3])
+        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).dataExtents == [10,1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).dataExtents == [1,4,3,1])
+        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).dataExtents == [1,1,4,3,5])
+        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).dataExtents == [1, 1, 4, 1, 1, 3, 5])
     }
     
     //==========================================================================
@@ -74,6 +74,17 @@ class test_DataShape: XCTestCase {
         let v2Indices = [Int](v2.shape.indices())
         XCTAssert(v2Indices == expectedPadded, "indices do not match")
 
+    }
+
+    func testPerformanceExample() {
+        let scalars: [Float] = (0..<24).map { Float($0) }
+        // This is an example of a performance test case.
+        self.measure {
+            for _ in 0..<10000 {
+                let v1 = VolumeTensor<Float>(extents: [2, 3, 4],
+                                             scalars: scalars)
+            }
+        }
     }
 
     //==========================================================================

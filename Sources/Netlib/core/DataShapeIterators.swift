@@ -73,8 +73,9 @@ public extension DataShapeSequenceIterable {
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
     func advance(_ position: inout [ExtentPosition]?, for dim: Int) -> Int? {
-        guard position != nil else { return advanceInitial(&position, for: dim)}
+        // check for initial position
         var nextPos: Int?
+        guard position != nil else { return advanceInitial(&position, for: dim)}
         
         // advance the position for this dimension by it's stride
         position![dim].current += shape.strides[dim]
@@ -126,9 +127,10 @@ public extension DataShapeSequenceIterable {
     /// - Returns: the index of the next position
     func advanceVirtual(_ position: inout [ExtentPosition]?,
                         for dim: Int) -> Int? {
-        guard position != nil else {
-            return advanceInitialVirtual(&position, for: dim)
-        }
+        // check for initial position
+        var nextPos: Int?
+        guard position != nil else
+        { return advanceInitialVirtual(&position, for: dim) }
         
         // advance the position for this dimension by it's stride
         position![dim].current += shape.strides[dim]
@@ -139,11 +141,13 @@ public extension DataShapeSequenceIterable {
             if dim > 0, let start = advance(&position, for: dim - 1) {
                 position![dim].current = start
                 position![dim].end = start + position![dim].span
-                return start
+                nextPos = start
             }
+        } else {
+            nextPos = position![dim].current
         }
         
-        return position![dim].current
+        return nextPos
     }
 }
 

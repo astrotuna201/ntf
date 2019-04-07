@@ -88,15 +88,15 @@ public extension TensorView {
     /// the shape of the view for the actual underlying data
     var dataShape: DataShape { return _dataShape }
     /// `true` if the scalars are densely packed in memory
-    var isDense: Bool { return shape.isContiguous }
+    var isDense: Bool { return dataShape.isContiguous }
     /// `true` if the view contains zero elements
-    var isEmpty: Bool { return shape.isEmpty }
+    var isEmpty: Bool { return dataShape.isEmpty }
     /// lastAccessMutated is `true` if the last data access caused the view
     /// to mutate, which causes the underlying tensorData object to be copied
     /// It's primary use is in debugging and unit testing
     var lastAccessMutated: Bool { return _lastAccessMutated }
     /// the number of dimensions in the view
-    var rank: Int { return _shape.rank }
+    var rank: Int { return _dataShape.rank }
     /// the shape of the view
     var shape: DataShape { return _shape }
     /// the linear element offset where the view begins
@@ -190,6 +190,7 @@ public extension TensorView {
     func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
         return NDTensor<Scalar>(
             shape: shape.squeezed(axes: axes),
+            dataShape: _dataShape,
             tensorData: _tensorData, viewOffset: _viewOffset,
             isShared: isShared, name: name, logging: logging)
     }
@@ -210,7 +211,7 @@ public extension TensorView {
     /// viewSpanByteCount
     /// the number of bytes in the `tensorData` spanned by this view
     var viewSpanByteCount: Int {
-        return shape.elementSpanCount * MemoryLayout<Scalar>.size
+        return dataShape.elementSpanCount * MemoryLayout<Scalar>.size
     }
 
     //--------------------------------------------------------------------------
@@ -268,7 +269,7 @@ public extension TensorView {
         if willLog(level: .diagnostic) == true {
             diagnostic("""
                 \(mutationString) \(logging?.namePath ?? "")
-                (\(_tensorData.trackingId))  elements: \(shape.elementCount)
+                (\(_tensorData.trackingId))  elements: \(dataShape.elementCount)
                 """, categories: [.dataCopy, .dataMutation])
         }
         
@@ -346,11 +347,12 @@ public extension TensorView {
         assert(shape.contains(offset: offset,
                               shape: DataShape(extents: extents)))
         // find subview relative offset and shape
-        let elementOffset = _viewOffset + shape.linearIndex(of: offset)
+        let dataOffset = zip(offset, dataShape.extents).map { $0 % $1 }
+        let elementOffset = _viewOffset + shape.linearIndex(of: dataOffset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
         
         return Self.init(shape: subViewShape,
-                         dataShape: nil,
+                         dataShape: dataShape,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
                          isShared: isReference,

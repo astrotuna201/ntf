@@ -7,9 +7,11 @@ import Foundation
 //==============================================================================
 // TensorViewSequence
 public struct TensorViewSequence<T>: Sequence where T: TensorView {
+    // properties
     let view: T
     let tensorDataBuffer: UnsafeBufferPointer<T.Scalar>
 
+    // initializers
     public init(view: T) throws {
         self.view = view
         try tensorDataBuffer = view.readOnly()
@@ -26,10 +28,12 @@ public struct TensorViewSequence<T>: Sequence where T: TensorView {
 /// an N dimensional DataShape as a single linear Sequence
 public struct TensorViewSequenceIterator<T>: IteratorProtocol
 where T: TensorView {
+    // properties
     let padValue: T.Scalar
     var indexIterator: DataShapeSequenceIterator
     let tensorDataBuffer: UnsafeBufferPointer<T.Scalar>
 
+    // initializers
     init(view: T, buffer: UnsafeBufferPointer<T.Scalar>) {
         padValue = view.padValue
         tensorDataBuffer = buffer

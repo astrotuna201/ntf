@@ -241,7 +241,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
         _shape = shape
         _viewOffset = viewOffset
         self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
+        let spanCount = _dataShape.elementSpanCount * MemoryLayout<Scalar>.size
         _tensorData = tensorData ??
             TensorData(byteCount: spanCount, logging: logging, name: name)
         assert(viewByteOffset + spanCount <= _tensorData.byteCount)

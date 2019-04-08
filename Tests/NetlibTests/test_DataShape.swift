@@ -108,7 +108,6 @@ class test_DataShape: XCTestCase {
                 1, 0, 1, 0,
             ]
             XCTAssert(values == expected, "indices do not match")
-            
         } catch {
             XCTFail(String(describing: error))
         }
@@ -117,23 +116,26 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_iteratePaddedSequence
     func test_iteratePaddedSequence() {
-        // try volume with shape and padding
-        let v2 = VolumeTensor<Int32>(extents: [1, 3, 4],
-                                     padding: [Padding(before: 2, after: 3)],
-                                     scalars: [Int32](0..<12))
-        let expectedPadded = [
-            -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1,  0,  1,  2,  3, -1, -1, -1,
-            -1, -1,  4,  5,  6,  7, -1, -1, -1,
-            -1, -1,  8,  9, 10, 11, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        ]
-        
-        let v2Indices = [Int](v2.shape.indices())
-        XCTAssert(v2Indices == expectedPadded, "indices do not match")
+        do {
+            // create volume with padding
+            let v = VolumeTensor<Int32>(extents: [1, 3, 4],
+                                        padding: [Padding(before: 2, after: 3)],
+                                        scalars: [Int32](0..<12))
+            let indices = [Int](v.shape.indices())
+            
+            let expected = [
+                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1,  0,  1,  2,  3, -1, -1, -1,
+                -1, -1,  4,  5,  6,  7, -1, -1, -1,
+                -1, -1,  8,  9, 10, 11, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            ]
+            
+            XCTAssert(indices == expected, "indices do not match")
+        }
     }
     
     //==========================================================================

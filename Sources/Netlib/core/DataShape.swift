@@ -18,6 +18,8 @@ public struct DataShape: Equatable, Codable {
     public let extents: [Int]
     /// the index of the last dimension
     public let lastDimension: Int
+    /// The padded extent of the shape in each dimension
+    public let paddedExtents: [Int]
     /// optional void space before and after each dimension
     public let padding: [Padding]?
     /// The distance to the next element for each dimension
@@ -44,9 +46,10 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // empty shape
     public init() {
-        self.extents = []
-        self.strides = []
-        self.padding = nil
+        extents = []
+        strides = []
+        paddedExtents = []
+        padding = nil
         lastDimension = 0
         elementCount = 0
         elementSpanCount = 0
@@ -66,7 +69,22 @@ public struct DataShape: Equatable, Codable {
                "the stride count must equal the extent count")
         let rank = extents.count
         self.lastDimension = rank - 1
-        self.padding = padding
+
+        // expand extents if padded
+        if let padding = padding {
+            assert(padding.count == 1 || padding.count == rank)
+            // rank expand padding
+            self.padding = padding.count == rank ? padding :
+                [Padding](repeating: padding[0], count: rank)
+
+            // expand extents
+            self.paddedExtents = zip(extents, self.padding!).map {
+                $0 + $1.before + $1.after
+            }
+        } else {
+            self.padding = padding
+            self.paddedExtents = extents
+        }
         self.extents = extents
         self.elementCount = extents.count == 0 ? 0 : extents.reduce(1, *)
         self.strides = strides ?? DataShape.denseStrides(for: extents)

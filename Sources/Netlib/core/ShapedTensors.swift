@@ -198,10 +198,11 @@ public extension MatrixTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(extents: [Int],
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, logging: LogInfo? = nil,
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
-        let shape = DataShape(extents: extents)
+        let shape = DataShape(extents: extents, padding: padding)
         self.init(shape: shape, dataShape: nil, tensorData: nil,
                   viewOffset: 0, padValue: nil,
                   isShared: false, name: name, logging: logging)
@@ -214,10 +215,13 @@ public extension MatrixTensorView {
     
     /// initialize with explicit labels
     init(_ rows: Int, _ cols: Int, isColMajor: Bool = false,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
-        self.init(extents: [rows, cols], name: name,
-                  logging: logging, isColMajor: isColMajor, scalars: scalars)
+        self.init(extents: [rows, cols],
+                  padding: padding, padValue: padValue,
+                  name: name, logging: logging,
+                  isColMajor: isColMajor, scalars: scalars)
     }
 }
 

@@ -117,21 +117,16 @@ class test_DataShape: XCTestCase {
     // test_iteratePaddedSequence
     func test_iteratePaddedSequence() {
         do {
-            // create volume with padding
-            let v = VolumeTensor<Int32>(extents: [1, 3, 4],
-                                        padding: [Padding(before: 2, after: 3)],
-                                        scalars: [Int32](0..<12))
-            let indices = [Int](v.shape.indices())
+            // create matrix with padding
+            let m = MatrixTensor<Int32>(extents: [1, 2],
+                                        padding: [Padding(before: 1, after: 1)],
+                                        scalars: [Int32](0..<2))
+            let indices = [Int](m.shape.indices())
             
             let expected = [
-                -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1,  0,  1,  2,  3, -1, -1, -1,
-                -1, -1,  4,  5,  6,  7, -1, -1, -1,
-                -1, -1,  8,  9, 10, 11, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1,  0,  1, -1,
+                -1, -1, -1, -1,
             ]
             
             XCTAssert(indices == expected, "indices do not match")

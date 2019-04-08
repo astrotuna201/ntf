@@ -39,7 +39,7 @@ where T: TensorView {
         tensorDataBuffer = buffer
         indexIterator = DataShapeSequenceIterator(shape: view.shape,
                                                   at: view.viewOffset,
-                                                  moduloShape: view.dataShape)
+                                                  repeating: view.dataShape)
     }
 
     /// next

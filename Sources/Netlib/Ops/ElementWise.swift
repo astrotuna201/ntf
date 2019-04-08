@@ -96,7 +96,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 /// in place
 /// - Parameter x: value tensor
 /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-///   broadcasting will be performed via modulo indexing.
+///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
@@ -111,7 +111,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T,
 /// returns new view
 /// - Parameter x: value tensor
 /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-///   broadcasting will be performed via modulo indexing.
+///   broadcasting will be performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
@@ -127,7 +127,7 @@ public func pow<T>(_ x: T, _ y: T,
 public extension TensorView where Self.Scalar: Numeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-    ///   broadcasting will be performed via modulo indexing.
+    ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
@@ -140,7 +140,7 @@ public extension TensorView where Self.Scalar: Numeric {
 public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-    ///   broadcasting will be performed via modulo indexing.
+    ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
@@ -156,7 +156,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
 public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-    ///   broadcasting will be performed via modulo indexing.
+    ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)

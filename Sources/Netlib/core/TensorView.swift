@@ -33,7 +33,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// the scalar value to be returned for indexes with padding regions
     var padValue: Scalar { get set }
     /// the virtual shape of the view used for indexing
-    /// if `shape` and `dataShape` differ, the modulo indexing is performed
+    /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var _shape: DataShape { get set }
     /// class reference to the underlying byte buffer
     var _tensorData: TensorData { get set }
@@ -52,6 +52,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
          dataShape: DataShape?,
          tensorData: TensorData?,
          viewOffset: Int,
+         padValue: Scalar?,
          isShared: Bool,
          name: String?,
          logging: LogInfo?)
@@ -103,15 +104,15 @@ public extension TensorView {
     var viewOffset: Int { return _viewOffset }
     
     //--------------------------------------------------------------------------
-    /// modulo view
-    /// This is used to enable broadcasting
-    init(extents: [Int], modulo other: Self,
-         padding: [Padding]? = nil) {
+    /// repeated view
+    init(extents: [Int], repeating other: Self,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
 
         self.init(shape: DataShape(extents: extents, padding: padding),
                   dataShape: other.shape,
                   tensorData: other._tensorData,
                   viewOffset: other._viewOffset,
+                  padValue: padValue ?? other.padValue,
                   isShared: other._isShared,
                   name: other.name,
                   logging: other.logging)
@@ -145,7 +146,7 @@ public extension TensorView {
     /// creates an empty view
     init() {
         self.init(shape: DataShape(), dataShape: nil,
-                  tensorData: TensorData(), viewOffset: 0,
+                  tensorData: TensorData(), viewOffset: 0, padValue: nil,
                   isShared: false, name: nil, logging: nil)
     }
 
@@ -156,8 +157,8 @@ public extension TensorView {
     init<T>(shapedLike other: T) where T: TensorView {
         self.init(shape: other.shape, dataShape: nil,
                   tensorData: nil, viewOffset: 0,
-                  isShared: false, name: nil,
-                  logging: other.logging)
+                  padValue: nil, isShared: false,
+                  name: nil, logging: other.logging)
     }
     
     //--------------------------------------------------------------------------
@@ -167,7 +168,7 @@ public extension TensorView {
     init(asScalar value: Scalar) {
         // create scalar version of the shaped view type
         self.init(shape: DataShape(extents: [1]), dataShape: nil,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewOffset: 0, padValue: nil,
                   isShared: false, name: nil, logging: nil)
         // set the value
         try! readWrite()[0] = value
@@ -355,6 +356,7 @@ public extension TensorView {
                          dataShape: dataShape,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
+                         padValue: padValue,
                          isShared: isReference,
                          name: "\(name).subview",
                          logging: logging)
@@ -413,7 +415,8 @@ public extension TensorView {
         // create flattened view
         return Self.init(shape: shape.flattened(), dataShape: nil,
                          tensorData: _tensorData, viewOffset: _viewOffset,
-                         isShared: isShared, name: name, logging: logging)
+                         padValue: padValue, isShared: isShared,
+                         name: name, logging: logging)
     }
     
     //--------------------------------------------------------------------------
@@ -431,7 +434,8 @@ public extension TensorView {
             try copyIfMutates(using: stream)
             return Self.init(shape: shape, dataShape: nil,
                              tensorData: _tensorData, viewOffset: _viewOffset,
-                             isShared: true, name: name, logging: logging)
+                             padValue: padValue, isShared: true,
+                             name: name, logging: logging)
         }
     }
     

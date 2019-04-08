@@ -37,7 +37,7 @@ infix operator .=
 /// in place
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the extents are smaller than `lhs`
-///   then broadcasting will be performed via modulo indexing.
+///   then broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
@@ -52,7 +52,7 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T,
 /// returns new view
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the extents are smaller than
-///   `lhs` then broadcasting is performed via modulo indexing.
+///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func add<T>(_ lhs: T, _ rhs: T,
@@ -68,7 +68,7 @@ public extension TensorView where Self.Scalar: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func + (lhs: Self, rhs: Self) throws -> Self {
@@ -80,7 +80,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
@@ -93,7 +93,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
@@ -109,7 +109,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// in place
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the size is smaller than `lhs` then
-///   broadcasting will be performed via modulo indexing.
+///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
@@ -124,7 +124,7 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T,
 /// returning new view
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the extents are smaller than
-///   `lhs` then broadcasting is performed via modulo indexing.
+///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func subtract<T>(_ lhs: T, _ rhs: T,
@@ -140,7 +140,7 @@ public extension TensorView where Self.Scalar: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - (lhs: Self, rhs: Self) throws -> Self {
@@ -152,7 +152,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
@@ -165,7 +165,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
@@ -180,7 +180,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// in place
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the size is smaller than `lhs` then
-///   broadcasting will be performed via modulo indexing.
+///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
@@ -195,7 +195,7 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T,
 /// returning new view
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the extents are smaller than
-///   `lhs` then broadcasting is performed via modulo indexing.
+///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func mul<T>(_ lhs: T, _ rhs: T,
@@ -211,7 +211,7 @@ public extension TensorView where Self.Scalar: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * (lhs: Self, rhs: Self) throws -> Self {
@@ -223,7 +223,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
@@ -236,7 +236,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
@@ -251,7 +251,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// in place
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the size is smaller than `lhs` then
-///   broadcasting will be performed via modulo indexing.
+///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
@@ -266,7 +266,7 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T,
 /// returning new view
 /// - Parameter lhs: left hand tensor
 /// - Parameter rhs: right hand tensor. If the extents are smaller than
-///   `lhs` then broadcasting is performed via modulo indexing.
+///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T,
@@ -282,7 +282,7 @@ public extension TensorView where Self.Scalar: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / (lhs: Self, rhs: Self) throws -> Self {
@@ -294,7 +294,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
@@ -307,7 +307,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via modulo indexing.
+    ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {

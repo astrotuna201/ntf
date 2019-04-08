@@ -7,9 +7,18 @@ import Foundation
 //==============================================================================
 //
 public struct ExtentPosition {
+    //---------------------------------
+    // used commonly for all advance functions
+    /// current cummulative iterative position accross the shape
     var current: Int
+    /// the span of the shape extent including stride
     let span: Int
+    /// the position just after the end of the extent in the shape
     var pastEnd: Int
+
+    //---------------------------------
+    // used commonly for all advance functions
+    
 }
 
 public typealias DataShapeAdvanceFn =
@@ -22,8 +31,8 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// function used to advance the position. This can be for concrete or
     /// virtual shapes.
     var advanceFn: DataShapeAdvanceFn! { get set }
-    /// shape indexes will be modulo this shape to support broadcasting
-    var moduloShape: DataShape { get set }
+    /// the shape of the data that will be repeated to support broadcasting
+    var repeatedShape: DataShape { get set }
     /// the relative offset to add to each index
     var offset: Int { get set }
     /// the current position in nD space
@@ -31,7 +40,7 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// the shape being iterated
     var shape: DataShape { get set }
     /// fully specified initializer
-    init(shape: DataShape, at offset: Int, moduloShape: DataShape?)
+    init(shape: DataShape, at offset: Int, repeating repeatedShape: DataShape?)
 }
 
 public extension DataShapeSequenceIterable {
@@ -114,21 +123,22 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
     public var advanceFn: DataShapeAdvanceFn!
     public var offset: Int
     public var position: [ExtentPosition]?
-    public var moduloShape: DataShape
+    public var repeatedShape: DataShape
     public var shape: DataShape
 
-    public init(shape: DataShape, at offset: Int, moduloShape: DataShape?) {
-        self.moduloShape = moduloShape ?? shape
+    public init(shape: DataShape, at offset: Int,
+                repeating repeatedShape: DataShape?) {
+        self.repeatedShape = repeatedShape ?? shape
         self.shape = shape
         self.offset = offset
         
         if shape.hasPadding {
             // TODO created padded version
             fatalError("not implemented")
-//            if moduloShape != nil {
+//            if repeatedShape != nil {
 //            } else {
 //            }
-        } else if moduloShape != nil {
+        } else if repeatedShape != nil {
             advanceFn = advanceModulo(_:for:)
         } else {
             advanceFn = advance(_:for:)
@@ -139,29 +149,29 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
 //==============================================================================
 // DataShapeSequence
 public struct DataShapeSequence: Sequence {
-    let moduloShape: DataShape?
+    let repeatedShape: DataShape?
     let shape: DataShape
     let offset: Int
     
     public init(shape: DataShape, at offset: Int,
-                modulo moduloShape: DataShape?) {
-        self.moduloShape = moduloShape
+                repeating repeatedShape: DataShape?) {
+        self.repeatedShape = repeatedShape
         self.shape = shape
         self.offset = offset
     }
     
     public func makeIterator() -> DataShapeSequenceIterator {
         return DataShapeSequenceIterator(shape: shape, at: offset,
-                                         moduloShape: moduloShape)
+                                         repeating: repeatedShape)
     }
 }
 
 extension DataShape {
     /// returns a Sequence of `tensorData` element indices relative to
     /// the specified offset
-    func indices(modulo shape: DataShape? = nil,
+    func indices(repeating shape: DataShape? = nil,
                  relativeTo offset: Int = 0) -> DataShapeSequence {
-        return DataShapeSequence(shape: self, at: offset, modulo: shape)
+        return DataShapeSequence(shape: self, at: offset, repeating: shape)
     }
 }
 

@@ -55,7 +55,7 @@ class test_DataShape: XCTestCase {
                 0, 0, 0,
             ]
 
-            let indices = [Int](shape.indices(modulo: dataShape))
+            let indices = [Int](shape.indices(repeating: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
         
@@ -68,7 +68,7 @@ class test_DataShape: XCTestCase {
                 0, 1, 2,
             ]
             
-            let indices = [Int](shape.indices(modulo: dataShape))
+            let indices = [Int](shape.indices(repeating: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
         
@@ -82,7 +82,7 @@ class test_DataShape: XCTestCase {
                 2, 2,
             ]
             
-            let indices = [Int](shape.indices(modulo: dataShape))
+            let indices = [Int](shape.indices(repeating: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
     }
@@ -92,12 +92,12 @@ class test_DataShape: XCTestCase {
     func test_iterateModuloView() {
         do {
             // try broadcasting a pattern of values
-            let data: [Int32] = [
+            let data = MatrixTensor<Int32>(extents: [2,2], scalars: [
                 1, 0,
                 0, 1,
-            ]
-            let pattern = MatrixTensor<Int32>(extents: [2,2], scalars: data)
-            let view = MatrixTensor<Int32>(extents: [3, 4], modulo: pattern)
+            ])
+            
+            let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
 
             let expected: [Int32] = [
                 1, 0, 1, 0,

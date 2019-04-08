@@ -12,7 +12,7 @@ class test_DataShape: XCTestCase {
     static var allTests = [
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
-        ("test_iterateModuloSequence", test_iterateModuloSequence),
+        ("test_iterateRepeatedSequence", test_iterateRepeatedSequence),
         ("test_iterateModuloView", test_iterateModuloView),
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
@@ -44,10 +44,10 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // test_iterateModuloSequence
-    func test_iterateModuloSequence() {
+    // test_iterateRepeatedSequence
+    func test_iterateRepeatedSequence() {
         do {
-            // try broadcasting a scalar
+            // try repeating a scalar
             let shape = DataShape(extents: [2, 3])
             let dataShape = DataShape(extents: [1, 1])
             let expected = [
@@ -60,7 +60,7 @@ class test_DataShape: XCTestCase {
         }
         
         do {
-            // try broadcasting a row vector
+            // try repeating a row vector
             let shape = DataShape(extents: [2, 3])
             let dataShape = DataShape(extents: [1, 3])
             let expected = [
@@ -73,7 +73,7 @@ class test_DataShape: XCTestCase {
         }
         
         do {
-            // try broadcasting a col vector
+            // try repeating a col vector
             let shape = DataShape(extents: [3, 2])
             let dataShape = DataShape(extents: [3, 1])
             let expected = [
@@ -91,7 +91,7 @@ class test_DataShape: XCTestCase {
     // test_iterateModuloView
     func test_iterateModuloView() {
         do {
-            // try broadcasting a pattern of values
+            // try repeating a pattern of values
             let data = MatrixTensor<Int32>(extents: [2,2], scalars: [
                 1, 0,
                 0, 1,

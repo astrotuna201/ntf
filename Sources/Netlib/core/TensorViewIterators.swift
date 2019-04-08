@@ -57,7 +57,7 @@ where T: TensorView {
 public extension TensorView {
     //--------------------------------------------------------------------------
     /// values
-    /// Returns a scalar linear Sequence iterator of all values
+    /// Returns a sequential iterator of all values
     func values() throws -> TensorViewSequence<Self> {
         return try TensorViewSequence(view: self)
     }

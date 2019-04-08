@@ -13,7 +13,7 @@ class test_DataShape: XCTestCase {
         ("test_squeezed", test_squeezed),
         ("test_transposed", test_transposed),
         ("test_iterateRepeatedSequence", test_iterateRepeatedSequence),
-        ("test_iterateModuloView", test_iterateModuloView),
+        ("test_iterateRepeatedView", test_iterateRepeatedView),
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
@@ -88,25 +88,27 @@ class test_DataShape: XCTestCase {
     }
     
     //==========================================================================
-    // test_iterateModuloView
-    func test_iterateModuloView() {
+    // test_iterateRepeatedView
+    func test_iterateRepeatedView() {
         do {
-            // try repeating a pattern of values
+            // values to repeat
             let data = MatrixTensor<Int32>(extents: [2,2], scalars: [
                 1, 0,
                 0, 1,
             ])
-            
-            let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
 
+            // create a virtual view and get it's values
+            let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
+            let values = try [Int32](view.values())
+
+            // compare
             let expected: [Int32] = [
                 1, 0, 1, 0,
                 0, 1, 0, 1,
                 1, 0, 1, 0,
             ]
-            
-            let values = try [Int32](view.values())
             XCTAssert(values == expected, "indices do not match")
+            
         } catch {
             XCTFail(String(describing: error))
         }

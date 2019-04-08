@@ -94,19 +94,17 @@ public extension DataShapeSequenceIterable {
     func advanceInitial(_ position: inout [DataShapeExtentPosition]?,
                         for dim: Int) -> Int? {
         guard !shape.isEmpty else { return nil }
-        var initial = [DataShapeExtentPosition]()
+        position = [DataShapeExtentPosition]()
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
             let span = shape.extents[dim] * shape.strides[dim]
-            initial.append(DataShapeExtentPosition(current: offset,
-                                          span: span,
-                                          pastEnd: span))
+            position!.append(DataShapeExtentPosition(current: offset,
+                                                     span: span,
+                                                     pastEnd: span))
         }
-        
-        // return the first position
-        position = initial
-        return 0
+        // return the first index
+        return offset
     }
 
     //--------------------------------------------------------------------------
@@ -114,7 +112,8 @@ public extension DataShapeSequenceIterable {
     /// Advances the last dimension. If it can't, then `nil` is returned
     /// This function is called recursively.
     /// - Returns: the index of the next position
-    func advance(_ position: inout [DataShapeExtentPosition]?, for dim: Int) -> Int? {
+    func advance(_ position: inout [DataShapeExtentPosition]?,
+                 for dim: Int) -> Int? {
         // check for initial position
         var nextPos: Int?
         guard position != nil else { return advanceInitial(&position, for: dim)}
@@ -138,15 +137,63 @@ public extension DataShapeSequenceIterable {
     }
     
     //--------------------------------------------------------------------------
-    /// advanceModulo(position:for:
+    /// advanceRepeatedInitial(position:for:
+    /// sets up the initial position for normal indexing
+    /// If the shape is empty then `nil` is returned
+    /// - Returns: the index of the next position
+    // In this version the `shape` is traversed by 1, and the `repeatedShape`
+    // is traversed by stride
+    func advanceRepeatedInitial(_ position: inout [DataShapeExtentPosition]?,
+                                for dim: Int) -> Int? {
+        guard !shape.isEmpty else { return nil }
+        position = [DataShapeExtentPosition]()
+        
+        // record the starting point for each dimension
+        for dim in 0..<shape.rank {
+            // repeated extent span
+            let rspan = repeatedShape.extents[dim] * repeatedShape.strides[dim]
+            
+            position!.append(DataShapeExtentPosition(
+                current: offset,
+                span: shape.extents[dim],
+                pastEnd: shape.extents[dim],
+                repeatedCurrent: offset,
+                repeatedSpan: rspan,
+                repeatedPastEnd: rspan))
+        }
+        // return the first index
+        return offset
+    }
+    
+    //--------------------------------------------------------------------------
+    /// advanceRepeated(position:for:
     /// advances the lastDimension . If it can't, then `position`
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
-    func advanceModulo(_ position: inout [DataShapeExtentPosition]?,
-                        for dim: Int) -> Int? {
+    func advanceRepeated(_ position: inout [DataShapeExtentPosition]?,
+                                 for dim: Int) -> Int? {
         // check for initial position
-        guard position != nil else { return advanceInitial(&position, for: dim)}
-        return nil
+        var nextPos: Int?
+        guard position != nil else
+        { return advanceRepeatedInitial(&position, for: dim) }
+
+        
+        // advance the position for this dimension by it's stride
+        position![dim].current += 1
+        
+        // if past the end then go back a dimension and advance
+        if position![dim].current == position![dim].pastEnd {
+            // make a recursive call to the parent dimension
+            if dim > 0, let start = advance(&position, for: dim - 1) {
+                position![dim].current = start
+                position![dim].pastEnd = start + position![dim].span
+                nextPos = start
+            }
+        } else {
+            nextPos = position![dim].current
+        }
+        
+        return nextPos
     }
 }
 
@@ -174,7 +221,7 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
 //            } else {
 //            }
         } else if repeatedShape != nil {
-            advanceFn = advanceModulo(_:for:)
+            advanceFn = advanceRepeated(_:for:)
         } else {
             advanceFn = advance(_:for:)
         }

@@ -5,10 +5,11 @@
 import Foundation
 
 //==============================================================================
-//
-public struct ExtentPosition {
+/// DataShapeExtentPosition
+/// This is used to track the iterated position for each extent in the shape
+public struct DataShapeExtentPosition {
     //---------------------------------
-    // used commonly for all advance functions
+    // used by all advance functions
     /// current cummulative iterative position accross the shape
     var current: Int
     /// the span of the shape extent including stride
@@ -17,12 +18,39 @@ public struct ExtentPosition {
     var pastEnd: Int
 
     //---------------------------------
-    // used commonly for all advance functions
+    // used by all repeated advance functions
+    /// current cummulative iterative position accross the repeated shape
+    var repeatedCurrent: Int
+    /// the span of the repeated shape extent including stride
+    let repeatedSpan: Int
+    /// the position just after the end of the extent in the repeated shape
+    var repeatedPastEnd: Int
     
+    //---------------------------------
+    // used by all padded advance functions
+    /// All positions before this are padding.
+    /// An index of -1 is returned for each padded position
+    var padBefore: Int
+    /// All positions after this are padding.
+    /// An index of -1 is returned for each padded position
+    var padAfter: Int
+    
+    //---------------------------------
+    /// initializer
+    public init(current: Int, span: Int, pastEnd: Int,
+                repeatedCurrent: Int = 0, repeatedSpan: Int = 0,
+                repeatedPastEnd: Int = 0,
+                padBefore: Int = 0, padAfter: Int = 0) {
+        self.current = current
+        self.span = span
+        self.pastEnd = pastEnd
+        self.repeatedCurrent = repeatedCurrent
+        self.repeatedSpan = repeatedSpan
+        self.repeatedPastEnd = repeatedPastEnd
+        self.padBefore = padBefore
+        self.padAfter = padAfter
+    }
 }
-
-public typealias DataShapeAdvanceFn =
-    (_ position: inout [ExtentPosition]?, _ dim: Int) -> Int?
 
 //==============================================================================
 // DataShapeSequenceIterable
@@ -36,14 +64,21 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// the relative offset to add to each index
     var offset: Int { get set }
     /// the current position in nD space
-    var position: [ExtentPosition]? { get set }
+    var position: [DataShapeExtentPosition]? { get set }
     /// the shape being iterated
     var shape: DataShape { get set }
     /// fully specified initializer
     init(shape: DataShape, at offset: Int, repeating repeatedShape: DataShape?)
 }
 
+// shorthand
+public typealias DataShapeAdvanceFn =
+    (_ position: inout [DataShapeExtentPosition]?, _ dim: Int) -> Int?
+
+//==============================================================================
+// DataShapeSequenceIterable default implementation
 public extension DataShapeSequenceIterable {
+    
     //--------------------------------------------------------------------------
     /// next
     /// advances to the next position in the shape
@@ -56,15 +91,15 @@ public extension DataShapeSequenceIterable {
     /// sets up the initial position for normal indexing
     /// If the shape is empty then `nil` is returned
     /// - Returns: the index of the next position
-    func advanceInitial(_ position: inout [ExtentPosition]?,
+    func advanceInitial(_ position: inout [DataShapeExtentPosition]?,
                         for dim: Int) -> Int? {
         guard !shape.isEmpty else { return nil }
-        var initial = [ExtentPosition]()
+        var initial = [DataShapeExtentPosition]()
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
             let span = shape.extents[dim] * shape.strides[dim]
-            initial.append(ExtentPosition(current: offset,
+            initial.append(DataShapeExtentPosition(current: offset,
                                           span: span,
                                           pastEnd: span))
         }
@@ -79,7 +114,7 @@ public extension DataShapeSequenceIterable {
     /// Advances the last dimension. If it can't, then `nil` is returned
     /// This function is called recursively.
     /// - Returns: the index of the next position
-    func advance(_ position: inout [ExtentPosition]?, for dim: Int) -> Int? {
+    func advance(_ position: inout [DataShapeExtentPosition]?, for dim: Int) -> Int? {
         // check for initial position
         var nextPos: Int?
         guard position != nil else { return advanceInitial(&position, for: dim)}
@@ -107,7 +142,7 @@ public extension DataShapeSequenceIterable {
     /// advances the lastDimension . If it can't, then `position`
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
-    func advanceModulo(_ position: inout [ExtentPosition]?,
+    func advanceModulo(_ position: inout [DataShapeExtentPosition]?,
                         for dim: Int) -> Int? {
         // check for initial position
         guard position != nil else { return advanceInitial(&position, for: dim)}
@@ -122,7 +157,7 @@ public extension DataShapeSequenceIterable {
 public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
     public var advanceFn: DataShapeAdvanceFn!
     public var offset: Int
-    public var position: [ExtentPosition]?
+    public var position: [DataShapeExtentPosition]?
     public var repeatedShape: DataShape
     public var shape: DataShape
 

@@ -103,7 +103,6 @@ class test_DataShape: XCTestCase {
                 1, 0, 1, 0,
                 0, 1, 0, 1,
                 1, 0, 1, 0,
-                0, 1, 0, 1,
             ]
             
             let values = try [Int32](view.values())

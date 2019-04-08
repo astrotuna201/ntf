@@ -8,9 +8,8 @@ import Foundation
 //
 public struct ExtentPosition {
     var current: Int
-    let spanView: Int
-    var endView: Int
-    var spanData: Int
+    let span: Int
+    var pastEnd: Int
 }
 
 public typealias DataShapeAdvanceFn =
@@ -55,12 +54,10 @@ public extension DataShapeSequenceIterable {
         
         // record the starting point for each dimension
         for dim in 0..<shape.rank {
-            let spanView = shape.extents[dim] * shape.strides[dim]
-            let spanData = moduloShape.extents[dim] * shape.strides[dim]
+            let span = shape.extents[dim] * shape.strides[dim]
             initial.append(ExtentPosition(current: offset,
-                                          spanView: spanView,
-                                          endView: spanView,
-                                          spanData: spanData))
+                                          span: span,
+                                          pastEnd: span))
         }
         
         // return the first position
@@ -82,11 +79,11 @@ public extension DataShapeSequenceIterable {
         position![dim].current += shape.strides[dim]
         
         // if past the end then go back a dimension and advance
-        if position![dim].current == position![dim].endView {
+        if position![dim].current == position![dim].pastEnd {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advance(&position, for: dim - 1) {
                 position![dim].current = start
-                position![dim].endView = start + position![dim].spanView
+                position![dim].pastEnd = start + position![dim].span
                 nextPos = start
             }
         } else {
@@ -98,35 +95,14 @@ public extension DataShapeSequenceIterable {
     
     //--------------------------------------------------------------------------
     /// advanceModulo(position:for:
-    /// advances the lastDimension. If it can't, then `position`
+    /// advances the lastDimension . If it can't, then `position`
     /// is set to `nil` this is a recursive function
     /// - Returns: the index of the next position
     func advanceModulo(_ position: inout [ExtentPosition]?,
                         for dim: Int) -> Int? {
         // check for initial position
-        var nextPos: Int?
         guard position != nil else { return advanceInitial(&position, for: dim)}
-        
-        // advance the position for this dimension by it's stride
-        position![dim].current += shape.strides[dim]
-        
-        // if past the end then go back a dimension and advance
-        if position![dim].current == position![dim].endView {
-            // make a recursive call to the parent dimension
-            if dim > 0, let start = advance(&position, for: dim - 1) {
-                position![dim].current = start
-                position![dim].endView = start + position![dim].spanView
-                nextPos = start
-            }
-        } else {
-            // take the virtual current position and mod
-            // with the actual data range
-            let zeroRelativeCurrent = position![dim].current - offset
-            let dataIndex = zeroRelativeCurrent % position![dim].spanData
-            nextPos = dataIndex + offset
-        }
-        
-        return nextPos
+        return nil
     }
 }
 

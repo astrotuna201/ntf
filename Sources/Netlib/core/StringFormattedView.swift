@@ -13,7 +13,6 @@ public extension TensorView where Scalar: AnyConvertable {
                    maxItems: Int = Int.max,
                    formatString: String? = nil) throws -> String {
         guard !shape.isEmpty else { return "[Empty]\n" }
-        let formatStr = formatString ?? Scalar.defaultFormatString
         var string = ""
         var index = [Int](repeating: 0, count: shape.rank)
         var iterator = try self.values().makeIterator()
@@ -21,12 +20,8 @@ public extension TensorView where Scalar: AnyConvertable {
         let indentSize = "  "
         
         // set header
-        string +=
-        """
-        TensorView extents: \(shape.extents.description)
-             paddedExtents: \(shape.paddedExtents.description)
-        """
-        string += "\n"
+        string += "TensorView extents: \(shape.extents.description)" +
+        " paddedExtents: \(shape.paddedExtents.description)\n"
         
         // recursive rank > 1 formatting
         func format(dim: Int, indent: String) {
@@ -42,19 +37,23 @@ public extension TensorView where Scalar: AnyConvertable {
                     
                 } else {
                     string += indent
-                    // print columns
-                    for col in 0..<shape.paddedExtents[dim] {
-                        if let value = iterator.next() {
-                            itemCount += 1
-                            if col < maxCols {
-                                let svalue = String(format: formatStr,
-                                                    value.asCVarArg)
-                                string += "\(svalue),"
-                            }
+                    let lastCol = min(shape.paddedExtents[dim], maxCols)
+                    var col = 0
+                    while let value = iterator.next(), itemCount < maxItems {
+                        if let fmt = formatString {
+                            string += "\(String(format: fmt, value.asCVarArg)), "
                         } else {
-                            return
+                            string += "\(value.asString), "
+                        }
+                        itemCount += 1
+                        col += 1
+                        if col == lastCol {
+                            string += col < shape.paddedExtents[dim] ?
+                                " ...\n\(indent)" : "\n\(indent)"
+                            col = 0
                         }
                     }
+                    string = String(string[..<string.lastIndex(of: ",")!])
                 }
             }
         }
@@ -64,13 +63,33 @@ public extension TensorView where Scalar: AnyConvertable {
         case 1:
             if shape.isScalar {
                 let value = iterator.next()!
-                string += "\(String(format: formatStr, value.asCVarArg))\n\n"
+                if let fmt = formatString {
+                    string += "\(String(format: fmt, value.asCVarArg))\n"
+                } else {
+                    string += "\(value.asString)\n"
+                }
             } else {
+                var col = 0
+                while let value = iterator.next(), itemCount < maxItems {
+                    if let fmt = formatString {
+                        string += "\(String(format: fmt, value.asCVarArg)), "
+                    } else {
+                        string += "\(value.asString), "
+                    }
+                    itemCount += 1
+                    col += 1
+                    if col == maxCols {
+                        string += "\n"
+                        col = 0
+                    }
+                }
+                string = String(string[..<string.lastIndex(of: ",")!])
             }
+            
         default:
             format(dim: 0, indent: "")
         }
         
-        return string
+        return string + "\n"
     }
 }

@@ -47,6 +47,7 @@ public protocol AnyConvertable: AnyScalar {
 	var asDouble : Double  { get }
 	var asCVarArg: CVarArg { get }
 	var asBool   : Bool    { get }
+    var asString : String  { get }
 
 	// values are normalized to the new type during a cast
 	init(norm any: AnyConvertable)
@@ -92,6 +93,7 @@ extension UInt8: AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normUInt8 }
 	public static var normScale: Double = 1.0 / (Double(UInt8.max) + 1)
@@ -135,6 +137,7 @@ extension UInt16 : AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normUInt16 }
 	public static var normScale: Double = 1.0 / (Double(UInt16.max) + 1)
@@ -178,6 +181,7 @@ extension Int16 : AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normInt16 }
 	public static var normScale: Double = 1.0 / (Double(Int16.max) + 1)
@@ -198,7 +202,7 @@ extension Int16 : AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real16I }
-    public static var defaultFormatString: String { return " %5h" }
+    public static var defaultFormatString: String { return " %5hd" }
 
 	public init?(string: String) {
         guard let value = Int16(string) else { return nil }
@@ -221,6 +225,7 @@ extension Int32 : AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normInt32 }
 	public static var normScale: Double = 1.0 / (Double(Int32.max) + 1)
@@ -241,7 +246,7 @@ extension Int32 : AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real32I }
-    public static var defaultFormatString: String { return " %5" }
+    public static var defaultFormatString: String { return " %5d" }
 
 	public init?(string: String) {
         guard let value = Int32(string) else { return nil }
@@ -264,7 +269,8 @@ extension UInt32 : AnyInteger {
     public var asDouble : Double { return Double(self) }
     public var asCVarArg: CVarArg{ return self }
     public var asBool   : Bool   { return self != 0 }
-    
+    public var asString : String { return String(self) }
+
     public init(norm any: AnyConvertable) { self = any.normUInt32 }
     public static var normScale: Double = 1.0 / (Double(UInt32.max) + 1)
     public static var normScalef: Float = Float(1.0) / (Float(UInt32.max) + 1)
@@ -307,6 +313,7 @@ extension Int : AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normInt }
 	public static var normScale: Double = 1.0 / (Double(Int.max) + 1)
@@ -330,7 +337,7 @@ extension Int : AnyInteger {
         let index: [DataType] = [.real8I, .real16I, .real32I, .real64I]
         return index[MemoryLayout<Int>.size - 1]
     }()
-    public static var defaultFormatString: String { return " %5" }
+    public static var defaultFormatString: String { return " %5d" }
 
 	public init?(string: String) {
         guard let value = Int(string) else { return nil }
@@ -353,6 +360,7 @@ extension UInt : AnyInteger {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normUInt }
 	public static var normScale: Double = 1.0 / (Double(UInt.max) + 1)
@@ -443,6 +451,7 @@ extension Float16 : AnyFloatingPoint {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return asFloat }
 	public var asBool   : Bool   { return Float(self) != 0 }
+    public var asString : String { return String(self.asFloat) }
 
 	public init(norm any: AnyConvertable) { self = any.normFloat16 }
 	
@@ -484,6 +493,7 @@ extension Float : AnyFloatingPoint {
 	public var asDouble : Double { return Double(self) }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normFloat }
 	
@@ -525,6 +535,7 @@ extension Double : AnyFloatingPoint {
 	public var asDouble : Double { return self }
 	public var asCVarArg: CVarArg{ return self }
 	public var asBool   : Bool   { return self != 0 }
+    public var asString : String { return String(self) }
 
 	public init(norm any: AnyConvertable) { self = any.normDouble }
 	

@@ -9,73 +9,79 @@ import Foundation
 public extension TensorView where Scalar: AnyConvertable {
     //--------------------------------------------------------------------------
     // formatted
-    func formatted(maxCols: Int = 10,
-                   maxItems: Int = Int.max,
-                   formatString: String? = nil) throws -> String {
+    func formatted(
+        maxCols: Int = 10,
+        maxItems: [Int]? = nil,
+        numberFormat: (width: Int, precision: Int)? = nil) throws -> String {
+        
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""
         var index = [Int](repeating: 0, count: shape.rank)
         var iterator = try self.values().makeIterator()
         var itemCount = 0
         let indentSize = "  "
+        let maxItems = maxItems?.enumerated().map {
+            min($1, shape.paddedExtents[$0])
+        } ?? shape.paddedExtents
         
         // set header
-        string += "TensorView extents: \(shape.extents.description)" +
+        string += "\nTensorView extents: \(shape.extents.description)" +
         " paddedExtents: \(shape.paddedExtents.description)\n"
+        
+        func appendFormatted(value: Scalar) {
+            if let fmt = numberFormat {
+                let str = String(format: Scalar.formatString(fmt),
+                                 value.asCVarArg)
+                string += "\(str), "
+            } else {
+                string += "\(value.asString), "
+            }
+        }
         
         // recursive rank > 1 formatting
         func format(dim: Int, indent: String) {
-            guard itemCount <= maxItems else { return }
-            // print the heading
-            if dim != shape.lastDimension {
-                string += "\(indent)at index: \(String(describing: index))\n"
-                index[dim] += 1
-                format(dim: dim + 1, indent: indent + indentSize)
-            } else {
-                // format a multi line vector
-                if shape.rank == 1 {
-                    
-                } else {
+            // print the heading unless it's the last two which we print
+            // 2d matrix style
+            if dim == shape.lastDimension - 1 {
+                let header = "at index: \(String(describing: index))"
+                string += "\(indent)\(header)\n\(indent)"
+                string += String(repeating: "-", count: header.count) + "\n"
+                let maxCol = shape.paddedExtents[shape.lastDimension] - 1
+                let lastCol = maxItems[shape.lastDimension] - 1
+                
+                for _ in 0..<maxItems[shape.lastDimension - 1] {
                     string += indent
-                    let lastCol = min(shape.paddedExtents[dim], maxCols)
-                    var col = 0
-                    while let value = iterator.next(), itemCount < maxItems {
-                        if let fmt = formatString {
-                            string += "\(String(format: fmt, value.asCVarArg)), "
-                        } else {
-                            string += "\(value.asString), "
-                        }
-                        itemCount += 1
-                        col += 1
-                        if col == lastCol {
-                            string += col < shape.paddedExtents[dim] ?
-                                " ...\n\(indent)" : "\n\(indent)"
-                            col = 0
+                    for col in 0...lastCol {
+                        if let value = iterator.next() {
+                            appendFormatted(value: value)
+                            if col == lastCol {
+                                string += (col < maxCol) ? " ...\n" : "\n"
+                            }
                         }
                     }
-                    string = String(string[..<string.lastIndex(of: ",")!])
+                }
+                string = String(string[..<string.lastIndex(of: ",")!]) + "\n\n"
+                
+            } else {
+                for _ in 0..<maxItems[dim] {
+                    string += "\(indent)at index: \(String(describing: index))\n"
+                    format(dim: dim + 1, indent: indent + indentSize)
+                    index[dim] += 1
                 }
             }
         }
 
         // format based on rank
         switch shape.rank {
-        case 1:
+        case 0, 1:
             if shape.isScalar {
                 let value = iterator.next()!
-                if let fmt = formatString {
-                    string += "\(String(format: fmt, value.asCVarArg))\n"
-                } else {
-                    string += "\(value.asString)\n"
-                }
+                appendFormatted(value: value)
+                string += "\n"
             } else {
                 var col = 0
-                while let value = iterator.next(), itemCount < maxItems {
-                    if let fmt = formatString {
-                        string += "\(String(format: fmt, value.asCVarArg)), "
-                    } else {
-                        string += "\(value.asString), "
-                    }
+                while let value = iterator.next(), itemCount < maxItems[0] {
+                    appendFormatted(value: value)
                     itemCount += 1
                     col += 1
                     if col == maxCols {
@@ -83,13 +89,14 @@ public extension TensorView where Scalar: AnyConvertable {
                         col = 0
                     }
                 }
-                string = String(string[..<string.lastIndex(of: ",")!])
             }
-            
+            string = String(string[..<string.lastIndex(of: ",")!]) + "\n"
+
         default:
             format(dim: 0, indent: "")
+            string = String(string.dropLast())
         }
         
-        return string + "\n"
+        return string
     }
 }

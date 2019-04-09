@@ -21,7 +21,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     // this gives full access to protocol default implementations.
     
     /// the shape of the view for the actual underlying data
-    var _dataShape: DataShape { get set }
+    var _dataShape: DataShape? { get set }
     /// `true` if the shape is readonly because it is a virtual shape or if
     /// it references a read only memory buffer
     var _isReadOnly: Bool { get set }
@@ -47,6 +47,8 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
 
     //--------------------------------------------------------------------------
     // initializers
+    // empty
+    init()
     
     /// Fully specified initializer
     /// creates a new concrete view instance. This is required to enable
@@ -90,7 +92,7 @@ public extension TensorView {
     // public property accessors
 
     /// the shape of the view for the actual underlying data
-    var dataShape: DataShape { return _dataShape }
+    var dataShape: DataShape { return _dataShape ?? shape }
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
     /// `true` if the view contains zero elements
@@ -103,12 +105,41 @@ public extension TensorView {
     /// It's primary use is in debugging and unit testing
     var lastAccessMutated: Bool { return _lastAccessMutated }
     /// the number of dimensions in the view
-    var rank: Int { return _dataShape.rank }
+    var rank: Int { return dataShape.rank }
     /// the shape of the view
     var shape: DataShape { return _shape }
     /// the linear element offset where the view begins
     var viewOffset: Int { return _viewOffset }
     
+    //--------------------------------------------------------------------------
+    /// Fully specified initializer
+    /// creates a new concrete view instance. This is required to enable
+    /// extension methods to create typed return values
+    init(shape: DataShape,
+         dataShape: DataShape? = nil,
+         tensorData: TensorData? = nil,
+         viewOffset: Int = 0,
+         padValue: Scalar? = nil,
+         isShared: Bool = false,
+         name: String? = nil,
+         logging: LogInfo? = nil)
+    {
+        self.init()
+        _lastAccessMutated = false
+        _dataShape = dataShape
+        _isShared = isShared
+        _name = name
+        _shape = shape
+        _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
+        self.padValue = padValue ?? Scalar()
+        self.logging = logging
+        let span = self.dataShape.elementSpanCount * MemoryLayout<Scalar>.size
+        _tensorData = tensorData ??
+            TensorData(byteCount: span, logging: logging, name: name)
+        assert(viewByteOffset + span <= _tensorData.byteCount)
+    }
+
     //--------------------------------------------------------------------------
     /// repeated view
     init(extents: [Int], repeating other: Self,
@@ -149,22 +180,11 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// creates an empty view
-    init() {
-        self.init(shape: DataShape(), dataShape: nil,
-                  tensorData: TensorData(), viewOffset: 0, padValue: nil,
-                  isShared: false, name: nil, logging: nil)
-    }
-
-    //--------------------------------------------------------------------------
     /// init<T>(shapedLike other:
     /// convenience initializer used by generics
     /// - Parameter other: the other object whose shape and logging to use
     init<T>(shapedLike other: T) where T: TensorView {
-        self.init(shape: other.shape, dataShape: nil,
-                  tensorData: nil, viewOffset: 0,
-                  padValue: nil, isShared: false,
-                  name: nil, logging: other.logging)
+        self.init(shape: other.shape, logging: other.logging)
     }
     
     //--------------------------------------------------------------------------
@@ -173,9 +193,7 @@ public extension TensorView {
     /// - Parameter value: the initial value to set
     init(asScalar value: Scalar) {
         // create scalar version of the shaped view type
-        self.init(shape: DataShape(extents: [1]), dataShape: nil,
-                  tensorData: nil, viewOffset: 0, padValue: nil,
-                  isShared: false, name: nil, logging: nil)
+        self.init(shape: DataShape(extents: [1]))
         // set the value
         try! readWrite()[0] = value
     }
@@ -419,7 +437,7 @@ public extension TensorView {
         }
         
         // create flattened view
-        return Self.init(shape: shape.flattened(), dataShape: nil,
+        return Self.init(shape: shape.flattened(), dataShape: _dataShape,
                          tensorData: _tensorData, viewOffset: _viewOffset,
                          padValue: padValue, isShared: isShared,
                          name: name, logging: logging)
@@ -438,7 +456,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return Self.init(shape: shape, dataShape: nil,
+            return Self.init(shape: shape, dataShape: _dataShape,
                              tensorData: _tensorData, viewOffset: _viewOffset,
                              padValue: padValue, isShared: true,
                              name: name, logging: logging)

@@ -101,9 +101,6 @@ class test_DataShape: XCTestCase {
             let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
             let values = try [Int32](view.values())
 
-//            try print(view.formatted())
-            
-
             // compare
             let expected: [Int32] = [
                 1, 0, 1, 0,
@@ -111,10 +108,35 @@ class test_DataShape: XCTestCase {
                 1, 0, 1, 0,
             ]
             XCTAssert(values == expected, "indices do not match")
-
-            let exp = VectorTensor<Int32>(scalars: expected)
-            try print(exp.formatted())
-
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        
+        do {
+            // values to repeat
+            let data = VolumeTensor<Int32>(extents: [2,2,2], scalars:[
+                1, 0,
+                0, 1,
+                
+                2, 3,
+                3, 2
+            ])
+            
+            // create a virtual view and get it's values
+            let view = VolumeTensor<Int32>(extents: [2, 3, 4], repeating: data)
+            let values = try [Int32](view.values())
+            
+            // compare
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+                
+                2, 3, 2, 3,
+                3, 2, 3, 2,
+                2, 3, 2, 3,
+            ]
+            XCTAssert(values == expected, "indices do not match")
         } catch {
             XCTFail(String(describing: error))
         }
@@ -127,9 +149,11 @@ class test_DataShape: XCTestCase {
             // create matrix with padding
             let m = MatrixTensor<Int32>(extents: [2, 3],
                                         padding: [Padding(before: 1, after: 1)],
+                                        padValue: -1,
                                         scalars: [Int32](0..<6))
-            let indices = [Int](m.shape.indices())
+            try print(m.formatted(numberFormat: (2,0)))
             
+            let indices = [Int](m.shape.indices())
             let expected = [
                 -1, -1, -1, -1,
                 -1,  0,  1, -1,
@@ -137,24 +161,32 @@ class test_DataShape: XCTestCase {
             ]
             
             XCTAssert(indices == expected, "indices do not match")
+        } catch {
+            XCTFail(String(describing: error))
         }
     }
     
     //==========================================================================
     // test_iterateSequence
     func test_iterateSequence() {
-        // try to iterate empty shape
-        let empty = VolumeTensor<Int32>()
-        for _ in empty.shape.indices() {
-            XCTFail("an empty shape should have an empty sequence")
+        do {
+            // try to iterate empty shape
+            let empty = VolumeTensor<Int32>()
+            for _ in empty.shape.indices() {
+                XCTFail("an empty shape should have an empty sequence")
+            }
+            
+            // try volume with shape
+            let expected = [Int](0..<24)
+            let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
+                                         scalars: expected.map { Int32($0) })
+            try print(v1.formatted(numberFormat: (2,0)))
+            
+            let indices = [Int](v1.shape.indices())
+            XCTAssert(indices == expected, "indices do not match")
+        } catch {
+            XCTFail(String(describing: error))
         }
-
-        // try volume with shape
-        let expected = [Int](0..<24)
-        let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
-                                     scalars: expected.map { Int32($0) })
-        let indices = [Int](v1.shape.indices())
-        XCTAssert(indices == expected, "indices do not match")
     }
 
     func testPerformanceExample() {

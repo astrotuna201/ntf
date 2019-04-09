@@ -74,8 +74,7 @@ public extension ScalarTensorView {
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
         let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: nil, tensorData: nil, viewOffset: 0,
-                  padValue: nil, isShared: false, name: name, logging: logging)
+        self.init(shape: shape, name: name, logging: logging)
     }
 }
 
@@ -83,39 +82,17 @@ public extension ScalarTensorView {
 // ScalarTensor
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 0, "rank must equal: 0")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -133,16 +110,23 @@ public extension VectorTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     /// create empty space
-    init(count: Int, name: String? = nil, logging: LogInfo? = nil) {
-        let shape = DataShape(extents: [count])
-        self.init(shape: shape, dataShape: nil, tensorData: nil,
-                  viewOffset: 0, padValue: nil,
-                  isShared: false, name: name, logging: logging)
+    init(count: Int,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         name: String? = nil, logging: LogInfo? = nil) {
+        
+        let shape = DataShape(extents: [count], padding: padding)
+        self.init(shape: shape, padValue: padValue,
+                  name: name, logging: logging)
     }
     
     /// initialize with scalar array
-    init(name: String? = nil, logging: LogInfo? = nil, scalars: [Scalar]) {
-        self.init(count: scalars.count, name: name, logging: logging)
+    init(name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         logging: LogInfo? = nil, scalars: [Scalar]) {
+        
+        self.init(count: scalars.count,
+                  padding: padding, padValue: padValue,
+                  name: name, logging: logging)
         _ = try! readWrite().initialize(from: scalars)
     }
 }
@@ -151,39 +135,17 @@ public extension VectorTensorView {
 // VectorTensor
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 1, "rank must equal: 1")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -207,9 +169,8 @@ public extension MatrixTensorView {
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents, padding: padding)
-        self.init(shape: shape, dataShape: nil, tensorData: nil,
-                  viewOffset: 0, padValue: nil,
-                  isShared: false, name: name, logging: logging)
+        self.init(shape: shape, padValue: padValue,
+                  name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
         if let scalars = scalars {
@@ -233,39 +194,17 @@ public extension MatrixTensorView {
 // MatrixTensor
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 2, "rank must equal: 2")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = _dataShape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -318,39 +257,17 @@ public extension VolumeTensorView {
 /// VolumeTensor
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.isEmpty || shape.rank == 3, "rank must equal: 3")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -365,38 +282,17 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -422,12 +318,13 @@ public extension NCHWTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int], name: String? = nil, logging: LogInfo? = nil,
+    init(extents: [Int],
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: nil,
-                  tensorData: nil, viewOffset: 0,
-                  padValue: nil, isShared: false,
+        
+        let shape = DataShape(extents: extents, padding: padding)
+        self.init(shape: shape, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -438,9 +335,12 @@ public extension NCHWTensorView {
     
     /// initialize with explicit labels
     init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
+        
         self.init(extents: [items, channels, rows, cols],
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging, scalars: scalars)
     }
 }
@@ -449,39 +349,17 @@ public extension NCHWTensorView {
 // NCHWTensor
 public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 4, "rank must equal: 4")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //==============================================================================
@@ -507,12 +385,13 @@ public extension NHWCTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int], name: String? = nil, logging: LogInfo? = nil,
+    init(extents: [Int],
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: nil,
-                  tensorData: nil, viewOffset: 0,
-                  padValue: nil, isShared: false,
+
+        let shape = DataShape(extents: extents, padding: padding)
+        self.init(shape: shape, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -523,9 +402,12 @@ public extension NHWCTensorView {
     
     /// initialize with explicit labels
     init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
+
         self.init(extents: [items, rows, cols, channels],
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging, scalars: scalars)
     }
 }
@@ -534,39 +416,17 @@ public extension NHWCTensorView {
 // NHWCTensor
 public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     // properties
-    public var _dataShape: DataShape
-    public var _isReadOnly: Bool
-    public var _isShared: Bool
-    public var _name: String?
-    public var _lastAccessMutated: Bool
-    public var _shape: DataShape
-    public var _tensorData: TensorData
-    public var _viewOffset: Int
-    public var logging: LogInfo?
-    public var padValue: Scalar
-
-    //--------------------------------------------------------------------------
-    // initializers
-    /// fully specified to support generic init
-    public init(shape: DataShape, dataShape: DataShape? = nil,
-                tensorData: TensorData? = nil, viewOffset: Int = 0,
-                padValue: Scalar? = nil, isShared: Bool = false,
-                name: String? = nil, logging: LogInfo? = nil) {
-        assert(shape.rank == 4, "rank must equal: 4")
-        _lastAccessMutated = false
-        _dataShape = dataShape ?? shape
-        _isShared = isShared
-        _name = name
-        _shape = shape
-        _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
-        self.padValue = padValue ?? Scalar()
-        self.logging = logging
-        let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: spanCount, logging: logging, name: name)
-        assert(viewByteOffset + spanCount <= _tensorData.byteCount)
-    }
+    public var _dataShape: DataShape? = nil
+    public var _isReadOnly: Bool = false
+    public var _isShared: Bool = false
+    public var _name: String? = nil
+    public var _lastAccessMutated: Bool = false
+    public var _shape: DataShape = DataShape()
+    public var _tensorData: TensorData = TensorData()
+    public var _viewOffset: Int = 0
+    public var logging: LogInfo? = nil
+    public var padValue: Scalar = Scalar()
+    public init() {}
 }
 
 //------------------------------------------------------------------------------

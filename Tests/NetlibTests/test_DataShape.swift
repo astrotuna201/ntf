@@ -155,9 +155,10 @@ class test_DataShape: XCTestCase {
             
             let indices = [Int](m.shape.indices())
             let expected = [
-                -1, -1, -1, -1,
-                -1,  0,  1, -1,
-                -1, -1, -1, -1,
+                -1, -1, -1, -1, -1,
+                -1,  0,  1,  2, -1,
+                -1,  3,  4,  5, -1,
+                -1, -1, -1, -1, -1,
             ]
             
             XCTAssert(indices == expected, "indices do not match")

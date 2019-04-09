@@ -32,9 +32,9 @@ public extension TensorView where Scalar: AnyConvertable {
             if let fmt = numberFormat {
                 let str = String(format: Scalar.formatString(fmt),
                                  value.asCVarArg)
-                string += "\(str), "
+                string += "\(str) "
             } else {
-                string += "\(value.asString), "
+                string += "\(value.asString) "
             }
         }
         
@@ -60,7 +60,7 @@ public extension TensorView where Scalar: AnyConvertable {
                         }
                     }
                 }
-                string = String(string[..<string.lastIndex(of: ",")!]) + "\n\n"
+                string += "\n\n"
                 
             } else {
                 for _ in 0..<maxItems[dim] {
@@ -90,7 +90,7 @@ public extension TensorView where Scalar: AnyConvertable {
                     }
                 }
             }
-            string = String(string[..<string.lastIndex(of: ",")!]) + "\n"
+            string += "\n"
 
         default:
             format(dim: 0, indent: "")

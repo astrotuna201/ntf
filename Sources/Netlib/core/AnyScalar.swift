@@ -65,6 +65,7 @@ public protocol AnyConvertable: AnyScalar {
 	var isFiniteValue: Bool { get }
     static var isFiniteType: Bool { get }
     static var dataType: DataType { get }
+    static var defaultFormatString: String { get }
 }
 
 public protocol AnyNumeric: AnyConvertable, AnyFixedSizeScalar {}
@@ -111,7 +112,8 @@ extension UInt8: AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real8U }
-
+    public static var defaultFormatString: String { return " %3hhu" }
+    
 	public init?(string: String) {
         guard let value = UInt8(string) else { return nil }
 		self = value
@@ -153,6 +155,7 @@ extension UInt16 : AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real16U }
+    public static var defaultFormatString: String { return " %5hu" }
 
     public init?(string: String) {
         guard let value = UInt16(string) else { return nil }
@@ -195,6 +198,7 @@ extension Int16 : AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real16I }
+    public static var defaultFormatString: String { return " %5h" }
 
 	public init?(string: String) {
         guard let value = Int16(string) else { return nil }
@@ -237,6 +241,7 @@ extension Int32 : AnyInteger {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real32I }
+    public static var defaultFormatString: String { return " %5" }
 
 	public init?(string: String) {
         guard let value = Int32(string) else { return nil }
@@ -279,7 +284,8 @@ extension UInt32 : AnyInteger {
     public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .real32U }
-    
+    public static var defaultFormatString: String { return " %5u" }
+
     public init?(string: String) {
         guard let value = UInt32(string) else { return nil }
         self = value
@@ -324,6 +330,7 @@ extension Int : AnyInteger {
         let index: [DataType] = [.real8I, .real16I, .real32I, .real64I]
         return index[MemoryLayout<Int>.size - 1]
     }()
+    public static var defaultFormatString: String { return " %5" }
 
 	public init?(string: String) {
         guard let value = Int(string) else { return nil }
@@ -369,6 +376,7 @@ extension UInt : AnyInteger {
         let index: [DataType] = [.real8U, .real16U, .real32U, .real64U]
         return index[MemoryLayout<Int>.size - 1]
     }()
+    public static var defaultFormatString: String { return " %5u" }
 
 	public init?(string: String) {
         guard let value = UInt(string) else { return nil }
@@ -412,6 +420,7 @@ extension Bool: AnyConvertable {
 	public var isFiniteValue: Bool { return true }
     public static var isFiniteType: Bool { return true }
     public static var dataType: DataType { return .bool }
+    public static var defaultFormatString: String { return " %3u" }
 
 	public init?(string: String) {
         guard let value = Bool(string) else { return nil }
@@ -452,6 +461,7 @@ extension Float16 : AnyFloatingPoint {
 	public var isFiniteValue: Bool { return Float(self).isFinite }
     public static var isFiniteType: Bool { return false }
     public static var dataType: DataType { return .real16F }
+    public static var defaultFormatString: String { return "%9.3f" }
 
 	public init?(string: String) {
         guard let value = Float16(string) else { return nil }
@@ -492,6 +502,7 @@ extension Float : AnyFloatingPoint {
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
     public static var dataType: DataType { return .real32F }
+    public static var defaultFormatString: String { return "%9.3f" }
 
 	public init?(string: String) {
         guard let value = Float(string) else { return nil }
@@ -532,6 +543,7 @@ extension Double : AnyFloatingPoint {
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
     public static var dataType: DataType { return .real64F }
+    public static var defaultFormatString: String { return "%9.3f" }
 
 	public init?(string: String) {
         guard let value = Double(string) else { return nil }

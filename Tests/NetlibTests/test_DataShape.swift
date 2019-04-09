@@ -101,6 +101,9 @@ class test_DataShape: XCTestCase {
             let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
             let values = try [Int32](view.values())
 
+//            try print(view.formatted())
+            
+
             // compare
             let expected: [Int32] = [
                 1, 0, 1, 0,
@@ -108,6 +111,10 @@ class test_DataShape: XCTestCase {
                 1, 0, 1, 0,
             ]
             XCTAssert(values == expected, "indices do not match")
+
+            let exp = VectorTensor<Int32>(scalars: expected)
+            try print(exp.formatted())
+
         } catch {
             XCTFail(String(describing: error))
         }
@@ -118,9 +125,9 @@ class test_DataShape: XCTestCase {
     func test_iteratePaddedSequence() {
         do {
             // create matrix with padding
-            let m = MatrixTensor<Int32>(extents: [1, 2],
+            let m = MatrixTensor<Int32>(extents: [2, 3],
                                         padding: [Padding(before: 1, after: 1)],
-                                        scalars: [Int32](0..<2))
+                                        scalars: [Int32](0..<6))
             let indices = [Int](m.shape.indices())
             
             let expected = [

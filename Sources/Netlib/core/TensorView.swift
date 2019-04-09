@@ -22,6 +22,9 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     
     /// the shape of the view for the actual underlying data
     var _dataShape: DataShape { get set }
+    /// `true` if the shape is readonly because it is a virtual shape or if
+    /// it references a read only memory buffer
+    var _isReadOnly: Bool { get set }
     /// during write access. Primarily to support multi-threaded writes
     var _isShared: Bool { get set }
     /// lastAccessMutated is `true` if the last data access caused the view
@@ -88,10 +91,13 @@ public extension TensorView {
 
     /// the shape of the view for the actual underlying data
     var dataShape: DataShape { return _dataShape }
-    /// `true` if the scalars are densely packed in memory
-    var isDense: Bool { return dataShape.isContiguous }
+    /// `true` if the scalars are contiguosly arranged in memory
+    var isContiguous: Bool { return dataShape.isContiguous }
     /// `true` if the view contains zero elements
     var isEmpty: Bool { return dataShape.isEmpty }
+    /// `true` if the shape is readonly because it is a virtual shape or if
+    /// it references a read only memory buffer
+    var isReadOnly: Bool { return _isReadOnly }
     /// lastAccessMutated is `true` if the last data access caused the view
     /// to mutate, which causes the underlying tensorData object to be copied
     /// It's primary use is in debugging and unit testing

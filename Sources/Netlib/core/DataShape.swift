@@ -35,7 +35,7 @@ public struct DataShape: Equatable, Codable {
     /// `true` if the shape has zero elements
     public var isEmpty: Bool { return elementCount == 0 }
     /// `true` if the shape is readonly because it is a virtual shape
-    public var isReadOnly: Bool { return false } // TODO fix
+    public var isReadOnly: Bool { return padding != nil }
     /// `true` if the shape has one element
     public var isScalar: Bool { return elementCount == 1 }
     /// the number of sahpe extents

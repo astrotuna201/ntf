@@ -102,11 +102,22 @@ public extension DataShapeSequenceIterable {
         let padding = getPadding()
         
         // record the starting point for each dimension
+        var firstIndexIsPad = false
         for dim in 0..<shape.rank {
             let sp = shape.paddedExtents[dim] * shape.strides[dim]
-            let before = padding[dim].before * shape.strides[dim]
-            let after = sp - padding[dim].after * shape.strides[dim]
             
+            // if the dim padding before > 0, then init padding for the
+            // rest of the dims to all be padding where before = dim span
+            var before, after: Int
+            if firstIndexIsPad {
+                before = sp
+                after = sp
+            } else {
+                before = padding[dim].before * shape.strides[dim]
+                after = sp - padding[dim].after * shape.strides[dim]
+            }
+            if before > 0 { firstIndexIsPad = true }
+
             position!.append(DataShapeExtentPosition(
                 shape: ShapePosition(current: offset, span: sp, end: sp),
                 repeated: ShapePosition(current: 0, span: 0, end: 0),
@@ -154,7 +165,9 @@ public extension DataShapeSequenceIterable {
     private func getRepeatedIndex(_ position: DataShapeExtentPosition) -> Int {
         // check if current falls within padding area
         let current = position.shape.current
-        return position.padBefore...position.padAfter ~= current ? current : -1
+        let repeatedIndex = position.padBefore..<position.padAfter ~= current ?
+            current - position.padBefore : -1
+        return repeatedIndex
     }
     
     //==========================================================================
@@ -179,15 +192,25 @@ public extension DataShapeSequenceIterable {
         // if past the end then go back a dimension and advance
         if position![dim].shape.current == position![dim].shape.end {
             // make a recursive call to the parent dimension
-            if dim > 0, let start = advance(&position, for: dim - 1) {
+            if dim > 0, let start = advancePadded(&position, for: dim - 1) {
                 // update the cumulative shape position
                 let current = start.shapeIndex
                 position![dim].shape.current = current
                 position![dim].shape.end = current + position![dim].shape.span
                 
                 // update the pad boundry positions
-                position![dim].padBefore = current + position![dim].padBeforeSpan
-                position![dim].padAfter = current + position![dim].padAfterSpan
+                if start.repeatedIndex == -1 {
+                    // the whole parent dimension is padding so all of this is
+                    let shapeSpan = position![dim].shape.span
+                    position![dim].padBefore = current + shapeSpan
+                    position![dim].padAfter = current + shapeSpan
+                } else {
+                    // the parent dimension is not padding so scan this one
+                    let beforeSpan = position![dim].padBeforeSpan
+                    let afterSpan = position![dim].padAfterSpan
+                    position![dim].padBefore = current + beforeSpan
+                    position![dim].padAfter = current + afterSpan
+                }
                 nextPos = start
             }
         } else {

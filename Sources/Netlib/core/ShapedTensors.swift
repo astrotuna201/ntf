@@ -84,6 +84,7 @@ public extension ScalarTensorView {
 public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -107,6 +108,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -150,6 +152,7 @@ public extension VectorTensorView {
 public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -173,6 +176,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -230,6 +234,7 @@ public extension MatrixTensorView {
 public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -253,6 +258,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = _dataShape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -313,6 +319,7 @@ public extension VolumeTensorView {
 public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -336,6 +343,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -358,6 +366,7 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -380,6 +389,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -440,6 +450,7 @@ public extension NCHWTensorView {
 public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -463,6 +474,7 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -523,6 +535,7 @@ public extension NHWCTensorView {
 public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     // properties
     public var _dataShape: DataShape
+    public var _isReadOnly: Bool
     public var _isShared: Bool
     public var _name: String?
     public var _lastAccessMutated: Bool
@@ -546,6 +559,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
+        _isReadOnly = shape.isReadOnly || dataShape != nil
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let spanCount = shape.elementSpanCount * MemoryLayout<Scalar>.size

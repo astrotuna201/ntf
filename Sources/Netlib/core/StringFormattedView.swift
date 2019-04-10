@@ -64,7 +64,13 @@ public extension TensorView where Scalar: AnyConvertable {
                 
             } else {
                 for _ in 0..<maxItems[dim] {
-                    string += "\(indent)at index: \(String(describing: index))\n"
+                    // output index header
+                    let header = indent +
+                    "at index: \(String(describing: index))"
+                    string += "\(indent)\(header)\n\(indent)"
+                    string += String(repeating: "=", count: header.count) + "\n"
+                    
+                    // recursively call next contained dimension
                     format(dim: dim + 1, indent: indent + indentSize)
                     index[dim] += 1
                 }

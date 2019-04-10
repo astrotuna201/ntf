@@ -33,6 +33,11 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var _lastAccessMutated: Bool { get set }
     /// the name of the view, which can optionally be set to aid in debugging
     var _name: String? { get set }
+    /// specifies an amount of padding before and after each dimension used
+    /// only during indexing and iteration. It is not reflected in the `shape`
+    /// of the view or part of subview creation. It is passed
+    /// as a parameter to iterators and also inherited by subviews.
+    var padding: [Padding]? { get set }
     /// the scalar value to be returned for indexes with padding regions
     var padValue: Scalar { get set }
     /// the virtual shape of the view used for indexing
@@ -57,6 +62,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
          dataShape: DataShape?,
          tensorData: TensorData?,
          viewOffset: Int,
+         padding: [Padding]?,
          padValue: Scalar?,
          isShared: Bool,
          name: String?,
@@ -120,6 +126,7 @@ public extension TensorView {
          dataShape: DataShape? = nil,
          tensorData: TensorData? = nil,
          viewOffset: Int = 0,
+         padding: [Padding]? = nil,
          padValue: Scalar? = nil,
          isShared: Bool = false,
          name: String? = nil,
@@ -132,7 +139,7 @@ public extension TensorView {
         _name = name
         _shape = shape
         _viewOffset = viewOffset
-        _isReadOnly = shape.isReadOnly || dataShape != nil
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
         self.logging = logging
         let span = self.dataShape.elementSpanCount * MemoryLayout<Scalar>.size
@@ -146,10 +153,11 @@ public extension TensorView {
     init(extents: [Int], repeating other: Self,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
 
-        self.init(shape: DataShape(extents: extents, padding: padding),
+        self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
                   tensorData: other._tensorData,
                   viewOffset: other._viewOffset,
+                  padding: padding ?? other.padding,
                   padValue: padValue ?? other.padValue,
                   isShared: other._isShared,
                   name: other.name,
@@ -381,6 +389,7 @@ public extension TensorView {
                          dataShape: dataShape,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
+                         padding: padding,
                          padValue: padValue,
                          isShared: isReference,
                          name: "\(name).subview",
@@ -440,8 +449,8 @@ public extension TensorView {
         // create flattened view
         return Self.init(shape: shape.flattened(), dataShape: _dataShape,
                          tensorData: _tensorData, viewOffset: _viewOffset,
-                         padValue: padValue, isShared: isShared,
-                         name: name, logging: logging)
+                         padding: padding, padValue: padValue,
+                         isShared: isShared, name: name, logging: logging)
     }
     
     //--------------------------------------------------------------------------
@@ -459,7 +468,8 @@ public extension TensorView {
             try copyIfMutates(using: stream)
             return Self.init(shape: shape, dataShape: _dataShape,
                              tensorData: _tensorData, viewOffset: _viewOffset,
-                             padValue: padValue, isShared: true,
+                             padding: padding, padValue: padValue,
+                             isShared: true,
                              name: name, logging: logging)
         }
     }

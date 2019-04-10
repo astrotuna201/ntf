@@ -21,12 +21,12 @@ public extension TensorView where Scalar: AnyConvertable {
         var itemCount = 0
         let indentSize = "  "
         let maxItems = maxItems?.enumerated().map {
-            min($1, shape.paddedExtents[$0])
-        } ?? shape.paddedExtents
+            min($1, shape.extents[$0])
+        } ?? shape.extents
         
         // set header
         string += "\nTensorView extents: \(shape.extents.description)" +
-        " paddedExtents: \(shape.paddedExtents.description)\n"
+        " paddedExtents: \(shape.extents.description)\n"
         
         func appendFormatted(value: Scalar) {
             if let fmt = numberFormat {
@@ -46,7 +46,7 @@ public extension TensorView where Scalar: AnyConvertable {
                 let header = "at index: \(String(describing: index))"
                 string += "\(indent)\(header)\n\(indent)"
                 string += String(repeating: "-", count: header.count) + "\n"
-                let maxCol = shape.paddedExtents[shape.lastDimension] - 1
+                let maxCol = shape.extents[shape.lastDimension] - 1
                 let lastCol = maxItems[shape.lastDimension] - 1
                 
                 for _ in 0..<maxItems[shape.lastDimension - 1] {

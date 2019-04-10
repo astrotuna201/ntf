@@ -91,6 +91,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -114,7 +115,7 @@ public extension VectorTensorView {
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, logging: LogInfo? = nil) {
         
-        let shape = DataShape(extents: [count], padding: padding)
+        let shape = DataShape(extents: [count])
         self.init(shape: shape, padValue: padValue,
                   name: name, logging: logging)
     }
@@ -144,6 +145,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -168,7 +170,7 @@ public extension MatrixTensorView {
          name: String? = nil, logging: LogInfo? = nil,
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
-        let shape = DataShape(extents: extents, padding: padding)
+        let shape = DataShape(extents: extents)
         self.init(shape: shape, padValue: padValue,
                   name: name, logging: logging)
         
@@ -203,6 +205,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -229,10 +232,8 @@ public extension VolumeTensorView {
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
         
-        self.init(shape: DataShape(extents: extents, padding: padding),
-                  dataShape: nil,
-                  tensorData: nil, viewOffset: 0, padValue: padValue,
-                  isShared: false, name: name, logging: logging)
+        self.init(shape: DataShape(extents: extents),
+                  name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
         if let scalars = scalars {
@@ -266,6 +267,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -291,6 +293,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -323,8 +326,9 @@ public extension NCHWTensorView {
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
         
-        let shape = DataShape(extents: extents, padding: padding)
-        self.init(shape: shape, padValue: padValue,
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape,
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -358,6 +362,7 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }
@@ -390,8 +395,9 @@ public extension NHWCTensorView {
          name: String? = nil, logging: LogInfo? = nil,
          scalars: [Scalar]? = nil) {
 
-        let shape = DataShape(extents: extents, padding: padding)
-        self.init(shape: shape, padValue: padValue,
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape,
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -425,6 +431,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
+    public var padding: [Padding]? = nil
     public var padValue: Scalar = Scalar()
     public init() {}
 }

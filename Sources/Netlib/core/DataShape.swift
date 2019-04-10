@@ -18,24 +18,15 @@ public struct DataShape: Equatable, Codable {
     public let extents: [Int]
     /// the index of the last dimension
     public let lastDimension: Int
-    /// The padded extent of the shape in each dimension
-    public let paddedExtents: [Int]
-    /// optional void space before and after each dimension
-    public let padding: [Padding]?
     /// The distance to the next element for each dimension
     public let strides: [Int]
 
     //--------------------------------------------------------------------------
     // computed properties
-
-    /// `true` if the shape has padding
-    public var hasPadding: Bool { return padding != nil }
     /// `true` if the underlying data for the whole shape has a stride of 1.
     public var isContiguous: Bool { return elementCount == elementSpanCount }
     /// `true` if the shape has zero elements
     public var isEmpty: Bool { return elementCount == 0 }
-    /// `true` if the shape is readonly because it is a virtual shape
-    public var isReadOnly: Bool { return padding != nil }
     /// `true` if the shape has one element
     public var isScalar: Bool { return elementCount == 1 }
     /// the number of sahpe extents
@@ -48,8 +39,6 @@ public struct DataShape: Equatable, Codable {
     public init() {
         extents = []
         strides = []
-        paddedExtents = []
-        padding = nil
         lastDimension = 0
         elementCount = 0
         elementSpanCount = 0
@@ -58,25 +47,16 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     /// Fully specified initializer
     /// - Parameter extents: extent of the shape in each dimension
-    /// - Parameter padding: padding before and after each dimension
     /// - Parameter strides: the distance to the next element in each dimension
-    public init(extents: [Int],
-                padding: [Padding]? = nil,
-                strides: [Int]? = nil) {
+    public init(extents: [Int], strides: [Int]? = nil) {
         // validate
         assert(extents.count > 0, "use init() to create empty shape")
         assert(strides == nil || strides?.count == extents.count,
                "the stride count must equal the extent count")
-        assert(padding == nil || padding?.count == 1 ||
-            padding?.count == extents.count,
-               "padding count must be 1 or equal to extent.count")
-        
         // init properties
         self.extents = extents
         self.lastDimension = extents.count - 1
         self.elementCount = extents.count == 0 ? 0 : extents.reduce(1, *)
-        self.padding = padding
-        self.paddedExtents = extents
         self.strides = strides ?? DataShape.denseStrides(for: extents)
         elementSpanCount = DataShape.spanCount(for: extents, with: self.strides)
     }
@@ -194,7 +174,7 @@ public struct DataShape: Equatable, Codable {
         cmExtent.swapAt(rank-1, rank-2)
         var cmStrides = DataShape.denseStrides(for: cmExtent)
         cmStrides.swapAt(rank-1, rank-2)
-        return DataShape(extents: extents, padding: padding, strides: cmStrides)
+        return DataShape(extents: extents, strides: cmStrides)
     }
     
     //--------------------------------------------------------------------------

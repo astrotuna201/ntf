@@ -50,8 +50,12 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     var position: [DataShapeExtentPosition]? { get set }
     /// the shape being iterated
     var shape: DataShape { get set }
+    /// the void space before and after each dimension
+    var padding: [Padding]? { get set }
     /// fully specified initializer
-    init(shape: DataShape, at offset: Int, repeating repeatedShape: DataShape?)
+    init(shape: DataShape, at offset: Int,
+         repeating repeatedShape: DataShape?,
+         with padding: [Padding]?)
 }
 
 // shorthand
@@ -90,7 +94,7 @@ public extension DataShapeSequenceIterable {
         guard !shape.isEmpty else { return nil }
 
         // get the padding and set an increment if there is more than one
-        let padding = shape.padding ?? [Padding(before: 0, after: 0)]
+        let padding = self.padding ?? [Padding(before: 0, after: 0)]
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
 
@@ -103,17 +107,19 @@ public extension DataShapeSequenceIterable {
 
         for dim in 0..<shape.rank {
             // the strided span of this dimension
-            let span = shape.paddedExtents[dim] * shape.strides[dim]
+            let before = padding[padIndex].before
+            let after = padding[padIndex].after
+            let span = (before + after + shape.extents[dim]) *
+                shape.strides[dim]
 
             // setting before equal to the dimension's span makes it all pad
-            let before = firstIndexIsPad ? span :
-                padding[padIndex].before * shape.strides[dim]
+            let beforeSpan = firstIndexIsPad ? span :
+                before * shape.strides[dim]
 
             // the after boundary will be tested assuming it is relative to
             // the start, so subtract it from the end
-            let after = firstIndexIsPad ? span :
-                (shape.paddedExtents[dim] - padding[padIndex].after)
-                * shape.strides[dim]
+            let afterSpan = firstIndexIsPad ? span :
+                (shape.extents[dim] - after) * shape.strides[dim]
 
             // advance the padding index for the multi pad case
             padIndex += padIncrement
@@ -123,7 +129,7 @@ public extension DataShapeSequenceIterable {
             if before > 0 { firstIndexIsPad = true }
             
             // setup the initial position relative to the repeated shape
-            let rspan = repeatedShape.paddedExtents[dim] *
+            let rspan = repeatedShape.extents[dim] *
                 repeatedShape.strides[dim]
             let rpos = ShapePosition(current: offset, span: rspan, end: rspan)
 
@@ -131,10 +137,10 @@ public extension DataShapeSequenceIterable {
             position!.append(DataShapeExtentPosition(
                 shape: ShapePosition(current: offset, span: span, end: span),
                 repeated: rpos,
-                padBefore: before,
-                padBeforeSpan: before,
-                padAfter: after,
-                padAfterSpan: after))
+                padBefore: beforeSpan,
+                padBeforeSpan: beforeSpan,
+                padAfter: afterSpan,
+                padAfterSpan: afterSpan))
         }
 
         // the first index is 0 plus the caller specified shape offset
@@ -300,19 +306,24 @@ public extension DataShapeSequenceIterable {
 /// This iterates the tensorData indexes described by
 /// an N dimensional DataShape as a single linear Sequence
 public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
+    // properties
     public var advanceFn: DataShapeAdvanceFn!
     public var offset: Int
     public var position: [DataShapeExtentPosition]?
     public var repeatedShape: DataShape
     public var shape: DataShape
+    public var padding: [Padding]?
 
+    // initializers
     public init(shape: DataShape, at offset: Int,
-                repeating repeatShape: DataShape?) {
+                repeating repeatShape: DataShape?,
+                with padding: [Padding]?) {
         self.repeatedShape = repeatShape ?? shape
         self.shape = shape
         self.offset = offset
+        self.padding = padding
         
-        if shape.hasPadding {
+        if padding != nil {
             if repeatShape == nil {
                 advanceFn = advancePadded(_:for:)
             } else {
@@ -333,19 +344,23 @@ public struct DataShapeSequence: Sequence {
     let offset: Int
     let shape: DataShape
     let repeatedShape: DataShape?
+    let padding: [Padding]?
     
     // initializers
     public init(shape: DataShape, at offset: Int,
-                repeating repeatedShape: DataShape?) {
-        self.offset = offset
+                repeating repeatedShape: DataShape?,
+                with padding: [Padding]?) {
         self.shape = shape
+        self.offset = offset
         self.repeatedShape = repeatedShape
+        self.padding = padding
     }
     
     // makeIterator
     public func makeIterator() -> DataShapeSequenceIterator {
         return DataShapeSequenceIterator(shape: shape, at: offset,
-                                         repeating: repeatedShape)
+                                         repeating: repeatedShape,
+                                         with: padding)
     }
 }
 
@@ -353,8 +368,10 @@ extension DataShape {
     /// returns a Sequence of `tensorData` element indices relative to
     /// the specified offset
     func indices(repeating shape: DataShape? = nil,
-                 relativeTo offset: Int = 0) -> DataShapeSequence {
-        return DataShapeSequence(shape: self, at: offset, repeating: shape)
+                 relativeTo offset: Int = 0,
+                 with padding: [Padding]? = nil) -> DataShapeSequence {
+        return DataShapeSequence(shape: self, at: offset,
+                                 repeating: shape, with: padding)
     }
 }
 

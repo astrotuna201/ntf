@@ -39,7 +39,8 @@ where T: TensorView {
         tensorDataBuffer = buffer
         indexIterator = DataShapeSequenceIterator(shape: view.shape,
                                                   at: view.viewOffset,
-                                                  repeating: view._dataShape)
+                                                  repeating: view._dataShape,
+                                                  with: view.padding)
     }
 
     /// next

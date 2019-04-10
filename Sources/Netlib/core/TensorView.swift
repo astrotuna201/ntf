@@ -63,6 +63,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
          logging: LogInfo?)
     
     /// convenience initializer used to create result views in op functions
+    /// other is generic, because it might have a different Scalar type
     init<T>(shapedLike other: T) where T: TensorView
 
     /// convenience initializer used to create type compatible tensors from

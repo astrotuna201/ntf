@@ -390,7 +390,7 @@ public extension TensorView {
                          dataShape: dataShape,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
-                         padding: nil,
+                         padding: padding,
                          padValue: padValue,
                          isShared: isReference,
                          name: "\(name).subview",
@@ -467,10 +467,15 @@ public extension TensorView {
         }
         
         // create flattened view
-        return Self.init(shape: shape.flattened(), dataShape: _dataShape,
-                         tensorData: _tensorData, viewOffset: _viewOffset,
-                         padding: padding, padValue: padValue,
-                         isShared: isShared, name: name, logging: logging)
+        return Self.init(shape: shape.flattened(),
+                         dataShape: _dataShape,
+                         tensorData: _tensorData,
+                         viewOffset: _viewOffset,
+                         padding: padding,
+                         padValue: padValue,
+                         isShared: isShared,
+                         name: name,
+                         logging: logging)
     }
     
     //--------------------------------------------------------------------------
@@ -499,6 +504,9 @@ public extension TensorView {
     /// Creates a reference view relative to this view. Write operations will
     /// not cause mutation of tensorData. It's purpose is to support
     /// multi-threaded write operations
+    
+    // TODO: maybe remove this if a subview view can correctly be taken
+    // from a `reference` view
     mutating func referenceView(
         offset: [Int], extents: [Int],
         padding: [Padding]? = nil, padValue: Scalar? = nil,
@@ -521,6 +529,9 @@ public extension TensorView {
     /// Creates a flattened reference view relative to this view.
     /// Write operations will not cause mutation of tensorData.
     /// It's purpose is to support multi-threaded write operations
+
+    // TODO: maybe remove this if a subview view can correctly be taken
+    // from a `reference` view
     mutating func referenceFlattened(
         axis: Int = 0,
         padding: [Padding]? = nil, padValue: Scalar? = nil,

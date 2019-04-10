@@ -208,6 +208,25 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
+    /// - Returns: the padded extents for the view used for iteration
+    func getPaddedExtents() -> [Int] {
+        guard let padding = self.padding else { return shape.extents }
+        let padIncrement = padding.count > 1 ? 1 : 0
+        var padIndex = 0
+        var padExtents = [Int]()
+        
+        for dim in 0..<rank {
+            let span = padding[padIndex].before +
+                shape.extents[dim] +
+                padding[padIndex].after
+            
+            padExtents.append(span)
+            padIndex += padIncrement
+        }
+        return padExtents
+    }
+    
+    //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Scalar {

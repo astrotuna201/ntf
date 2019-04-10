@@ -20,13 +20,17 @@ public extension TensorView where Scalar: AnyConvertable {
         var iterator = try self.values().makeIterator()
         var itemCount = 0
         let indentSize = "  "
+        let extents = getPaddedExtents()
+        let lastDimension = shape.lastDimension
+        
+        // clamp ranges
         let maxItems = maxItems?.enumerated().map {
-            min($1, shape.extents[$0])
-        } ?? shape.extents
+            min($1, extents[$0])
+        } ?? extents
         
         // set header
         string += "\nTensorView extents: \(shape.extents.description)" +
-        " paddedExtents: \(shape.extents.description)\n"
+        " paddedExtents: \(extents.description)\n"
         
         func appendFormatted(value: Scalar) {
             if let fmt = numberFormat {
@@ -42,14 +46,14 @@ public extension TensorView where Scalar: AnyConvertable {
         func format(dim: Int, indent: String) {
             // print the heading unless it's the last two which we print
             // 2d matrix style
-            if dim == shape.lastDimension - 1 {
+            if dim == lastDimension - 1 {
                 let header = "at index: \(String(describing: index))"
                 string += "\(indent)\(header)\n\(indent)"
                 string += String(repeating: "-", count: header.count) + "\n"
-                let maxCol = shape.extents[shape.lastDimension] - 1
-                let lastCol = maxItems[shape.lastDimension] - 1
+                let maxCol = extents[lastDimension] - 1
+                let lastCol = maxItems[lastDimension] - 1
                 
-                for _ in 0..<maxItems[shape.lastDimension - 1] {
+                for _ in 0..<maxItems[lastDimension - 1] {
                     string += indent
                     for col in 0...lastCol {
                         if let value = iterator.next() {

@@ -149,7 +149,7 @@ class test_DataShape: XCTestCase {
             // create matrix with padding
             let padding = [
                 // rows
-                Padding(before: 1, after: 1),
+                Padding(before: 0, after: 0),
                 // columns
                 Padding(before: 2, after: 3)
             ]

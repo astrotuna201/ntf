@@ -21,8 +21,8 @@ public struct DataShapeExtentPosition {
     var shape: ShapePosition
     /// the position for the `repeatedShape`
     var repeated: ShapePosition
-    /// the whole extent is padding because the outer dimension is padding
-    var extentIsPad: Bool
+    /// the current position in this dimension is padding
+    var currentIsPad: Bool
     /// All positions before this are padding.
     /// An index of -1 is returned for each padded position
     var padBefore: Int
@@ -95,21 +95,15 @@ public extension DataShapeSequenceIterable {
     /// Initialization moves from outer dimension to inner (0 -> rank)
     /// - Returns: the index of the first position. If the shape is empty then
     ///   `nil` is returned
-    func advanceFirst(_ position: inout [DataShapeExtentPosition]?,
-                      for dim: Int) -> DataShapeIndex? {
+    func advanceFirst(
+        _ position: inout [DataShapeExtentPosition]?) -> DataShapeIndex? {
         guard !shape.isEmpty else { return nil }
+        position = [DataShapeExtentPosition]()
 
         // get the padding and set an increment if there is more than one
         let padding = self.padding ?? [Padding(before: 0, after: 0)]
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
-
-        // record the starting point for each dimension
-        position = [DataShapeExtentPosition]()
-        
-        // if index 0 of any dimension is in the pad area, then all
-        // contained dimensions are padding as well
-        var firstIndexIsPad = padding[0].before > 0
 
         for dim in 0..<shape.rank {
             // the strided span of this dimension
@@ -117,27 +111,21 @@ public extension DataShapeSequenceIterable {
             let afterSize = padding[padIndex].after
             let span = (beforeSize + afterSize + shape.extents[dim]) *
                 shape.strides[dim]
-            
+            let beforeSpan = beforeSize * shape.strides[dim]
+            let afterSpan = span - afterSize * shape.strides[dim]
+
             // set the current position and end
             let current = offset
             let end = current + span
-            
-            // setting before equal to the dimension's span makes it all pad
-            let beforeSpan = firstIndexIsPad ? span :
-                beforeSize * shape.strides[dim]
 
-            // the after boundary will be tested assuming it is relative to
-            // the start, so subtract it from the end
-            let afterSpan = firstIndexIsPad ? span :
-                span - afterSize * shape.strides[dim]
+            // if index 0 of any dimension is in the pad area, then all
+            // contained dimensions are padding as well
+            let currentIsPad = beforeSize > 0 ||
+                (dim > 0 && position![dim - 1].currentIsPad)
 
             // advance the padding index for the multi pad case
             padIndex += padIncrement
 
-            // if before is greater than 0 for this dimension, then subsequent
-            // dimensions are also pad
-            if beforeSize > 0 { firstIndexIsPad = true }
-            
             // setup the initial position relative to the repeated shape
             let rspan = repeatedShape.extents[dim] *
                 repeatedShape.strides[dim]
@@ -149,7 +137,7 @@ public extension DataShapeSequenceIterable {
             position!.append(DataShapeExtentPosition(
                 shape: ShapePosition(current: current, span: span, end: end),
                 repeated: rpos,
-                extentIsPad: firstIndexIsPad,
+                currentIsPad: currentIsPad,
                 padBefore: beforeSpan,
                 padBeforeSpan: beforeSpan,
                 padAfter: afterSpan,
@@ -170,7 +158,7 @@ public extension DataShapeSequenceIterable {
                  for dim: Int) -> DataShapeIndex? {
         // check for initial position
         var nextPos: DataShapeIndex?
-        guard position != nil else { return advanceFirst(&position, for: dim) }
+        guard position != nil else { return advanceFirst(&position) }
         
         // advance the position for this dimension by it's stride
         position![dim].shape.current += shape.strides[dim]
@@ -205,7 +193,7 @@ public extension DataShapeSequenceIterable {
                        for dim: Int) -> DataShapeIndex? {
         // advance to the first position if it is `nil`
         var nextPos: DataShapeIndex?
-        if position == nil { return advanceFirst(&position, for: dim) }
+        if position == nil { return advanceFirst(&position) }
 
         // advance the position for this dimension by it's stride
         position![dim].shape.current += shape.strides[dim]
@@ -216,19 +204,15 @@ public extension DataShapeSequenceIterable {
             // make a recursive call to the parent dimension
             // `start` is the first position in the parent dimension
             if dim > 0, let start = advancePadded(&position, for: dim - 1) {
-                // if the enclosing parent dimension for this is padding
-                // then all of this extent is padding
-                position![dim].extentIsPad = position![dim - 1].extentIsPad
-                
                 // update the cumulative shape position and set the new end
                 let current = start.shapeIndex
                 position![dim].shape.current = current
                 position![dim].shape.end = current + position![dim].shape.span
                 
-                if position![dim].extentIsPad {
-                    let shapeSpan = position![dim].shape.span
-                    position![dim].padBefore = current + shapeSpan
-                    position![dim].padAfter = current + shapeSpan
+                // if the enclosing parent dimension for this is padding
+                // then all of this extent is padding
+                if position![dim - 1].currentIsPad {
+                    position![dim].currentIsPad = true
                 } else {
                     // in the case that the parent dimension is not padding,
                     // set the boundaries testing
@@ -243,12 +227,26 @@ public extension DataShapeSequenceIterable {
         } else {
             // the current index is passed on to continue shape traversal
             let current = position![dim].shape.current
-            let isPad = current < position![dim].padBefore ||
-                current >= position![dim].padAfter
+            
+            // test if its in the pad region
+            let repeatedIndex: Int
+            if dim > 0 && position![dim - 1].currentIsPad {
+                // if the parent dimension is padding then this is also
+                repeatedIndex = -1
+            } else {
+                // test range
+                position![dim].currentIsPad =
+                    current < position![dim].padBefore ||
+                    current >= position![dim].padAfter
+                
+                repeatedIndex = position![dim].currentIsPad ? -1 :
+                    current - position![dim].padBefore
+            }
             
             // return new position
+            assert(repeatedIndex < repeatedShape.elementSpanCount)
             nextPos = DataShapeIndex(shapeIndex: current,
-                                     repeatedIndex: isPad ? -1 : current)
+                                     repeatedIndex: repeatedIndex)
         }
         
         return nextPos
@@ -263,7 +261,7 @@ public extension DataShapeSequenceIterable {
                          for dim: Int) -> DataShapeIndex? {
         // check for initial position
         var nextPos: DataShapeIndex?
-        guard position != nil else { return advanceFirst(&position, for: dim) }
+        guard position != nil else { return advanceFirst(&position) }
 
         //--------------------------------
         // advance the `repeatedShape` position for this dimension by stride

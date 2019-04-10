@@ -107,35 +107,41 @@ public extension DataShapeSequenceIterable {
 
         for dim in 0..<shape.rank {
             // the strided span of this dimension
-            let before = padding[padIndex].before
-            let after = padding[padIndex].after
-            let span = (before + after + shape.extents[dim]) *
+            let beforeSize = padding[padIndex].before
+            let afterSize = padding[padIndex].after
+            let span = (beforeSize + afterSize + shape.extents[dim]) *
                 shape.strides[dim]
+            
+            // set the current position and end
+            let current = offset
+            let end = current + span
 
             // setting before equal to the dimension's span makes it all pad
             let beforeSpan = firstIndexIsPad ? span :
-                before * shape.strides[dim]
+                beforeSize * shape.strides[dim]
 
             // the after boundary will be tested assuming it is relative to
             // the start, so subtract it from the end
             let afterSpan = firstIndexIsPad ? span :
-                (shape.extents[dim] - after) * shape.strides[dim]
+                span - afterSize * shape.strides[dim]
 
             // advance the padding index for the multi pad case
             padIndex += padIncrement
 
             // if before is greater than 0 for this dimension, then subsequent
             // dimensions are also pad
-            if before > 0 { firstIndexIsPad = true }
+            if beforeSize > 0 { firstIndexIsPad = true }
             
             // setup the initial position relative to the repeated shape
             let rspan = repeatedShape.extents[dim] *
                 repeatedShape.strides[dim]
-            let rpos = ShapePosition(current: offset, span: rspan, end: rspan)
+            let rcurrent = offset
+            let rend = rcurrent + rspan
+            let rpos = ShapePosition(current: rcurrent, span: rspan, end: rend)
 
             // append the fully initialized first position
             position!.append(DataShapeExtentPosition(
-                shape: ShapePosition(current: offset, span: span, end: span),
+                shape: ShapePosition(current: current, span: span, end: end),
                 repeated: rpos,
                 padBefore: beforeSpan,
                 padBeforeSpan: beforeSpan,

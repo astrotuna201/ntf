@@ -147,19 +147,27 @@ class test_DataShape: XCTestCase {
     func test_iteratePaddedSequence() {
         do {
             // create matrix with padding
-            let m = MatrixTensor<Int32>(extents: [2, 3],
-                                        padding: [Padding(before: 1, after: 1)],
+            let padding = [
+                // rows
+                Padding(before: 1, after: 1),
+                // columns
+                Padding(before: 2, after: 3)
+            ]
+            let m = MatrixTensor<Int32>(extents: [1, 3],
+                                        padding: padding,
                                         padValue: -1,
-                                        scalars: [Int32](0..<6))
+                                        scalars: [Int32](0..<3))
             try print(m.formatted(numberFormat: (2,0)))
             
             let indices = [Int](m.shape.indices())
             let expected = [
-                -1, -1, -1, -1, -1,
-                -1,  0,  1,  2, -1,
-                -1,  3,  4,  5, -1,
-                -1, -1, -1, -1, -1,
+                -1,  0,  -1,
             ]
+
+//            let expected = [
+//                -1,  0,  1,  2, -1,
+//                -1,  3,  4,  5, -1,
+//            ]
             
             XCTAssert(indices == expected, "indices do not match")
         } catch {

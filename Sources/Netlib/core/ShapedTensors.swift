@@ -72,9 +72,14 @@ public protocol ScalarTensorView: TensorView
 public extension ScalarTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Scalar, name: String? = nil, logging: LogInfo? = nil) {
+    init(_ value: Scalar,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         name: String? = nil, logging: LogInfo? = nil) {
+        
         let shape = DataShape(extents: [1])
-        self.init(shape: shape, name: name, logging: logging)
+        self.init(shape: shape,
+                  padding: padding, padValue: padValue,
+                  name: name, logging: logging)
     }
 }
 
@@ -116,7 +121,8 @@ public extension VectorTensorView {
          name: String? = nil, logging: LogInfo? = nil) {
         
         let shape = DataShape(extents: [count])
-        self.init(shape: shape, padValue: padValue,
+        self.init(shape: shape,
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging)
     }
     
@@ -171,7 +177,8 @@ public extension MatrixTensorView {
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents)
-        self.init(shape: shape, padValue: padValue,
+        self.init(shape: shape,
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail
@@ -233,6 +240,7 @@ public extension VolumeTensorView {
          scalars: [Scalar]? = nil) {
         
         self.init(shape: DataShape(extents: extents),
+                  padding: padding, padValue: padValue,
                   name: name, logging: logging)
         
         // it's being initialized in host memory so it can't fail

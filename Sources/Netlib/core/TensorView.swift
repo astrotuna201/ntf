@@ -36,7 +36,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// specifies an amount of padding before and after each dimension used
     /// only during indexing and iteration. It is not reflected in the `shape`
     /// of the view or part of subview creation. It is passed
-    /// as a parameter to iterators and also inherited by subviews.
+    /// as a parameter to iterators. It is not inherited by subviews.
     var padding: [Padding]? { get set }
     /// the scalar value to be returned for indexes with padding regions
     var padValue: Scalar { get set }
@@ -157,8 +157,8 @@ public extension TensorView {
                   dataShape: other.shape,
                   tensorData: other._tensorData,
                   viewOffset: other._viewOffset,
-                  padding: padding ?? other.padding,
-                  padValue: padValue ?? other.padValue,
+                  padding: padding,
+                  padValue: padValue,
                   isShared: other._isShared,
                   name: other.name,
                   logging: other.logging)
@@ -374,6 +374,7 @@ public extension TensorView {
     /// createSubView
     /// Returns a view of the tensorData relative to this view
     private func createSubView(at offset: [Int], with extents: [Int],
+                               padding: [Padding]?, padValue: Scalar?,
                                isReference: Bool) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
@@ -389,7 +390,7 @@ public extension TensorView {
                          dataShape: dataShape,
                          tensorData: _tensorData,
                          viewOffset: elementOffset,
-                         padding: padding,
+                         padding: nil,
                          padValue: padValue,
                          isShared: isReference,
                          name: "\(name).subview",
@@ -399,20 +400,27 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// view
     /// Create a sub view of the tensorData relative to this view
-    func view(at offset: [Int], with extents: [Int]) -> Self {
+    func view(at offset: [Int],
+              with extents: [Int],
+              padding: [Padding]? = nil,
+              padValue: Scalar? = nil) -> Self {
         // the view created will have the same isShared state as the parent
-        return createSubView(at: offset, with: extents, isReference: isShared)
+        return createSubView(at: offset, with: extents,
+                             padding: padding, padValue: padValue,
+                             isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     /// viewItems
-    /// Returns a view along extent[0] spanning all the other extents. It is
-    /// used to simplify accessing a set of training samples.
-    ///
+    /// Returns a view along the first dimension spanning all the others.
+    /// It is used to simplify accessing a set of training samples.
     /// The view created will have the same isShared state as the parent
-    func viewItems(at offset: Int, count: Int) -> Self {
-        var index: [Int]
-        let viewExtents: [Int]
+    func viewItems(at offset: Int,
+                   count: Int,
+                   padding: [Padding]? = nil,
+                   padValue: Scalar? = nil) -> Self {
+
+        let index, viewExtents: [Int]
         if rank == 1 {
             index = [offset]
             viewExtents = [count]
@@ -421,26 +429,38 @@ public extension TensorView {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createSubView(at: index, with: viewExtents, isReference: isShared)
+        return createSubView(at: index, with: viewExtents,
+                             padding: padding, padValue: padValue,
+                             isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     /// view(item:
-    func view(item: Int) -> Self {
-        return viewItems(at: item, count: 1)
+    func view(item: Int,
+              padding: [Padding]? = nil,
+              padValue: Scalar? = nil) -> Self {
+        return viewItems(at: item, count: 1,
+                         padding: padding, padValue: padValue)
     }
     
     //--------------------------------------------------------------------------
     /// flattened
     /// Returns a view reduced in rank depending on the axis selected
-    func flattened(axis: Int = 0) -> Self {
-        return createFlattened(axis: axis, isShared: isShared)
+    func flattened(axis: Int = 0,
+                   padding: [Padding]? = nil,
+                   padValue: Scalar? = nil) -> Self {
+        
+        return createFlattened(axis: axis, isShared: isShared,
+                               padding: padding, padValue: padValue)
     }
     
     //--------------------------------------------------------------------------
     /// createFlattened
     /// helper
-    private func createFlattened(axis: Int, isShared: Bool) -> Self {
+    private func createFlattened(axis: Int,
+                                 isShared: Bool,
+                                 padding: [Padding]?,
+                                 padValue: Scalar?) -> Self {
         // check if self already meets requirements
         guard self.isShared != isShared || axis != shape.rank - 1 else {
             return self
@@ -459,7 +479,7 @@ public extension TensorView {
     /// operations. Therefore the data will be copied before
     /// reference view creation if not uniquely held. References will not
     /// be checked on the resulting view when a write pointer is taken
-    mutating func reference(using stream: DeviceStream?) throws -> Self {
+    mutating func reference(using stream: DeviceStream? = nil) throws -> Self {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
@@ -479,15 +499,20 @@ public extension TensorView {
     /// Creates a reference view relative to this view. Write operations will
     /// not cause mutation of tensorData. It's purpose is to support
     /// multi-threaded write operations
-    mutating func referenceView(offset: [Int], extents: [Int],
-                                using stream: DeviceStream?) throws -> Self {
+    mutating func referenceView(
+        offset: [Int], extents: [Int],
+        padding: [Padding]? = nil, padValue: Scalar? = nil,
+        using stream: DeviceStream? = nil) throws -> Self {
+        
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return createSubView(at: offset, with: extents, isReference: true)
+            return createSubView(at: offset, with: extents,
+                                 padding: padding, padValue: padValue,
+                                 isReference: true)
         }
     }
     
@@ -496,15 +521,19 @@ public extension TensorView {
     /// Creates a flattened reference view relative to this view.
     /// Write operations will not cause mutation of tensorData.
     /// It's purpose is to support multi-threaded write operations
-    mutating func referenceFlattened(axis: Int = 0,
-                                     using stream: DeviceStream?) throws -> Self {
+    mutating func referenceFlattened(
+        axis: Int = 0,
+        padding: [Padding]? = nil, padValue: Scalar? = nil,
+        using stream: DeviceStream? = nil) throws -> Self {
+        
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return createFlattened(axis: axis, isShared: true)
+            return createFlattened(axis: axis, isShared: true,
+                                   padding: padding, padValue: padValue)
         }
     }
 }

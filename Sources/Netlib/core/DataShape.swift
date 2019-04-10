@@ -67,26 +67,16 @@ public struct DataShape: Equatable, Codable {
         assert(extents.count > 0, "use init() to create empty shape")
         assert(strides == nil || strides?.count == extents.count,
                "the stride count must equal the extent count")
-        let rank = extents.count
-        self.lastDimension = rank - 1
-
-        // expand extents if padded
-        if let padding = padding {
-            assert(padding.count == 1 || padding.count == rank)
-            // rank expand padding
-            self.padding = padding.count == rank ? padding :
-                [Padding](repeating: padding[0], count: rank)
-
-            // expand extents
-            self.paddedExtents = zip(extents, self.padding!).map {
-                $0 + $1.before + $1.after
-            }
-        } else {
-            self.padding = padding
-            self.paddedExtents = extents
-        }
+        assert(padding == nil || padding?.count == 1 ||
+            padding?.count == extents.count,
+               "padding count must be 1 or equal to extent.count")
+        
+        // init properties
         self.extents = extents
+        self.lastDimension = extents.count - 1
         self.elementCount = extents.count == 0 ? 0 : extents.reduce(1, *)
+        self.padding = padding
+        self.paddedExtents = extents
         self.strides = strides ?? DataShape.denseStrides(for: extents)
         elementSpanCount = DataShape.spanCount(for: extents, with: self.strides)
     }

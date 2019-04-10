@@ -84,7 +84,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try add(lhs, scalarTensor)
     }
 }
@@ -97,7 +97,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try add(lhs, scalarTensor)
     }
 }
@@ -156,7 +156,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try subtract(lhs, scalarTensor)
     }
 }
@@ -169,7 +169,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try subtract(lhs, scalarTensor)
     }
 }
@@ -227,7 +227,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try mul(lhs, scalarTensor)
     }
 }
@@ -240,7 +240,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try mul(lhs, scalarTensor)
     }
 }
@@ -298,7 +298,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try div(lhs, scalarTensor)
     }
 }
@@ -311,7 +311,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
-        let scalarTensor = Self.init(asScalar: Scalar(any: rhs))
+        let scalarTensor = Self.init(Scalar(any: rhs))
         return try div(lhs, scalarTensor)
     }
 }

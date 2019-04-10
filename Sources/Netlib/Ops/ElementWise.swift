@@ -147,7 +147,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
     func pow<S: AnyNumeric>(
         _ y: S, using deviceStream: DeviceStream? = nil) throws -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.pow(self, Self.init(asScalar: Scalar(any: y)),
+        try Netlib.pow(self, Self.init(Scalar(any: y)),
                        result: &result, using: deviceStream)
         return result
     }
@@ -163,7 +163,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     func pow<S: AnyInteger>(
         _ y: S, using deviceStream: DeviceStream? = nil) throws -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.pow(self, Self.init(asScalar: Scalar(any: y)),
+        try Netlib.pow(self, Self.init(Scalar(any: y)),
                        result: &result, using: deviceStream)
         return result
     }

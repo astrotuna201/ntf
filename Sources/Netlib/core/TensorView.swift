@@ -67,7 +67,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
 
     /// convenience initializer used to create type compatible tensors from
     /// from a scalar used in generic op functions.
-    init(asScalar value: Scalar)
+    init(_ value: Scalar)
     
     //--------------------------------------------------------------------------
     // functions
@@ -191,7 +191,7 @@ public extension TensorView {
     /// init<S>(asScalar value:
     /// convenience initializer used by generics
     /// - Parameter value: the initial value to set
-    init(asScalar value: Scalar) {
+    init(_ value: Scalar) {
         // create scalar version of the shaped view type
         self.init(shape: DataShape(extents: [1]))
         // set the value

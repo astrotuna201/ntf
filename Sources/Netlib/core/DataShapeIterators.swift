@@ -30,8 +30,6 @@ public struct ExtentPosition {
 }
 
 public struct ShapePosition {
-    /// the base offset for this iteration sequence
-    //    var base: Int
     /// current cummulative iterative position accross the shapes
     var current: Int
     /// the strided span of the extent
@@ -41,7 +39,9 @@ public struct ShapePosition {
 }
 
 public struct DataShapeIndex {
+    /// linear view index
     let viewPos: Int
+    /// linear data index
     let dataPos: Int
 }
 

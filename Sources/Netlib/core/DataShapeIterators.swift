@@ -155,10 +155,10 @@ public extension DataShapeSequenceIterable {
 
     //--------------------------------------------------------------------------
     /// advance(position:for:
-    /// Advances the last dimension. If it can't, then `nil` is returned
-    /// This function is called recursively.
+    /// advances the index in the lastDimension. If it can't, then the parent
+    /// dimension is called recursively to advance.
     /// - Returns: the index of the next position
-    /// Cost per value: 2 cmp, 1 inc
+    /// Minimal per value: 2 cmp, 1 inc
     func advance(_ index: inout [ExtentPosition], dim: Int) -> DataShapeIndex? {
         // check for initial position
         guard index.count > 0 else { return advanceFirst(&index) }
@@ -187,55 +187,51 @@ public extension DataShapeSequenceIterable {
     
     //--------------------------------------------------------------------------
     /// advanceRepeated(position:for:
-    /// advances the lastDimension . If it can't, then `position`
-    /// is set to `nil` this is a recursive function
+    /// advances the index in the lastDimension. If it can't, then the parent
+    /// dimension is called recursively to advance.
     /// - Returns: the index of the next position
-    ///
     /// Minimal cost per value: 3 cmp, 2 inc
-    func advanceRepeated(_ position: inout [ExtentPosition],
+    func advanceRepeated(_ index: inout [ExtentPosition],
                          for dim: Int) -> DataShapeIndex? {
         // check for initial position
-        var nextPos: DataShapeIndex?
-        guard position.count > 0 else { return advanceFirst(&position) }
+        guard index.count > 0 else { return advanceFirst(&index) }
         
         //--------------------------------
-        // advance the `repeatedShape` position for this dimension by stride
-        position[dim].data.current += data.strides[dim]
+        // advance the `data` position for this dimension by it's stride
+        index[dim].data.current += data.strides[dim]
         
-        // if past the end of the repeated dimension, go back to the beginning
-        if position[dim].data.current == position[dim].data.end {
-            position[dim].data.current -= position[dim].data.span
+        // if past the data end, then go back to beginning and repeat
+        if index[dim].data.current == index[dim].data.end {
+            index[dim].data.current -= index[dim].data.span
         }
         
         //--------------------------------
-        // advance the `view` position for this dimension by stride
-        position[dim].view.current += view.strides[dim]
+        // advance the `view` position for this dimension by it's stride
+        index[dim].view.current += view.strides[dim]
         
-        // if past the end of this dimension,
-        // then go back a dimension and advance
-        if position[dim].view.current == position[dim].view.end {
-            // make a recursive call to the parent dimension
-            if dim > 0, let start = advanceRepeated(&position, for: dim - 1) {
+        // if past the end, then advance parent dimension
+        if index[dim].view.current == index[dim].view.end {
+            // make a recursive call to advance the parent dimension
+            if dim > 0, let start = advanceRepeated(&index, for: dim - 1) {
                 // update the cumulative view position
                 let current = start.viewPos
-                position[dim].view.current = current
-                position[dim].view.end = current + position[dim].view.span
+                index[dim].view.current = current
+                index[dim].view.end = current + index[dim].view.span
                 
                 // update the cumulative repeated view position
-                position[dim].data.current = start.dataPos
-                position[dim].data.end =
-                    start.dataPos + position[dim].data.span
-                
-                // return the next position
-                nextPos = start
+                index[dim].data.current = start.dataPos
+                index[dim].data.end = start.dataPos + index[dim].data.span
+                return start
+            } else {
+                // can't advance any further, so return nil
+                return nil
             }
         } else {
-            nextPos = DataShapeIndex(
-                viewPos: position[dim].view.current,
-                dataPos: position[dim].data.current)
+            // we are not at the end, so return the current position
+            return DataShapeIndex(
+                viewPos: index[dim].view.current,
+                dataPos: index[dim].data.current)
         }
-        
-        return nextPos
     }
 
     //==========================================================================

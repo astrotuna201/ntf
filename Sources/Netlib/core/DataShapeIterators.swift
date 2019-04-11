@@ -254,7 +254,9 @@ public extension DataShapeSequenceIterable {
         if index[dim].view.current == index[dim].view.end {
             // make a recursive call to advance the parent dimension
             if dim > 0, let start = advancePadded(&index, for: dim - 1) {
-                let parentIsPad = index[dim - 1].currentIsPad
+                // the current is pad if the parent is pad
+                index[dim].currentIsPad = index[dim - 1].currentIsPad
+                
                 // update the view position
                 let current = start.viewPos
                 index[dim].view.current = current
@@ -264,10 +266,7 @@ public extension DataShapeSequenceIterable {
                 index[dim].data.current = start.dataPos
                 index[dim].data.end = start.dataPos + index[dim].data.span
                 
-                if parentIsPad {
-                    index[dim].currentIsPad = parentIsPad
-
-                } else {
+                if !index[dim].currentIsPad {
                     // update the padding ranges
                     index[dim].padBefore = current + index[dim].padBeforeSpan
                     index[dim].padAfter = current + index[dim].padAfterSpan
@@ -285,28 +284,33 @@ public extension DataShapeSequenceIterable {
             }
         }
         
-        // if index 0 of any dimension is in the pad area, then all
-        // contained dimensions are padding as well
-        let current = index[dim].view.current
-        let parentIsPad = dim > 0 && index[dim - 1].currentIsPad
-        let currentIsPad = parentIsPad ||
-            current < index[dim].padBefore ||
-            current >= index[dim].padAfter
-        index[dim].currentIsPad = currentIsPad
-        
         //--------------------------------
         // advance the `data` position for this dimension by it's stride
         // only while we are not in the padded region
         var dataIndex: Int
-        if currentIsPad {
+        let parentIsPad = dim > 0 && index[dim - 1].currentIsPad
+        let current = index[dim].view.current
+
+        if parentIsPad {
+            index[dim].currentIsPad = true
             dataIndex = -1
         } else {
-            dataIndex = index[dim].data.current
-            index[dim].data.current += data.strides[dim]
+            // if index 0 of any dimension is in the pad area, then all
+            // contained dimensions are padding as well
+            index[dim].currentIsPad =
+                current < index[dim].padBefore ||
+                current >= index[dim].padAfter
             
-            // if past the data end, then go back to beginning and repeat
-            if index[dim].data.current == index[dim].data.end {
-                index[dim].data.current -= index[dim].data.span
+            if index[dim].currentIsPad {
+                dataIndex = -1
+            } else {
+                dataIndex = index[dim].data.current
+                index[dim].data.current += data.strides[dim]
+                
+                // if past the data end, then go back to beginning and repeat
+                if index[dim].data.current == index[dim].data.end {
+                    index[dim].data.current -= index[dim].data.span
+                }
             }
         }
         

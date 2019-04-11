@@ -91,7 +91,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -146,7 +146,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -207,7 +207,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -270,7 +270,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -296,7 +296,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -365,7 +365,7 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
@@ -434,7 +434,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
-    public var _lastAccessMutated: Bool = false
+    public var _lastAccessCopiedTensorData: Bool = false
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0

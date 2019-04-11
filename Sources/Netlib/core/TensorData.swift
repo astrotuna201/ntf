@@ -36,6 +36,11 @@ final public class TensorData: ObjectTracking, Logging {
     private let streamRequired = "stream is required for device data transfers"
     private let isReadOnlyReference: Bool
     
+    /// is `true` if the last data access caused the view's underlying
+    /// tensorData object to be copied.
+    /// Used primarily for debugging and unit testing
+    var lastAccessCopiedTensorData: Bool = false
+
     //-----------------------------------
     /// The hostBuffer is the app thread synced data array.
     ///

@@ -27,10 +27,6 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var _isReadOnly: Bool { get set }
     /// during write access. Primarily to support multi-threaded writes
     var _isShared: Bool { get set }
-    /// lastAccessMutated is `true` if the last data access caused the view
-    /// to mutate, which causes the underlying tensorData object to be copied
-    /// It's primary use is in debugging and unit testing
-    var _lastAccessMutated: Bool { get set }
     /// the name of the view, which can optionally be set to aid in debugging
     var _name: String? { get set }
     /// specifies an amount of padding before and after each dimension used
@@ -107,10 +103,11 @@ public extension TensorView {
     /// `true` if the shape is readonly because it is a virtual shape or if
     /// it references a read only memory buffer
     var isReadOnly: Bool { return _isReadOnly }
-    /// lastAccessMutated is `true` if the last data access caused the view
-    /// to mutate, which causes the underlying tensorData object to be copied
-    /// It's primary use is in debugging and unit testing
-    var lastAccessMutated: Bool { return _lastAccessMutated }
+    /// is `true` if the last data access caused the view's underlying
+    /// tensorData object to be copied.
+    /// Used primarily for debugging and unit testing
+    var lastAccessCopiedTensorData: Bool
+    { return _tensorData.lastAccessCopiedTensorData }
     /// the number of dimensions in the view
     var rank: Int { return dataShape.rank }
     /// the shape of the view
@@ -133,7 +130,6 @@ public extension TensorView {
          logging: LogInfo? = nil)
     {
         self.init()
-        _lastAccessMutated = false
         _dataShape = dataShape
         _isShared = isShared
         _name = name
@@ -315,10 +311,9 @@ public extension TensorView {
     /// NOTE: this must be called from inside the accessQueue.sync block
     private mutating func copyIfMutates(using stream: DeviceStream? = nil) throws {
         // for unit tests
-        _lastAccessMutated = false
+        _tensorData.lastAccessCopiedTensorData = false
         guard !isShared && !isUniqueReference() else { return }
         
-        _lastAccessMutated = true
         if willLog(level: .diagnostic) == true {
             diagnostic("""
                 \(mutationString) \(logging?.namePath ?? "")
@@ -327,6 +322,7 @@ public extension TensorView {
         }
         
         _tensorData = try TensorData(withContentsOf: _tensorData, using: stream)
+        _tensorData.lastAccessCopiedTensorData = true
     }
     
     //--------------------------------------------------------------------------
@@ -339,6 +335,7 @@ public extension TensorView {
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         return try queue.sync {
+            _tensorData.lastAccessCopiedTensorData = false
             let buffer = try _tensorData.roHostRawBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
@@ -352,6 +349,7 @@ public extension TensorView {
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         return try queue.sync {
+            _tensorData.lastAccessCopiedTensorData = false
             let buffer = try _tensorData.roDevicePointer(using: stream)
             return buffer.advanced(by: _viewOffset)
         }

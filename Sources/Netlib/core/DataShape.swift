@@ -257,6 +257,16 @@ public struct DataShape: Equatable, Codable {
 public struct Padding: Equatable, Codable {
     let before: Int
     let after: Int
+
+    public init(before: Int, after: Int) {
+        self.before = before
+        self.after = after
+    }
+    
+    public init(_ both: Int) {
+        self.before = both
+        self.after = both
+    }
 }
 
 //==============================================================================

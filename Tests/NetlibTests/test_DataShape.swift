@@ -148,10 +148,8 @@ class test_DataShape: XCTestCase {
         do {
             // create matrix with padding
             let padding = [
-                // rows
-                Padding(before: 1, after: 1),
-                // columns
-                Padding(before: 2, after: 3)
+                Padding(1), // row pad both 1
+                Padding(before: 2, after: 3)  // col pad
             ]
             let m = MatrixTensor<Int32>(extents: [2, 3],
                                         padding: padding,
@@ -161,14 +159,11 @@ class test_DataShape: XCTestCase {
             
             let indices = [Int](m.shape.indices())
             let expected = [
-                -1,  0,  -1,
+                -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1,  0,  1,  2, -1, -1, -1,
+                -1, -1,  3,  4,  5, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1,
             ]
-
-//            let expected = [
-//                -1,  0,  1,  2, -1,
-//                -1,  3,  4,  5, -1,
-//            ]
-            
             XCTAssert(indices == expected, "indices do not match")
         } catch {
             XCTFail(String(describing: error))

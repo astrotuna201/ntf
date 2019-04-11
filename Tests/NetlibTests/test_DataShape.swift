@@ -149,14 +149,14 @@ class test_DataShape: XCTestCase {
             // create matrix with padding
             let padding = [
                 // rows
-                Padding(before: 0, after: 0),
+                Padding(before: 1, after: 1),
                 // columns
                 Padding(before: 2, after: 3)
             ]
-            let m = MatrixTensor<Int32>(extents: [1, 3],
+            let m = MatrixTensor<Int32>(extents: [2, 3],
                                         padding: padding,
                                         padValue: -1,
-                                        scalars: [Int32](0..<3))
+                                        scalars: [Int32](0..<6))
             try print(m.formatted(numberFormat: (2,0)))
             
             let indices = [Int](m.shape.indices())

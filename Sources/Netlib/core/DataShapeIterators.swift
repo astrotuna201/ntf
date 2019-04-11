@@ -146,7 +146,9 @@ public extension DataShapeSequenceIterable {
 
         // the first index is 0 plus the caller specified shape offset
         // this is usually the TensorView.viewOffset value
-        return DataShapeIndex(shapeIndex: offset, repeatedIndex: offset)
+        let firstIsPad = position![shape.lastDimension].padBefore > 0
+        return DataShapeIndex(shapeIndex: offset,
+                              repeatedIndex: firstIsPad ? -1 : offset)
     }
 
     //--------------------------------------------------------------------------
@@ -191,8 +193,7 @@ public extension DataShapeSequenceIterable {
     /// - Returns: the index of the next position
     func advancePadded(_ position: inout [DataShapeExtentPosition]?,
                        for dim: Int) -> DataShapeIndex? {
-        // advance to the first position if it is `nil`
-        var nextPos: DataShapeIndex?
+        // advance to first if needed
         if position == nil { return advanceFirst(&position) }
 
         // advance the position for this dimension by it's stride
@@ -221,35 +222,31 @@ public extension DataShapeSequenceIterable {
                     position![dim].padBefore = current + beforeSpan
                     position![dim].padAfter = current + afterSpan
                 }
-                // return the position
-                nextPos = start
             }
-        } else {
-            // the current index is passed on to continue shape traversal
-            let current = position![dim].shape.current
-            
-            // test if its in the pad region
-            let repeatedIndex: Int
-            if dim > 0 && position![dim - 1].currentIsPad {
-                // if the parent dimension is padding then this is also
-                repeatedIndex = -1
-            } else {
-                // test range
-                position![dim].currentIsPad =
-                    current < position![dim].padBefore ||
-                    current >= position![dim].padAfter
-                
-                repeatedIndex = position![dim].currentIsPad ? -1 :
-                    current - position![dim].padBefore
-            }
-            
-            // return new position
-            assert(repeatedIndex < repeatedShape.elementSpanCount)
-            nextPos = DataShapeIndex(shapeIndex: current,
-                                     repeatedIndex: repeatedIndex)
         }
         
-        return nextPos
+        // the current index is passed on to continue shape traversal
+        let current = position![dim].shape.current
+        
+        // test if its in the pad region
+        let repeatedIndex: Int
+        if dim > 0 && position![dim - 1].currentIsPad {
+            // if the parent dimension is padding then this is also
+            repeatedIndex = -1
+        } else {
+            // test if in padding area
+            position![dim].currentIsPad =
+                current < position![dim].padBefore ||
+                current >= position![dim].padAfter
+            
+            repeatedIndex = position![dim].currentIsPad ? -1 :
+                current - position![dim].padBefore
+        }
+        
+        // return new position
+        assert(repeatedIndex < repeatedShape.elementSpanCount)
+        return  DataShapeIndex(shapeIndex: current,
+                               repeatedIndex: repeatedIndex)
     }
     
     //--------------------------------------------------------------------------

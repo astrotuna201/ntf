@@ -17,10 +17,11 @@ class test_DataShape: XCTestCase {
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
-        ("perf_IterateMatrixIndices", perf_IterateMatrixIndices),
-        ("perf_IterateMatrixValues", perf_IterateMatrixValues),
-        ("perf_IterateRepeatedRowMatrixIndices", perf_IterateRepeatedRowMatrixIndices),
-        ("perf_IterateRepeatedColMatrixIndices", perf_IterateRepeatedColMatrixIndices),
+        ("test_perfIterateMatrixIndices", test_perfIterateMatrixIndices),
+        ("test_perfIterateMatrixValues", test_perfIterateMatrixValues),
+        ("test_perfIterateRepeatedRowMatrixIndices", test_perfIterateRepeatedRowMatrixIndices),
+        ("test_perfIterateRepeatedColMatrixIndices", test_perfIterateRepeatedColMatrixIndices),
+        ("test_perfIteratePaddedMatrixValues", test_perfIteratePaddedMatrixValues),
     ]
 
     //==========================================================================
@@ -152,23 +153,29 @@ class test_DataShape: XCTestCase {
         do {
             // create matrix with padding
             let padding = [
-                Padding(1), // row pad both 1
+                Padding(1), // row pad
                 Padding(before: 2, after: 3)  // col pad
             ]
-            let m = MatrixTensor<Int32>(extents: [2, 3],
+            let m = MatrixTensor<Int32>(extents: [2,3],
                                         padding: padding,
                                         padValue: -1,
                                         scalars: [Int32](0..<6))
-            try print(m.formatted(numberFormat: (2,0)))
+            
+//            try print(m.formatted(numberFormat: (2,0)))
             
             let indices = [Int](m.shape.indices())
-            let expected = [
+            let expectedIndices = [0, 1, 2, 3, 4, 5]
+            XCTAssert(indices == expectedIndices, "indices do not match")
+
+            let values = try [Int32](m.values())
+            let expectedValues: [Int32] = [
                 -1, -1, -1, -1, -1, -1, -1, -1,
                 -1, -1,  0,  1,  2, -1, -1, -1,
                 -1, -1,  3,  4,  5, -1, -1, -1,
                 -1, -1, -1, -1, -1, -1, -1, -1,
             ]
-            XCTAssert(indices == expected, "indices do not match")
+            XCTAssert(values == expectedValues, "indices do not match")
+
         } catch {
             XCTFail(String(describing: error))
         }
@@ -188,18 +195,15 @@ class test_DataShape: XCTestCase {
             let expected = [Int](0..<24)
             let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
                                          scalars: expected.map { Int32($0) })
-            try print(v1.formatted(numberFormat: (2,0)))
             
             let indices = [Int](v1.shape.indices())
             XCTAssert(indices == expected, "indices do not match")
-        } catch {
-            XCTFail(String(describing: error))
         }
     }
 
     //==========================================================================
-    // perf_IterateMatrixIndices
-    func perf_IterateMatrixIndices() {
+    // test_perfIterateMatrixIndices
+    func test_perfIterateMatrixIndices() {
         let m = MatrixTensor<Int8>(extents: [1024, 1024])
         self.measure {
             for _ in m.shape.indices() {}
@@ -207,8 +211,8 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // perf_IterateRepeatedRowMatrixIndices
-    func perf_IterateRepeatedRowMatrixIndices() {
+    // test_perfIterateRepeatedRowMatrixIndices
+    func test_perfIterateRepeatedRowMatrixIndices() {
         let row = MatrixTensor<Int8>(extents: [1, 1024])
         let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: row)
         self.measure {
@@ -217,8 +221,8 @@ class test_DataShape: XCTestCase {
     }
     
     //==========================================================================
-    // perf_IterateRepeatedColMatrixIndices
-    func perf_IterateRepeatedColMatrixIndices() {
+    // test_perfIterateRepeatedColMatrixIndices
+    func test_perfIterateRepeatedColMatrixIndices() {
         let col = MatrixTensor<Int8>(extents: [1024, 1])
         let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: col)
         self.measure {
@@ -227,8 +231,8 @@ class test_DataShape: XCTestCase {
     }
     
     //==========================================================================
-    // perf_IterateMatrixValues
-    func perf_IterateMatrixValues() {
+    // test_perfIterateMatrixValues
+    func test_perfIterateMatrixValues() {
         let m = MatrixTensor<Int8>(extents: [1024, 1024])
         do {
             let values = try m.values()
@@ -240,6 +244,23 @@ class test_DataShape: XCTestCase {
         }
     }
     
+    //==========================================================================
+    // test_perfIteratePaddedMatrixValues
+    func test_perfIteratePaddedMatrixValues() {
+        // put a 1 scalar padding boundary around the Matrix
+        // as if we were going to do a 3x3 convolution
+        // by default the padValue is 0
+        let m = MatrixTensor<Int8>(extents: [1024, 1024], padding: [Padding(1)])
+        do {
+            let values = try m.values()
+            self.measure {
+                for _ in values {}
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
     //==========================================================================
     // test_iterateShaped
     func test_iterateShaped() {

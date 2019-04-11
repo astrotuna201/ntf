@@ -197,15 +197,6 @@ public extension DataShapeSequenceIterable {
         guard index.count > 0 else { return advanceFirst(&index) }
         
         //--------------------------------
-        // advance the `data` position for this dimension by it's stride
-        index[dim].data.current += data.strides[dim]
-        
-        // if past the data end, then go back to beginning and repeat
-        if index[dim].data.current == index[dim].data.end {
-            index[dim].data.current -= index[dim].data.span
-        }
-        
-        //--------------------------------
         // advance the `view` position for this dimension by it's stride
         index[dim].view.current += view.strides[dim]
         
@@ -227,6 +218,15 @@ public extension DataShapeSequenceIterable {
                 return nil
             }
         } else {
+            //--------------------------------
+            // advance the `data` position for this dimension by it's stride
+            index[dim].data.current += data.strides[dim]
+            
+            // if past the data end, then go back to beginning and repeat
+            if index[dim].data.current == index[dim].data.end {
+                index[dim].data.current -= index[dim].data.span
+            }
+            
             // we are not at the end, so return the current position
             return DataShapeIndex(
                 viewPos: index[dim].view.current,
@@ -247,64 +247,71 @@ public extension DataShapeSequenceIterable {
         guard index.count > 0 else { return advanceFirst(&index) }
 
         //--------------------------------
-        // advance the `data` position for this dimension by it's stride
-        index[dim].data.current += data.strides[dim]
-        
-        // if past the data end, then go back to beginning and repeat
-        if index[dim].data.current == index[dim].data.end {
-            index[dim].data.current -= index[dim].data.span
-        }
-        
-        //--------------------------------
         // advance the `view` position for this dimension by it's stride
         index[dim].view.current += view.strides[dim]
-
-        // if at the end then go back a dimension and advance
+        
+        // if past the end, then advance parent dimension
         if index[dim].view.current == index[dim].view.end {
-
-            // make a recursive call to the parent dimension
-            // `start` is the first position in the parent dimension
+            // make a recursive call to advance the parent dimension
             if dim > 0, let start = advancePadded(&index, for: dim - 1) {
-                // update the cumulative view position and set the new end
+                let parentIsPad = index[dim - 1].currentIsPad
+                // update the view position
                 let current = start.viewPos
                 index[dim].view.current = current
                 index[dim].view.end = current + index[dim].view.span
                 
-                // update the cumulative repeated view position
+                // update the data position
                 index[dim].data.current = start.dataPos
-                index[dim].data.end =
-                    start.dataPos + index[dim].data.span
+                index[dim].data.end = start.dataPos + index[dim].data.span
                 
-                // if the enclosing parent dimension for this is padding
-                // then all of this extent is padding
-                if index[dim - 1].currentIsPad {
-                    index[dim].currentIsPad = true
+                if parentIsPad {
+                    index[dim].currentIsPad = parentIsPad
+
                 } else {
-                    // in the case that the parent dimension is not padding,
-                    // set the boundaries testing
-                    let beforeSpan = index[dim].padBeforeSpan
-                    let afterSpan = index[dim].padAfterSpan
-                    index[dim].padBefore = current + beforeSpan
-                    index[dim].padAfter = current + afterSpan
+                    // update the padding ranges
+                    index[dim].padBefore = current + index[dim].padBeforeSpan
+                    index[dim].padAfter = current + index[dim].padAfterSpan
+                    
+                    // if index 0 of any dimension is in the pad area, then all
+                    // contained dimensions are padding as well
+                    index[dim].currentIsPad =
+                        current < index[dim].padBefore ||
+                        current >= index[dim].padAfter
                 }
+                // Fall through here to perform test on update current
+            } else {
+                // can't advance any further, so return nil
+                return nil
             }
         }
         
-        // the current index is passed on to continue view traversal
+        // if index 0 of any dimension is in the pad area, then all
+        // contained dimensions are padding as well
         let current = index[dim].view.current
-        
-        let isPad =
+        let parentIsPad = dim > 0 && index[dim - 1].currentIsPad
+        let currentIsPad = parentIsPad ||
             current < index[dim].padBefore ||
-            current >= index[dim].padAfter ||
-            (dim > 0 && index[dim - 1].currentIsPad)
+            current >= index[dim].padAfter
+        index[dim].currentIsPad = currentIsPad
         
-        index[dim].currentIsPad = isPad
-        let repeatedIndex = isPad ? -1 : index[dim].data.current
-
-        // return new position
-        assert(repeatedIndex < data.elementSpanCount)
-        return DataShapeIndex(viewPos: current,
-                              dataPos: repeatedIndex)
+        //--------------------------------
+        // advance the `data` position for this dimension by it's stride
+        // only while we are not in the padded region
+        var dataIndex: Int
+        if currentIsPad {
+            dataIndex = -1
+        } else {
+            dataIndex = index[dim].data.current
+            index[dim].data.current += data.strides[dim]
+            
+            // if past the data end, then go back to beginning and repeat
+            if index[dim].data.current == index[dim].data.end {
+                index[dim].data.current -= index[dim].data.span
+            }
+        }
+        
+        // we are not at the end, so return the current position
+        return DataShapeIndex(viewPos: current, dataPos: dataIndex)
     }
 }
 

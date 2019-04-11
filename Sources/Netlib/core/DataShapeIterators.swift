@@ -5,24 +5,18 @@
 import Foundation
 
 //==============================================================================
-/// DataShapeExtentPosition
-/// This is used to track the iterated position for each extent in the shape
-public struct ShapePosition {
-    /// current cummulative iterative position accross the shapes
-    var current: Int
-    /// the span of the shapes extent including stride
-    let span: Int
-    /// the position just after the end of the extent in the shapes
-    var end: Int
-}
-
-public struct DataShapeExtentPosition {
-    /// the position for the `shape`
-    var shape: ShapePosition
-    /// the position for the `repeatedShape`
-    var repeated: ShapePosition
+/// ExtentPosition
+/// This is used to track the iterated position for each extent in the view
+public struct ExtentPosition {
+    /// the position for the `view` being traversed, which might be
+    /// different than the data view and includes padding
+    var view: ShapePosition
+    /// the position for the real `data` being traveresed.
+    var data: ShapePosition
     /// the current position in this dimension is padding
     var currentIsPad: Bool
+    /// the current position in this dimension is padding
+    var parentIsPad: Bool
     /// All positions before this are padding.
     /// An index of -1 is returned for each padded position
     var padBefore: Int
@@ -35,9 +29,20 @@ public struct DataShapeExtentPosition {
     let padAfterSpan: Int
 }
 
+public struct ShapePosition {
+    /// the base offset for this iteration sequence
+    //    var base: Int
+    /// current cummulative iterative position accross the shapes
+    var current: Int
+    /// the strided span of the extent
+    let span: Int
+    /// the position just after the last element
+    var end: Int
+}
+
 public struct DataShapeIndex {
-    let shapeIndex: Int
-    let repeatedIndex: Int
+    let viewIndex: Int
+    let dataIndex: Int
 }
 
 //==============================================================================
@@ -47,26 +52,25 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
     /// function used to advance the position. This can be for concrete or
     /// virtual shapes.
     var advanceFn: DataShapeAdvanceFn! { get set }
-    /// the shape of the data that will be repeated to support broadcasting
-    var repeatedShape: DataShape { get set }
+    /// the view of the data that will be iterated over
+    var data: DataShape { get set }
     /// the relative offset to add to each index
     var offset: Int { get set }
     /// the current position in nD space
-    var position: [DataShapeExtentPosition]? { get set }
-    /// the shape being iterated
-    var shape: DataShape { get set }
+    var position: [ExtentPosition] { get set }
+    /// the view being iterated
+    var view: DataShape { get set }
     /// the void space before and after each dimension
-    var padding: [Padding]? { get set }
+    var padding: [Padding] { get set }
     /// fully specified initializer
-    init(shape: DataShape, at offset: Int,
+    init(view: DataShape, at offset: Int,
          repeating repeatedShape: DataShape?,
          with padding: [Padding]?)
 }
 
 // shorthand
 public typealias DataShapeAdvanceFn =
-    (_ position: inout [DataShapeExtentPosition]?, _ dim: Int) ->
-    DataShapeIndex?
+    (_ position: inout [ExtentPosition], _ dim: Int) -> DataShapeIndex?
 
 //==============================================================================
 // DataShapeSequenceIterable default implementation
@@ -74,18 +78,18 @@ public extension DataShapeSequenceIterable {
     
     //--------------------------------------------------------------------------
     /// next
-    /// advances to the next position in the shape.
-    /// - Returns: The `tensorData` buffer index associated with this shape.
+    /// advances to the next position in the view.
+    /// - Returns: The `tensorData` buffer index associated with this view.
     ///   If the index is within a padded region, then -1 is returned.
     mutating func next() -> Int? {
         /// the advance function is selected at init depending on whether
-        /// the shape is padded or is repeating another shape. If the `shape`
+        /// the view is padded or is repeating another view. If the `view`
         /// and `repeatedShape` are the same, then `shapeIndex` and
         /// `repeatedIndex` are equal. If the shapes are not the same, then
-        /// `shape` is interpreted as virtual, and the `repeatedShape`
+        /// `view` is interpreted as virtual, and the `repeatedShape`
         /// represents a real tensorBuffer, therefore the `repeatedIndex` is
         /// always returned.
-        return advanceFn(&position, shape.lastDimension)?.repeatedIndex
+        return advanceFn(&position, view.lastDimension)?.dataIndex
     }
     
     //==========================================================================
@@ -93,26 +97,25 @@ public extension DataShapeSequenceIterable {
     /// sets up the first position for normal indexing. This is only called
     /// once per sequence iteration.
     /// Initialization moves from outer dimension to inner (0 -> rank)
-    /// - Returns: the index of the first position. If the shape is empty then
+    /// - Returns: the index of the first position. If the view is empty then
     ///   `nil` is returned
-    func advanceFirst(
-        _ position: inout [DataShapeExtentPosition]?) -> DataShapeIndex? {
-        guard !shape.isEmpty else { return nil }
-        position = [DataShapeExtentPosition]()
+    func advanceFirst(_ position: inout [ExtentPosition]) -> DataShapeIndex? {
+        guard !view.isEmpty else { return nil }
 
         // get the padding and set an increment if there is more than one
-        let padding = self.padding ?? [Padding(before: 0, after: 0)]
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
 
-        for dim in 0..<shape.rank {
+        for dim in 0..<view.rank {
+            let before = padding[padIndex].before
+            let after = padding[padIndex].after
+            let extent = view.extents[dim]
+            let stride = view.strides[dim]
+            
             // the strided span of this dimension
-            let beforeSize = padding[padIndex].before
-            let afterSize = padding[padIndex].after
-            let span = (beforeSize + afterSize + shape.extents[dim]) *
-                shape.strides[dim]
-            let beforeSpan = beforeSize * shape.strides[dim]
-            let afterSpan = span - afterSize * shape.strides[dim]
+            let span = (before + after + extent) * stride
+            let beforeSpan = before * stride
+            let afterSpan = span - after * stride
 
             // set the current position and end
             let current = offset
@@ -120,35 +123,32 @@ public extension DataShapeSequenceIterable {
 
             // if index 0 of any dimension is in the pad area, then all
             // contained dimensions are padding as well
-            let currentIsPad = beforeSize > 0 ||
-                (dim > 0 && position![dim - 1].currentIsPad)
-
-            // advance the padding index for the multi pad case
+            let parentIsPad = dim > 0 && position[dim - 1].currentIsPad
+            let currentIsPad = parentIsPad || before > 0
             padIndex += padIncrement
 
-            // setup the initial position relative to the repeated shape
-            let rspan = repeatedShape.extents[dim] *
-                repeatedShape.strides[dim]
-            let rcurrent = offset
-            let rend = rcurrent + rspan
-            let rpos = ShapePosition(current: rcurrent, span: rspan, end: rend)
+            // setup the initial position relative to the data view
+            let dcurrent = offset
+            let dspan = data.extents[dim] * data.strides[dim]
+            let dend = dcurrent + dspan
 
             // append the fully initialized first position
-            position!.append(DataShapeExtentPosition(
-                shape: ShapePosition(current: current, span: span, end: end),
-                repeated: rpos,
+            position.append(ExtentPosition(
+                view: ShapePosition(current: current, span: span, end: end),
+                data: ShapePosition(current: dcurrent, span: dspan, end: dend),
                 currentIsPad: currentIsPad,
+                parentIsPad: parentIsPad,
                 padBefore: beforeSpan,
                 padBeforeSpan: beforeSpan,
                 padAfter: afterSpan,
                 padAfterSpan: afterSpan))
         }
 
-        // the first index is 0 plus the caller specified shape offset
+        // the first index is 0 plus the caller specified view offset
         // this is usually the TensorView.viewOffset value
-        let firstIsPad = position![shape.lastDimension].padBefore > 0
-        return DataShapeIndex(shapeIndex: offset,
-                              repeatedIndex: firstIsPad ? -1 : offset)
+        let firstIsPad = position[view.lastDimension].currentIsPad
+        return DataShapeIndex(viewIndex: offset,
+                              dataIndex: firstIsPad ? -1 : offset)
     }
 
     //--------------------------------------------------------------------------
@@ -156,36 +156,32 @@ public extension DataShapeSequenceIterable {
     /// Advances the last dimension. If it can't, then `nil` is returned
     /// This function is called recursively.
     /// - Returns: the index of the next position
-    ///
     /// Cost per value: 2 cmp, 1 inc
-    func advance(_ position: inout [DataShapeExtentPosition]?,
-                 for dim: Int) -> DataShapeIndex? {
+    func advance(_ index: inout [ExtentPosition], dim: Int) -> DataShapeIndex? {
         // check for initial position
-        var nextPos: DataShapeIndex?
-        guard position != nil else { return advanceFirst(&position) }
+        guard index.count > 0 else { return advanceFirst(&index) }
         
         // advance the position for this dimension by it's stride
-        position![dim].shape.current += shape.strides[dim]
+        index[dim].view.current += view.strides[dim]
         
         // if at the end then go back a dimension and advance
-        if position![dim].shape.current == position![dim].shape.end {
+        if index[dim].view.current == index[dim].view.end {
             // make a recursive call to the parent dimension
-            if dim > 0, let start = advance(&position, for: dim - 1) {
-                // update the cumulative shape position
-                let current = start.shapeIndex
-                position![dim].shape.current = current
-                position![dim].shape.end = current + position![dim].shape.span
-                nextPos = start
+            if dim > 0, let start = advance(&index, dim: dim - 1) {
+                // update the cumulative view position
+                let current = start.viewIndex
+                index[dim].view.current = current
+                index[dim].view.end = current + index[dim].view.span
+                return start
+            } else {
+                return nil
             }
         } else {
-            // this function does not account for repeating or padding,
-            // so the current position is used for both
-            let current = position![dim].shape.current
-            nextPos = DataShapeIndex(shapeIndex: current,
-                                     repeatedIndex: current)
+            // In this case the viewIndex and dataIndex are the same
+            // becasue there is no repeating or padding
+            let current = index[dim].view.current
+            return DataShapeIndex(viewIndex: current, dataIndex: current)
         }
-
-        return nextPos
     }
     
     //--------------------------------------------------------------------------
@@ -195,47 +191,47 @@ public extension DataShapeSequenceIterable {
     /// - Returns: the index of the next position
     ///
     /// Minimal cost per value: 3 cmp, 2 inc
-    func advanceRepeated(_ position: inout [DataShapeExtentPosition]?,
+    func advanceRepeated(_ position: inout [ExtentPosition],
                          for dim: Int) -> DataShapeIndex? {
         // check for initial position
         var nextPos: DataShapeIndex?
-        guard position != nil else { return advanceFirst(&position) }
+        guard position.count > 0 else { return advanceFirst(&position) }
         
         //--------------------------------
         // advance the `repeatedShape` position for this dimension by stride
-        position![dim].repeated.current += repeatedShape.strides[dim]
+        position[dim].data.current += data.strides[dim]
         
         // if past the end of the repeated dimension, go back to the beginning
-        if position![dim].repeated.current == position![dim].repeated.end {
-            position![dim].repeated.current -= position![dim].repeated.span
+        if position[dim].data.current == position[dim].data.end {
+            position[dim].data.current -= position[dim].data.span
         }
         
         //--------------------------------
-        // advance the `shape` position for this dimension by stride
-        position![dim].shape.current += shape.strides[dim]
+        // advance the `view` position for this dimension by stride
+        position[dim].view.current += view.strides[dim]
         
         // if past the end of this dimension,
         // then go back a dimension and advance
-        if position![dim].shape.current == position![dim].shape.end {
+        if position[dim].view.current == position[dim].view.end {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advanceRepeated(&position, for: dim - 1) {
-                // update the cumulative shape position
-                let current = start.shapeIndex
-                position![dim].shape.current = current
-                position![dim].shape.end = current + position![dim].shape.span
+                // update the cumulative view position
+                let current = start.viewIndex
+                position[dim].view.current = current
+                position[dim].view.end = current + position[dim].view.span
                 
-                // update the cumulative repeated shape position
-                position![dim].repeated.current = start.repeatedIndex
-                position![dim].repeated.end =
-                    start.repeatedIndex + position![dim].repeated.span
+                // update the cumulative repeated view position
+                position[dim].data.current = start.dataIndex
+                position[dim].data.end =
+                    start.dataIndex + position[dim].data.span
                 
                 // return the next position
                 nextPos = start
             }
         } else {
             nextPos = DataShapeIndex(
-                shapeIndex: position![dim].shape.current,
-                repeatedIndex: position![dim].repeated.current)
+                viewIndex: position[dim].view.current,
+                dataIndex: position[dim].data.current)
         }
         
         return nextPos
@@ -248,69 +244,69 @@ public extension DataShapeSequenceIterable {
     /// - Returns: the index of the next position
     ///
     /// Minimal cost per value: 6 cmp, 1 inc, 1 sub
-    func advancePadded(_ position: inout [DataShapeExtentPosition]?,
+    func advancePadded(_ position: inout [ExtentPosition],
                        for dim: Int) -> DataShapeIndex? {
         // advance to first if needed
-        if position == nil { return advanceFirst(&position) }
+        guard position.count > 0 else { return advanceFirst(&position) }
 
         //--------------------------------
         // advance the `repeatedShape` position for this dimension by stride
-        position![dim].repeated.current += repeatedShape.strides[dim]
+        position[dim].data.current += data.strides[dim]
         
         // if past the end of the repeated dimension, go back to the beginning
-        if position![dim].repeated.current == position![dim].repeated.end {
-            position![dim].repeated.current -= position![dim].repeated.span
+        if position[dim].data.current == position[dim].data.end {
+            position[dim].data.current -= position[dim].data.span
         }
 
-        // advance the `shape` position for this dimension by it's stride
-        position![dim].shape.current += shape.strides[dim]
+        // advance the `view` position for this dimension by it's stride
+        position[dim].view.current += view.strides[dim]
         
         // if at the end then go back a dimension and advance
-        if position![dim].shape.current == position![dim].shape.end {
+        if position[dim].view.current == position[dim].view.end {
 
             // make a recursive call to the parent dimension
             // `start` is the first position in the parent dimension
             if dim > 0, let start = advancePadded(&position, for: dim - 1) {
-                // update the cumulative shape position and set the new end
-                let current = start.shapeIndex
-                position![dim].shape.current = current
-                position![dim].shape.end = current + position![dim].shape.span
+                // update the cumulative view position and set the new end
+                let current = start.viewIndex
+                position[dim].view.current = current
+                position[dim].view.end = current + position[dim].view.span
                 
-                // update the cumulative repeated shape position
-                position![dim].repeated.current = start.repeatedIndex
-                position![dim].repeated.end =
-                    start.repeatedIndex + position![dim].repeated.span
+                // update the cumulative repeated view position
+                position[dim].data.current = start.dataIndex
+                position[dim].data.end =
+                    start.dataIndex + position[dim].data.span
                 
                 // if the enclosing parent dimension for this is padding
                 // then all of this extent is padding
-                if position![dim - 1].currentIsPad {
-                    position![dim].currentIsPad = true
+                if position[dim - 1].currentIsPad {
+                    position[dim].currentIsPad = true
                 } else {
                     // in the case that the parent dimension is not padding,
                     // set the boundaries testing
-                    let beforeSpan = position![dim].padBeforeSpan
-                    let afterSpan = position![dim].padAfterSpan
-                    position![dim].padBefore = current + beforeSpan
-                    position![dim].padAfter = current + afterSpan
+                    let beforeSpan = position[dim].padBeforeSpan
+                    let afterSpan = position[dim].padAfterSpan
+                    position[dim].padBefore = current + beforeSpan
+                    position[dim].padAfter = current + afterSpan
                 }
             }
         }
         
-        // the current index is passed on to continue shape traversal
-        let current = position![dim].shape.current
+        // the current index is passed on to continue view traversal
+        let current = position[dim].view.current
         
         let isPad =
-            current < position![dim].padBefore ||
-            current >= position![dim].padAfter ||
-            (dim > 0 && position![dim - 1].currentIsPad)
+            current < position[dim].padBefore ||
+            current >= position[dim].padAfter ||
+            (dim > 0 && position[dim - 1].currentIsPad)
         
-        position![dim].currentIsPad = isPad
-        let repeatedIndex = isPad ? -1 : position![dim].repeated.current
+        position[dim].currentIsPad = isPad
+        let repeatedIndex = isPad ? -1 : position[dim].data.current
 
         // return new position
-        assert(repeatedIndex < repeatedShape.elementSpanCount)
-        return DataShapeIndex(shapeIndex: current,
-                              repeatedIndex: repeatedIndex)
+        assert(repeatedIndex < data.elementSpanCount)
+        return DataShapeIndex(viewIndex: current,
+                              dataIndex: repeatedIndex)
     }
 }
 
@@ -322,26 +318,26 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
     // properties
     public var advanceFn: DataShapeAdvanceFn!
     public var offset: Int
-    public var position: [DataShapeExtentPosition]?
-    public var repeatedShape: DataShape
-    public var shape: DataShape
-    public var padding: [Padding]?
+    public var position = [ExtentPosition]()
+    public var data: DataShape
+    public var view: DataShape
+    public var padding: [Padding]
 
     // initializers
-    public init(shape: DataShape, at offset: Int,
-                repeating repeatShape: DataShape?,
+    public init(view: DataShape, at offset: Int,
+                repeating dataShape: DataShape?,
                 with padding: [Padding]?) {
-        self.repeatedShape = repeatShape ?? shape
-        self.shape = shape
+        self.data = dataShape ?? view
+        self.view = view
         self.offset = offset
-        self.padding = padding
+        self.padding = padding ?? [Padding(before: 0, after: 0)]
         
         if padding != nil {
             advanceFn = advancePadded(_:for:)
-        } else if repeatShape != nil {
+        } else if dataShape != nil {
             advanceFn = advanceRepeated(_:for:)
         } else {
-            advanceFn = advance(_:for:)
+            advanceFn = advance(_: dim:)
         }
     }
 }
@@ -351,15 +347,15 @@ public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
 public struct DataShapeSequence: Sequence {
     // properties
     let offset: Int
-    let shape: DataShape
+    let view: DataShape
     let repeatedShape: DataShape?
     let padding: [Padding]?
     
     // initializers
-    public init(shape: DataShape, at offset: Int,
+    public init(view: DataShape, at offset: Int,
                 repeating repeatedShape: DataShape?,
                 with padding: [Padding]?) {
-        self.shape = shape
+        self.view = view
         self.offset = offset
         self.repeatedShape = repeatedShape
         self.padding = padding
@@ -367,7 +363,7 @@ public struct DataShapeSequence: Sequence {
     
     // makeIterator
     public func makeIterator() -> DataShapeSequenceIterator {
-        return DataShapeSequenceIterator(shape: shape, at: offset,
+        return DataShapeSequenceIterator(view: view, at: offset,
                                          repeating: repeatedShape,
                                          with: padding)
     }
@@ -376,11 +372,11 @@ public struct DataShapeSequence: Sequence {
 extension DataShape {
     /// returns a Sequence of `tensorData` element indices relative to
     /// the specified offset
-    func indices(repeating shape: DataShape? = nil,
+    func indices(repeating view: DataShape? = nil,
                  relativeTo offset: Int = 0,
                  with padding: [Padding]? = nil) -> DataShapeSequence {
-        return DataShapeSequence(shape: self, at: offset,
-                                 repeating: shape, with: padding)
+        return DataShapeSequence(view: self, at: offset,
+                                 repeating: view, with: padding)
     }
 }
 
@@ -396,7 +392,7 @@ extension DataShape {
 //// DataShape
 //extension DataShape: Sequence {
 //    public func makeIterator() -> NDExtentIterator {
-//        return NDExtentIterator(shape: self, extentIndex: 0,
+//        return NDExtentIterator(view: self, extentIndex: 0,
 //                                startingIndex: 0)
 //    }
 //}
@@ -411,17 +407,17 @@ extension DataShape {
 //    var _currentTensorIndex: Int { get set }
 //    /// the tensorIndex just past the end of this range
 //    var _tensorIndexPastEnd: Int { get set }
-//    /// the shape being iterated
+//    /// the view being iterated
 //    var _shape: DataShape { get set }
 //    /// returns an iterator for the tensor data indices for the elements
 //    /// contained by this extent, which is the next dimension
 //    var tensorIndices: IndexSequence { get }
 //
 //    /// initializer
-//    /// - Parameter shape: the shape being iterated
+//    /// - Parameter view: the view being iterated
 //    /// - Parameter extentIndex: the extent being iterated
 //    /// - Parameter startingIndex: the starting tensor index
-//    init(shape: DataShape, extentIndex: Int, startingIndex: Int)
+//    init(view: DataShape, extentIndex: Int, startingIndex: Int)
 //
 //    /// makes a sequence iterator for the next dimension
 //    func makeIterator() -> Self
@@ -434,7 +430,7 @@ extension DataShape {
 //    /// makes a sequence iterator for the next dimension
 //    func makeIterator() -> Self {
 //        assert(_extentIndex + 1 < _shape.rank)
-//        return Self.init(shape: _shape,
+//        return Self.init(view: _shape,
 //                         extentIndex: _extentIndex + 1,
 //                         startingIndex: _currentTensorIndex)
 //    }
@@ -445,7 +441,7 @@ extension DataShape {
 //        if _currentTensorIndex == _tensorIndexPastEnd {
 //            return nil
 //        } else {
-//            let iter = Self.init(shape: _shape,
+//            let iter = Self.init(view: _shape,
 //                                 extentIndex: _extentIndex,
 //                                 startingIndex: _currentTensorIndex)
 //            _currentTensorIndex += _shape.strides[_extentIndex]
@@ -457,7 +453,7 @@ extension DataShape {
 //    /// contained by this extent, which is the next dimension
 //    var tensorIndices: IndexSequence {
 //        assert(_extentIndex + 1 < _shape.rank)
-//        return IndexSequence(shape: _shape, dim: _extentIndex + 1,
+//        return IndexSequence(view: _shape, dim: _extentIndex + 1,
 //                             offset: _currentTensorIndex)
 //    }
 //}
@@ -472,12 +468,12 @@ extension DataShape {
 //    public var _tensorIndexPastEnd: Int
 //
 //    /// initializer
-//    public init(shape: DataShape, extentIndex: Int, startingIndex: Int) {
-//        _shape = shape
+//    public init(view: DataShape, extentIndex: Int, startingIndex: Int) {
+//        _shape = view
 //        _extentIndex = extentIndex
 //        _currentTensorIndex = startingIndex
 //        _tensorIndexPastEnd = startingIndex +
-//            shape.extents[extentIndex] * shape.strides[extentIndex]
+//            view.extents[extentIndex] * view.strides[extentIndex]
 //    }
 //
 //}
@@ -487,16 +483,16 @@ extension DataShape {
 //public struct IndexSequence: Sequence {
 //    let dim: Int
 //    var offset: Int
-//    let shape: DataShape
+//    let view: DataShape
 //
-//    init(shape: DataShape, dim: Int, offset: Int) {
+//    init(view: DataShape, dim: Int, offset: Int) {
 //        self.dim = dim
 //        self.offset = offset
-//        self.shape = shape
+//        self.view = view
 //    }
 //
 //    public func makeIterator() -> IndexIterator {
-//        return IndexIterator(shape: shape, dim: dim, offset: offset)
+//        return IndexIterator(view: view, dim: dim, offset: offset)
 //    }
 //}
 //
@@ -505,13 +501,13 @@ extension DataShape {
 //    let dim: Int
 //    let endOffset: Int
 //    var offset: Int
-//    let shape: DataShape
+//    let view: DataShape
 //
-//    init(shape: DataShape, dim: Int, offset: Int) {
+//    init(view: DataShape, dim: Int, offset: Int) {
 //        self.dim = dim
-//        self.endOffset = offset + shape.extents[dim] * shape.strides[dim]
+//        self.endOffset = offset + view.extents[dim] * view.strides[dim]
 //        self.offset = offset
-//        self.shape = shape
+//        self.view = view
 //    }
 //
 //    public mutating func next() -> Int? {
@@ -520,7 +516,7 @@ extension DataShape {
 //            return nil
 //        } else {
 //            let value = offset
-//            offset += shape.strides[dim]
+//            offset += view.strides[dim]
 //            return value
 //        }
 //    }

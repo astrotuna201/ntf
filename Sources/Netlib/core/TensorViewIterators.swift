@@ -37,7 +37,7 @@ where T: TensorView {
     init(view: T, buffer: UnsafeBufferPointer<T.Scalar>) {
         padValue = view.padValue
         tensorDataBuffer = buffer
-        indexIterator = DataShapeSequenceIterator(shape: view.shape,
+        indexIterator = DataShapeSequenceIterator(view: view.shape,
                                                   at: view.viewOffset,
                                                   repeating: view._dataShape,
                                                   with: view.padding)

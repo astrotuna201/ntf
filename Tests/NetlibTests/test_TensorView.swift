@@ -64,11 +64,17 @@ class test_TensorView: XCTestCase {
     func test_tensorDataMigration() {
         do {
             // create a named stream on two different devices
-            let devices = Platform.global.requestDevices(deviceIds: [0, 1])
+            var devices = Platform.global.requestDevices(serviceName: "cuda",
+                                                         deviceIds: [0])
+            devices.append(Platform.global.defaultDevice)
+            let testNonUMADevice = !devices[0].usesUnifiedAddressing ||
+                !devices[1].usesUnifiedAddressing
+
+            // create streams
             let stream = try devices.enumerated().map {
                 try $1.createStream(name: "stream:\($0)")
             }
-            
+
             // create a tensor and validate migration
             let values = (0..<24).map { Float($0) }
             var view = VolumeTensor<Float>(extents: [2, 3, 4], scalars: values)
@@ -79,19 +85,24 @@ class test_TensorView: XCTestCase {
             _ = try view.readOnly()
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
+            // if this stream device is not UMA, then it should have copied
             _ = try view.readOnly(using: stream[0])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(stream[0].device.usesUnifiedAddressing !=
+                view._tensorData.lastAccessCopiedBuffer)
 
+            // write access hasn't been taken, so this is still up to date
             _ = try view.readOnly()
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
+            // an up to date copy is already there, so won't copy
             _ = try view.readWrite(using: stream[0])
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
-            // copy to device 1
-            _ = try view.readOnly(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
-
+            if testNonUMADevice {
+                _ = try view.readOnly(using: stream[1])
+                XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            }
+            
             _ = try view.readOnly(using: stream[0])
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
@@ -101,22 +112,26 @@ class test_TensorView: XCTestCase {
             _ = try view.readWrite(using: stream[0])
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
-            // copy to device 1
-            _ = try view.readOnly(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
-
-            _ = try view.readWrite(using: stream[1])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
-
-            // copy to device 0
-            _ = try view.readWrite(using: stream[0])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            if testNonUMADevice {
+                _ = try view.readOnly(using: stream[1])
+                XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            }
             
             _ = try view.readWrite(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
 
+            if testNonUMADevice {
+                _ = try view.readWrite(using: stream[0])
+                XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+                
+                _ = try view.readWrite(using: stream[1])
+                XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            }
+            
+            // if stream 1 is a non uma device then it should copy
             _ = try view.readOnly()
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(stream[1].device.usesUnifiedAddressing !=
+                view._tensorData.lastAccessCopiedBuffer)
 
         } catch {
             XCTFail(String(describing: error))

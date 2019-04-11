@@ -53,7 +53,7 @@ final public class Platform: ObjectTracking, Logging {
     /// loading and enumerating services is expensive and invariant, so
     /// we only want to do it once per process and share it across all
     /// Platform instances.
-    public lazy var services: [String: ComputeService] = {
+    public lazy var services: [String : ComputeService] = {
         if Platform._services == nil { Platform._services = loadServices() }
         return Platform._services!
     }()

@@ -35,7 +35,7 @@ public protocol AnyConvertable: AnyScalar {
 	// unchanged cast value
 	init(any: AnyConvertable)
 	init?(string: String)
-    var asInt8   : Int8   { get }
+    var asInt8   : Int8    { get }
 	var asUInt8  : UInt8   { get }
 	var asUInt16 : UInt16  { get }
 	var asInt16  : Int16   { get }

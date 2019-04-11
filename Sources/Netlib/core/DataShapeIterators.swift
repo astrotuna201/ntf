@@ -188,6 +188,59 @@ public extension DataShapeSequenceIterable {
         return nextPos
     }
     
+    //--------------------------------------------------------------------------
+    /// advanceRepeated(position:for:
+    /// advances the lastDimension . If it can't, then `position`
+    /// is set to `nil` this is a recursive function
+    /// - Returns: the index of the next position
+    ///
+    /// Minimal cost per value: 3 cmp, 2 inc
+    func advanceRepeated(_ position: inout [DataShapeExtentPosition]?,
+                         for dim: Int) -> DataShapeIndex? {
+        // check for initial position
+        var nextPos: DataShapeIndex?
+        guard position != nil else { return advanceFirst(&position) }
+        
+        //--------------------------------
+        // advance the `repeatedShape` position for this dimension by stride
+        position![dim].repeated.current += repeatedShape.strides[dim]
+        
+        // if past the end of the repeated dimension, go back to the beginning
+        if position![dim].repeated.current == position![dim].repeated.end {
+            position![dim].repeated.current -= position![dim].repeated.span
+        }
+        
+        //--------------------------------
+        // advance the `shape` position for this dimension by stride
+        position![dim].shape.current += shape.strides[dim]
+        
+        // if past the end of this dimension,
+        // then go back a dimension and advance
+        if position![dim].shape.current == position![dim].shape.end {
+            // make a recursive call to the parent dimension
+            if dim > 0, let start = advanceRepeated(&position, for: dim - 1) {
+                // update the cumulative shape position
+                let current = start.shapeIndex
+                position![dim].shape.current = current
+                position![dim].shape.end = current + position![dim].shape.span
+                
+                // update the cumulative repeated shape position
+                position![dim].repeated.current = start.repeatedIndex
+                position![dim].repeated.end =
+                    start.repeatedIndex + position![dim].repeated.span
+                
+                // return the next position
+                nextPos = start
+            }
+        } else {
+            nextPos = DataShapeIndex(
+                shapeIndex: position![dim].shape.current,
+                repeatedIndex: position![dim].repeated.current)
+        }
+        
+        return nextPos
+    }
+
     //==========================================================================
     /// advancePadded(position:for:
     /// Advances the last dimension. If it can't, then `nil` is returned
@@ -258,59 +311,6 @@ public extension DataShapeSequenceIterable {
         assert(repeatedIndex < repeatedShape.elementSpanCount)
         return DataShapeIndex(shapeIndex: current,
                               repeatedIndex: repeatedIndex)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// advanceRepeated(position:for:
-    /// advances the lastDimension . If it can't, then `position`
-    /// is set to `nil` this is a recursive function
-    /// - Returns: the index of the next position
-    ///
-    /// Minimal cost per value: 3 cmp, 2 inc
-    func advanceRepeated(_ position: inout [DataShapeExtentPosition]?,
-                         for dim: Int) -> DataShapeIndex? {
-        // check for initial position
-        var nextPos: DataShapeIndex?
-        guard position != nil else { return advanceFirst(&position) }
-
-        //--------------------------------
-        // advance the `repeatedShape` position for this dimension by stride
-        position![dim].repeated.current += repeatedShape.strides[dim]
-        
-        // if past the end of the repeated dimension, go back to the beginning
-        if position![dim].repeated.current == position![dim].repeated.end {
-            position![dim].repeated.current -= position![dim].repeated.span
-        }
-
-        //--------------------------------
-        // advance the `shape` position for this dimension by stride
-        position![dim].shape.current += shape.strides[dim]
-        
-        // if past the end of this dimension,
-        // then go back a dimension and advance
-        if position![dim].shape.current == position![dim].shape.end {
-            // make a recursive call to the parent dimension
-            if dim > 0, let start = advanceRepeated(&position, for: dim - 1) {
-                // update the cumulative shape position
-                let current = start.shapeIndex
-                position![dim].shape.current = current
-                position![dim].shape.end = current + position![dim].shape.span
-
-                // update the cumulative repeated shape position
-                position![dim].repeated.current = start.repeatedIndex
-                position![dim].repeated.end =
-                    start.repeatedIndex + position![dim].repeated.span
-
-                // return the next position
-                nextPos = start
-            }
-        } else {
-            nextPos = DataShapeIndex(
-                shapeIndex: position![dim].shape.current,
-                repeatedIndex: position![dim].repeated.current)
-        }
-        
-        return nextPos
     }
 }
 

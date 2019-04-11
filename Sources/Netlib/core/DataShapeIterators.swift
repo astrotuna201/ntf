@@ -49,9 +49,13 @@ public struct DataShapeIndex {
 // DataShapeSequenceIterable
 // This is a recursive iterator that works it's way through N dimensions
 public protocol DataShapeSequenceIterable: IteratorProtocol {
+    /// types
+    typealias AdvanceFunction =
+        (_ position: inout [ExtentPosition], _ dim: Int) -> DataShapeIndex?
+
     /// function used to advance the position. This can be for concrete or
     /// virtual shapes.
-    var advanceFn: DataShapeAdvanceFn! { get set }
+    var advanceFn: AdvanceFunction! { get set }
     /// the view of the data that will be iterated over
     var data: DataShape { get set }
     /// the relative offset to add to each index
@@ -69,8 +73,6 @@ public protocol DataShapeSequenceIterable: IteratorProtocol {
 }
 
 // shorthand
-public typealias DataShapeAdvanceFn =
-    (_ position: inout [ExtentPosition], _ dim: Int) -> DataShapeIndex?
 
 //==============================================================================
 // DataShapeSequenceIterable default implementation
@@ -316,7 +318,7 @@ public extension DataShapeSequenceIterable {
 /// an N dimensional DataShape as a single linear Sequence
 public struct DataShapeSequenceIterator: DataShapeSequenceIterable {
     // properties
-    public var advanceFn: DataShapeAdvanceFn!
+    public var advanceFn: AdvanceFunction!
     public var offset: Int
     public var position = [ExtentPosition]()
     public var data: DataShape

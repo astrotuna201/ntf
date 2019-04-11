@@ -45,11 +45,8 @@ where T: TensorView {
 
     /// next
     public mutating func next() -> T.Scalar? {
-        if let index = indexIterator.next() {
-            return index < 0 ? padValue : tensorDataBuffer[index]
-        } else {
-            return nil
-        }
+        guard let index = indexIterator.next() else { return nil }
+        return index < 0 ? padValue : tensorDataBuffer[index]
     }
 }
 

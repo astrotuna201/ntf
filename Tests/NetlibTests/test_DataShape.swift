@@ -17,6 +17,8 @@ class test_DataShape: XCTestCase {
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
+        ("testPerformance_IterateMatrixIndices", testPerformance_IterateMatrixIndices),
+        ("testPerformance_IterateMatrixValues", testPerformance_IterateMatrixValues),
     ]
 
     //==========================================================================
@@ -194,15 +196,28 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // testPerformanceExample
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        let m = MatrixTensor<Int8>(extents: [1024, 1024])
+    // testPerformance_IterateMatrixIndices
+    func testPerformance_IterateMatrixIndices() {
+        let m = MatrixTensor<Int8>(extents: [1024, 512])
         self.measure {
             for _ in m.shape.indices() {}
         }
     }
 
+    //==========================================================================
+    // testPerformance_IterateMatrixValues
+    func testPerformance_IterateMatrixValues() {
+        let m = MatrixTensor<Int8>(extents: [1024, 512])
+        do {
+            let values = try m.values()
+            self.measure {
+                for _ in values {}
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
     //==========================================================================
     // test_iterateShaped
     func test_iterateShaped() {

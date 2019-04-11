@@ -241,64 +241,65 @@ public extension DataShapeSequenceIterable {
     /// - Returns: the index of the next position
     ///
     /// Minimal cost per value: 6 cmp, 1 inc, 1 sub
-    func advancePadded(_ position: inout [ExtentPosition],
+    func advancePadded(_ index: inout [ExtentPosition],
                        for dim: Int) -> DataShapeIndex? {
         // advance to first if needed
-        guard position.count > 0 else { return advanceFirst(&position) }
+        guard index.count > 0 else { return advanceFirst(&index) }
 
         //--------------------------------
-        // advance the `repeatedShape` position for this dimension by stride
-        position[dim].data.current += data.strides[dim]
+        // advance the `data` position for this dimension by it's stride
+        index[dim].data.current += data.strides[dim]
         
-        // if past the end of the repeated dimension, go back to the beginning
-        if position[dim].data.current == position[dim].data.end {
-            position[dim].data.current -= position[dim].data.span
+        // if past the data end, then go back to beginning and repeat
+        if index[dim].data.current == index[dim].data.end {
+            index[dim].data.current -= index[dim].data.span
         }
-
-        // advance the `view` position for this dimension by it's stride
-        position[dim].view.current += view.strides[dim]
         
+        //--------------------------------
+        // advance the `view` position for this dimension by it's stride
+        index[dim].view.current += view.strides[dim]
+
         // if at the end then go back a dimension and advance
-        if position[dim].view.current == position[dim].view.end {
+        if index[dim].view.current == index[dim].view.end {
 
             // make a recursive call to the parent dimension
             // `start` is the first position in the parent dimension
-            if dim > 0, let start = advancePadded(&position, for: dim - 1) {
+            if dim > 0, let start = advancePadded(&index, for: dim - 1) {
                 // update the cumulative view position and set the new end
                 let current = start.viewPos
-                position[dim].view.current = current
-                position[dim].view.end = current + position[dim].view.span
+                index[dim].view.current = current
+                index[dim].view.end = current + index[dim].view.span
                 
                 // update the cumulative repeated view position
-                position[dim].data.current = start.dataPos
-                position[dim].data.end =
-                    start.dataPos + position[dim].data.span
+                index[dim].data.current = start.dataPos
+                index[dim].data.end =
+                    start.dataPos + index[dim].data.span
                 
                 // if the enclosing parent dimension for this is padding
                 // then all of this extent is padding
-                if position[dim - 1].currentIsPad {
-                    position[dim].currentIsPad = true
+                if index[dim - 1].currentIsPad {
+                    index[dim].currentIsPad = true
                 } else {
                     // in the case that the parent dimension is not padding,
                     // set the boundaries testing
-                    let beforeSpan = position[dim].padBeforeSpan
-                    let afterSpan = position[dim].padAfterSpan
-                    position[dim].padBefore = current + beforeSpan
-                    position[dim].padAfter = current + afterSpan
+                    let beforeSpan = index[dim].padBeforeSpan
+                    let afterSpan = index[dim].padAfterSpan
+                    index[dim].padBefore = current + beforeSpan
+                    index[dim].padAfter = current + afterSpan
                 }
             }
         }
         
         // the current index is passed on to continue view traversal
-        let current = position[dim].view.current
+        let current = index[dim].view.current
         
         let isPad =
-            current < position[dim].padBefore ||
-            current >= position[dim].padAfter ||
-            (dim > 0 && position[dim - 1].currentIsPad)
+            current < index[dim].padBefore ||
+            current >= index[dim].padAfter ||
+            (dim > 0 && index[dim - 1].currentIsPad)
         
-        position[dim].currentIsPad = isPad
-        let repeatedIndex = isPad ? -1 : position[dim].data.current
+        index[dim].currentIsPad = isPad
+        let repeatedIndex = isPad ? -1 : index[dim].data.current
 
         // return new position
         assert(repeatedIndex < data.elementSpanCount)

@@ -3,7 +3,6 @@
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
 import Foundation
-import TensorFlow
 
 //==============================================================================
 /// DataType
@@ -74,11 +73,6 @@ public protocol AnyConvertable: AnyScalar {
 public protocol AnyNumeric: AnyConvertable, AnyFixedSizeScalar {}
 public protocol AnyInteger: AnyNumeric {}
 public protocol AnyFloatingPoint: AnyNumeric {}
-
-public typealias AnyTensorFlowScalar = AnyNumeric & TensorFlowScalar
-public typealias AnyTensorFlowNumeric = AnyNumeric & TensorFlowNumeric
-public typealias AnyTensorFlowInteger = AnyNumeric & TensorFlowInteger
-public typealias AnyTensorFlowFloatingPoint = AnyNumeric & TensorFlowFloatingPoint
 
 //------------------------------------------------------------------------------
 extension Int8: AnyInteger {

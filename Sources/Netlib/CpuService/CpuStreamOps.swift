@@ -3,7 +3,6 @@
 //  Copyright © 2019 Connell Research. All rights reserved.
 //
 import Foundation
-import TensorFlow
 import simd
 
 extension CpuStream {

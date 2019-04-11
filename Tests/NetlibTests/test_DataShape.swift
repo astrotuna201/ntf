@@ -193,13 +193,13 @@ class test_DataShape: XCTestCase {
         }
     }
 
+    //==========================================================================
+    // testPerformanceExample
     func testPerformanceExample() {
-        let scalars: [Float] = (0..<24).map { Float($0) }
         // This is an example of a performance test case.
+        let m = MatrixTensor<Int8>(extents: [1024, 1024])
         self.measure {
-            for _ in 0..<10000 {
-                let _ = VolumeTensor<Float>(extents: [2, 3, 4], scalars: scalars)
-            }
+            for _ in m.shape.indices() {}
         }
     }
 

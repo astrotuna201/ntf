@@ -14,6 +14,7 @@ public struct Float16: Equatable, Comparable {
 		bits = floatToFloat16_rn(value).bits
 	}
 
+    public init(_ value: Int8)   { bits = floatToFloat16_rn(Float(value)).bits}
 	public init(_ value: UInt8)  { bits = floatToFloat16_rn(Float(value)).bits}
 	public init(_ value: UInt16) { bits = floatToFloat16_rn(Float(value)).bits}
 	public init(_ value: Int16)  { bits = floatToFloat16_rn(Float(value)).bits}
@@ -95,6 +96,10 @@ public func hone() -> Float16 { return Float16(bitPattern: UInt16(0x3c00)) }
 // extensions
 extension Float {
 	public init(_ fp16: Float16) { self = float16ToFloat(fp16) }
+}
+
+extension Int8 {
+    public init(_ fp16: Float16) { self = Int8(Float(fp16)) }
 }
 
 extension UInt8 {

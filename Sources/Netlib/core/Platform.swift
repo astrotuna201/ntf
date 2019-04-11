@@ -215,7 +215,7 @@ final public class Platform: ObjectTracking, Logging {
     /// This will try to return the requested devices from the requested service
     /// substituting if needed based on `servicePriority` and `deviceIdPriority`
     ///
-    public func requestDevices(serviceName: String?,
+    public func requestDevices(serviceName: String? = nil,
                                deviceIds: [Int]) -> [ComputeDevice] {
         // if no serviceName is specified then return the default
         let serviceName = serviceName ?? defaultDevice.service.name

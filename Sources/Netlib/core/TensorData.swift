@@ -11,14 +11,21 @@ import Dispatch
 /// It is responsible for replication and syncing between devices.
 /// It is not created or directly used by end users.
 final public class TensorData: ObjectTracking, Logging {
-    //--------------------------------------------------------------------------
     // properties
-    /// used by TensorViews to synchronize access to the data.
+    /// used by TensorViews to synchronize access to this object
     public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
+    ///
     public var autoReleaseUmaBuffer = false
-
-    // object tracking
+    /// testing: `true` if the last access caused the contents of the
+    /// buffer to be copied
+    public private(set) var lastAccessCopiedBuffer = false
+    /// testing: is `true` if the last data access caused the view's underlying
+    /// tensorData object to be copied. It's stored here instead of on the
+    /// view, because the view is immutable when taking a read only pointer
+    public var lastAccessMutatedView: Bool = false
+    /// the object tracking id
     public private(set) var trackingId = 0
+    /// the logging properties
     public var logging: LogInfo?
 
     /// an optional context specific name for logging
@@ -29,17 +36,9 @@ final public class TensorData: ObjectTracking, Logging {
     }
     public var hasName: Bool { return _name != nil }
     
-    // testing
-    public private(set) var lastAccessCopiedBuffer = false
-
     // local
     private let streamRequired = "stream is required for device data transfers"
     private let isReadOnlyReference: Bool
-    
-    /// is `true` if the last data access caused the view's underlying
-    /// tensorData object to be copied.
-    /// Used primarily for debugging and unit testing
-    var lastAccessCopiedTensorData: Bool = false
 
     //-----------------------------------
     /// The hostBuffer is the app thread synced data array.

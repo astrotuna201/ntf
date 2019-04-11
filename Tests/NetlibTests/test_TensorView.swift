@@ -10,8 +10,8 @@ import Foundation
 class test_TensorView: XCTestCase {
 //    static var allTests : [(String, (test_TensorView) -> () throws -> Void)] {
 //        return [
-//            ("test_ViewTensorDataMutation", test_ViewTensorDataMutation),
-//            ("test_dataMigration"           , test_dataMigration),
+//            ("test_viewMutateOnWrite", test_viewMutateOnWrite),
+//            ("test_tensorDataMigration"           , test_tensorDataMigration),
 //            ("test_mutateOnDevice"          , test_mutateOnDevice),
 //            ("test_copyOnWriteCrossDevice"  , test_copyOnWriteCrossDevice),
 //            ("test_copyOnWriteDevice"       , test_copyOnWriteDevice),
@@ -21,36 +21,36 @@ class test_TensorView: XCTestCase {
 //        ]
 //    }
 	
-	//----------------------------------------------------------------------------
-	// test_ViewTensorDataMutation
-	func test_ViewTensorDataMutation() {
+	//--------------------------------------------------------------------------
+	// test_viewMutateOnWrite
+	func test_viewMutateOnWrite() {
 		do {
             let values = (0..<12).map { Float($0) }
             var m0 = MatrixTensor<Float>(extents: [3, 4], scalars: values)
             let _ = try m0.readWrite()
-            XCTAssert(!m0.lastAccessCopiedTensorData)
+            XCTAssert(!m0.lastAccessMutatedView)
             let _ = try m0.readOnly()
-            XCTAssert(!m0.lastAccessCopiedTensorData)
+            XCTAssert(!m0.lastAccessMutatedView)
             let _ = try m0.readWrite()
-            XCTAssert(!m0.lastAccessCopiedTensorData)
+            XCTAssert(!m0.lastAccessMutatedView)
             
             // copy the view
             var m1 = m0
             // rw access m0 should mutate m0
             let _ = try m0.readWrite()
-            XCTAssert(m0.lastAccessCopiedTensorData)
+            XCTAssert(m0.lastAccessMutatedView)
             // m1 should now be unique reference
             XCTAssert(m1.isUniqueReference())
             let _ = try m1.readOnly()
-            XCTAssert(!m1.lastAccessCopiedTensorData)
+            XCTAssert(!m1.lastAccessMutatedView)
 
             // copy the view
             var m2 = m0
             let _ = try m2.readOnly()
-            XCTAssert(!m2.lastAccessCopiedTensorData)
+            XCTAssert(!m2.lastAccessMutatedView)
             // rw request should cause copy of m0 data
             let _ = try m2.readWrite()
-            XCTAssert(m2.lastAccessCopiedTensorData)
+            XCTAssert(m2.lastAccessMutatedView)
             // m2 should now be unique reference
             XCTAssert(m2.isUniqueReference())
             
@@ -59,108 +59,106 @@ class test_TensorView: XCTestCase {
 		}
 	}
 	
-//    //----------------------------------------------------------------------------
-//    // test_dataMigration
-//    func test_dataMigration() {
-//        do {
-//            let model = Model()
-//            try model.setup()
-//            let streams = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
-//            let multiDevice = streams[0].device.id != streams[1].device.id
-//
-//            // this test needs 2 devices
-//            if streams.count != 2 { return }
-//
-//            var data = DataView(rows: 4, cols: 3)
-//            _ = try data.rwReal8U()
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.roReal8U()
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.ro(using: streams[0])
-//            XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.roReal8U()
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.rw(using: streams[0])
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            if multiDevice {
-//                _ = try data.ro(using: streams[1])
-//                XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//            }
-//
-//            _ = try data.ro(using: streams[0])
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.ro(using: streams[1])
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            _ = try data.rw(using: streams[0])
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            if multiDevice {
-//                _ = try data.ro(using: streams[1])
-//                XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//            }
-//
-//            _ = try data.rw(using: streams[1])
-//            XCTAssert(!data.dataArray.lastAccessCopiedBuffer)
-//
-//            if multiDevice {
-//                _ = try data.rw(using: streams[0])
-//                XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//
-//                _ = try data.rw(using: streams[1])
-//                XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//            }
-//
-//            _ = try data.roReal8U()
-//            XCTAssert(data.dataArray.lastAccessCopiedBuffer)
-//
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
-//
-//    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    // test_tensorDataMigration
+    func test_tensorDataMigration() {
+        do {
+            // create a named stream on two different devices
+            let devices = Platform.global.requestDevices(deviceIds: [0, 1])
+            let stream = try devices.enumerated().map {
+                try $1.createStream(name: "stream:\($0)")
+            }
+            
+            // create a tensor and validate migration
+            let values = (0..<24).map { Float($0) }
+            var view = VolumeTensor<Float>(extents: [2, 3, 4], scalars: values)
+            
+            _ = try view.readOnly()
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly()
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly(using: stream[0])
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly()
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readWrite(using: stream[0])
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            // copy to device 1
+            _ = try view.readOnly(using: stream[1])
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly(using: stream[0])
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly(using: stream[1])
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readWrite(using: stream[0])
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            // copy to device 1
+            _ = try view.readOnly(using: stream[1])
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readWrite(using: stream[1])
+            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+
+            // copy to device 0
+            _ = try view.readWrite(using: stream[0])
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            
+            _ = try view.readWrite(using: stream[1])
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+
+            _ = try view.readOnly()
+            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
+    //----------------------------------------------------------------------------
 //    // test_mutateOnDevice
 //    func test_mutateOnDevice() {
 //        do {
 //            let model = Model()
 //            try model.setup()
-//            let streams = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
+//            let stream = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
 //
 //            var data0 = DataView(rows: 3, cols: 2)
-//            try streams[0].fillWithIndex(data: &data0, startingAt: 0)
+//            try stream[0].fillWithIndex(data: &data0, startingAt: 0)
 //
 //            let value1: Float = try data0.get(at: [1, 1])
 //            XCTAssert(value1 == 3.0)
 //
 //            // migrate the data to the devices
-//            _ = try data0.ro(using: streams[0])
+//            _ = try data0.ro(using: stream[0])
 //
 //            // sum device 0 copy should be 15
 //            var sum = DataView(count: 1)
-//            try streams[0].asum(x: data0.flattened(), result: &sum)
+//            try stream[0].asum(x: data0.flattened(), result: &sum)
 //            var sumValue: Float = try sum.get()
 //            XCTAssert(sumValue == 15.0)
 //
 //            let data1 = data0
-//            _ = try data1.ro(using: streams[1])
+//            _ = try data1.ro(using: stream[1])
 //
 //            // sum device 1 copy should be 15
-//            try streams[1].asum(x: data0.flattened(), result: &sum)
+//            try stream[1].asum(x: data0.flattened(), result: &sum)
 //            sumValue = try sum.get()
 //            XCTAssert(sumValue == 15.0)
 //
 //            // clear stream 0 copy
-//            try streams[0].fill(data: &data0, with: 0)
+//            try stream[0].fill(data: &data0, with: 0)
 //
 //            // sum device 1 copy should still be 15
-//            try streams[1].asum(x: data1.flattened(), result: &sum)
+//            try stream[1].asum(x: data1.flattened(), result: &sum)
 //            sumValue = try sum.get()
 //            XCTAssert(sumValue == 15.0)
 //            //            print(sumValue)
@@ -210,33 +208,33 @@ class test_TensorView: XCTestCase {
 //        do {
 //            let model = Model()
 //            try model.setup()
-//            let streams = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
-//            let multiDevice = streams[0].device.id != streams[1].device.id
+//            let stream = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
+//            let multiDevice = stream[0].device.id != stream[1].device.id
 //
 //            // don't test unless we have multiple devices
 //            if !multiDevice { return }
 //
 //            let testIndex = [0, 0, 1, 1]
 //            var data1 = DataView(rows: 3, cols: 2)
-//            try streams[0].fillWithIndex(data: &data1, startingAt: 0)
+//            try stream[0].fillWithIndex(data: &data1, startingAt: 0)
 //            let value1: Float = try data1.get(at: testIndex)
 //            XCTAssert(value1 == 3.0)
 //
 //            // migrate the data to the devices
-//            _ = try data1.ro(using: streams[0])
-//            _ = try data1.ro(using: streams[1])
+//            _ = try data1.ro(using: stream[0])
+//            _ = try data1.ro(using: stream[1])
 //
 //            // sum device 0 copy should be 15
 //            var sum = DataView(count: 1)
-//            try streams[0].asum(x: data1.flattened(), result: &sum)
+//            try stream[0].asum(x: data1.flattened(), result: &sum)
 //            var sumValue: Float = try sum.get()
 //            XCTAssert(sumValue == 15.0)
 //
 //            // clear the device 0 master copy
-//            try streams[0].fill(data: &data1, with: 0)
+//            try stream[0].fill(data: &data1, with: 0)
 //
 //            // sum device 1 copy should now also be 0
-//            try streams[1].asum(x: data1.flattened(), result: &sum)
+//            try stream[1].asum(x: data1.flattened(), result: &sum)
 //            sumValue = try sum.get()
 //            XCTAssert(sumValue == 0.0)
 //        } catch {

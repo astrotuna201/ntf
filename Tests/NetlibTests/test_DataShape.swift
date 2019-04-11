@@ -17,10 +17,10 @@ class test_DataShape: XCTestCase {
         ("test_iteratePaddedSequence", test_iteratePaddedSequence),
         ("test_iterateSequence", test_iterateSequence),
         ("test_iterateShaped", test_iterateShaped),
-        ("testPerformance_IterateMatrixIndices", testPerformance_IterateMatrixIndices),
-        ("testPerformance_IterateMatrixValues", testPerformance_IterateMatrixValues),
-        ("testPerformance_IterateRepeateRowdMatrixIndices", testPerformance_IterateRepeateRowdMatrixIndices),
-        ("testPerformance_IterateRepeatedColMatrixIndices", testPerformance_IterateRepeatedColMatrixIndices),
+        ("perf_IterateMatrixIndices", perf_IterateMatrixIndices),
+        ("perf_IterateMatrixValues", perf_IterateMatrixValues),
+        ("perf_IterateRepeatedRowMatrixIndices", perf_IterateRepeatedRowMatrixIndices),
+        ("perf_IterateRepeatedColMatrixIndices", perf_IterateRepeatedColMatrixIndices),
     ]
 
     //==========================================================================
@@ -198,8 +198,8 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // testPerformance_IterateMatrixIndices
-    func testPerformance_IterateMatrixIndices() {
+    // perf_IterateMatrixIndices
+    func perf_IterateMatrixIndices() {
         let m = MatrixTensor<Int8>(extents: [1024, 1024])
         self.measure {
             for _ in m.shape.indices() {}
@@ -207,8 +207,8 @@ class test_DataShape: XCTestCase {
     }
 
     //==========================================================================
-    // testPerformance_IterateRepeateRowdMatrixIndices
-    func testPerformance_IterateRepeateRowdMatrixIndices() {
+    // perf_IterateRepeatedRowMatrixIndices
+    func perf_IterateRepeatedRowMatrixIndices() {
         let row = MatrixTensor<Int8>(extents: [1, 1024])
         let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: row)
         self.measure {
@@ -217,8 +217,8 @@ class test_DataShape: XCTestCase {
     }
     
     //==========================================================================
-    // testPerformance_IterateRepeatedColMatrixIndices
-    func testPerformance_IterateRepeatedColMatrixIndices() {
+    // perf_IterateRepeatedColMatrixIndices
+    func perf_IterateRepeatedColMatrixIndices() {
         let col = MatrixTensor<Int8>(extents: [1024, 1])
         let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: col)
         self.measure {
@@ -227,8 +227,8 @@ class test_DataShape: XCTestCase {
     }
     
     //==========================================================================
-    // testPerformance_IterateMatrixValues
-    func testPerformance_IterateMatrixValues() {
+    // perf_IterateMatrixValues
+    func perf_IterateMatrixValues() {
         let m = MatrixTensor<Int8>(extents: [1024, 1024])
         do {
             let values = try m.values()

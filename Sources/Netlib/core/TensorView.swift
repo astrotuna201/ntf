@@ -106,8 +106,8 @@ public extension TensorView {
     /// is `true` if the last data access caused the view's underlying
     /// tensorData object to be copied.
     /// Used primarily for debugging and unit testing
-    var lastAccessCopiedTensorData: Bool
-    { return _tensorData.lastAccessCopiedTensorData }
+    var lastAccessMutatedView: Bool
+    { return _tensorData.lastAccessMutatedView }
     /// the number of dimensions in the view
     var rank: Int { return dataShape.rank }
     /// the shape of the view
@@ -311,7 +311,7 @@ public extension TensorView {
     /// NOTE: this must be called from inside the accessQueue.sync block
     private mutating func copyIfMutates(using stream: DeviceStream? = nil) throws {
         // for unit tests
-        _tensorData.lastAccessCopiedTensorData = false
+        _tensorData.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
         
         if willLog(level: .diagnostic) == true {
@@ -322,7 +322,7 @@ public extension TensorView {
         }
         
         _tensorData = try TensorData(withContentsOf: _tensorData, using: stream)
-        _tensorData.lastAccessCopiedTensorData = true
+        _tensorData.lastAccessMutatedView = true
     }
     
     //--------------------------------------------------------------------------
@@ -335,7 +335,7 @@ public extension TensorView {
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         return try queue.sync {
-            _tensorData.lastAccessCopiedTensorData = false
+            _tensorData.lastAccessMutatedView = false
             let buffer = try _tensorData.roHostRawBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
@@ -349,7 +349,7 @@ public extension TensorView {
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         return try queue.sync {
-            _tensorData.lastAccessCopiedTensorData = false
+            _tensorData.lastAccessMutatedView = false
             let buffer = try _tensorData.roDevicePointer(using: stream)
             return buffer.advanced(by: _viewOffset)
         }

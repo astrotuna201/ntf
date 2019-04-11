@@ -41,8 +41,8 @@ public struct ShapePosition {
 }
 
 public struct DataShapeIndex {
-    let viewIndex: Int
-    let dataIndex: Int
+    let viewPos: Int
+    let dataPos: Int
 }
 
 //==============================================================================
@@ -91,7 +91,7 @@ public extension DataShapeSequenceIterable {
         /// `view` is interpreted as virtual, and the `repeatedShape`
         /// represents a real tensorBuffer, therefore the `repeatedIndex` is
         /// always returned.
-        return advanceFn(&position, view.lastDimension)?.dataIndex
+        return advanceFn(&position, view.lastDimension)?.dataPos
     }
     
     //==========================================================================
@@ -149,8 +149,8 @@ public extension DataShapeSequenceIterable {
         // the first index is 0 plus the caller specified view offset
         // this is usually the TensorView.viewOffset value
         let firstIsPad = position[view.lastDimension].currentIsPad
-        return DataShapeIndex(viewIndex: offset,
-                              dataIndex: firstIsPad ? -1 : offset)
+        return DataShapeIndex(viewPos: offset,
+                              dataPos: firstIsPad ? -1 : offset)
     }
 
     //--------------------------------------------------------------------------
@@ -171,9 +171,8 @@ public extension DataShapeSequenceIterable {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advance(&index, dim: dim - 1) {
                 // update the cumulative view position
-                let current = start.viewIndex
-                index[dim].view.current = current
-                index[dim].view.end = current + index[dim].view.span
+                index[dim].view.current = start.viewPos
+                index[dim].view.end = start.viewPos + index[dim].view.span
                 return start
             } else {
                 return nil
@@ -182,7 +181,7 @@ public extension DataShapeSequenceIterable {
             // In this case the viewIndex and dataIndex are the same
             // becasue there is no repeating or padding
             let current = index[dim].view.current
-            return DataShapeIndex(viewIndex: current, dataIndex: current)
+            return DataShapeIndex(viewPos: current, dataPos: current)
         }
     }
     
@@ -218,22 +217,22 @@ public extension DataShapeSequenceIterable {
             // make a recursive call to the parent dimension
             if dim > 0, let start = advanceRepeated(&position, for: dim - 1) {
                 // update the cumulative view position
-                let current = start.viewIndex
+                let current = start.viewPos
                 position[dim].view.current = current
                 position[dim].view.end = current + position[dim].view.span
                 
                 // update the cumulative repeated view position
-                position[dim].data.current = start.dataIndex
+                position[dim].data.current = start.dataPos
                 position[dim].data.end =
-                    start.dataIndex + position[dim].data.span
+                    start.dataPos + position[dim].data.span
                 
                 // return the next position
                 nextPos = start
             }
         } else {
             nextPos = DataShapeIndex(
-                viewIndex: position[dim].view.current,
-                dataIndex: position[dim].data.current)
+                viewPos: position[dim].view.current,
+                dataPos: position[dim].data.current)
         }
         
         return nextPos
@@ -270,14 +269,14 @@ public extension DataShapeSequenceIterable {
             // `start` is the first position in the parent dimension
             if dim > 0, let start = advancePadded(&position, for: dim - 1) {
                 // update the cumulative view position and set the new end
-                let current = start.viewIndex
+                let current = start.viewPos
                 position[dim].view.current = current
                 position[dim].view.end = current + position[dim].view.span
                 
                 // update the cumulative repeated view position
-                position[dim].data.current = start.dataIndex
+                position[dim].data.current = start.dataPos
                 position[dim].data.end =
-                    start.dataIndex + position[dim].data.span
+                    start.dataPos + position[dim].data.span
                 
                 // if the enclosing parent dimension for this is padding
                 // then all of this extent is padding
@@ -307,8 +306,8 @@ public extension DataShapeSequenceIterable {
 
         // return new position
         assert(repeatedIndex < data.elementSpanCount)
-        return DataShapeIndex(viewIndex: current,
-                              dataIndex: repeatedIndex)
+        return DataShapeIndex(viewPos: current,
+                              dataPos: repeatedIndex)
     }
 }
 

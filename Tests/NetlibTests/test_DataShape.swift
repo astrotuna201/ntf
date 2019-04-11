@@ -19,6 +19,8 @@ class test_DataShape: XCTestCase {
         ("test_iterateShaped", test_iterateShaped),
         ("testPerformance_IterateMatrixIndices", testPerformance_IterateMatrixIndices),
         ("testPerformance_IterateMatrixValues", testPerformance_IterateMatrixValues),
+        ("testPerformance_IterateRepeateRowdMatrixIndices", testPerformance_IterateRepeateRowdMatrixIndices),
+        ("testPerformance_IterateRepeatedColMatrixIndices", testPerformance_IterateRepeatedColMatrixIndices),
     ]
 
     //==========================================================================
@@ -198,16 +200,36 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // testPerformance_IterateMatrixIndices
     func testPerformance_IterateMatrixIndices() {
-        let m = MatrixTensor<Int8>(extents: [1024, 512])
+        let m = MatrixTensor<Int8>(extents: [1024, 1024])
         self.measure {
             for _ in m.shape.indices() {}
         }
     }
 
     //==========================================================================
+    // testPerformance_IterateRepeateRowdMatrixIndices
+    func testPerformance_IterateRepeateRowdMatrixIndices() {
+        let row = MatrixTensor<Int8>(extents: [1, 1024])
+        let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: row)
+        self.measure {
+            for _ in m.shape.indices() {}
+        }
+    }
+    
+    //==========================================================================
+    // testPerformance_IterateRepeatedColMatrixIndices
+    func testPerformance_IterateRepeatedColMatrixIndices() {
+        let col = MatrixTensor<Int8>(extents: [1024, 1])
+        let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: col)
+        self.measure {
+            for _ in m.shape.indices() {}
+        }
+    }
+    
+    //==========================================================================
     // testPerformance_IterateMatrixValues
     func testPerformance_IterateMatrixValues() {
-        let m = MatrixTensor<Int8>(extents: [1024, 512])
+        let m = MatrixTensor<Int8>(extents: [1024, 1024])
         do {
             let values = try m.values()
             self.measure {

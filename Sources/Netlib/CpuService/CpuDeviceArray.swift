@@ -15,41 +15,39 @@ public class CpuDeviceArray : DeviceArray {
     //--------------------------------------------------------------------------
 	// initializers
 	public init(logging: LogInfo, device: ComputeDevice, count: Int) {
-        self.count = count
-        self.data = UnsafeMutableRawPointer(bitPattern: 0)!
-		self.device = device
-        self.logging = logging
-		self.trackingId = ObjectTracker.global.register(self)
+        // should never get here
+        fatalError("The cpu device uses unified memory")
+//        self.count = count
+//        self.device = device
+//        self.logging = logging
+//        self.data = UnsafeMutableRawPointer.allocate(
+//            byteCount: count, alignment: MemoryLayout<Double>.alignment)
+//        self.trackingId = ObjectTracker.global.register(self)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
 	//--------------------------------------------------------------------------
 	// zero
 	public func zero(using stream: DeviceStream?) throws {
-
 	}
 
 	// copyAsync(from deviceArray
 	public func copyAsync(from other: DeviceArray,
                           using stream: DeviceStream) throws {
-
 	}
 
 	// copyAsync(from buffer
 	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
-
 	}
 
 	// copy(to buffer
 	public func copy(to buffer: UnsafeMutableRawBufferPointer,
                      using stream: DeviceStream) throws {
-
 	}
 
 	// copyAsync(to buffer
 	public func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                           using stream: DeviceStream) throws {
-
 	}
 }

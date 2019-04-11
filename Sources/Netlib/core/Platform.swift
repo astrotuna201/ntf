@@ -31,7 +31,8 @@ final public class Platform: ObjectTracking, Logging {
     /// a stream created on the default device
     public private(set) static var defaultStream: DeviceStream = {
         do {
-            return try global.defaultDevice.createStream(name: "Platform.defaultStream")
+            return try global.defaultDevice
+                .createStream(name: "Platform.defaultStream")
         } catch {
             // this should never fail
             global.writeLog(String(describing: error))

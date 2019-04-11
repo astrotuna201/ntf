@@ -152,7 +152,7 @@ public extension DataShapeSequenceIterable {
     }
 
     //--------------------------------------------------------------------------
-    /// advancePosition(position:for:
+    /// advance(position:for:
     /// Advances the last dimension. If it can't, then `nil` is returned
     /// This function is called recursively.
     /// - Returns: the index of the next position

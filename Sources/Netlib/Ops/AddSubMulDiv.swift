@@ -17,7 +17,7 @@
 /// - scalar type mismatch: a form is provided to allow the user to pass an
 ///   integer value where a Float or Double is needed.
 ///   For example:
-///     let m = MatrixTensor<Float>()
+///     let m = Matrix<Float>()
 ///     let x = m + 1
 import Foundation
 

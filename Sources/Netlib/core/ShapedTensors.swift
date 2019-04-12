@@ -8,9 +8,9 @@ import Foundation
 /// conformance indicates that scalar components are of the same type and
 /// densely packed. This is necessary for zero copy view type casting of
 /// non numeric scalar types.
-/// For example: MatrixTensor<RGBASample<Float>> -> NHWCTensor<Float>
+/// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol UniformDenseScalar: AnyScalar {
+public protocol UniformDenseScalar {
     associatedtype ComponentScalar: AnyFixedSizeScalar
     static var componentCount: Int { get }
 }
@@ -66,10 +66,10 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // ScalarTensorView
-public protocol ScalarTensorView: TensorView
+public protocol ScalarView: TensorView
     where BoolView == ScalarTensor<Bool>, IndexView == ScalarTensor<TensorIndex>{}
 
-public extension ScalarTensorView {
+public extension ScalarView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar,
@@ -85,9 +85,9 @@ public extension ScalarTensorView {
 
 //------------------------------------------------------------------------------
 // ScalarTensor
-public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
+public struct ScalarTensor<Scalar>: ScalarView {
     // properties
-    public var _dataShape: DataShape? = nil
+    public var _removethis_dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -102,14 +102,14 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
 }
 
 //==============================================================================
-// VectorTensorView
-public protocol VectorTensorView: TensorView
-where BoolView == VectorTensor<Bool>, IndexView == VectorTensor<TensorIndex> {
+// VectorView
+public protocol VectorView: TensorView
+where BoolView == Vector<Bool>, IndexView == Vector<TensorIndex> {
     // properties
     var count: Int { get }
 }
 
-public extension VectorTensorView {
+public extension VectorView {
     /// the number of elements in the vector
     var count: Int { return shape.extents[0] }
 
@@ -139,10 +139,10 @@ public extension VectorTensorView {
 }
 
 //------------------------------------------------------------------------------
-// VectorTensor
-public struct VectorTensor<Scalar>: VectorTensorView {
+// Vector
+public struct Vector<Scalar>: VectorView {
     // properties
-    public var _dataShape: DataShape? = nil
+    public var _removethis_dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -157,15 +157,15 @@ public struct VectorTensor<Scalar>: VectorTensorView {
 }
 
 //==============================================================================
-// MatrixTensorView
-public protocol MatrixTensorView: TensorView
-where BoolView == MatrixTensor<Bool>, IndexView == MatrixTensor<TensorIndex> {
+// MatrixView
+public protocol MatrixView: TensorView
+where BoolView == Matrix<Bool>, IndexView == Matrix<TensorIndex> {
     // properties
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-public extension MatrixTensorView {
+public extension MatrixView {
     var rowStride: Int { return shape.strides[0] }
     var colStride: Int { return shape.strides[1]  }
     
@@ -200,10 +200,10 @@ public extension MatrixTensorView {
 }
 
 //------------------------------------------------------------------------------
-// MatrixTensor
-public struct MatrixTensor<Scalar>: MatrixTensorView {
+// Matrix
+public struct Matrix<Scalar>: MatrixView {
     // properties
-    public var _dataShape: DataShape? = nil
+    public var _removethis_dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -218,15 +218,15 @@ public struct MatrixTensor<Scalar>: MatrixTensorView {
 }
 
 //==============================================================================
-// VolumeTensorView
-public protocol VolumeTensorView: TensorView
-where BoolView == VolumeTensor<Bool>, IndexView == VolumeTensor<TensorIndex> {
+// VolumeView
+public protocol VolumeView: TensorView
+where BoolView == Volume<Bool>, IndexView == Volume<TensorIndex> {
     var depthStride: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
 }
 
-public extension VolumeTensorView {
+public extension VolumeView {
     // properties
     var depthStride: Int { return shape.strides[0] }
     var rowStride: Int { return shape.strides[1] }
@@ -263,10 +263,10 @@ public extension VolumeTensorView {
 }
 
 //------------------------------------------------------------------------------
-/// VolumeTensor
-public struct VolumeTensor<Scalar>: VolumeTensorView {
+/// Volume
+public struct Volume<Scalar>: VolumeView {
     // properties
-    public var _dataShape: DataShape? = nil
+    public var _removethis_dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -292,7 +292,7 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar>: NDTensorView {
     // properties
-    public var _dataShape: DataShape? = nil
+    public var _removethis_dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -306,154 +306,154 @@ public struct NDTensor<Scalar>: NDTensorView {
     public init() {}
 }
 
-//==============================================================================
-/// NCHWTensorView
-/// An NCHW tensor is a standard layout for use with cuDNN.
-/// It has a layout of numerics organized as:
-/// n: items
-/// c: channels
-/// h: rows
-/// w: cols
-public protocol NCHWTensorView: TensorView
-where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<TensorIndex> {
-    var rowStride: Int { get }
-    var colStride: Int { get }
-}
-
-public extension NCHWTensorView {
-    // properties
-    var itemStride: Int { return shape.strides[0] }
-    var channelStride: Int { return shape.strides[1] }
-    var rowStride: Int { return shape.strides[2] }
-    var colStride: Int { return shape.strides[3] }
-
-    //--------------------------------------------------------------------------
-    /// shaped initializers
-    init(extents: [Int],
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
-         scalars: [Scalar]? = nil) {
-        
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape,
-                  padding: padding, padValue: padValue,
-                  name: name, logging: logging)
-        
-        // it's being initialized in host memory so it can't fail
-        if let scalars = scalars {
-            _ = try! readWrite().initialize(from: scalars)
-        }
-    }
-    
-    /// initialize with explicit labels
-    init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
-         scalars: [Scalar]? = nil) {
-        
-        self.init(extents: [items, channels, rows, cols],
-                  padding: padding, padValue: padValue,
-                  name: name, logging: logging, scalars: scalars)
-    }
-}
-
-//------------------------------------------------------------------------------
-// NCHWTensor
-public struct NCHWTensor<Scalar>: NCHWTensorView {
-    // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
-}
-
-//==============================================================================
-/// NHWCTensorView
-/// An NHWC tensor is a standard layout for use with cuDNN.
-/// It has a layout of numerics organized as:
-/// n: items
-/// h: rows
-/// w: cols
-/// c: channels
-public protocol NHWCTensorView: TensorView
-where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<TensorIndex> {
-    var rowStride: Int { get }
-    var colStride: Int { get }
-}
-
-public extension NHWCTensorView {
-    // properties
-    var itemStride: Int { return shape.strides[0] }
-    var channelStride: Int { return shape.strides[1] }
-    var rowStride: Int { return shape.strides[2] }
-    var colStride: Int { return shape.strides[3] }
-
-    //--------------------------------------------------------------------------
-    /// shaped initializers
-    init(extents: [Int],
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
-         scalars: [Scalar]? = nil) {
-
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape,
-                  padding: padding, padValue: padValue,
-                  name: name, logging: logging)
-        
-        // it's being initialized in host memory so it can't fail
-        if let scalars = scalars {
-            _ = try! readWrite().initialize(from: scalars)
-        }
-    }
-    
-    /// initialize with explicit labels
-    init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
-         scalars: [Scalar]? = nil) {
-
-        self.init(extents: [items, rows, cols, channels],
-                  padding: padding, padValue: padValue,
-                  name: name, logging: logging, scalars: scalars)
-    }
-}
-
-//------------------------------------------------------------------------------
-// NHWCTensor
-public struct NHWCTensor<Scalar>: NHWCTensorView {
-    // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
-}
-
-//------------------------------------------------------------------------------
-public extension NHWCTensor {
-    /// zero copy cast of a matrix of dense uniform scalars to NHWC
-    init<M: MatrixTensorView>(_ matrix: M, name: String? = nil) where
-        M.Scalar: UniformDenseScalar,
-        M.Scalar.ComponentScalar == Scalar {
-            let extents = [1, matrix.shape.extents[0],
-                           matrix.shape.extents[1], M.Scalar.componentCount]
-            self.init(shape: DataShape(extents: extents),
-                      tensorData: matrix._tensorData, viewOffset: 0,
-                      isShared: false, name: nil, logging: matrix.logging)
-    }
-}
+////==============================================================================
+///// NCHWTensorView
+///// An NCHW tensor is a standard layout for use with cuDNN.
+///// It has a layout of numerics organized as:
+///// n: items
+///// c: channels
+///// h: rows
+///// w: cols
+//public protocol NCHWTensorView: TensorView
+//where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<TensorIndex> {
+//    var rowStride: Int { get }
+//    var colStride: Int { get }
+//}
+//
+//public extension NCHWTensorView {
+//    // properties
+//    var itemStride: Int { return shape.strides[0] }
+//    var channelStride: Int { return shape.strides[1] }
+//    var rowStride: Int { return shape.strides[2] }
+//    var colStride: Int { return shape.strides[3] }
+//
+//    //--------------------------------------------------------------------------
+//    /// shaped initializers
+//    init(extents: [Int],
+//         padding: [Padding]? = nil, padValue: Scalar? = nil,
+//         name: String? = nil, logging: LogInfo? = nil,
+//         scalars: [Scalar]? = nil) {
+//
+//        let shape = DataShape(extents: extents)
+//        self.init(shape: shape,
+//                  padding: padding, padValue: padValue,
+//                  name: name, logging: logging)
+//
+//        // it's being initialized in host memory so it can't fail
+//        if let scalars = scalars {
+//            _ = try! readWrite().initialize(from: scalars)
+//        }
+//    }
+//
+//    /// initialize with explicit labels
+//    init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
+//         padding: [Padding]? = nil, padValue: Scalar? = nil,
+//         name: String? = nil, logging: LogInfo? = nil,
+//         scalars: [Scalar]? = nil) {
+//
+//        self.init(extents: [items, channels, rows, cols],
+//                  padding: padding, padValue: padValue,
+//                  name: name, logging: logging, scalars: scalars)
+//    }
+//}
+//
+////------------------------------------------------------------------------------
+//// NCHWTensor
+//public struct NCHWTensor<Scalar>: NCHWTensorView {
+//    // properties
+//    public var _removethis_dataShape: DataShape? = nil
+//    public var _isReadOnly: Bool = false
+//    public var _isShared: Bool = false
+//    public var _name: String? = nil
+//    public var _lastAccessCopiedTensorData: Bool = false
+//    public var _shape: DataShape = DataShape()
+//    public var _tensorData: TensorData = TensorData()
+//    public var _viewOffset: Int = 0
+//    public var logging: LogInfo? = nil
+//    public var padding: [Padding]? = nil
+//    public var padValue: Scalar?
+//    public init() {}
+//}
+//
+////==============================================================================
+///// NHWCTensorView
+///// An NHWC tensor is a standard layout for use with cuDNN.
+///// It has a layout of numerics organized as:
+///// n: items
+///// h: rows
+///// w: cols
+///// c: channels
+//public protocol NHWCTensorView: TensorView
+//where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<TensorIndex> {
+//    var rowStride: Int { get }
+//    var colStride: Int { get }
+//}
+//
+//public extension NHWCTensorView {
+//    // properties
+//    var itemStride: Int { return shape.strides[0] }
+//    var channelStride: Int { return shape.strides[1] }
+//    var rowStride: Int { return shape.strides[2] }
+//    var colStride: Int { return shape.strides[3] }
+//
+//    //--------------------------------------------------------------------------
+//    /// shaped initializers
+//    init(extents: [Int],
+//         padding: [Padding]? = nil, padValue: Scalar? = nil,
+//         name: String? = nil, logging: LogInfo? = nil,
+//         scalars: [Scalar]? = nil) {
+//
+//        let shape = DataShape(extents: extents)
+//        self.init(shape: shape,
+//                  padding: padding, padValue: padValue,
+//                  name: name, logging: logging)
+//
+//        // it's being initialized in host memory so it can't fail
+//        if let scalars = scalars {
+//            _ = try! readWrite().initialize(from: scalars)
+//        }
+//    }
+//
+//    /// initialize with explicit labels
+//    init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
+//         padding: [Padding]? = nil, padValue: Scalar? = nil,
+//         name: String? = nil, logging: LogInfo? = nil,
+//         scalars: [Scalar]? = nil) {
+//
+//        self.init(extents: [items, rows, cols, channels],
+//                  padding: padding, padValue: padValue,
+//                  name: name, logging: logging, scalars: scalars)
+//    }
+//}
+//
+////------------------------------------------------------------------------------
+//// NHWCTensor
+//public struct NHWCTensor<Scalar>: NHWCTensorView {
+//    // properties
+//    public var _removethis_dataShape: DataShape? = nil
+//    public var _isReadOnly: Bool = false
+//    public var _isShared: Bool = false
+//    public var _name: String? = nil
+//    public var _lastAccessCopiedTensorData: Bool = false
+//    public var _shape: DataShape = DataShape()
+//    public var _tensorData: TensorData = TensorData()
+//    public var _viewOffset: Int = 0
+//    public var logging: LogInfo? = nil
+//    public var padding: [Padding]? = nil
+//    public var padValue: Scalar?
+//    public init() {}
+//}
+//
+////------------------------------------------------------------------------------
+//public extension NHWCTensor {
+//    /// zero copy cast of a matrix of dense uniform scalars to NHWC
+//    init<M: MatrixView>(_ matrix: M, name: String? = nil) where
+//        M.Scalar: UniformDenseScalar,
+//        M.Scalar.ComponentScalar == Scalar {
+//            let extents = [1, matrix.shape.extents[0],
+//                           matrix.shape.extents[1], M.Scalar.componentCount]
+//            self.init(shape: DataShape(extents: extents),
+//                      tensorData: matrix._tensorData, viewOffset: 0,
+//                      isShared: false, name: nil, logging: matrix.logging)
+//    }
+//}

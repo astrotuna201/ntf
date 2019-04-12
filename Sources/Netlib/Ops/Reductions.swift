@@ -17,7 +17,7 @@ import Foundation
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
 public func all<T>(_ x: T,
-                   alongAxes axes: VectorTensor<TensorIndex>? = nil,
+                   alongAxes axes: Vector<TensorIndex>? = nil,
                    result: inout T,
                    using deviceStream: DeviceStream? = nil) throws
     where T: TensorView, T.Scalar == Bool {
@@ -39,7 +39,7 @@ public extension TensorView where Self.Scalar == Bool {
             TensorIndex($0)
         }
         // turn into a vector
-        let axesVec = VectorTensor<TensorIndex>(scalars: axes)
+        let axesVec = Vector<TensorIndex>(scalars: axes)
         var result = Self.init(shapedLike: self)
         try Netlib.all(self, alongAxes: axesVec,
                        result: &result, using: deviceStream)
@@ -63,7 +63,7 @@ public extension TensorView where Self.Scalar == Bool {
         using deviceStream: DeviceStream? = nil) throws -> NDTensor<Scalar> {
         
         let axes = shape.makePositive(indices: squeezingAxes)
-        let axesVec = VectorTensor<TensorIndex>(
+        let axesVec = Vector<TensorIndex>(
             scalars: axes.map {TensorIndex($0)})
         
         var result = Self.init(shapedLike: self)

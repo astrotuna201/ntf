@@ -26,7 +26,7 @@ class test_TensorView: XCTestCase {
 	func test_viewMutateOnWrite() {
 		do {
             let values = (0..<12).map { Float($0) }
-            var m0 = MatrixTensor<Float>(extents: [3, 4], scalars: values)
+            var m0 = Matrix<Float>(extents: [3, 4], scalars: values)
             let _ = try m0.readWrite()
             XCTAssert(!m0.lastAccessMutatedView)
             let _ = try m0.readOnly()
@@ -77,7 +77,7 @@ class test_TensorView: XCTestCase {
 
             // create a tensor and validate migration
             let values = (0..<24).map { Float($0) }
-            var view = VolumeTensor<Float>(extents: [2, 3, 4], scalars: values)
+            var view = Volume<Float>(extents: [2, 3, 4], scalars: values)
             
             _ = try view.readOnly()
             XCTAssert(!view._tensorData.lastAccessCopiedBuffer)

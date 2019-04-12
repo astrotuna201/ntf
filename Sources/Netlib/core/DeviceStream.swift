@@ -49,14 +49,14 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func all<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func all<T>(x: T, axes: Vector<TensorIndex>?,
                 result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
     /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func any<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func any<T>(x: T, axes: Vector<TensorIndex>?,
                 result: inout T) throws
         where T: TensorView, T.Scalar == Bool
 
@@ -71,7 +71,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func argmax<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func argmax<T>(x: T, axes: Vector<TensorIndex>?,
                    result: inout T.IndexView) throws where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == TensorIndex
@@ -81,7 +81,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func argmin<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func argmin<T>(x: T, axes: Vector<TensorIndex>?,
                    result: inout T.IndexView) throws where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == TensorIndex
@@ -202,7 +202,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-    func mean<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func mean<T>(x: T, axes: Vector<TensorIndex>?,
                  result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
 
@@ -245,7 +245,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-    func prod<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func prod<T>(x: T, axes: Vector<TensorIndex>?,
                  result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
 
@@ -291,7 +291,7 @@ public protocol DeviceStream: ObjectTracking, Logging {
     /// Sums the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func sum<T>(x: T, axes: VectorTensor<TensorIndex>?,
+    func sum<T>(x: T, axes: Vector<TensorIndex>?,
                 result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
     

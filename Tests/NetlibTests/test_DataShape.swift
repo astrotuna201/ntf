@@ -23,7 +23,7 @@ class test_DataShape: XCTestCase {
         ("test_perfIterateRepeatedColMatrixIndices", test_perfIterateRepeatedColMatrixIndices),
         ("test_perfIteratePaddedMatrixValues", test_perfIteratePaddedMatrixValues),
     ]
-
+    
     //==========================================================================
     // test_squeezed
     func test_squeezed() {
@@ -43,11 +43,11 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_transposed
     func test_transposed() {
-//        let avals = (0..<6).map { Float($0) }
-//        let a = TensorView<Float>(extents: 2,3, scalars: avals)
+        //        let avals = (0..<6).map { Float($0) }
+        //        let a = TensorView<Float>(extents: 2,3, scalars: avals)
         
     }
-
+    
     //==========================================================================
     // test_iterateRepeatedSequence
     func test_iterateRepeatedSequence() {
@@ -59,7 +59,7 @@ class test_DataShape: XCTestCase {
                 0, 0, 0,
                 0, 0, 0,
             ]
-
+            
             let indices = [Int](shape.indices(repeating: dataShape))
             XCTAssert(indices == expected, "indices do not match")
         }
@@ -97,15 +97,15 @@ class test_DataShape: XCTestCase {
     func test_iterateRepeatedView() {
         do {
             // values to repeat
-            let data = MatrixTensor<Int32>(extents: [2,2], scalars: [
+            let data = Matrix<Int32>(extents: [2,2], scalars: [
                 1, 0,
                 0, 1,
             ])
-
+            
             // create a virtual view and get it's values
-            let view = MatrixTensor<Int32>(extents: [3, 4], repeating: data)
+            let view = Matrix<Int32>(extents: [3, 4], repeating: data)
             let values = try [Int32](view.values())
-
+            
             // compare
             let expected: [Int32] = [
                 1, 0, 1, 0,
@@ -119,7 +119,7 @@ class test_DataShape: XCTestCase {
         
         do {
             // values to repeat
-            let data = VolumeTensor<Int32>(extents: [2,2,2], scalars:[
+            let data = Volume<Int32>(extents: [2,2,2], scalars:[
                 1, 0,
                 0, 1,
                 
@@ -128,7 +128,7 @@ class test_DataShape: XCTestCase {
             ])
             
             // create a virtual view and get it's values
-            let view = VolumeTensor<Int32>(extents: [2, 3, 4], repeating: data)
+            let view = Volume<Int32>(extents: [2, 3, 4], repeating: data)
             let values = try [Int32](view.values())
             
             // compare
@@ -156,17 +156,17 @@ class test_DataShape: XCTestCase {
                 Padding(1), // row pad
                 Padding(before: 2, after: 3)  // col pad
             ]
-            let m = MatrixTensor<Int32>(extents: [2,3],
-                                        padding: padding,
-                                        padValue: -1,
-                                        scalars: [Int32](0..<6))
+            let m = Matrix<Int32>(extents: [2,3],
+                                  padding: padding,
+                                  padValue: -1,
+                                  scalars: [Int32](0..<6))
             
-//            try print(m.formatted(numberFormat: (2,0)))
+            //            try print(m.formatted(numberFormat: (2,0)))
             
             let indices = [Int](m.shape.indices())
             let expectedIndices = [0, 1, 2, 3, 4, 5]
             XCTAssert(indices == expectedIndices, "indices do not match")
-
+            
             let values = try [Int32](m.values())
             let expectedValues: [Int32] = [
                 -1, -1, -1, -1, -1, -1, -1, -1,
@@ -175,7 +175,7 @@ class test_DataShape: XCTestCase {
                 -1, -1, -1, -1, -1, -1, -1, -1,
             ]
             XCTAssert(values == expectedValues, "indices do not match")
-
+            
         } catch {
             XCTFail(String(describing: error))
         }
@@ -186,35 +186,35 @@ class test_DataShape: XCTestCase {
     func test_iterateSequence() {
         do {
             // try to iterate empty shape
-            let empty = VolumeTensor<Int32>()
+            let empty = Volume<Int32>()
             for _ in empty.shape.indices() {
                 XCTFail("an empty shape should have an empty sequence")
             }
             
             // try volume with shape
             let expected = [Int](0..<24)
-            let v1 = VolumeTensor<Int32>(extents: [2, 3, 4],
-                                         scalars: expected.map { Int32($0) })
+            let v1 = Volume<Int32>(extents: [2, 3, 4],
+                                   scalars: expected.map { Int32($0) })
             
             let indices = [Int](v1.shape.indices())
             XCTAssert(indices == expected, "indices do not match")
         }
     }
-
+    
     //==========================================================================
     // test_perfIterateMatrixIndices
     func test_perfIterateMatrixIndices() {
-        let m = MatrixTensor<Int8>(extents: [1024, 1024])
+        let m = Matrix<Int8>(extents: [1024, 1024])
         self.measure {
             for _ in m.shape.indices() {}
         }
     }
-
+    
     //==========================================================================
     // test_perfIterateRepeatedRowMatrixIndices
     func test_perfIterateRepeatedRowMatrixIndices() {
-        let row = MatrixTensor<Int8>(extents: [1, 1024])
-        let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: row)
+        let row = Matrix<Int8>(extents: [1, 1024])
+        let m = Matrix<Int8>(extents: [1024, 1024], repeating: row)
         self.measure {
             for _ in m.shape.indices() {}
         }
@@ -223,8 +223,8 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_perfIterateRepeatedColMatrixIndices
     func test_perfIterateRepeatedColMatrixIndices() {
-        let col = MatrixTensor<Int8>(extents: [1024, 1])
-        let m = MatrixTensor<Int8>(extents: [1024, 1024], repeating: col)
+        let col = Matrix<Int8>(extents: [1024, 1])
+        let m = Matrix<Int8>(extents: [1024, 1024], repeating: col)
         self.measure {
             for _ in m.shape.indices() {}
         }
@@ -233,7 +233,7 @@ class test_DataShape: XCTestCase {
     //==========================================================================
     // test_perfIterateMatrixValues
     func test_perfIterateMatrixValues() {
-        let m = MatrixTensor<Int8>(extents: [1024, 1024])
+        let m = Matrix<Int8>(extents: [1024, 1024])
         do {
             let values = try m.values()
             self.measure {
@@ -250,7 +250,7 @@ class test_DataShape: XCTestCase {
         // put a 1 scalar padding boundary around the Matrix
         // as if we were going to do a 3x3 convolution
         // by default the padValue is 0
-        let m = MatrixTensor<Int8>(extents: [1024, 1024], padding: [Padding(1)])
+        let m = Matrix<Int8>(extents: [1024, 1024], padding: [Padding(1)])
         do {
             let values = try m.values()
             self.measure {
@@ -260,24 +260,24 @@ class test_DataShape: XCTestCase {
             XCTFail(String(describing: error))
         }
     }
-
+    
     //==========================================================================
     // test_iterateShaped
     func test_iterateShaped() {
-//        do {
-//            let m = VolumeTensor<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
-//            for depth in m.shape {
-//                print("depth")
-//                for row in depth {
-//                    print("row")
-//                    for index in row.tensorIndices {
-//                        let value = try m.readOnly()[index]
-//                        print("index: \(index) value: \(value)")
-//                    }
-//                }
-//            }
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
+        //        do {
+        //            let m = Volume<Int32>(extents: [2, 3, 4], scalars: [Int32](0..<24))
+        //            for depth in m.shape {
+        //                print("depth")
+        //                for row in depth {
+        //                    print("row")
+        //                    for index in row.tensorIndices {
+        //                        let value = try m.readOnly()[index]
+        //                        print("index: \(index) value: \(value)")
+        //                    }
+        //                }
+        //            }
+        //        } catch {
+        //            XCTFail(String(describing: error))
+        //        }
     }
 }

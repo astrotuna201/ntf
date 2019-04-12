@@ -17,8 +17,8 @@ class test_Ops: XCTestCase {
     
     func test_Casting() {
 //        do {
-//            let a = VectorTensor<Float>(scalars: [1, 2, 3, 4])
-//            let b = try VectorTensor<Int32>(a)
+//            let a = Vector<Float>(scalars: [1, 2, 3, 4])
+//            let b = try Vector<Int32>(a)
 //            XCTAssert(a == b)
 //
 //        } catch {
@@ -32,14 +32,14 @@ class test_Ops: XCTestCase {
     }
     
     func test_AddSubMulDiv() {
-        let _ = MatrixTensor<RGBASample<UInt8>>(4, 3)
-        let _ = VectorTensor<StereoSample<Int16>>(count: 1024)
+        let _ = Matrix<RGBASample<UInt8>>(4, 3)
+        let _ = Vector<StereoSample<Int16>>(count: 1024)
 
-        let m = MatrixTensor<UInt8>(4, 3)
-        let a = VectorTensor<Float>(scalars: [1, 2, 3, 4])
-        let b = VectorTensor<Float>(scalars: [4, 3, 2, 1])
-        let y = VectorTensor<Float>(scalars: [0, 1, 2, 3])
-        let expected = VectorTensor<Float>(scalars: [5, 5, 5, 5])
+        let m = Matrix<UInt8>(4, 3)
+        let a = Vector<Float>(scalars: [1, 2, 3, 4])
+        let b = Vector<Float>(scalars: [4, 3, 2, 1])
+        let y = Vector<Float>(scalars: [0, 1, 2, 3])
+        let expected = Vector<Float>(scalars: [5, 5, 5, 5])
 
         do {
             //---------------------------------
@@ -68,7 +68,7 @@ class test_Ops: XCTestCase {
             }
             
             let c4 = try aPlusB + aMinusB
-            let c4expected = VectorTensor<Float>(scalars: [2, 4, 6, 8])
+            let c4expected = Vector<Float>(scalars: [2, 4, 6, 8])
             // all three streams auto sync at this point
             XCTAssert(c4 == c4expected)
 
@@ -86,7 +86,7 @@ class test_Ops: XCTestCase {
             
             //---------------------------------
             // nested multi scoped
-            let x: VectorTensor<Float> = try using(stream[0]) {
+            let x: Vector<Float> = try using(stream[0]) {
                 let aMinusB = try using(stream[1]) {
                     return try a - b
                 }
@@ -102,7 +102,7 @@ class test_Ops: XCTestCase {
             let c5 = try logx / (logx + 1)
             
             // all three streams auto sync at this point
-            let c5expected = VectorTensor<Float>(scalars: [0, 0.581, 0.782, 0.862])
+            let c5expected = Vector<Float>(scalars: [0, 0.581, 0.782, 0.862])
             let c5IsEqual = try c5.approximatelyEqual(to: c5expected).all().scalarValue()
 
             // here the defaultStream is synced with the app thread

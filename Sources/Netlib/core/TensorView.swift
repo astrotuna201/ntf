@@ -6,10 +6,10 @@ import Foundation
 
 //==============================================================================
 // TensorView protocol
-public protocol TensorView: AnyScalar, Logging, Equatable {
+public protocol TensorView: Logging, Equatable {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
-    associatedtype Scalar: AnyScalar
+    associatedtype Scalar
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -35,7 +35,7 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     /// as a parameter to iterators. It is not inherited by subviews.
     var padding: [Padding]? { get set }
     /// the scalar value to be returned for indexes with padding regions
-    var padValue: Scalar { get set }
+    var padValue: Scalar? { get set }
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var _shape: DataShape { get set }
@@ -47,33 +47,8 @@ public protocol TensorView: AnyScalar, Logging, Equatable {
     var logging: LogInfo? { get set }
 
     //--------------------------------------------------------------------------
-    // initializers
-    // empty
-    init()
-    
-    /// Fully specified initializer
-    /// creates a new concrete view instance. This is required to enable
-    /// extension methods to create typed return values
-    init(shape: DataShape,
-         dataShape: DataShape?,
-         tensorData: TensorData?,
-         viewOffset: Int,
-         padding: [Padding]?,
-         padValue: Scalar?,
-         isShared: Bool,
-         name: String?,
-         logging: LogInfo?)
-    
-    /// convenience initializer used to create result views in op functions
-    /// other is generic, because it might have a different Scalar type
-    init<T>(shapedLike other: T) where T: TensorView
-
-    /// convenience initializer used to create type compatible tensors from
-    /// from a scalar used in generic op functions.
-    init(_ value: Scalar)
-    
-    //--------------------------------------------------------------------------
     // functions
+    init()
     
     /// determines if the view holds a unique reference to the underlying
     /// TensorData array
@@ -136,7 +111,7 @@ public extension TensorView {
         _shape = shape
         _viewOffset = viewOffset
         self.padding = padding
-        self.padValue = padValue ?? Scalar()
+        self.padValue = padValue
         self.logging = logging
         let span = self.dataShape.elementSpanCount * MemoryLayout<Scalar>.size
         _tensorData = tensorData ??
@@ -263,23 +238,6 @@ public extension TensorView {
         return dataShape.elementSpanCount * MemoryLayout<Scalar>.size
     }
 
-    //--------------------------------------------------------------------------
-    /// isFinite
-    /// `true` if all elements are finite values. Primarily used for debugging
-    func isFinite() throws -> Bool {
-        var isfiniteValue = true
-        func check<T: AnyNumeric>(_ type: T.Type) throws {
-            try readOnly().withMemoryRebound(to: AnyNumeric.self) {
-                $0.forEach {
-                    if !$0.isFiniteValue {
-                        isfiniteValue = false
-                    }
-                }
-            }
-        }
-        return isfiniteValue
-    }
-    
     //--------------------------------------------------------------------------
     /// Equal values
     /// performs an element wise value comparison
@@ -563,5 +521,19 @@ public extension TensorView {
             return createFlattened(axis: axis, isShared: true,
                                    padding: padding, padValue: padValue)
         }
+    }
+}
+
+public extension TensorView where Scalar: FloatingPoint {
+    //--------------------------------------------------------------------------
+    /// isFinite
+    /// `true` if all elements are finite values. Primarily used for debugging
+    func isFinite() throws -> Bool {
+        for value in try readOnly() {
+            if !value.isFinite {
+                return false
+            }
+        }
+        return true
     }
 }

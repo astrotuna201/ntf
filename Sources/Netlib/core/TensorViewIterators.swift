@@ -35,7 +35,7 @@ where T: TensorView {
 
     // initializers
     init(view: T, buffer: UnsafeBufferPointer<T.Scalar>) {
-        padValue = view.padValue
+        padValue = view.padValue!
         tensorDataBuffer = buffer
         indexIterator = DataShapeSequenceIterator(view: view.shape,
                                                   at: view.viewOffset,

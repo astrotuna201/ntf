@@ -30,10 +30,10 @@ public protocol AnyRGBImageSample: UniformDenseScalar {
 }
 
 public struct RGBSample<T>: AnyRGBImageSample
-    where T: AnyNumeric & AnyFixedSizeScalar {
+where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var r, g, b: T
-    public init() { r = T(); g = T(); b = T() }
+    public init() { r = T.zero; g = T.zero; b = T.zero }
 }
 
 public protocol AnyRGBAImageSample: UniformDenseScalar {
@@ -47,7 +47,7 @@ public struct RGBASample<T> : AnyRGBAImageSample
 where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var r, g, b, a: T
-    public init() { r = T(); g = T(); b = T(); a = T() }
+    public init() { r = T.zero; g = T.zero; b = T.zero; a = T.zero }
 }
 
 //==============================================================================
@@ -61,7 +61,7 @@ public struct StereoSample<T>: AnyStereoAudioSample
 where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var left, right: T
-    public init() { left = T(); right = T() }
+    public init() { left = T.zero; right = T.zero }
 }
 
 //==============================================================================
@@ -97,7 +97,7 @@ public struct ScalarTensor<Scalar: AnyScalar>: ScalarTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar? = nil
     public init() {}
 }
 
@@ -140,7 +140,7 @@ public extension VectorTensorView {
 
 //------------------------------------------------------------------------------
 // VectorTensor
-public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
+public struct VectorTensor<Scalar>: VectorTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -152,7 +152,7 @@ public struct VectorTensor<Scalar: AnyScalar>: VectorTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 
@@ -201,7 +201,7 @@ public extension MatrixTensorView {
 
 //------------------------------------------------------------------------------
 // MatrixTensor
-public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
+public struct MatrixTensor<Scalar>: MatrixTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -213,7 +213,7 @@ public struct MatrixTensor<Scalar: AnyScalar>: MatrixTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 
@@ -264,7 +264,7 @@ public extension VolumeTensorView {
 
 //------------------------------------------------------------------------------
 /// VolumeTensor
-public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
+public struct VolumeTensor<Scalar>: VolumeTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -276,7 +276,7 @@ public struct VolumeTensor<Scalar: AnyScalar>: VolumeTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 
@@ -290,7 +290,7 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 //------------------------------------------------------------------------------
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
-public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
+public struct NDTensor<Scalar>: NDTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -302,7 +302,7 @@ public struct NDTensor<Scalar: AnyScalar>: NDTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 
@@ -359,7 +359,7 @@ public extension NCHWTensorView {
 
 //------------------------------------------------------------------------------
 // NCHWTensor
-public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
+public struct NCHWTensor<Scalar>: NCHWTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -371,7 +371,7 @@ public struct NCHWTensor<Scalar: AnyScalar>: NCHWTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 
@@ -428,7 +428,7 @@ public extension NHWCTensorView {
 
 //------------------------------------------------------------------------------
 // NHWCTensor
-public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
+public struct NHWCTensor<Scalar>: NHWCTensorView {
     // properties
     public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
@@ -440,7 +440,7 @@ public struct NHWCTensor<Scalar: AnyScalar>: NHWCTensorView {
     public var _viewOffset: Int = 0
     public var logging: LogInfo? = nil
     public var padding: [Padding]? = nil
-    public var padValue: Scalar = Scalar()
+    public var padValue: Scalar?
     public init() {}
 }
 

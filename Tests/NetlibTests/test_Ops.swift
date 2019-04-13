@@ -99,11 +99,13 @@ class test_Ops: XCTestCase {
                 // here stream[1] is synced with stream[0]
                 return pow(a + b + aMinusB, y)
             }
+            
             // can compose easily (but log(x) is computed twice in this case)
             let _ = x.log() / (x.log() + 1)
             
-            // temporary results are okay!
+            // temporary results are okay, they won't cause data movement
             let logx = log(x)
+            
             // here stream[0] is synced with the defaultStream
             let c5 = logx / (logx + 1)
             

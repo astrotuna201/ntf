@@ -16,16 +16,16 @@ infix operator ≈ : ComparisonPrecedence
 /// - Parameter rhs: right hand tensor
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-public func approximatelyEqual<T>(
-    _ lhs: T, _ rhs: T, result: inout T.BoolView, tolerance: Double = 0.00001,
-    using deviceStream: DeviceStream? = nil) throws
+public func approximatelyEqual<T>(_ lhs: T, _ rhs: T, result: inout T.BoolView,
+                                  tolerance: Double = 0.00001)
     where T: TensorView, T.Scalar: FloatingPoint & AnyConvertable {
         
         let toleranceTensor = ScalarTensor(T.Scalar(any: tolerance))
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.approximatelyEqual(lhs: lhs, rhs: rhs,
-                                      tolerance: toleranceTensor,
-                                      result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.approximatelyEqual(lhs: lhs, rhs: rhs,
+                                          tolerance: toleranceTensor,
+                                          result: &result)
+        }
 }
 
 /// returns new view
@@ -33,13 +33,11 @@ public func approximatelyEqual<T>(
 /// - Returns: a new tensor containing the result
 public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
     @inlinable @inline(__always)
-    func approximatelyEqual(to rhs: Self, tolerance: Double = 0.00001,
-                            using deviceStream: DeviceStream? = nil) throws
+    func approximatelyEqual(to rhs: Self, tolerance: Double = 0.00001)
         -> Self.BoolView {
             var result = Self.BoolView.init(shapedLike: self)
-            try Netlib.approximatelyEqual(self, rhs, result: &result,
-                                          tolerance: tolerance,
-                                          using: deviceStream)
+            Netlib.approximatelyEqual(self, rhs, result: &result,
+                                          tolerance: tolerance)
             return result
     }
 }

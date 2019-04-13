@@ -41,12 +41,12 @@ infix operator .=
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-public func add<T>(_ lhs: T, _ rhs: T, result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.add(lhs: lhs, rhs: rhs, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.add(lhs: lhs, rhs: rhs, result: &result)
+        }
 }
 
 /// returns new view
@@ -55,12 +55,11 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T,
 ///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-public func add<T>(_ lhs: T, _ rhs: T,
-                   using deviceStream: DeviceStream? = nil) throws -> T
+public func add<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Scalar: Numeric {
         
         var result = T.init(shapedLike: lhs)
-        try add(lhs, rhs, result: &result, using: deviceStream)
+        add(lhs, rhs, result: &result)
         return result
 }
 
@@ -71,8 +70,8 @@ public extension TensorView where Self.Scalar: Numeric {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func + (lhs: Self, rhs: Self) throws -> Self {
-        return try add(lhs, rhs)
+    static func + (lhs: Self, rhs: Self) -> Self {
+        return add(lhs, rhs)
     }
 }
 
@@ -83,9 +82,9 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +<S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+    static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try add(lhs, scalarTensor)
+        return add(lhs, scalarTensor)
     }
 }
 
@@ -96,9 +95,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +<S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
+    static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try add(lhs, scalarTensor)
+        return add(lhs, scalarTensor)
     }
 }
 
@@ -113,12 +112,12 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
-public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T,
-                        using deviceStream: DeviceStream? = nil) throws
+public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.subtract(lhs: lhs, rhs: rhs, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.subtract(lhs: lhs, rhs: rhs, result: &result)
+        }
 }
 
 /// returning new view
@@ -127,12 +126,11 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T,
 ///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-public func subtract<T>(_ lhs: T, _ rhs: T,
-                        using deviceStream: DeviceStream? = nil) throws -> T
+public func subtract<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Scalar: Numeric {
         
         var result = T.init(shapedLike: lhs)
-        try subtract(lhs, rhs, result: &result, using: deviceStream)
+        subtract(lhs, rhs, result: &result)
         return result
 }
 
@@ -143,8 +141,8 @@ public extension TensorView where Self.Scalar: Numeric {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - (lhs: Self, rhs: Self) throws -> Self {
-        return try subtract(lhs, rhs)
+    static func - (lhs: Self, rhs: Self) -> Self {
+        return subtract(lhs, rhs)
     }
 }
 
@@ -155,9 +153,9 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+    static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try subtract(lhs, scalarTensor)
+        return subtract(lhs, scalarTensor)
     }
 }
 
@@ -168,9 +166,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
+    static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try subtract(lhs, scalarTensor)
+        return subtract(lhs, scalarTensor)
     }
 }
 
@@ -184,12 +182,12 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-public func mul<T>(_ lhs: T, _ rhs: T, result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.mul(lhs: lhs, rhs: rhs, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.mul(lhs: lhs, rhs: rhs, result: &result)
+        }
 }
 
 /// returning new view
@@ -198,12 +196,11 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T,
 ///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-public func mul<T>(_ lhs: T, _ rhs: T,
-                   using deviceStream: DeviceStream? = nil) throws -> T
+public func mul<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Scalar: Numeric {
         
         var result = T.init(shapedLike: lhs)
-        try mul(lhs, rhs, result: &result, using: deviceStream)
+        mul(lhs, rhs, result: &result)
         return result
 }
 
@@ -214,8 +211,8 @@ public extension TensorView where Self.Scalar: Numeric {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * (lhs: Self, rhs: Self) throws -> Self {
-        return try mul(lhs, rhs)
+    static func * (lhs: Self, rhs: Self) -> Self {
+        return mul(lhs, rhs)
     }
 }
 
@@ -226,9 +223,9 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+    static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try mul(lhs, scalarTensor)
+        return mul(lhs, scalarTensor)
     }
 }
 
@@ -239,9 +236,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
+    static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try mul(lhs, scalarTensor)
+        return mul(lhs, scalarTensor)
     }
 }
 
@@ -255,12 +252,12 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
-public func div<T>(_ lhs: T, _ rhs: T, result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.div(lhs: lhs, rhs: rhs, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.div(lhs: lhs, rhs: rhs, result: &result)
+        }
 }
 
 /// returning new view
@@ -269,12 +266,11 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T,
 ///   `lhs` then broadcasting is performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-public func div<T>(_ lhs: T, _ rhs: T,
-                   using deviceStream: DeviceStream? = nil) throws -> T
+public func div<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Scalar: Numeric {
         
         var result = T.init(shapedLike: lhs)
-        try div(lhs, rhs, result: &result, using: deviceStream)
+        div(lhs, rhs, result: &result)
         return result
 }
 
@@ -285,8 +281,8 @@ public extension TensorView where Self.Scalar: Numeric {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func / (lhs: Self, rhs: Self) throws -> Self {
-        return try div(lhs, rhs)
+    static func / (lhs: Self, rhs: Self) -> Self {
+        return div(lhs, rhs)
     }
 }
 
@@ -297,9 +293,9 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func / <S: AnyNumeric>(lhs: Self, rhs: S) throws -> Self {
+    static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try div(lhs, scalarTensor)
+        return div(lhs, scalarTensor)
     }
 }
 
@@ -310,8 +306,8 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func / <S: AnyInteger>(lhs: Self, rhs: S) throws -> Self {
+    static func / <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
-        return try div(lhs, scalarTensor)
+        return div(lhs, scalarTensor)
     }
 }

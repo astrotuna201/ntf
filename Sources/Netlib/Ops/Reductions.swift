@@ -16,14 +16,13 @@ import Foundation
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func all<T>(_ x: T,
-                   alongAxes axes: Vector<TensorIndex>? = nil,
-                   result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func all<T>(_ x: T, alongAxes axes: Vector<TensorIndex>? = nil,
+                   result: inout T)
     where T: TensorView, T.Scalar == Bool {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.all(x: x, axes: axes, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.all(x: x, axes: axes, result: &result)
+        }
 }
 
 /// returns new view
@@ -32,8 +31,7 @@ public func all<T>(_ x: T,
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 public extension TensorView where Self.Scalar == Bool {
     @inlinable @inline(__always)
-    func all(alongAxes: Int...,
-        using deviceStream: DeviceStream? = nil) throws -> Self {
+    func all(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
         let axes = shape.makePositive(indices: alongAxes).map {
             TensorIndex($0)
@@ -41,16 +39,14 @@ public extension TensorView where Self.Scalar == Bool {
         // turn into a vector
         let axesVec = Vector<TensorIndex>(scalars: axes)
         var result = Self.init(shapedLike: self)
-        try Netlib.all(self, alongAxes: axesVec,
-                       result: &result, using: deviceStream)
+        Netlib.all(self, alongAxes: axesVec, result: &result)
         return result
     }
     
     @inlinable @inline(__always)
-    func all(using deviceStream: DeviceStream? = nil) throws -> Self {
-        
+    func all() -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.all(self, result: &result, using: deviceStream)
+        Netlib.all(self, result: &result)
         return result
     }
     
@@ -59,17 +55,14 @@ public extension TensorView where Self.Scalar == Bool {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func all(squeezingAxes: Int...,
-        using deviceStream: DeviceStream? = nil) throws -> NDTensor<Scalar> {
+    func all(squeezingAxes: Int...) -> NDTensor<Scalar> {
         
         let axes = shape.makePositive(indices: squeezingAxes)
         let axesVec = Vector<TensorIndex>(
             scalars: axes.map {TensorIndex($0)})
         
         var result = Self.init(shapedLike: self)
-        try Netlib.all(self, alongAxes: axesVec,
-                       result: &result, using: deviceStream)
-        
+        Netlib.all(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
     }
 }

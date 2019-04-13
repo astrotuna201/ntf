@@ -4,6 +4,8 @@
 //
 //  This is inspired by the S4TF CompilerRuntime.swift
 //  thread local implementation
+import Foundation
+
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
 import Darwin
 #else
@@ -18,7 +20,7 @@ import Glibc
 ///           specified stream
 @inline(never)
 public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
-                     perform body: () throws -> R) throws -> R {
+                     perform body: () throws -> R) rethrows -> R {
     // sets the default stream and logging info for the current scope
     _ThreadLocal.value.push(stream: stream, logInfo: logInfo)
     defer { _ThreadLocal.value.popStream() }
@@ -52,7 +54,7 @@ class _ThreadLocal {
     }()
     
     // there will always be the platform default stream and logInfo
-    public var defaultStream: DeviceStream { return streamScope.last!.stream }
+    public var currentStream: DeviceStream { return streamScope.last!.stream }
     public var defaultLogging: LogInfo { return streamScope.last!.logInfo }
 
     //--------------------------------------------------------------------------
@@ -70,12 +72,23 @@ class _ThreadLocal {
     }
 
     @usableFromInline
-    func catchError(perform body: () throws -> Void) {
+    func catchError(perform body: (DeviceStream) throws -> Void) {
         do {
-            return try body()
+            return try body(currentStream)
         } catch {
+            // write the error to the log
             defaultLogging.log.write(level: .error,
                                      message: String(describing: error))
+            
+            // call the handler if there is one
+            if let handler = exceptionHandler {
+                DispatchQueue.main.async {
+                    handler(error)
+                }
+            } else {
+                // if there is no handler then break to the debugger
+                raise(SIGINT)
+            }
         }
     }
 

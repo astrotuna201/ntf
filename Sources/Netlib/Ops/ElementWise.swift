@@ -13,12 +13,12 @@ import Foundation
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
-public func log<T>(_ x: T, result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func log<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.log(x: x, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.log(x: x, result: &result)
+        }
 }
 
 /// returns new view
@@ -26,11 +26,11 @@ public func log<T>(_ x: T, result: inout T,
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
-public func log<T>(_ x: T, using deviceStream: DeviceStream? = nil) throws -> T
+public func log<T>(_ x: T) -> T
     where T: TensorView, T.Scalar: FloatingPoint {
         
         var result = T.init(shapedLike: x)
-        try log(x, result: &result, using: deviceStream)
+        log(x, result: &result)
         return result
 }
 
@@ -39,9 +39,9 @@ public extension TensorView where Self.Scalar: FloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
-    func log(using deviceStream: DeviceStream? = nil) throws -> Self {
+    func log() -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.log(self, result: &result, using: deviceStream)
+        Netlib.log(self, result: &result)
         return result
     }
 }
@@ -55,12 +55,12 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
-public func logSoftmax<T>(_ x: T, result: inout T,
-                          using deviceStream: DeviceStream? = nil) throws
+public func logSoftmax<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.logSoftmax(x: x, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.logSoftmax(x: x, result: &result)
+        }
 }
 
 /// returns new view
@@ -68,12 +68,11 @@ public func logSoftmax<T>(_ x: T, result: inout T,
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
-public func logSoftmax<T>(_ x: T,
-                          using deviceStream: DeviceStream? = nil) throws -> T
+public func logSoftmax<T>(_ x: T) -> T
     where T: TensorView, T.Scalar: FloatingPoint {
         
         var result = T.init(shapedLike: x)
-        try logSoftmax(x, result: &result, using: deviceStream)
+        logSoftmax(x, result: &result)
         return result
 }
 
@@ -82,9 +81,9 @@ public extension TensorView where Self.Scalar: FloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
-    func logSoftmax(using deviceStream: DeviceStream? = nil) throws -> Self {
+    func logSoftmax() throws -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.logSoftmax(self, result: &result, using: deviceStream)
+        Netlib.logSoftmax(self, result: &result)
         return result
     }
 }
@@ -100,12 +99,12 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
-public func pow<T>(_ x: T, _ y: T, result: inout T,
-                   using deviceStream: DeviceStream? = nil) throws
+public func pow<T>(_ x: T, _ y: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        let stream = deviceStream ?? _ThreadLocal.value.defaultStream
-        try stream.pow(x: x, y: y, result: &result)
+        _ThreadLocal.value.catchError { stream in
+            try stream.pow(x: x, y: y, result: &result)
+        }
 }
 
 /// returns new view
@@ -115,12 +114,11 @@ public func pow<T>(_ x: T, _ y: T, result: inout T,
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
-public func pow<T>(_ x: T, _ y: T,
-                   using deviceStream: DeviceStream? = nil) throws -> T
+public func pow<T>(_ x: T, _ y: T) -> T
     where T: TensorView, T.Scalar: Numeric {
         
         var result = T.init(shapedLike: x)
-        try pow(x, y, result: &result, using: deviceStream)
+        pow(x, y, result: &result)
         return result
 }
 
@@ -131,9 +129,9 @@ public extension TensorView where Self.Scalar: Numeric {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
-    func pow(_ y: Self, using deviceStream: DeviceStream? = nil) throws -> Self{
+    func pow(_ y: Self) -> Self{
         var result = Self.init(shapedLike: self)
-        try Netlib.pow(self, y, result: &result, using: deviceStream)
+        Netlib.pow(self, y, result: &result)
         return result
     }
 }
@@ -144,11 +142,9 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
-    func pow<S: AnyNumeric>(
-        _ y: S, using deviceStream: DeviceStream? = nil) throws -> Self {
+    func pow<S: AnyNumeric>(_ y: S) -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.pow(self, Self.init(Scalar(any: y)),
-                       result: &result, using: deviceStream)
+        Netlib.pow(self, Self.init(Scalar(any: y)), result: &result)
         return result
     }
 }
@@ -161,10 +157,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
     func pow<S: AnyInteger>(
-        _ y: S, using deviceStream: DeviceStream? = nil) throws -> Self {
+        _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
         var result = Self.init(shapedLike: self)
-        try Netlib.pow(self, Self.init(Scalar(any: y)),
-                       result: &result, using: deviceStream)
+        Netlib.pow(self, Self.init(Scalar(any: y)), result: &result)
         return result
     }
 }

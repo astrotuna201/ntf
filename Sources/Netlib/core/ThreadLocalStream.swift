@@ -36,8 +36,8 @@ public func using<R>(_ stream: DeviceStream,
 public typealias StreamExceptionHandler = (Error) -> Void
 
 //==============================================================================
-/// SetStreamExceptionHandler
-public func SetStreamExceptionHandler(handler: @escaping StreamExceptionHandler) {
+/// handleStreamExceptions
+public func handleStreamExceptions(handler: @escaping StreamExceptionHandler) {
     let index = _ThreadLocalStream.value.streamScope.count - 1
     _ThreadLocalStream.value.streamScope[index].exceptionHandler = handler
 }

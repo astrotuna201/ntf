@@ -32,7 +32,7 @@ class test_Ops: XCTestCase {
     }
     
     func test_AddSubMulDiv() {
-        SetStreamExceptionHandler { error in
+        handleStreamExceptions { error in
             // something unexpected bad happened
             print(String(describing: error))
             exit(0)

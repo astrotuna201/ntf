@@ -56,7 +56,7 @@ class test_Ops: XCTestCase {
             //---------------------------------
             // other scoped
             // create a streams on each specified devices from the preferred service
-            let stream = try Platform.global.createStreams(deviceIds: [0, 1])
+            let stream = try Platform.local.createStreams(deviceIds: [0, 1])
             
             let c3 = using(stream[0]) {
                 return a + b

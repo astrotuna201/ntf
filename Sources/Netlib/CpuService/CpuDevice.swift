@@ -17,7 +17,7 @@ public class CpuDevice : ComputeDevice {
     public weak var service: ComputeService!
     private let streamId = AtomicCounter()
     public var timeout: TimeInterval?
-    public let usesUnifiedAddressing = true
+    public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
 
     // TODO this should be currently available and not physicalMemory
@@ -27,12 +27,16 @@ public class CpuDevice : ComputeDevice {
 
     //--------------------------------------------------------------------------
 	// initializers
-	public init(logging: LogInfo, service: CpuComputeService,
-                deviceId: Int, timeout: TimeInterval? = nil) {
+	public init(service: CpuComputeService,
+                deviceId: Int,
+                logging: LogInfo,
+                memoryAddressing: MemoryAddressing,
+                timeout: TimeInterval? = nil) {
 		self.logging = logging
 		self.id = deviceId
 		self.service = service
         self.timeout = timeout
+        self.memoryAddressing = memoryAddressing
 
 		// devices are statically held by the Platform.service
         trackingId = ObjectTracker.global.register(self,

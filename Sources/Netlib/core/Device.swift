@@ -33,9 +33,8 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     var service: ComputeService! { get }
     /// the maximum amount of time allowed for an operation to complete
     var timeout: TimeInterval? { get set }
-    /// is `true` if the device is configured to use unified memory addressing
-    /// with the host CPU
-    var usesUnifiedAddressing: Bool { get }
+    /// the type of memory addressing this device uses
+    var memoryAddressing: MemoryAddressing { get }
     /// current percent of the device utilized
     var utilization: Float { get }
 
@@ -46,6 +45,8 @@ public protocol ComputeDevice: ObjectTracking, Logging {
     /// creates a named command stream for this device
     func createStream(name: String) throws -> DeviceStream
 }
+
+public enum MemoryAddressing { case unified, discreet }
 
 //==============================================================================
 // DeviceArray

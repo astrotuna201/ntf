@@ -20,14 +20,17 @@ public class CpuComputeService : ComputeService {
         
         // this is held statically by the Platform
         trackingId = ObjectTracker.global.register(self, isStatic: true)
+
+        // add cpu device
+        devices.append(CpuDevice(service: self, deviceId: id,
+                                 logging: logging.child("cpu"),
+                                 memoryAddressing: .unified))
         
-        // add a device for each logical core
-        let processInfo = ProcessInfo()
-        for id in 0..<processInfo.activeProcessorCount {
-            let device = CpuDevice(logging: logging.child("cpu:\(id)"),
-                                   service: self, deviceId: id)
-            devices.append(device)
-        }
+        // add a discreet version for unit testing
+        // TODO is there a better solution for testing
+        devices.append(CpuDevice(service: self, deviceId: id,
+                                 logging: logging.child("discreetmemorycpu"),
+                                 memoryAddressing: .discreet))
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

@@ -129,7 +129,7 @@ final public class TensorData: ObjectTracking, Logging {
         byteCount = buffer.count
         
         do {
-            _ = try rwHostMutableRawBuffer()
+            _ = try readWriteHostBuffer()
                 .initializeMemory(as: UInt8.self, from: buffer)
         } catch {
             // TODO: what do we want to do here when it should never fail
@@ -235,7 +235,7 @@ final public class TensorData: ObjectTracking, Logging {
                 
             } else {
                 // uma to device
-                try array.copyAsync(from: other.roHostRawBuffer(), using: stream)
+                try array.copyAsync(from: other.readOnlyHostBuffer(), using: stream)
             }
             
             // set the master
@@ -243,7 +243,7 @@ final public class TensorData: ObjectTracking, Logging {
             
         } else {
             // get pointer to this array's umaBuffer
-            let buffer = try rwHostMutableRawBuffer()
+            let buffer = try readWriteHostBuffer()
             
             if let otherMaster = other.master {
                 // synchronous device to umaArray
@@ -251,32 +251,34 @@ final public class TensorData: ObjectTracking, Logging {
                 
             } else {
                 // umaArray to umaArray
-                try buffer.copyMemory(from: other.roHostRawBuffer())
+                try buffer.copyMemory(from: other.readOnlyHostBuffer())
             }
         }
     }
     
     //--------------------------------------------------------------------------
-    // ro
-    public func roHostRawBuffer() throws -> UnsafeRawBufferPointer {
+    // readOnly
+    public func readOnlyHostBuffer() throws -> UnsafeRawBufferPointer {
         try migrate(readOnly: true)
         return UnsafeRawBufferPointer(hostBuffer)
     }
     
-    public func roDevicePointer(using stream: DeviceStream) throws -> UnsafeRawPointer {
+    public func readOnlyDevicePointer(using stream: DeviceStream) throws
+        -> UnsafeRawPointer {
         try migrate(readOnly: true, using: stream)
         return UnsafeRawPointer(deviceDataPointer)
     }
 
     //--------------------------------------------------------------------------
-    // rw
-    public func rwHostMutableRawBuffer() throws -> UnsafeMutableRawBufferPointer {
+    // readWrite
+    public func readWriteHostBuffer() throws
+        -> UnsafeMutableRawBufferPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false)
         return UnsafeMutableRawBufferPointer(hostBuffer)
     }
 
-    public func rwDevicePointer(using stream: DeviceStream) throws ->
+    public func readWriteDevicePointer(using stream: DeviceStream) throws ->
         UnsafeMutableRawPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false, using: stream)
@@ -289,8 +291,8 @@ final public class TensorData: ObjectTracking, Logging {
     private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {
         // if the array is empty then there is nothing to do
         guard !isReadOnlyReference && byteCount > 0 else { return }
-        let srcUsesUMA = master?.stream.device.usesUnifiedAddressing ?? true
-        let dstUsesUMA = stream?.device.usesUnifiedAddressing ?? true
+        let srcUsesUMA = master?.stream.device.memoryAddressing != .discreet
+        let dstUsesUMA = stream?.device.memoryAddressing != .discreet
 
         // reset, this is to support automated tests
         lastAccessCopiedBuffer = false

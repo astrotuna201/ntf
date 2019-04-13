@@ -312,7 +312,7 @@ public extension TensorView {
         let queue = _tensorData.accessQueue
         return try queue.sync {
             _tensorData.lastAccessMutatedView = false
-            let buffer = try _tensorData.roHostRawBuffer()
+            let buffer = try _tensorData.readOnlyHostBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
     }
@@ -326,7 +326,7 @@ public extension TensorView {
         let queue = _tensorData.accessQueue
         return try queue.sync {
             _tensorData.lastAccessMutatedView = false
-            let buffer = try _tensorData.roDevicePointer(using: stream)
+            let buffer = try _tensorData.readOnlyDevicePointer(using: stream)
             return buffer.advanced(by: _viewOffset)
         }
     }
@@ -342,7 +342,7 @@ public extension TensorView {
         let queue = _tensorData.accessQueue
         return try queue.sync {
             try copyIfMutates()
-            let buffer = try _tensorData.rwHostMutableRawBuffer()
+            let buffer = try _tensorData.readWriteHostBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }
     }
@@ -358,7 +358,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            let buffer = try _tensorData.rwDevicePointer(using: stream)
+            let buffer = try _tensorData.readWriteDevicePointer(using: stream)
             return buffer.advanced(by: _viewOffset)
         }
     }

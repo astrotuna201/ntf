@@ -182,72 +182,14 @@ public func setText(_ text: String, color: LogColor) -> String {
 //------------------------------------------------------------------------------
 // LogCategories
 public struct LogCategories: OptionSet {
-    private let masks = [
-        "connections": LogCategories.connections.rawValue,
-        "context": LogCategories.context.rawValue,
-        "dataAlloc": LogCategories.dataAlloc.rawValue,
-        "dataCopy": LogCategories.dataCopy.rawValue,
-        "dataMutation": LogCategories.dataMutation.rawValue,
-        "defaults": LogCategories.defaultsLookup.rawValue,
-        "evaluate": LogCategories.evaluate.rawValue,
-        "setup": LogCategories.setup.rawValue,
-        "setupBackward": LogCategories.setupBackward.rawValue,
-        "setupForward": LogCategories.setupForward.rawValue,
-        "streamAlloc": LogCategories.streamAlloc.rawValue,
-        "streamSync": LogCategories.streamSync.rawValue,
-        "tryLookup": LogCategories.tryDefaultsLookup.rawValue,
-        "download": LogCategories.download.rawValue
-    ]
-
-	public init(rawValue: Int) { self.rawValue = rawValue }
-
-	public init?(string: String) throws {
-		var value = 0
-		let options = string.components(separatedBy: ",")
-		for option in options {
-			let key = option.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let keyValue = masks[key] else { return nil }
-            value |= keyValue
-		}
-		self.rawValue = value
-	}
-
-	public var string: String {
-		var result = ""
-		if rawValue & LogCategories.connections.rawValue    != 0 { result += "connections, " }
-		if rawValue & LogCategories.context.rawValue        != 0 { result += "context, " }
-		if rawValue & LogCategories.dataAlloc.rawValue      != 0 { result += "dataAlloc, " }
-		if rawValue & LogCategories.dataCopy.rawValue       != 0 { result += "dataCopy, " }
-		if rawValue & LogCategories.dataMutation.rawValue   != 0 { result += "dataMutation, " }
-		if rawValue & LogCategories.defaultsLookup.rawValue != 0 { result += "defaults, " }
-		if rawValue & LogCategories.evaluate.rawValue       != 0 { result += "evaluate, " }
-		if rawValue & LogCategories.setup.rawValue          != 0 { result += "setup, " }
-		if rawValue & LogCategories.setupBackward.rawValue  != 0 { result += "setupBackward, " }
-		if rawValue & LogCategories.setupForward.rawValue   != 0 { result += "setupForward, " }
-		if rawValue & LogCategories.streamAlloc.rawValue    != 0 { result += "streamAlloc, " }
-		if rawValue & LogCategories.streamSync.rawValue     != 0 { result += "streamSync, " }
-		if rawValue & LogCategories.tryDefaultsLookup.rawValue != 0 { result += "tryLookup, " }
-		if rawValue & LogCategories.download.rawValue       != 0 { result += "download, " }
-		if !result.isEmpty { result.removeLast(2) }
-		return result
-	}
-
-	// properties
+    public init(rawValue: Int) { self.rawValue = rawValue }
 	public let rawValue: Int
-	public static let connections       = LogCategories(rawValue: 1 << 0)
-	public static let dataAlloc         = LogCategories(rawValue: 1 << 1)
-	public static let dataCopy          = LogCategories(rawValue: 1 << 2)
-	public static let dataMutation      = LogCategories(rawValue: 1 << 3)
-	public static let defaultsLookup    = LogCategories(rawValue: 1 << 4)
-	public static let evaluate          = LogCategories(rawValue: 1 << 5)
-	public static let setup             = LogCategories(rawValue: 1 << 7)
-	public static let setupBackward     = LogCategories(rawValue: 1 << 8)
-	public static let setupForward      = LogCategories(rawValue: 1 << 9)
-	public static let streamAlloc       = LogCategories(rawValue: 1 << 10)
-	public static let streamSync        = LogCategories(rawValue: 1 << 11)
-	public static let context           = LogCategories(rawValue: 1 << 12)
-	public static let tryDefaultsLookup = LogCategories(rawValue: 1 << 13)
-	public static let download          = LogCategories(rawValue: 1 << 14)
+	public static let dataAlloc    = LogCategories(rawValue: 1 << 0)
+	public static let dataCopy     = LogCategories(rawValue: 1 << 1)
+	public static let dataMutation = LogCategories(rawValue: 1 << 2)
+    public static let setup        = LogCategories(rawValue: 1 << 3)
+	public static let streamAlloc  = LogCategories(rawValue: 1 << 4)
+	public static let streamSync   = LogCategories(rawValue: 1 << 5)
 }
 
 // strings

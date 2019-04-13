@@ -21,7 +21,7 @@ final public class Platform: ObjectTracking, Logging {
     // properties
     
     /// global shared instance
-    public static let global = Platform()
+    public static let local = Platform()
     /// a device automatically selected based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     /// the default number of devices to use
@@ -31,11 +31,11 @@ final public class Platform: ObjectTracking, Logging {
     /// a stream created on the default device
     public private(set) static var defaultStream: DeviceStream = {
         do {
-            return try global.defaultDevice
+            return try local.defaultDevice
                 .createStream(name: "Platform.defaultStream")
         } catch {
             // this should never fail
-            global.writeLog(String(describing: error))
+            local.writeLog(String(describing: error))
             fatalError()
         }
     }()
@@ -47,7 +47,11 @@ final public class Platform: ObjectTracking, Logging {
     // object tracking
     public private(set) var trackingId = 0
     public var logging: LogInfo?
-
+    public var log: Log {
+        get { return logging!.log }
+        set { logging!.log = newValue }
+    }
+    
     //--------------------------------------------------------------------------
     /// collection of registered compute services (cpu, cuda, ...)
     /// loading and enumerating services is expensive and invariant, so
@@ -161,15 +165,13 @@ final public class Platform: ObjectTracking, Logging {
                                            allowSubstitute: true)
             }
         }
-        if willLog(level: .status) {
-            writeLog("""
-                default device: \(defaultDevice.name)
-                id: \(defaultDevice.service.name).\(defaultDevice.id)
-                """, level: .status)
-        }
 
         // we had to find at least one device like the cpu
         guard let device = defaultDev else { fatalError("No available devices") }
+        if willLog(level: .status) {
+            writeLog("default device: [\(device.service.name)] " +
+                "\(device.name):\(device.id)", level: .status)
+        }
         return device
     }
 

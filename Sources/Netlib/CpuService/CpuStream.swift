@@ -113,8 +113,10 @@ public final class CpuStream : DeviceStream {
     //--------------------------------------------------------------------------
     /// record(event:
 	public func record(event: StreamEvent) throws  -> StreamEvent {
+        let streamEvent = event as! CpuStreamEvent
+        streamEvent.occurred = false
+
         commandQueue.async {
-            let streamEvent = event as! CpuStreamEvent
             streamEvent.signal()
         }
 		return event

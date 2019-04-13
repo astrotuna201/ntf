@@ -13,7 +13,7 @@ public class CpuDevice : ComputeDevice {
     public let id: Int
     public var logging: LogInfo?
     public var maxThreadsPerBlock: Int { return 1 }
-    public let name: String = "cpu"
+    public let name: String
     public weak var service: ComputeService!
     private let streamId = AtomicCounter()
     public var timeout: TimeInterval?
@@ -32,6 +32,7 @@ public class CpuDevice : ComputeDevice {
                 logging: LogInfo,
                 memoryAddressing: MemoryAddressing,
                 timeout: TimeInterval? = nil) {
+        self.name = "cpu:\(deviceId)"
 		self.logging = logging
 		self.id = deviceId
 		self.service = service

@@ -169,8 +169,8 @@ final public class Platform: ObjectTracking, Logging {
         // we had to find at least one device like the cpu
         guard let device = defaultDev else { fatalError("No available devices") }
         if willLog(level: .status) {
-            writeLog("default device: [\(device.service.name)] " +
-                "\(device.name):\(device.id)", level: .status)
+            writeLog("default device: [\(device.service.name)] \(device.name)",
+                level: .status)
         }
         return device
     }

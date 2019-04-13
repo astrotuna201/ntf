@@ -94,8 +94,7 @@ final public class TensorData: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // initializers
-    
-    //----------------------------------------
+
     // Empty
     public convenience init() {
         self.init(byteCount: 0, logging: nil)
@@ -108,7 +107,7 @@ final public class TensorData: ObjectTracking, Logging {
     public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer,
                 logging: LogInfo?) {
         // store
-        self.logging = logging
+        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         isReadOnlyReference = true
         byteCount = buffer.count
         masterVersion = 0
@@ -124,7 +123,7 @@ final public class TensorData: ObjectTracking, Logging {
     //----------------------------------------
     // copy from buffer
     public init(logging: LogInfo?, buffer: UnsafeRawBufferPointer) {
-        self.logging = logging
+        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         isReadOnlyReference = false
         byteCount = buffer.count
         
@@ -143,7 +142,7 @@ final public class TensorData: ObjectTracking, Logging {
     public init<Scalar>(type: Scalar.Type, count: Int,
                         logging: LogInfo?, name: String? = nil) {
         isReadOnlyReference = false
-        self.logging = logging
+        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         self.byteCount = count * MemoryLayout<Scalar>.size
         self._name = name
         register()
@@ -153,7 +152,7 @@ final public class TensorData: ObjectTracking, Logging {
     // create new array based on byte count
     public init(byteCount: Int, logging: LogInfo?, name: String? = nil) {
         isReadOnlyReference = false
-        self.logging = logging
+        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         self.byteCount = byteCount
         self._name = name
         register()
@@ -169,7 +168,7 @@ final public class TensorData: ObjectTracking, Logging {
 
         if byteCount > 0 && willLog(level: .diagnostic) {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "bytes: \(byteCount)", categories: .dataAlloc)
+                    "bytes[\(byteCount)]", categories: .dataAlloc)
         }
     }
 
@@ -212,7 +211,7 @@ final public class TensorData: ObjectTracking, Logging {
             let streamIdStr = stream == nil ? "nil" : "\(stream!.id)"
             diagnostic("\(createString) \(name)(\(trackingId)) init" +
                 "\(setText(" copying ", color: .blue))" +
-                "DataArray(\(other.trackingId)) bytes: \(other.byteCount) " +
+                "DataArray(\(other.trackingId)) bytes[\(other.byteCount)] " +
                 "stream id(\(streamIdStr))", categories: [.dataAlloc, .dataCopy])
         }
         
@@ -325,7 +324,7 @@ final public class TensorData: ObjectTracking, Logging {
         // add the device array list if needed
         if deviceArrays.count <= serviceId {
             let addCount = max(serviceId + 1, 2) - deviceArrays.count
-            for _ in 0..<addCount {    deviceArrays.append([ArrayInfo?]()) }
+            for _ in 0..<addCount { deviceArrays.append([ArrayInfo?]()) }
         }
 
         // create array list if needed
@@ -346,8 +345,8 @@ final public class TensorData: ObjectTracking, Logging {
         } else {
             // create the device array
             if willLog(level: .diagnostic) {
-                diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "allocating array on device(\(device.id)) bytes: \(byteCount)",
+                diagnostic("\(allocString) \(name)(\(trackingId)) " +
+                    "device array on \(device.name)  bytes[\(byteCount)]",
                     categories: .dataAlloc)
             }
             let array = try device.createArray(count: byteCount)
@@ -362,8 +361,8 @@ final public class TensorData: ObjectTracking, Logging {
     // createHostArray
     private func createHostArray() throws {
         if willLog(level: .diagnostic) {
-            diagnostic("\(createString) \(name)(\(trackingId)) " +
-                "host array  bytes: \(byteCount)", categories: .dataAlloc)
+            diagnostic("\(allocString) \(name)(\(trackingId)) " +
+                "host array  bytes[\(byteCount)]", categories: .dataAlloc)
         }
         hostVersion = -1
         hostBuffer = UnsafeMutableRawBufferPointer.allocate(
@@ -378,7 +377,7 @@ final public class TensorData: ObjectTracking, Logging {
         if willLog(level: .diagnostic) {
             diagnostic(
                 "\(releaseString) \(name) DataArray(\(trackingId)) host array " +
-                "bytes: \(byteCount)", categories: .dataAlloc)
+                "bytes[\(byteCount)]", categories: .dataAlloc)
         }
         hostBuffer.deallocate()
         hostBuffer = nil
@@ -411,8 +410,8 @@ final public class TensorData: ObjectTracking, Logging {
             // copy host data to device if it exists and is needed
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) host" +
-                    "\(setText(" ---> ", color: .blue))" +
-                    "d\(stream.device.id)_s\(stream.id) bytes: \(byteCount)",
+                    "\(setText(" --> ", color: .blue))" +
+                    "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
                     categories: .dataCopy)
             }
 
@@ -451,7 +450,7 @@ final public class TensorData: ObjectTracking, Logging {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "d\(master.stream.device.id)_s\(master.stream.id)" +
                     "\(setText(" ---> ", color: .blue)) host" +
-                    " bytes: \(byteCount)", categories: .dataCopy)
+                    " bytes[\(byteCount)]", categories: .dataCopy)
             }
 
             // synchronous copy
@@ -473,7 +472,7 @@ final public class TensorData: ObjectTracking, Logging {
 
         // get array for stream's device and set deviceBuffer pointer
         let arrayInfo = try getArray(for: stream)
-        let array     = arrayInfo.array
+        let array = arrayInfo.array
         deviceDataPointer = array.data
 
         // synchronize output stream with master stream
@@ -487,9 +486,9 @@ final public class TensorData: ObjectTracking, Logging {
                 if master.stream.device.id != stream.device.id {
                     if willLog(level: .diagnostic) {
                         diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                            "device(\(master.stream.device.id))" +
-                            "\(setText(" ---> ", color: .blue))" +
-                            "device(\(stream.device.id)) bytes: \(byteCount)",
+                            "\(master.stream.device.name)" +
+                            "\(setText(" --> ", color: .blue))" +
+                            "\(stream.device.name)  bytes[\(byteCount)]",
                             categories: .dataCopy)
                     }
                     try array.copyAsync(from: master.array, using: stream)

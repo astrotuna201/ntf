@@ -10,7 +10,7 @@ final public class CpuStreamEvent : StreamEvent {
     // properties
     private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
-    public var occurred: Bool = false
+    public var occurred: Bool = true
     public var logging: LogInfo? = nil
 
     //--------------------------------------------------------------------------
@@ -26,18 +26,20 @@ final public class CpuStreamEvent : StreamEvent {
     /// These are not exposed through the protocol because they should only
     /// be manipulated via the DeviceStream protocol
     public func signal() {
-        occurred = true
         semaphore.signal()
     }
     
     public func wait(until timeout: TimeInterval?) throws {
-        if let timeout = timeout {
-            let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
-            if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
-                throw StreamEventError.timedOut
+        if !occurred {
+            if let timeout = timeout {
+                let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
+                if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
+                    throw StreamEventError.timedOut
+                }
+            } else {
+                semaphore.wait()
             }
-        } else {
-            semaphore.wait()
+            occurred = true
         }
     }
 }

@@ -139,7 +139,18 @@ final public class TensorData: ObjectTracking, Logging {
     }
 
     //----------------------------------------
-    // create new space
+    // create new array based on scalar size
+    public init<Scalar>(type: Scalar.Type, count: Int,
+                        logging: LogInfo?, name: String? = nil) {
+        isReadOnlyReference = false
+        self.logging = logging
+        self.byteCount = count * MemoryLayout<Scalar>.size
+        self._name = name
+        register()
+    }
+    
+    //----------------------------------------
+    // create new array based on byte count
     public init(byteCount: Int, logging: LogInfo?, name: String? = nil) {
         isReadOnlyReference = false
         self.logging = logging

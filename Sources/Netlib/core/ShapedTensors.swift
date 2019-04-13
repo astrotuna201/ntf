@@ -87,7 +87,7 @@ public extension ScalarView {
 // ScalarTensor
 public struct ScalarTensor<Scalar>: ScalarView {
     // properties
-    public var _removethis_dataShape: DataShape? = nil
+    public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -142,7 +142,7 @@ public extension VectorView {
 // Vector
 public struct Vector<Scalar>: VectorView {
     // properties
-    public var _removethis_dataShape: DataShape? = nil
+    public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -203,7 +203,7 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Scalar>: MatrixView {
     // properties
-    public var _removethis_dataShape: DataShape? = nil
+    public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -266,7 +266,7 @@ public extension VolumeView {
 /// Volume
 public struct Volume<Scalar>: VolumeView {
     // properties
-    public var _removethis_dataShape: DataShape? = nil
+    public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -292,7 +292,7 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar>: NDTensorView {
     // properties
-    public var _removethis_dataShape: DataShape? = nil
+    public var _dataShape: DataShape? = nil
     public var _isReadOnly: Bool = false
     public var _isShared: Bool = false
     public var _name: String? = nil
@@ -361,7 +361,7 @@ public struct NDTensor<Scalar>: NDTensorView {
 //// NCHWTensor
 //public struct NCHWTensor<Scalar>: NCHWTensorView {
 //    // properties
-//    public var _removethis_dataShape: DataShape? = nil
+//    public var _dataShape: DataShape? = nil
 //    public var _isReadOnly: Bool = false
 //    public var _isShared: Bool = false
 //    public var _name: String? = nil
@@ -430,7 +430,7 @@ public struct NDTensor<Scalar>: NDTensorView {
 //// NHWCTensor
 //public struct NHWCTensor<Scalar>: NHWCTensorView {
 //    // properties
-//    public var _removethis_dataShape: DataShape? = nil
+//    public var _dataShape: DataShape? = nil
 //    public var _isReadOnly: Bool = false
 //    public var _isShared: Bool = false
 //    public var _name: String? = nil

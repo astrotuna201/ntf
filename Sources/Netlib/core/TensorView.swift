@@ -21,8 +21,6 @@ public protocol TensorView: Logging, Equatable {
     // this gives full access to protocol default implementations.
 
     // remove these
-    /// the shape of the view for the actual underlying data
-    var _removethis_dataShape: DataShape? { get set }
     /// specifies an amount of padding before and after each dimension used
     /// only during indexing and iteration. It is not reflected in the `shape`
     /// of the view or part of subview creation. It is passed
@@ -31,11 +29,16 @@ public protocol TensorView: Logging, Equatable {
     /// the scalar value to be returned for indexes with padding regions
     var padValue: Scalar? { get set }
 
-    
+    /// the shape of the actual underlying data. If `dataShape.extents` do not
+    /// match `shape.extents` then the data is repeated (broadcast) across
+    /// all dimensions during iteration and indexing.
+    /// If `_dataShape` is nil, then it equals `shape`
+    var _dataShape: DataShape? { get set }
     /// `true` if the shape is readonly because it is a virtual shape or if
     /// it references a read only memory buffer
     var _isReadOnly: Bool { get set }
-    /// during write access. Primarily to support multi-threaded writes
+    /// used internally when obtaining write access to manage
+    /// multi-threaded writes without causing `tensorData` copy on write.
     var _isShared: Bool { get set }
     /// the name of the view, which can optionally be set to aid in debugging
     var _name: String? { get set }
@@ -72,8 +75,10 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     // public property accessors
 
-    /// the shape of the view for the actual underlying data
-    var dataShape: DataShape { return _removethis_dataShape ?? shape }
+    /// the shape of the actual underlying data. If `dataShape.extents` do not
+    /// match `shape.extents` then the data is repeated (broadcast) across
+    /// all dimensions during iteration and indexing.
+    var dataShape: DataShape { return _dataShape ?? shape }
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
     /// `true` if the view contains zero elements
@@ -108,7 +113,7 @@ public extension TensorView {
          logging: LogInfo? = nil)
     {
         self.init()
-        _removethis_dataShape = dataShape
+        _dataShape = dataShape
         _isShared = isShared
         _name = name
         _shape = shape
@@ -116,10 +121,21 @@ public extension TensorView {
         self.padding = padding
         self.padValue = padValue
         self.logging = logging
-        let span = self.dataShape.elementSpanCount * MemoryLayout<Scalar>.size
-        _tensorData = tensorData ??
-            TensorData(byteCount: span, logging: logging, name: name)
-        assert(viewByteOffset + span <= _tensorData.byteCount)
+
+        // initialize tensor data
+        if let tensorData = tensorData {
+            // this views existing data
+            _tensorData = tensorData
+        } else {
+            // allocate backing tensorData
+            assert(shape.isContiguous, "new views should have a dense shape")
+            _tensorData =
+                TensorData(type: Scalar.self,
+                           count: self.dataShape.elementSpanCount,
+                           logging: logging, name: name)
+            
+            assert(viewByteOffset + viewSpanByteCount <= _tensorData.byteCount)
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -445,7 +461,7 @@ public extension TensorView {
         
         // create flattened view
         return Self.init(shape: shape.flattened(),
-                         dataShape: _removethis_dataShape,
+                         dataShape: _dataShape,
                          tensorData: _tensorData,
                          viewOffset: _viewOffset,
                          padding: padding,
@@ -468,7 +484,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return Self.init(shape: shape, dataShape: _removethis_dataShape,
+            return Self.init(shape: shape, dataShape: _dataShape,
                              tensorData: _tensorData, viewOffset: _viewOffset,
                              padding: padding, padValue: padValue,
                              isShared: true,
@@ -538,13 +554,6 @@ public extension TensorView where Scalar: FloatingPoint {
         }
         return true
     }
-}
-
-//==============================================================================
-// RepeatedView protocol
-public protocol RepeatedView: TensorView {
-    /// the shape of the view for the actual underlying data
-    var _dataShape: DataShape { get set }
 }
 
 //==============================================================================

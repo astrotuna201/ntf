@@ -41,9 +41,9 @@ extension Logging {
 	                     minCount: Int = 80) {
 		if willLog(level: level) {
 			logging!.log.write(level: level,
+                               message: message,
                                nestingLevel: indent + logging!.nestingLevel,
-                               trailing: trailing, minCount: minCount,
-                               message: message)
+                               trailing: trailing, minCount: minCount)
 		}
 	}
 
@@ -59,9 +59,9 @@ extension Logging {
 			   categories.rawValue & mask == 0 { return }
 
 			logging!.log.write(level: .diagnostic,
+                               message: message,
                                nestingLevel: indent + logging!.nestingLevel,
-                               trailing: trailing, minCount: minCount,
-                               message: message)
+                               trailing: trailing, minCount: minCount)
 		}
 	}
 }
@@ -88,23 +88,35 @@ final public class Log: ObjectTracking {
 		String(describing: LogLevel.diagnostic).count
 
 	//--------------------------------------------------------------------------
-	// functions
-	public func write(level: LogLevel, nestingLevel: Int,
-	                  trailing: String, minCount: Int, message: String) {
+	/// write
+    /// writes an entry into the log
+    /// - Parameter level: the level of the message
+    /// - Parameter message:
+    /// - Parameter nestingLevel:
+    /// - Parameter trailing:
+    /// - Parameter minCount:
+	public func write(level: LogLevel,
+                      message: String,
+                      nestingLevel: Int = 0,
+	                  trailing: String = "",
+                      minCount: Int = 0) {
+        // protect against mt writes
 		queue.sync { [unowned self] in
+            // record in history
 			if maxHistory > 0 {
 				if self.history.count == self.maxHistory { self.history.removeFirst() }
 				self.history.append(LogEvent(level: level, nestingLevel: nestingLevel,
 				                             message: message))
 			}
 
+            // create fixed width string for level column
 			let levelStr = String(describing: level).padding(
 				toLength: Log.levelColWidth, withPad: " ", startingAt: 0)
 
 			let indent = String(repeating: " ", count: nestingLevel * self.tabSize)
 			var eventStr = levelStr + ": " + indent + message
 
-			// add trailing fill
+			// add trailing fill if desired
 			if !trailing.isEmpty {
 				let fillCount = minCount - eventStr.count
 				if message.isEmpty {

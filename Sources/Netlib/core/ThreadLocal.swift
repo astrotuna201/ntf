@@ -35,6 +35,8 @@ class _ThreadLocal {
     /// stack of default device streams and logging
     var streamScope: [(stream: DeviceStream, logInfo: LogInfo)] =
         [(Platform.defaultStream, Platform.defaultStream.logging!)]
+    /// an application thread exception handler.
+    var exceptionHandler: ((Error) -> Void)?
 
     /// thread data key
     private static let key: pthread_key_t = {
@@ -65,6 +67,16 @@ class _ThreadLocal {
     func popStream() {
         assert(streamScope.count > 1)
         _ = streamScope.popLast()
+    }
+
+    @usableFromInline
+    func catchError(perform body: () throws -> Void) {
+        do {
+            return try body()
+        } catch {
+            defaultLogging.log.write(level: .error,
+                                     message: String(describing: error))
+        }
     }
 
     //--------------------------------------------------------------------------

@@ -16,7 +16,7 @@ import Foundation
 public func log<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        _ThreadLocal.value.catchError { stream in
+        _ThreadLocalStream.value.catchError { stream in
             try stream.log(x: x, result: &result)
         }
 }
@@ -58,7 +58,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 public func logSoftmax<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        _ThreadLocal.value.catchError { stream in
+        _ThreadLocalStream.value.catchError { stream in
             try stream.logSoftmax(x: x, result: &result)
         }
 }
@@ -102,7 +102,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 public func pow<T>(_ x: T, _ y: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        _ThreadLocal.value.catchError { stream in
+        _ThreadLocalStream.value.catchError { stream in
             try stream.pow(x: x, y: y, result: &result)
         }
 }

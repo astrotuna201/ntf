@@ -32,6 +32,12 @@ class test_Ops: XCTestCase {
     }
     
     func test_AddSubMulDiv() {
+        SetStreamExceptionHandler { error in
+            // something unexpected bad happened
+            print(String(describing: error))
+            exit(0)
+        }
+        
         let _ = Matrix<RGBASample<UInt8>>(4, 3)
         let _ = Vector<StereoSample<Int16>>(count: 1024)
 

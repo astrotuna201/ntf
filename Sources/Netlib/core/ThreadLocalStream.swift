@@ -14,31 +14,56 @@ import Glibc
 
 //==============================================================================
 /// Executes a closure on the specified stream
-///
-/// - Parameters:
-///   - body: A closure whose operations are to be executed on the
-///           specified stream
+/// - Parameter stream: the stream to set as the `currentStream`
+/// - Parameter logInfo: optional logging, if nil then it is inherited from
+///             the previous scope
+/// - Parameter handler: a handler for asynchronous errors, if nil it is
+///             inherited from the previous scope
+/// - Parameter body: A closure whose operations are to be executed on the
+///             specified stream
 @inline(never)
-public func using<R>(_ stream: DeviceStream, logInfo: LogInfo? = nil,
+public func using<R>(_ stream: DeviceStream,
+                     logInfo: LogInfo? = nil,
+                     handler: StreamExceptionHandler? = nil,
                      perform body: () throws -> R) rethrows -> R {
     // sets the default stream and logging info for the current scope
-    _ThreadLocal.value.push(stream: stream, logInfo: logInfo)
-    defer { _ThreadLocal.value.popStream() }
+    _ThreadLocalStream.value.push(stream: stream, logInfo: logInfo)
+    defer { _ThreadLocalStream.value.popStream() }
     // execute the body
     return try body()
 }
 
+public typealias StreamExceptionHandler = (Error) -> Void
+
 //==============================================================================
-// _ThreadLocal
+/// SetStreamExceptionHandler
+public func SetStreamExceptionHandler(handler: @escaping StreamExceptionHandler) {
+    let index = _ThreadLocalStream.value.streamScope.count - 1
+    _ThreadLocalStream.value.streamScope[index].exceptionHandler = handler
+}
+
+//==============================================================================
+/// _ThreadLocalStream
+
+/// Manages the current scope for the current stream, log, and error handlers
 @usableFromInline
-class _ThreadLocal {
+class _ThreadLocalStream
+ {
+    // types
+    struct Scope {
+        let stream: DeviceStream
+        let logInfo: LogInfo
+        var exceptionHandler: StreamExceptionHandler?
+    }
+    
     //--------------------------------------------------------------------------
     // properties
     /// stack of default device streams and logging
-    var streamScope: [(stream: DeviceStream, logInfo: LogInfo)] =
-        [(Platform.defaultStream, Platform.defaultStream.logging!)]
-    /// an application thread exception handler.
-    var exceptionHandler: ((Error) -> Void)?
+    public fileprivate(set) var streamScope: [Scope] = [
+        Scope(stream: Platform.defaultStream,
+              logInfo: Platform.defaultStream.logging!,
+              exceptionHandler: nil)
+    ]
 
     /// thread data key
     private static let key: pthread_key_t = {
@@ -61,8 +86,10 @@ class _ThreadLocal {
     // stack functions
     @usableFromInline
     func push(stream: DeviceStream, logInfo: LogInfo? = nil) {
-        let info = logInfo ?? streamScope.last!.logInfo
-        streamScope.append((stream, info))
+        streamScope.append(
+            Scope(stream: stream,
+                  logInfo: logInfo ?? streamScope.last!.logInfo,
+                  exceptionHandler: streamScope.last!.exceptionHandler))
     }
     
     @usableFromInline
@@ -81,7 +108,7 @@ class _ThreadLocal {
                                      message: String(describing: error))
             
             // call the handler if there is one
-            if let handler = exceptionHandler {
+            if let handler = streamScope.last!.exceptionHandler {
                 DispatchQueue.main.async {
                     handler(error)
                 }
@@ -95,13 +122,14 @@ class _ThreadLocal {
     //--------------------------------------------------------------------------
     // shared singleton initializer
     @usableFromInline
-    static var value: _ThreadLocal {
+    static var value: _ThreadLocalStream
+ {
         // try to get an existing state
         if let state = pthread_getspecific(key) {
             return Unmanaged.fromOpaque(state).takeUnretainedValue()
         } else {
             // create and return new state
-            let state = _ThreadLocal()
+            let state = _ThreadLocalStream()
             pthread_setspecific(key, Unmanaged.passRetained(state).toOpaque())
             return state
         }

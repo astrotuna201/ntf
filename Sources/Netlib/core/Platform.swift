@@ -207,8 +207,7 @@ final public class Platform: ObjectTracking, Logging {
         return try ids.map {
             let device = requestDevice(serviceName: serviceName,
                                        deviceId: $0, allowSubstitute: true)!
-            let streamName = deviceIds?.count != 0 ? "\(name):\($0)" : name
-            return try device.createStream(name: streamName)
+            return try device.createStream(name: name)
         }
     }
 

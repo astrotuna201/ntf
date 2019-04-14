@@ -15,7 +15,7 @@ public class CpuDevice : ComputeDevice {
     public var maxThreadsPerBlock: Int { return 1 }
     public let name: String
     public weak var service: ComputeService!
-    private let streamId = AtomicCounter()
+    private let streamId = AtomicCounter(value: -1)
     public var timeout: TimeInterval?
     public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
@@ -57,7 +57,8 @@ public class CpuDevice : ComputeDevice {
 	// createStream
 	public func createStream(name streamName: String) throws -> DeviceStream {
         let id = streamId.increment()
-        return try CpuStream(logging: logging!.child("\(streamName):\(id)"),
+        let streamName = "\(streamName):\(id)"
+        return try CpuStream(logging: logging!.child(streamName),
                              device: self, name: streamName, id: id)
 	}
 } // CpuDevice

@@ -31,7 +31,9 @@ public final class AtomicCounter {
     }
 
     // initializers
-	public init(value: Int = 0) { counter = value }
+	public init(value: Int = 0) {
+        counter = value
+    }
 
     // functions
 	public func increment() -> Int {

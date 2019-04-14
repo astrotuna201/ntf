@@ -178,7 +178,7 @@ public extension TensorView {
     /// name
     /// an optional view name used for logging
     var name: String {
-        get { return _name ?? String(describing: self) }
+        get { return _name ?? _tensorData.name }
         set {
             _name = newValue
             if !_tensorData.hasName { _tensorData.name = newValue }

@@ -68,9 +68,9 @@ class test_TensorView: XCTestCase {
             log.logLevel = .diagnostic
             
             // create a named stream on two different discreet devices
-            // cpu device 1 is a discreet memory version for testing only
+            // cpu devices 1 and 2 are discreet memory versions for testing
             let stream = try Platform.local.createStreams(serviceName: "cpu",
-                                                          deviceIds: [1, 1])
+                                                          deviceIds: [1, 2])
             XCTAssert(stream[0].device.memoryAddressing == .discreet &&
                 stream[1].device.memoryAddressing == .discreet)
             

@@ -31,7 +31,7 @@ final public class TensorData: ObjectTracking, Logging {
     /// an optional context specific name for logging
     private var _name: String?
     public var name: String {
-        get { return _name ?? String(describing: TensorData.self) }
+        get { return _name ?? "TensorData" }
         set { _name = newValue }
     }
     public var hasName: Bool { return _name != nil }

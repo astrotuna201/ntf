@@ -6,11 +6,14 @@ import Foundation
 
 //==============================================================================
 // CpuStreamEvent
+/// a stream event behaves like a barrier. The first caller to wait takes
+/// the wait semaphore
 final public class CpuStreamEvent : StreamEvent {
     // properties
+    private let occurredMutex = Mutex()
     private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
-    public var occurred: Bool = true
+    private var _occurred: Bool = true
     public var logging: LogInfo? = nil
 
     //--------------------------------------------------------------------------
@@ -29,17 +32,24 @@ final public class CpuStreamEvent : StreamEvent {
         semaphore.signal()
     }
     
+    public var occurred: Bool {
+        get { return occurredMutex.sync { _occurred } }
+        set { occurredMutex.sync { _occurred = newValue } }
+    }
+    
     public func wait(until timeout: TimeInterval?) throws {
-        if !occurred {
-            if let timeout = timeout {
-                let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
-                if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
-                    throw StreamEventError.timedOut
+        try occurredMutex.sync {
+            if !_occurred {
+                if let timeout = timeout {
+                    let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
+                    if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
+                        throw StreamEventError.timedOut
+                    }
+                } else {
+                    semaphore.wait()
                 }
-            } else {
-                semaphore.wait()
+                _occurred = true
             }
-            occurred = true
         }
     }
 }

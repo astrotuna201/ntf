@@ -22,14 +22,18 @@ public class CpuComputeService : ComputeService {
         trackingId = ObjectTracker.global.register(self, isStatic: true)
 
         // add cpu device
-        devices.append(CpuDevice(service: self, deviceId: id,
-                                 logging: logging.child("cpu"),
+        devices.append(CpuDevice(service: self, deviceId: 0,
+                                 logging: logging.child("cpu:0"),
                                  memoryAddressing: .unified))
         
-        // add a discreet version for unit testing
+        // add two discreet versions for unit testing
         // TODO is there a better solution for testing
-        devices.append(CpuDevice(service: self, deviceId: id,
-                                 logging: logging.child("discreetmemorycpu"),
+        devices.append(CpuDevice(service: self, deviceId: 1,
+                                 logging: logging.child("unitTestDiscreet:1"),
+                                 memoryAddressing: .discreet))
+
+        devices.append(CpuDevice(service: self, deviceId: 2,
+                                 logging: logging.child("unitTestDiscreet:2"),
                                  memoryAddressing: .discreet))
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }

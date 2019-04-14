@@ -20,7 +20,8 @@ public protocol ComputePlatform : ObjectTracking, Logging {
     // instance members
     /// a device automatically selected based on service priority
     var defaultDevice: ComputeDevice { get }
-    /// the default number of devices to use
+    /// the default number of devices to spread a set of streams across
+    /// a value of -1 specifies all available devices within the service
     var defaultDevicesToAllocate: Int { get set }
     /// ordered list of device ids specifying the order for auto selection
     var deviceIdPriority: [Int] { get set }

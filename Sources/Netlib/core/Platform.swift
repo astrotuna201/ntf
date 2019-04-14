@@ -20,8 +20,9 @@ import Foundation
 final public class Platform: ComputePlatform {
     /// a device automatically selected based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
-    /// the default number of devices to use
-    public var defaultDevicesToAllocate = 1
+    /// the default number of devices to spread a set of streams across
+    /// a value of -1 specifies all available devices within the service
+    public var defaultDevicesToAllocate = -1
     /// ordered list of device ids specifying the order for auto selection
     public var deviceIdPriority: [Int] = [0]
     /// global shared instance
@@ -206,12 +207,19 @@ final public class Platform: ComputePlatform {
     public func createStreams(name: String = "stream",
                               serviceName: String? = nil,
                               deviceIds: [Int]? = nil) throws -> [DeviceStream]{
-
+        
+        // choose the service to select the device from
         let serviceName = serviceName ?? defaultDevice.service.name
-        let maxDeviceCount = min(defaultDevicesToAllocate,
-                                 defaultDevice.service.devices.count)
+        
+        // choose how many devices to spread the streams across
+        let maxDeviceCount = defaultDevicesToAllocate == -1 ?
+            defaultDevice.service.devices.count :
+            min(defaultDevicesToAllocate, defaultDevice.service.devices.count)
+        
+        // get the device ids
         let ids = deviceIds ?? [Int](0..<maxDeviceCount)
 
+        // create the streams
         return try ids.map {
             let device = requestDevice(serviceName: serviceName,
                                        deviceId: $0, allowSubstitute: true)!

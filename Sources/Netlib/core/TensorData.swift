@@ -454,7 +454,7 @@ final public class TensorData: ObjectTracking, Logging {
         if hostVersion != masterVersion {
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                    "d\(master.stream.device.id)_s\(master.stream.id)" +
+                    "\(master.stream.device.name)_s\(master.stream.id)" +
                     "\(setText(" --> ", color: .blue))host " +
                     "  bytes[\(byteCount)]", categories: .dataCopy)
             }
@@ -495,7 +495,7 @@ final public class TensorData: ObjectTracking, Logging {
                         diagnostic("\(copyString) \(name)(\(trackingId)) " +
                             "\(master.stream.device.name)" +
                             "\(setText(" --> ", color: .blue))" +
-                            "\(stream.device.name)  bytes[\(byteCount)]",
+                            "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
                             categories: .dataCopy)
                     }
                     try array.copyAsync(from: master.array, using: stream)

@@ -109,7 +109,7 @@ class _ThreadLocalStream
             
             // call the handler if there is one
             if let handler = streamScope.last!.exceptionHandler {
-                DispatchQueue.main.async {
+                DispatchQueue.main.sync {
                     handler(error)
                 }
             } else {

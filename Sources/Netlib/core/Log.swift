@@ -6,7 +6,7 @@ import Foundation
 import Dispatch
 
 //==============================================================================
-// Logging
+// Logger
 public struct LogInfo {
     var log: Log
     var logLevel: LogLevel = .error
@@ -16,25 +16,96 @@ public struct LogInfo {
     public func child(_ name: String) -> LogInfo {
         return LogInfo(log: log, logLevel: .error,
                        namePath: "\(namePath)/\(name)",
-                       nestingLevel: nestingLevel + 1)
+            nestingLevel: nestingLevel + 1)
     }
 }
 
-public protocol Logging {
-    var logging: LogInfo { get set }
+//==============================================================================
+// Logger
+public protocol Logger {
+    var logInfo: LogInfo { get }
 }
 
-public func initLogging(param: LogInfo? = nil) -> LogInfo {
-    return param ?? _ThreadLocalStream.value.defaultLogging
+extension Logger {
+    public var log: Log {
+        get { return logInfo.log }
+    }
+    
+    public var logLevel: LogLevel {
+        get { return logInfo.logLevel }
+    }
+    
+    public var logNamePath: String {
+        get { return logInfo.namePath }
+    }
+    
+    public var logNestingLevel: Int {
+        get { return logInfo.nestingLevel }
+    }
+    
+    //------------------------------------
+    // willLog
+    public func willLog(level: LogLevel) -> Bool {
+        return level <= log.logLevel || level <= logLevel
+    }
+    
+    //------------------------------------
+    // writeLog
+    public func writeLog(_ message: String, level: LogLevel = .error,
+                         indent: Int = 0, trailing: String = "",
+                         minCount: Int = 80) {
+        if willLog(level: level) {
+            log.write(level: level,
+                      message: message,
+                      nestingLevel: indent + logNestingLevel,
+                      trailing: trailing, minCount: minCount)
+        }
+    }
+    
+    //------------------------------------
+    // diagnostic
+    public func diagnostic(_ message: String, categories: LogCategories,
+                           indent: Int = 0, trailing: String = "",
+                           minCount: Int = 80) {
+        if willLog(level: .diagnostic) {
+            // if subcategories have been selected on the log object
+            // then make sure the caller's category is desired
+            if let mask = log.categories?.rawValue,
+                categories.rawValue & mask == 0 { return }
+            
+            log.write(level: .diagnostic,
+                      message: message,
+                      nestingLevel: indent + logNestingLevel,
+                      trailing: trailing, minCount: minCount)
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
 // Logging
+public protocol Logging { }
+
 extension Logging {
-	//------------------------------------
+    public var log: Log {
+        get { return _ThreadLocalStream.value.defaultLogging.log }
+    }
+    
+    public var logLevel: LogLevel {
+        get { return _ThreadLocalStream.value.defaultLogging.logLevel }
+    }
+    
+    public var logNamePath: String {
+        get { return _ThreadLocalStream.value.defaultLogging.namePath }
+    }
+    
+    public var logNestingLevel: Int {
+        get { return _ThreadLocalStream.value.defaultLogging.nestingLevel }
+    }
+
+    //------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		return level <= logging.log.logLevel || level <= logging.logLevel
+		return level <= log.logLevel || level <= logLevel
 	}
 
 	//------------------------------------
@@ -42,31 +113,31 @@ extension Logging {
 	public func writeLog(_ message: String, level: LogLevel = .error,
 	                     indent: Int = 0, trailing: String = "",
 	                     minCount: Int = 80) {
-		if willLog(level: level) {
-            logging.log.write(level: level,
-                              message: message,
-                              nestingLevel: indent + logging.nestingLevel,
-                              trailing: trailing, minCount: minCount)
-		}
+        if willLog(level: level) {
+            log.write(level: level,
+                      message: message,
+                      nestingLevel: indent + logNestingLevel,
+                      trailing: trailing, minCount: minCount)
+        }
 	}
 
 	//------------------------------------
 	// diagnostic
-	public func diagnostic(_ message: String, categories: LogCategories,
-	                       indent: Int = 0, trailing: String = "",
-	                       minCount: Int = 80) {
-		if willLog(level: .diagnostic) {
-			// if subcategories have been selected on the log object
-			// then make sure the caller's category is desired
-			if let mask = logging.log.categories?.rawValue,
-			   categories.rawValue & mask == 0 { return }
-
-            logging.log.write(level: .diagnostic,
-                              message: message,
-                              nestingLevel: indent + logging.nestingLevel,
-                              trailing: trailing, minCount: minCount)
-		}
-	}
+    public func diagnostic(_ message: String, categories: LogCategories,
+                           indent: Int = 0, trailing: String = "",
+                           minCount: Int = 80) {
+        if willLog(level: .diagnostic) {
+            // if subcategories have been selected on the log object
+            // then make sure the caller's category is desired
+            if let mask = log.categories?.rawValue,
+                categories.rawValue & mask == 0 { return }
+            
+            log.write(level: .diagnostic,
+                      message: message,
+                      nestingLevel: indent + logNestingLevel,
+                      trailing: trailing, minCount: minCount)
+        }
+    }
 }
 
 //==============================================================================

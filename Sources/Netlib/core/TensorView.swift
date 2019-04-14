@@ -107,8 +107,7 @@ public extension TensorView {
          padding: [Padding]? = nil,
          padValue: Scalar? = nil,
          isShared: Bool = false,
-         name: String? = nil,
-         logging: LogInfo? = nil)
+         name: String? = nil)
     {
         self.init()
         _dataShape = dataShape
@@ -118,7 +117,6 @@ public extension TensorView {
         _viewOffset = viewOffset
         self.padding = padding
         self.padValue = padValue
-        self.logging = logging ?? initLogging()
         _tensorData = initTensorData(tensorData, shape, dataShape)
     }
 
@@ -134,8 +132,7 @@ public extension TensorView {
                   padding: padding,
                   padValue: padValue,
                   isShared: other._isShared,
-                  name: other.name,
-                  logging: other.logging)
+                  name: other.name)
     }
 
     //--------------------------------------------------------------------------
@@ -152,7 +149,7 @@ public extension TensorView {
             assert(dataShape == nil, "new views shouldn't specify a data shape")
             let tensorData = TensorData(type: Scalar.self,
                                         count: self.dataShape.elementSpanCount,
-                                        logging: logging, name: name)
+                                        name: name)
             
             assert(viewByteOffset + viewSpanByteCount <= tensorData.byteCount)
             return tensorData
@@ -191,7 +188,7 @@ public extension TensorView {
     /// convenience initializer used by generics
     /// - Parameter other: the other object whose shape and logging to use
     init<T>(shapedLike other: T) where T: TensorView {
-        self.init(shape: other.shape, logging: other.logging)
+        self.init(shape: other.shape)
     }
     
     //--------------------------------------------------------------------------
@@ -242,7 +239,7 @@ public extension TensorView {
         return NDTensor<Scalar>(
             shape: shape.squeezed(axes: axes),
             tensorData: _tensorData, viewOffset: _viewOffset,
-            isShared: isShared, name: name, logging: logging)
+            isShared: isShared, name: name)
     }
 
     //--------------------------------------------------------------------------
@@ -393,8 +390,7 @@ public extension TensorView {
                          padding: padding,
                          padValue: padValue,
                          isShared: isReference,
-                         name: "\(name).subview",
-                         logging: logging)
+                         name: "\(name).subview")
     }
     
     //--------------------------------------------------------------------------
@@ -474,8 +470,7 @@ public extension TensorView {
                          padding: padding,
                          padValue: padValue,
                          isShared: isShared,
-                         name: name,
-                         logging: logging)
+                         name: name)
     }
     
     //--------------------------------------------------------------------------
@@ -494,8 +489,7 @@ public extension TensorView {
             return Self.init(shape: shape, dataShape: _dataShape,
                              tensorData: _tensorData, viewOffset: _viewOffset,
                              padding: padding, padValue: padValue,
-                             isShared: true,
-                             name: name, logging: logging)
+                             isShared: true, name: name)
         }
     }
     

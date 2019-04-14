@@ -34,7 +34,7 @@ final public class Platform: ComputePlatform {
     /// object tracking id
     public private(set) var trackingId = 0
     /// logging information
-    public var logging: LogInfo
+    public var logInfo: LogInfo
 
     //--------------------------------------------------------------------------
     /// log
@@ -42,8 +42,8 @@ final public class Platform: ComputePlatform {
     /// device stream hierarchy, but can be overriden at any point down
     /// the tree
     public var log: Log {
-        get { return logging.log }
-        set { logging.log = newValue }
+        get { return logInfo.log }
+        set { logInfo.log = newValue }
     }
     
     //--------------------------------------------------------------------------
@@ -77,10 +77,9 @@ final public class Platform: ComputePlatform {
     /// `init` is private because this is a singleton. Use the `local` static
     /// member to access the global instance.
     private init() {
-        let namePath = String(describing: Platform.self)
-        let info = LogInfo(log: Log(), logLevel: .error,
-                           namePath: namePath, nestingLevel: 0)
-        self.logging = info
+        self.logInfo = LogInfo(log: Log(), logLevel: .error,
+                               namePath: String(describing: Platform.self),
+                               nestingLevel: 0)
     }
     
     //--------------------------------------------------------------------------
@@ -96,7 +95,7 @@ final public class Platform: ComputePlatform {
             }
             
             // add cpu service by default
-            try addService(CpuComputeService(logging: logging))
+            try addService(CpuComputeService(logInfo: logInfo))
             //            #if os(Linux)
             //            try add(service: CudaComputeService(logging: logging))
             //            #endif
@@ -110,7 +109,7 @@ final public class Platform: ComputePlatform {
                     bundle.principalClass as? ComputeService.Type {
                     
                     // create the service
-                    let service = try serviceType.init(logging: logging)
+                    let service = try serviceType.init(logInfo: logInfo)
                     
                     if willLog(level: .diagnostic) {
                         diagnostic(

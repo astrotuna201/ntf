@@ -79,7 +79,7 @@ public extension ScalarView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape,
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging)
+                  name: name)
     }
 }
 
@@ -95,7 +95,6 @@ public struct ScalarTensor<Scalar>: ScalarView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar? = nil
     public init() {}
@@ -123,7 +122,7 @@ public extension VectorView {
         let shape = DataShape(extents: [count])
         self.init(shape: shape,
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging)
+                  name: name)
     }
     
     /// initialize with scalar array
@@ -133,7 +132,7 @@ public extension VectorView {
         
         self.init(count: scalars.count,
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging)
+                  name: name)
         _ = try! readWrite().initialize(from: scalars)
     }
 }
@@ -150,7 +149,6 @@ public struct Vector<Scalar>: VectorView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -177,9 +175,7 @@ public extension MatrixView {
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents)
-        self.init(shape: shape,
-                  padding: padding, padValue: padValue,
-                  name: name, logging: logging)
+        self.init(shape: shape, padding: padding, padValue: padValue,name: name)
         
         // it's being initialized in host memory so it can't fail
         if let scalars = scalars {
@@ -194,8 +190,7 @@ public extension MatrixView {
          scalars: [Scalar]? = nil) {
         self.init(extents: [rows, cols],
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging,
-                  isColMajor: isColMajor, scalars: scalars)
+                  name: name, isColMajor: isColMajor, scalars: scalars)
     }
 }
 
@@ -211,7 +206,6 @@ public struct Matrix<Scalar>: MatrixView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -241,7 +235,7 @@ public extension VolumeView {
         
         self.init(shape: DataShape(extents: extents),
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging)
+                  name: name)
         
         // it's being initialized in host memory so it can't fail
         if let scalars = scalars {
@@ -257,7 +251,7 @@ public extension VolumeView {
         
         self.init(extents: [depths, rows, cols],
                   padding: padding, padValue: padValue,
-                  name: name, logging: logging,
+                  name: name,
                   scalars: scalars)
     }
 }
@@ -274,7 +268,6 @@ public struct Volume<Scalar>: VolumeView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -300,7 +293,6 @@ public struct NDTensor<Scalar>: NDTensorView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}

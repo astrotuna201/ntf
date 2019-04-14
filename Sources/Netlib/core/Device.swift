@@ -9,7 +9,7 @@ import Foundation
 /// this represents the root for managing all services, devices, and streams
 /// on a platform. There is one local instance per process, and possibly
 /// many remote instances.
-public protocol ComputePlatform : ObjectTracking, Logging {
+public protocol ComputePlatform : ObjectTracking, Logger {
     //--------------------------------------------------------------------------
     // class members
     /// global shared instance
@@ -78,7 +78,7 @@ public protocol ComputePlatform : ObjectTracking, Logging {
 /// ComputeService
 /// a compute service represents category of installed devices on the platform,
 /// such as (cpu, cuda, tpu, ...)
-public protocol ComputeService: ObjectTracking, Logging {
+public protocol ComputeService: ObjectTracking, Logger {
     /// a collection of available devices
     var devices: [ComputeDevice] { get }
     /// the service id
@@ -87,14 +87,14 @@ public protocol ComputeService: ObjectTracking, Logging {
     var name: String { get }
     
     /// required initializer to support dynamiclly loaded services
-    init(logging: LogInfo) throws
+    init(logInfo: LogInfo) throws
 }
 
 //==============================================================================
 /// ComputeDevice
 /// a compute device represents a physical service device installed
 /// on the platform
-public protocol ComputeDevice: ObjectTracking, Logging {
+public protocol ComputeDevice: ObjectTracking, Logger {
     //-------------------------------------
     // properties
     /// a dictionary of device specific attributes describing the device
@@ -129,7 +129,7 @@ public enum MemoryAddressing { case unified, discreet }
 //==============================================================================
 // DeviceArray
 //    This represents a device data array
-public protocol DeviceArray: ObjectTracking, Logging {
+public protocol DeviceArray: ObjectTracking, Logger {
     //-------------------------------------
     // properties
     /// the device where this array is allocated
@@ -161,12 +161,12 @@ public protocol DeviceArray: ObjectTracking, Logging {
 //==============================================================================
 // StreamEvent
 /// Stream events are queued to enable stream synchronization
-public protocol StreamEvent: ObjectTracking, Logging {
+public protocol StreamEvent: ObjectTracking, Logger {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
     
     // TODO: consider adding time outs for failed remote events
-    init(logging: LogInfo, options: StreamEventOptions) throws
+    init(logInfo: LogInfo, options: StreamEventOptions) throws
 }
 
 public struct StreamEventOptions: OptionSet {

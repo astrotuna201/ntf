@@ -11,7 +11,7 @@ public final class CpuStream : DeviceStream {
 	public let device: ComputeDevice
     public let id: Int
 	public let name: String
-    public var logging: LogInfo
+    public var logInfo: LogInfo
     public var timeout: TimeInterval?
     /// the last error thrown by a stream function
     public private(set) var lastStreamError: Error?
@@ -24,19 +24,19 @@ public final class CpuStream : DeviceStream {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(logging: LogInfo,
+    public init(logInfo: LogInfo,
                 device: ComputeDevice,
                 name: String, id: Int) throws {
         // create serial queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         errorQueue = DispatchQueue(label: "\(name).errorQueue")
-        completionEvent = CpuStreamEvent(logging: logging,
+        completionEvent = CpuStreamEvent(logInfo: logInfo,
                                          options: StreamEventOptions())
-        self.logging = logging
+        self.logInfo = logInfo
         self.device = device
         self.id = id
         self.name = name
-        let path = logging.namePath
+        let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
@@ -73,7 +73,7 @@ public final class CpuStream : DeviceStream {
 	/// createEvent
     /// creates an event object used for stream synchronization
 	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
-        return CpuStreamEvent(logging: logging, options: options)
+        return CpuStreamEvent(logInfo: logInfo, options: options)
 	}
 
     /// introduces a delay into command queue processing to simulate workloads

@@ -8,7 +8,7 @@ import Foundation
 // DeviceStream
 /// A device stream is an asynchronous queue of commands executed on
 /// the associated device
-public protocol DeviceStream: ObjectTracking, Logging {
+public protocol DeviceStream: ObjectTracking, Logger {
     //--------------------------------------------------------------------------
     // properties
     /// the device the stream is associated with

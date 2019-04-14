@@ -60,7 +60,7 @@ class _ThreadLocalStream {
     /// stack of default device streams and logging
     public fileprivate(set) var streamScope: [Scope] = [
         Scope(stream: Platform.defaultStream,
-              logInfo: Platform.defaultStream.logging,
+              logInfo: Platform.defaultStream.logInfo,
               exceptionHandler: nil)
     ]
 

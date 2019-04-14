@@ -11,7 +11,7 @@ public class CpuDevice : ComputeDevice {
     public private(set) var trackingId = 0
     public let attributes = [String : String]()
     public let id: Int
-    public var logging: LogInfo
+    public var logInfo: LogInfo
     public var maxThreadsPerBlock: Int { return 1 }
     public let name: String
     public weak var service: ComputeService!
@@ -29,11 +29,11 @@ public class CpuDevice : ComputeDevice {
 	// initializers
 	public init(service: CpuComputeService,
                 deviceId: Int,
-                logging: LogInfo,
+                logInfo: LogInfo,
                 memoryAddressing: MemoryAddressing,
                 timeout: TimeInterval? = nil) {
         self.name = "cpu:\(deviceId)"
-		self.logging = logging
+		self.logInfo = logInfo
 		self.id = deviceId
 		self.service = service
         self.timeout = timeout
@@ -41,7 +41,7 @@ public class CpuDevice : ComputeDevice {
 
 		// devices are statically held by the Platform.service
         trackingId = ObjectTracker.global.register(self,
-                                                   namePath: logging.namePath,
+                                                   namePath: logNamePath,
                                                    isStatic: true)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
@@ -50,7 +50,7 @@ public class CpuDevice : ComputeDevice {
 	// createArray
 	//	This creates memory on the device
 	public func createArray(count: Int) throws -> DeviceArray {
-		return CpuDeviceArray(logging: logging, device: self, count: count)
+        return CpuDeviceArray(logInfo: logInfo, device: self, count: count)
 	}
 
 	//-------------------------------------
@@ -58,7 +58,7 @@ public class CpuDevice : ComputeDevice {
 	public func createStream(name streamName: String) throws -> DeviceStream {
         let id = streamId.increment()
         let streamName = "\(streamName):\(id)"
-        return try CpuStream(logging: logging.child(streamName),
+        return try CpuStream(logInfo: logInfo.child(streamName),
                              device: self, name: streamName, id: id)
 	}
 } // CpuDevice

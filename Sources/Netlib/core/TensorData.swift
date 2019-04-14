@@ -25,8 +25,6 @@ final public class TensorData: ObjectTracking, Logging {
     public var lastAccessMutatedView: Bool = false
     /// the object tracking id
     public private(set) var trackingId = 0
-    /// the logging properties
-    public var logging: LogInfo = initLogging()
 
     /// an optional context specific name for logging
     private var _name: String?
@@ -97,17 +95,15 @@ final public class TensorData: ObjectTracking, Logging {
 
     // Empty
     public convenience init() {
-        self.init(byteCount: 0, logging: nil)
+        self.init(byteCount: 0)
     }
 
     //----------------------------------------
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer,
-                logging: LogInfo?) {
+    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         // store
-        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         isReadOnlyReference = true
         byteCount = buffer.count
         masterVersion = 0
@@ -122,8 +118,7 @@ final public class TensorData: ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(logging: LogInfo?, buffer: UnsafeRawBufferPointer) {
-        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
+    public init(buffer: UnsafeRawBufferPointer) {
         isReadOnlyReference = false
         byteCount = buffer.count
         
@@ -140,9 +135,8 @@ final public class TensorData: ObjectTracking, Logging {
     //----------------------------------------
     // create new array based on scalar size
     public init<Scalar>(type: Scalar.Type, count: Int,
-                        logging: LogInfo?, name: String? = nil) {
+                        name: String? = nil) {
         isReadOnlyReference = false
-        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         self.byteCount = count * MemoryLayout<Scalar>.size
         self._name = name
         register()
@@ -150,9 +144,8 @@ final public class TensorData: ObjectTracking, Logging {
     
     //----------------------------------------
     // create new array based on byte count
-    public init(byteCount: Int, logging: LogInfo?, name: String? = nil) {
+    public init(byteCount: Int, name: String? = nil) {
         isReadOnlyReference = false
-        self.logging = logging ?? _ThreadLocalStream.value.defaultLogging
         self.byteCount = byteCount
         self._name = name
         register()
@@ -162,8 +155,7 @@ final public class TensorData: ObjectTracking, Logging {
     // object lifetime tracking for leak detection
     private func register() {
         trackingId = ObjectTracker.global
-            .register(self,
-                      namePath: logging.namePath,
+            .register(self, namePath: logNamePath,
                       supplementalInfo: "byteCount: \(byteCount)")
 
         if byteCount > 0 && willLog(level: .diagnostic) {

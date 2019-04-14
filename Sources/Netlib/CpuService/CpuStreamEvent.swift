@@ -10,18 +10,18 @@ import Foundation
 /// the wait semaphore
 final public class CpuStreamEvent : StreamEvent {
     // properties
+    public var logInfo: LogInfo
     private let occurredMutex = Mutex()
     private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
     private var _occurred: Bool = true
-    public var logging: LogInfo
 
     //--------------------------------------------------------------------------
     // initializers
-    public required init(logging: LogInfo, options: StreamEventOptions) {
-        self.logging = logging
+    public required init(logInfo: LogInfo, options: StreamEventOptions) {
+        self.logInfo = logInfo
         trackingId = ObjectTracker.global
-            .register(self, namePath: logging.namePath)
+            .register(self, namePath: logNamePath)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
     

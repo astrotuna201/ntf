@@ -9,17 +9,17 @@ public class CpuDeviceArray : DeviceArray {
     public var count: Int
     public var data: UnsafeMutableRawPointer
     public var device: ComputeDevice
-    public var logging: LogInfo
+    public var logInfo: LogInfo
     public var version = 0
     
     //--------------------------------------------------------------------------
 	// initializers
-	public init(logging: LogInfo, device: ComputeDevice, count: Int) {
+	public init(logInfo: LogInfo, device: ComputeDevice, count: Int) {
         self.count = count
         self.device = device
-        self.logging = logging
         self.data = UnsafeMutableRawPointer.allocate(
             byteCount: count, alignment: MemoryLayout<Double>.alignment)
+        self.logInfo = logInfo
         self.trackingId = ObjectTracker.global.register(self)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }

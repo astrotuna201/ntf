@@ -121,21 +121,7 @@ public extension TensorView {
         self.padding = padding
         self.padValue = padValue
         self.logging = logging
-
-        // initialize tensor data
-        if let tensorData = tensorData {
-            // this views existing data
-            _tensorData = tensorData
-        } else {
-            // allocate backing tensorData
-            assert(shape.isContiguous, "new views should have a dense shape")
-            _tensorData =
-                TensorData(type: Scalar.self,
-                           count: self.dataShape.elementSpanCount,
-                           logging: logging, name: name)
-            
-            assert(viewByteOffset + viewSpanByteCount <= _tensorData.byteCount)
-        }
+        _tensorData = initTensorData(tensorData, shape, dataShape)
     }
 
     //--------------------------------------------------------------------------
@@ -152,6 +138,27 @@ public extension TensorView {
                   isShared: other._isShared,
                   name: other.name,
                   logging: other.logging)
+    }
+
+    //--------------------------------------------------------------------------
+    /// initTensorData
+    /// a helper to correctly initialize the tensorData object
+    func initTensorData(_ param: TensorData?, _ shape: DataShape,
+                        _ dataShape: DataShape?) -> TensorData {
+        if let tensorData = param {
+            // this views existing data
+            return tensorData
+        } else {
+            // allocate backing tensorData
+            assert(shape.isContiguous, "new views should have a dense shape")
+            assert(dataShape == nil, "new views shouldn't specify a data shape")
+            let tensorData = TensorData(type: Scalar.self,
+                                        count: self.dataShape.elementSpanCount,
+                                        logging: logging, name: name)
+            
+            assert(viewByteOffset + viewSpanByteCount <= tensorData.byteCount)
+            return tensorData
+        }
     }
 
     //--------------------------------------------------------------------------

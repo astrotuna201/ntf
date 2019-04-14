@@ -25,6 +25,10 @@ class test_TensorView: XCTestCase {
 	// test_viewMutateOnWrite
 	func test_viewMutateOnWrite() {
 		do {
+            let log = Platform.local.log
+            log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            log.logLevel = .diagnostic
+
             let values = (0..<12).map { Float($0) }
             var m0 = Matrix<Float>(extents: [3, 4], scalars: values)
             let _ = try m0.readWrite()

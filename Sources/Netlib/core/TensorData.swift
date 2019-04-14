@@ -54,7 +54,7 @@ final public class TensorData: ObjectTracking, Logging {
     //-----------------------------------
     // stream sync
     private var _streamSyncEvent: StreamEvent!
-    private func getSyncEvent(using stream: DeviceStream) throws -> StreamEvent {
+    private func getSyncEvent(using stream: DeviceStream) throws -> StreamEvent{
         if _streamSyncEvent == nil {
             _streamSyncEvent = try stream.createEvent(options: [])
         }
@@ -216,7 +216,7 @@ final public class TensorData: ObjectTracking, Logging {
         }
         
         if isReadOnlyReference {
-            // point to external data buffer, such as LMDB memory mapped data record
+            // point to external data buffer, such as memory mapped file
             assert(master == nil)
             hostBuffer = other.hostBuffer
             
@@ -234,7 +234,8 @@ final public class TensorData: ObjectTracking, Logging {
                 
             } else {
                 // uma to device
-                try array.copyAsync(from: other.readOnlyHostBuffer(), using: stream)
+                try array.copyAsync(from: other.readOnlyHostBuffer(),
+                                    using: stream)
             }
             
             // set the master
@@ -285,9 +286,11 @@ final public class TensorData: ObjectTracking, Logging {
     }
 
     //--------------------------------------------------------------------------
-    // migrate
-    // This migrates
-    private func migrate(readOnly: Bool, using stream: DeviceStream? = nil) throws {
+    /// migrate
+    /// This migrates the master version of the data from wherever it is to
+    /// wherever it needs to be
+    private func migrate(readOnly: Bool,
+                         using stream: DeviceStream? = nil) throws {
         // if the array is empty then there is nothing to do
         guard !isReadOnlyReference && byteCount > 0 else { return }
         let srcUsesUMA = master?.stream.device.memoryAddressing != .discreet
@@ -330,15 +333,17 @@ final public class TensorData: ObjectTracking, Logging {
         // create array list if needed
         if deviceArrays[serviceId].isEmpty {
             deviceArrays[serviceId] =
-                [ArrayInfo?](repeating: nil, count: device.service.devices.count)
+                [ArrayInfo?](repeating: nil,
+                             count: device.service.devices.count)
         }
 
         // return existing if found
         if let info = deviceArrays[serviceId][device.id] {
             // sync the requesting stream with the last stream that accessed it
-            try stream.sync(with: info.stream, event: getSyncEvent(using: stream))
+            try stream.sync(with: info.stream,
+                            event: getSyncEvent(using: stream))
 
-            // update the last stream used to access this array for sync purposes
+            // update the last stream used to access this array for sync
             info.stream = stream
             return info
 
@@ -376,8 +381,8 @@ final public class TensorData: ObjectTracking, Logging {
         precondition(!isReadOnlyReference)
         if willLog(level: .diagnostic) {
             diagnostic(
-                "\(releaseString) \(name) DataArray(\(trackingId)) host array " +
-                "bytes[\(byteCount)]", categories: .dataAlloc)
+                "\(releaseString) \(name) DataArray(\(trackingId)) " +
+                "host array  bytes[\(byteCount)]", categories: .dataAlloc)
         }
         hostBuffer.deallocate()
         hostBuffer = nil
@@ -396,7 +401,8 @@ final public class TensorData: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // host2device
-    private func host2device(readOnly: Bool, using stream: DeviceStream) throws {
+    private func host2device(readOnly: Bool,
+                             using stream: DeviceStream) throws {
         let arrayInfo = try getArray(for: stream)
         let array     = arrayInfo.array
         deviceDataPointer = array.data
@@ -465,7 +471,8 @@ final public class TensorData: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // device2device
-    private func device2device(readOnly: Bool, using stream: DeviceStream) throws {
+    private func device2device(readOnly: Bool,
+                               using stream: DeviceStream) throws {
         // master cannot be nil
         let master = self.master!
         assert(master.array.version == masterVersion)

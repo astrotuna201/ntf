@@ -61,6 +61,9 @@ class test_TensorView: XCTestCase {
 	
     //--------------------------------------------------------------------------
     // test_tensorDataMigration
+    // This test creates streams on unitTest cpu devices 1 and 2 because they
+    // are always available. The test is equally as valid with other non UMA
+    // devices such as cuda or tpu
     func test_tensorDataMigration() {
         do {
             let log = Platform.local.log
@@ -131,7 +134,7 @@ class test_TensorView: XCTestCase {
             XCTAssert(view._tensorData.lastAccessCopiedBuffer)
             
             // accessing data without a stream causes transfer to the host
-            // COPY cpu:2_s0 --> host 
+            // COPY cpu:2_s0 --> host
             _ = try view.readOnly()
             XCTAssert(view._tensorData.lastAccessCopiedBuffer)
 

@@ -21,7 +21,11 @@ public struct LogInfo {
 }
 
 public protocol Logging {
-    var logging: LogInfo? { get }
+    var logging: LogInfo { get set }
+}
+
+public func initLogging(param: LogInfo? = nil) -> LogInfo {
+    return param ?? _ThreadLocalStream.value.defaultLogging
 }
 
 //------------------------------------------------------------------------------
@@ -30,7 +34,6 @@ extension Logging {
 	//------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		guard let logging = self.logging else { return false }
 		return level <= logging.log.logLevel || level <= logging.logLevel
 	}
 
@@ -40,10 +43,10 @@ extension Logging {
 	                     indent: Int = 0, trailing: String = "",
 	                     minCount: Int = 80) {
 		if willLog(level: level) {
-			logging!.log.write(level: level,
-                               message: message,
-                               nestingLevel: indent + logging!.nestingLevel,
-                               trailing: trailing, minCount: minCount)
+            logging.log.write(level: level,
+                              message: message,
+                              nestingLevel: indent + logging.nestingLevel,
+                              trailing: trailing, minCount: minCount)
 		}
 	}
 
@@ -55,13 +58,13 @@ extension Logging {
 		if willLog(level: .diagnostic) {
 			// if subcategories have been selected on the log object
 			// then make sure the caller's category is desired
-			if let mask = logging!.log.categories?.rawValue,
+			if let mask = logging.log.categories?.rawValue,
 			   categories.rawValue & mask == 0 { return }
 
-			logging!.log.write(level: .diagnostic,
-                               message: message,
-                               nestingLevel: indent + logging!.nestingLevel,
-                               trailing: trailing, minCount: minCount)
+            logging.log.write(level: .diagnostic,
+                              message: message,
+                              nestingLevel: indent + logging.nestingLevel,
+                              trailing: trailing, minCount: minCount)
 		}
 	}
 }

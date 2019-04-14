@@ -11,7 +11,7 @@ public class CpuDevice : ComputeDevice {
     public private(set) var trackingId = 0
     public let attributes = [String : String]()
     public let id: Int
-    public var logging: LogInfo?
+    public var logging: LogInfo
     public var maxThreadsPerBlock: Int { return 1 }
     public let name: String
     public weak var service: ComputeService!
@@ -50,7 +50,7 @@ public class CpuDevice : ComputeDevice {
 	// createArray
 	//	This creates memory on the device
 	public func createArray(count: Int) throws -> DeviceArray {
-		return CpuDeviceArray(logging: logging!, device: self, count: count)
+		return CpuDeviceArray(logging: logging, device: self, count: count)
 	}
 
 	//-------------------------------------
@@ -58,7 +58,7 @@ public class CpuDevice : ComputeDevice {
 	public func createStream(name streamName: String) throws -> DeviceStream {
         let id = streamId.increment()
         let streamName = "\(streamName):\(id)"
-        return try CpuStream(logging: logging!.child(streamName),
+        return try CpuStream(logging: logging.child(streamName),
                              device: self, name: streamName, id: id)
 	}
 } // CpuDevice

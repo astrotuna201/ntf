@@ -95,7 +95,7 @@ public struct ScalarTensor<Scalar>: ScalarView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar? = nil
     public init() {}
@@ -150,7 +150,7 @@ public struct Vector<Scalar>: VectorView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -211,7 +211,7 @@ public struct Matrix<Scalar>: MatrixView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -274,7 +274,7 @@ public struct Volume<Scalar>: VolumeView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}
@@ -300,7 +300,7 @@ public struct NDTensor<Scalar>: NDTensorView {
     public var _shape: DataShape = DataShape()
     public var _tensorData: TensorData = TensorData()
     public var _viewOffset: Int = 0
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo = initLogging()
     public var padding: [Padding]? = nil
     public var padValue: Scalar?
     public init() {}

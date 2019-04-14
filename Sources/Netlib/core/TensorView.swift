@@ -49,8 +49,6 @@ public protocol TensorView: Logging, Equatable {
     var _tensorData: TensorData { get set }
     /// the linear element offset where the view begins
     var _viewOffset: Int { get set }
-    /// the logging information for the view
-    var logging: LogInfo? { get set }
 
     //--------------------------------------------------------------------------
     // functions
@@ -120,7 +118,7 @@ public extension TensorView {
         _viewOffset = viewOffset
         self.padding = padding
         self.padValue = padValue
-        self.logging = logging
+        self.logging = logging ?? initLogging()
         _tensorData = initTensorData(tensorData, shape, dataShape)
     }
 
@@ -178,7 +176,10 @@ public extension TensorView {
     /// name
     /// an optional view name used for logging
     var name: String {
-        get { return _name ?? _tensorData.name }
+        get {
+            return _name ?? (_tensorData.hasName ?
+                _tensorData.name : String(describing: Self.self))
+        }
         set {
             _name = newValue
             if !_tensorData.hasName { _tensorData.name = newValue }
@@ -292,16 +293,15 @@ public extension TensorView {
     /// Creates a copy of the tensorData if read-write access will cause mutation
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
-    private mutating func copyIfMutates(using stream: DeviceStream? = nil) throws {
+    private mutating func copyIfMutates(using stream: DeviceStream?) throws {
         // for unit tests
         _tensorData.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
         
         if willLog(level: .diagnostic) == true {
-            diagnostic("""
-                \(mutationString) \(logging?.namePath ?? "")
-                (\(_tensorData.trackingId))  elements: \(dataShape.elementCount)
-                """, categories: [.dataCopy, .dataMutation])
+            diagnostic("\(mutationString) \(name)(\(_tensorData.trackingId)) " +
+                "elements[\(dataShape.elementCount)]",
+                categories: [.dataCopy, .dataMutation])
         }
         
         _tensorData = try TensorData(withContentsOf: _tensorData, using: stream)
@@ -348,7 +348,7 @@ public extension TensorView {
         // it adds a ref count which messes things up
         let queue = _tensorData.accessQueue
         return try queue.sync {
-            try copyIfMutates()
+            try copyIfMutates(using: nil)
             let buffer = try _tensorData.readWriteHostBuffer()
             return buffer.bindMemory(to: Scalar.self)
         }

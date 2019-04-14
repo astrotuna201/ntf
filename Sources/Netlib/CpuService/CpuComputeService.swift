@@ -10,7 +10,7 @@ public class CpuComputeService : ComputeService {
     public private(set) var trackingId = 0
     public var devices = [ComputeDevice]()
     public var id = 0
-    public var logging: LogInfo?
+    public var logging: LogInfo
     public let name = "cpu"
 
     //--------------------------------------------------------------------------

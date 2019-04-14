@@ -47,8 +47,7 @@ public func handleStreamExceptions(handler: @escaping StreamExceptionHandler) {
 
 /// Manages the current scope for the current stream, log, and error handlers
 @usableFromInline
-class _ThreadLocalStream
- {
+class _ThreadLocalStream {
     // types
     struct Scope {
         let stream: DeviceStream
@@ -61,7 +60,7 @@ class _ThreadLocalStream
     /// stack of default device streams and logging
     public fileprivate(set) var streamScope: [Scope] = [
         Scope(stream: Platform.defaultStream,
-              logInfo: Platform.defaultStream.logging!,
+              logInfo: Platform.defaultStream.logging,
               exceptionHandler: nil)
     ]
 

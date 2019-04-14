@@ -166,7 +166,7 @@ public protocol StreamEvent: ObjectTracking, Logging {
     var occurred: Bool { get }
     
     // TODO: consider adding time outs for failed remote events
-    init(options: StreamEventOptions) throws
+    init(logging: LogInfo, options: StreamEventOptions) throws
 }
 
 public struct StreamEventOptions: OptionSet {

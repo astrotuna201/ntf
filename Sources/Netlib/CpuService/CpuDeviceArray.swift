@@ -9,7 +9,7 @@ public class CpuDeviceArray : DeviceArray {
     public var count: Int
     public var data: UnsafeMutableRawPointer
     public var device: ComputeDevice
-    public var logging: LogInfo?
+    public var logging: LogInfo
     public var version = 0
     
     //--------------------------------------------------------------------------

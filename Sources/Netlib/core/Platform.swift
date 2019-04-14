@@ -34,7 +34,7 @@ final public class Platform: ComputePlatform {
     /// object tracking id
     public private(set) var trackingId = 0
     /// logging information
-    public var logging: LogInfo?
+    public var logging: LogInfo
 
     //--------------------------------------------------------------------------
     /// log
@@ -42,8 +42,8 @@ final public class Platform: ComputePlatform {
     /// device stream hierarchy, but can be overriden at any point down
     /// the tree
     public var log: Log {
-        get { return logging!.log }
-        set { logging!.log = newValue }
+        get { return logging.log }
+        set { logging.log = newValue }
     }
     
     //--------------------------------------------------------------------------
@@ -96,7 +96,7 @@ final public class Platform: ComputePlatform {
             }
             
             // add cpu service by default
-            try addService(CpuComputeService(logging: logging!))
+            try addService(CpuComputeService(logging: logging))
             //            #if os(Linux)
             //            try add(service: CudaComputeService(logging: logging))
             //            #endif
@@ -110,7 +110,7 @@ final public class Platform: ComputePlatform {
                     bundle.principalClass as? ComputeService.Type {
                     
                     // create the service
-                    let service = try serviceType.init(logging: logging!)
+                    let service = try serviceType.init(logging: logging)
                     
                     if willLog(level: .diagnostic) {
                         diagnostic(

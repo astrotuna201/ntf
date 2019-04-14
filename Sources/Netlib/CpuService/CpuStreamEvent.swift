@@ -14,13 +14,14 @@ final public class CpuStreamEvent : StreamEvent {
     private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
     private var _occurred: Bool = true
-    public var logging: LogInfo? = nil
+    public var logging: LogInfo
 
     //--------------------------------------------------------------------------
     // initializers
-    public required init(options: StreamEventOptions) {
+    public required init(logging: LogInfo, options: StreamEventOptions) {
+        self.logging = logging
         trackingId = ObjectTracker.global
-            .register(self, namePath: logging?.namePath)
+            .register(self, namePath: logging.namePath)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
     
@@ -48,6 +49,7 @@ final public class CpuStreamEvent : StreamEvent {
                 } else {
                     semaphore.wait()
                 }
+                // TODO add diagnostic message
                 _occurred = true
             }
         }

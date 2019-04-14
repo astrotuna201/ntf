@@ -26,7 +26,7 @@ final public class TensorData: ObjectTracking, Logging {
     /// the object tracking id
     public private(set) var trackingId = 0
     /// the logging properties
-    public var logging: LogInfo?
+    public var logging: LogInfo = initLogging()
 
     /// an optional context specific name for logging
     private var _name: String?
@@ -163,7 +163,7 @@ final public class TensorData: ObjectTracking, Logging {
     private func register() {
         trackingId = ObjectTracker.global
             .register(self,
-                      namePath: logging?.namePath,
+                      namePath: logging.namePath,
                       supplementalInfo: "byteCount: \(byteCount)")
 
         if byteCount > 0 && willLog(level: .diagnostic) {
@@ -198,7 +198,7 @@ final public class TensorData: ObjectTracking, Logging {
     //----------------------------------------
     // init from other TensorData
     public init(withContentsOf other: TensorData,
-                using stream: DeviceStream? = nil) throws {
+                using stream: DeviceStream?) throws {
         // init
         isReadOnlyReference = other.isReadOnlyReference
         byteCount = other.byteCount
@@ -208,11 +208,14 @@ final public class TensorData: ObjectTracking, Logging {
         register()
         
         if willLog(level: .diagnostic) {
-            let streamIdStr = stream == nil ? "nil" : "\(stream!.id)"
-            diagnostic("\(createString) \(name)(\(trackingId)) init" +
+            var message =
+                "\(createString) \(name)(\(trackingId))" +
                 "\(setText(" copying ", color: .blue))" +
-                "DataArray(\(other.trackingId)) bytes[\(other.byteCount)] " +
-                "stream id(\(streamIdStr))", categories: [.dataAlloc, .dataCopy])
+                "TensorData(\(other.trackingId)) bytes[\(other.byteCount)]"
+            if let stream = stream {
+                message += "on \(stream.name)"
+            }
+            diagnostic(message, categories: [.dataAlloc, .dataCopy])
         }
         
         if isReadOnlyReference {
@@ -381,7 +384,7 @@ final public class TensorData: ObjectTracking, Logging {
         precondition(!isReadOnlyReference)
         if willLog(level: .diagnostic) {
             diagnostic(
-                "\(releaseString) \(name) DataArray(\(trackingId)) " +
+                "\(releaseString) \(name) TensorData(\(trackingId)) " +
                 "host array  bytes[\(byteCount)]", categories: .dataAlloc)
         }
         hostBuffer.deallocate()

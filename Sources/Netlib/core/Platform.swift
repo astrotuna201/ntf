@@ -95,7 +95,9 @@ final public class Platform: ObjectTracking, Logging {
                 try bundle.loadAndReturnError()
                 //            var unloadBundle = false
                 
-                if let serviceType = bundle.principalClass as? ComputeService.Type {
+                if let serviceType =
+                    bundle.principalClass as? ComputeService.Type {
+                    
                     // create the service
                     let service = try serviceType.init(logging: logging!)
                     
@@ -103,19 +105,16 @@ final public class Platform: ObjectTracking, Logging {
                         diagnostic(
                             "Loaded compute service '\(service.name)'." +
                             " ComputeDevice count = \(service.devices.count)",
-                            categories: .setup)
+                            categories: .initialize)
                     }
                     
                     if service.devices.count > 0 {
                         // add plugin service
                         addService(service)
                     } else {
-                        if willLog(level: .warning) {
-                            writeLog(
-                                "Compute service '\(service.name)' successfully loaded, " +
-                                "but reported devices = 0, so service is unavailable",
-                                level: .warning)
-                        }
+                        writeLog("Compute service '\(service.name)' " +
+                            "successfully loaded, but reported devices = 0, " +
+                            "so service is unavailable", level: .warning)
                         //                    unloadBundle = true
                     }
                 }
@@ -136,7 +135,8 @@ final public class Platform: ObjectTracking, Logging {
     public static var plugInBundles: [Bundle] = {
         var bundles = [Bundle]()
         if let dir = Bundle.main.builtInPlugInsPath {
-            let paths = Bundle.paths(forResourcesOfType: "bundle", inDirectory: dir)
+            let paths = Bundle.paths(forResourcesOfType: "bundle",
+                                     inDirectory: dir)
             for path in paths {
                 bundles.append(Bundle(url: URL(fileURLWithPath: path))!)
             }
@@ -165,16 +165,17 @@ final public class Platform: ObjectTracking, Logging {
                                            allowSubstitute: true)
             }
         }
-
+        
         // we had to find at least one device like the cpu
-        guard let device = defaultDev else { fatalError("No available devices") }
+        assert(defaultDev != nil, "There must be at least one device")
+        let device = defaultDev!
         if willLog(level: .status) {
             writeLog("default device: [\(device.service.name)] \(device.name)",
                 level: .status)
         }
         return device
     }
-
+    
     //--------------------------------------------------------------------------
     // add(service
     public func add(service: ComputeService) {
@@ -197,7 +198,7 @@ final public class Platform: ObjectTracking, Logging {
     ///   is returned.
     public func createStreams(name: String = "stream",
                               serviceName: String? = nil,
-                              deviceIds: [Int]? = nil) throws -> [DeviceStream] {
+                              deviceIds: [Int]? = nil) throws -> [DeviceStream]{
 
         let serviceName = serviceName ?? defaultDevice.service.name
         let maxDeviceCount = min(defaultDevicesToAllocate,

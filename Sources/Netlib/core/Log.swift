@@ -187,7 +187,7 @@ public struct LogCategories: OptionSet {
 	public static let dataAlloc    = LogCategories(rawValue: 1 << 0)
 	public static let dataCopy     = LogCategories(rawValue: 1 << 1)
 	public static let dataMutation = LogCategories(rawValue: 1 << 2)
-    public static let setup        = LogCategories(rawValue: 1 << 3)
+    public static let initialize   = LogCategories(rawValue: 1 << 3)
 	public static let streamAlloc  = LogCategories(rawValue: 1 << 4)
 	public static let streamSync   = LogCategories(rawValue: 1 << 5)
 }

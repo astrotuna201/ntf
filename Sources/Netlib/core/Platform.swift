@@ -13,10 +13,11 @@
 //
 import Foundation
 
+
 //==============================================================================
 // Platform
 /// The root service to enumerate and select compute services and devices
-final public class Platform: ObjectTracking, Logging {
+final public class Platform: ComputePlatform {
     /// a device automatically selected based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     /// the default number of devices to use
@@ -190,13 +191,6 @@ final public class Platform: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
-    // add(service
-    public func add(service: ComputeService) {
-        service.id = services.count
-        services[service.name] = service
-    }
-
-    //--------------------------------------------------------------------------
     /// createStreams
     //
     /// This will try to match the requested service and device ids returning
@@ -227,12 +221,11 @@ final public class Platform: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     /// requestDevices
-    ///
     /// This will try to return the requested devices from the requested service
     /// substituting if needed based on `servicePriority` and `deviceIdPriority`
     ///
-    public func requestDevices(serviceName: String? = nil,
-                               deviceIds: [Int]) -> [ComputeDevice] {
+    public func requestDevices(deviceIds: [Int],
+                               serviceName: String?) -> [ComputeDevice] {
         // if no serviceName is specified then return the default
         let serviceName = serviceName ?? defaultDevice.service.name
         return deviceIds.map {
@@ -246,7 +239,7 @@ final public class Platform: ObjectTracking, Logging {
     /// This tries to satisfy the device requested, but if not available will
     /// return a suitable alternative. In the case of an invalid string, an
     /// error will be reported, but no exception will be thrown
-    public func requestDevice(serviceName: String, deviceId: Int,
+    private func requestDevice(serviceName: String, deviceId: Int,
                               allowSubstitute: Bool) -> ComputeDevice? {
 
         if let service = services[serviceName] {
@@ -263,5 +256,14 @@ final public class Platform: ObjectTracking, Logging {
         } else {
             return nil
         }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// open
+    /// - Parameter url: the location of the remote platform
+    /// - Returns: a reference to the remote platform, which can be used
+    ///   to query resources and create remote streams.
+    public static func open(platform url: URL) throws -> ComputePlatform {
+        fatalError("not implemented yet")
     }
 } // ComputePlatform

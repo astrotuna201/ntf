@@ -5,17 +5,94 @@
 import Foundation
 
 //==============================================================================
-// ComputeService
-public protocol ComputeService: ObjectTracking, Logging {
-    init(logging: LogInfo) throws
-    var devices: [ComputeDevice] { get }
-    var id: Int { get set }
-    var name: String { get }
+/// ComputePlatform
+/// this represents the root for managing all services, devices, and streams
+/// on a platform. There is one local instance per process, and possibly
+/// many remote instances.
+public protocol ComputePlatform : ObjectTracking, Logging {
+    //--------------------------------------------------------------------------
+    // class members
+    /// global shared instance
+    static var local: Platform { get }
+    /// a stream selected based on `servicePriority` and `deviceIdPriority`
+    static var defaultStream: DeviceStream { get }
+    
+    // instance members
+    /// a device automatically selected based on service priority
+    var defaultDevice: ComputeDevice { get }
+    /// the default number of devices to use
+    var defaultDevicesToAllocate: Int { get set }
+    /// ordered list of device ids specifying the order for auto selection
+    var deviceIdPriority: [Int] { get set }
+    /// location of dynamically loaded service modules
+    var serviceModuleDirectory: URL { get set }
+    /// ordered list of service names specifying the order for auto selection
+    var servicePriority: [String] { get set }
+    /// a dynamically loaded collection of available compute services.
+    /// The "cpu" service will always be available
+    var services: [String : ComputeService] { get }
+    /// the root log
+    var log: Log { get set }
+    
+    //--------------------------------------------------------------------------
+    /// createStreams will try to match the requested service name and
+    /// device ids returning substitutions if needed to fulfill the request
+    ///
+    /// Parameters
+    /// - Parameter name: a text label assigned to the stream for logging
+    /// - Parameter serviceName: (cpu, cuda, tpu, ...)
+    ///   If no service name is specified, then the default is used.
+    /// - Parameter deviceIds: (0, 1, 2, ...)
+    ///   If no ids are specified, then one stream per defaultDeviceCount
+    ///   is returned. If device ids are specified that are greater than
+    ///   the number of available devices, then id % available will be used.
+    func createStreams(name: String,
+                       serviceName: String?,
+                       deviceIds: [Int]?) throws -> [DeviceStream]
+    
+    //--------------------------------------------------------------------------
+    /// open
+    /// this is a placeholder. Additional parameters will be needed for
+    /// credentials, timeouts, etc...
+    ///
+    /// - Parameter url: the location of the remote platform
+    /// - Returns: a reference to the remote platform, which can be used
+    ///   to query resources and create remote streams.
+    static func open(platform url: URL) throws -> ComputePlatform
+    
+    //--------------------------------------------------------------------------
+    /// requestDevices
+    /// - Parameter deviceIds: an array of selected device ids
+    /// - Parameter serviceName: an optional service name to allocate
+    ///   the devices from.
+    /// - Returns: the requested devices from the requested service
+    ///   substituting if needed based on `servicePriority`
+    ///   and `deviceIdPriority`
+    func requestDevices(deviceIds: [Int],
+                        serviceName: String?) -> [ComputeDevice]
+    
 }
 
 //==============================================================================
-// ComputeDevice
-//    This specifies the compute device interface
+/// ComputeService
+/// a compute service represents category of installed devices on the platform,
+/// such as (cpu, cuda, tpu, ...)
+public protocol ComputeService: ObjectTracking, Logging {
+    /// a collection of available devices
+    var devices: [ComputeDevice] { get }
+    /// the service id
+    var id: Int { get set }
+    /// the service name used for `servicePriority` and logging
+    var name: String { get }
+    
+    /// required initializer to support dynamiclly loaded services
+    init(logging: LogInfo) throws
+}
+
+//==============================================================================
+/// ComputeDevice
+/// a compute device represents a physical service device installed
+/// on the platform
 public protocol ComputeDevice: ObjectTracking, Logging {
     //-------------------------------------
     // properties

@@ -449,8 +449,8 @@ final public class TensorData: ObjectTracking, Logging {
             if willLog(level: .diagnostic) {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "d\(master.stream.device.id)_s\(master.stream.id)" +
-                    "\(setText(" ---> ", color: .blue)) host" +
-                    " bytes[\(byteCount)]", categories: .dataCopy)
+                    "\(setText(" --> ", color: .blue))host " +
+                    "  bytes[\(byteCount)]", categories: .dataCopy)
             }
 
             // synchronous copy
@@ -501,7 +501,7 @@ final public class TensorData: ObjectTracking, Logging {
                 //                if willLog(level: .diagnostic) == true {
                 //                    diagnostic("\(copyString) \(name)(\(trackingId)) cross service from " +
                 //                        "device(\(master.stream.device.id))" +
-                //                    "\(setText(" ---> ", color: .blue))" +
+                //                    "\(setText(" --> ", color: .blue))" +
                 //                        "device(\(stream.device.id)) elementCount: \(elementCount)",
                 //                        categories: .dataCopy)
                 //                }

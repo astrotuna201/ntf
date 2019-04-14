@@ -101,7 +101,7 @@ class _ThreadLocalStream
     @usableFromInline
     func catchError(perform body: (DeviceStream) throws -> Void) {
         do {
-            return try body(currentStream)
+            try body(currentStream)
         } catch {
             // write the error to the log
             defaultLogging.log.write(level: .error,

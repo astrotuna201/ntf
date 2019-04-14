@@ -32,12 +32,12 @@ class test_Ops: XCTestCase {
     }
     
     func test_AddSubMulDiv() {
+        // handle unexpected stream error
         handleStreamExceptions { error in
-            // something unexpected bad happened
-            print(String(describing: error))
-            exit(0)
+            XCTFail(String(describing: error))
         }
         
+        // create some tensors
         let _ = Matrix<RGBASample<UInt8>>(4, 3)
         let _ = Vector<StereoSample<Int16>>(count: 1024)
 
@@ -59,18 +59,18 @@ class test_Ops: XCTestCase {
             let stream = try Platform.local.createStreams(deviceIds: [0, 1])
             
             let c3 = using(stream[0]) {
-                return a + b
+                a + b
             }
             XCTAssert(c3 == expected)
-
+            
             //---------------------------------
             // sequential multi scoped
             let aPlusB = using(stream[0]) {
-                return a + b
+                a + b
             }
             
             let aMinusB = using(stream[1]) {
-                return a - b
+                a - b
             }
             
             let c4 = aPlusB + aMinusB
@@ -94,7 +94,7 @@ class test_Ops: XCTestCase {
             // nested multi scoped
             let x: Vector<Float> = using(stream[0]) {
                 let aMinusB = using(stream[1]) {
-                    return a - b
+                    a - b
                 }
                 // here stream[1] is synced with stream[0]
                 return pow(a + b + aMinusB, y)
@@ -106,15 +106,16 @@ class test_Ops: XCTestCase {
             // temporary results are okay, they won't cause data movement
             let logx = log(x)
             
-            // here stream[0] is synced with the defaultStream
+            // here stream[0] is synced with the currentStream
             let c5 = logx / (logx + 1)
             
-            // all three streams auto sync at this point
+            // currentStream, stream0, and stream1 all sync at this point
             let c5expected = Vector<Float>(scalars: [0, 0.581, 0.782, 0.862])
             let c5All = c5.approximatelyEqual(to: c5expected).all()
-            let c5IsEqual = try c5All.scalarValue()
 
-            // here the defaultStream is synced with the app thread
+            // here the currentStream is synced with the app thread
+            // because we are actually taking a Bool scalar value
+            let c5IsEqual = try c5All.scalarValue()
             XCTAssert(c5IsEqual)
 
         } catch {

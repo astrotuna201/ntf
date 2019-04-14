@@ -497,6 +497,8 @@ final public class TensorData: ObjectTracking, Logging {
 
             } else {
                 // cross service
+                
+                // TODO: test with discreet cpu unit test device and cuda
                 fatalError()
                 //                if willLog(level: .diagnostic) == true {
                 //                    diagnostic("\(copyString) \(name)(\(trackingId)) cross service from " +

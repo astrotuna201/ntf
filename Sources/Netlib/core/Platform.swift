@@ -17,17 +17,34 @@ import Foundation
 // Platform
 /// The root service to enumerate and select compute services and devices
 final public class Platform: ObjectTracking, Logging {
-    //--------------------------------------------------------------------------
-    // properties
-    
-    /// global shared instance
-    public static let local = Platform()
     /// a device automatically selected based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
     /// the default number of devices to use
     public var defaultDevicesToAllocate = 1
     /// ordered list of device ids specifying the order for auto selection
-    public var deviceIdPriority: [Int]?
+    public var deviceIdPriority: [Int] = [0]
+    /// global shared instance
+    public static let local = Platform()
+    /// location of dynamically loaded service modules
+    public var serviceModuleDirectory: URL = URL(fileURLWithPath: "TODO")
+    /// ordered list of service names specifying the order for auto selection
+    public var servicePriority = ["cuda", "cpu"]
+    /// object tracking id
+    public private(set) var trackingId = 0
+    /// logging information
+    public var logging: LogInfo?
+
+    //--------------------------------------------------------------------------
+    /// log
+    /// the caller can specify a root log which will be inherited by the
+    /// device stream hierarchy, but can be overriden at any point down
+    /// the tree
+    public var log: Log {
+        get { return logging!.log }
+        set { logging!.log = newValue }
+    }
+    
+    //--------------------------------------------------------------------------
     /// a stream created on the default device
     public private(set) static var defaultStream: DeviceStream = {
         do {
@@ -39,19 +56,7 @@ final public class Platform: ObjectTracking, Logging {
             fatalError()
         }
     }()
-    /// ordered list of service names specifying the order for auto selection
-    public var servicePriority = ["cuda", "cpu"]
-    /// location of dynamically loaded service modules
-    public var servicesLocation: URL = URL(fileURLWithPath: "TODO")
 
-    // object tracking
-    public private(set) var trackingId = 0
-    public var logging: LogInfo?
-    public var log: Log {
-        get { return logging!.log }
-        set { logging!.log = newValue }
-    }
-    
     //--------------------------------------------------------------------------
     /// collection of registered compute services (cpu, cuda, ...)
     /// loading and enumerating services is expensive and invariant, so
@@ -67,6 +72,8 @@ final public class Platform: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // initializers
+    /// `init` is private because this is a singleton. Use the `local` static
+    /// member to access the global instance.
     private init() {
         let namePath = String(describing: Platform.self)
         let info = LogInfo(log: Log(), logLevel: .error,
@@ -76,6 +83,8 @@ final public class Platform: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     // loadServices
+    // dynamically loads ComputeService bundles/dylib from the
+    // `serviceModuleDirectory` and adds them to the `services` list
     private func loadServices() -> [String: ComputeService] {
         var loadedServices = [String: ComputeService]()
         do {
@@ -131,7 +140,8 @@ final public class Platform: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
-    // plugIns TODO: move to compute service
+    // plugInBundles
+    // an array of the dynamically installed bundles
     public static var plugInBundles: [Bundle] = {
         var bundles = [Bundle]()
         if let dir = Bundle.main.builtInPlugInsPath {
@@ -146,10 +156,13 @@ final public class Platform: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     // selectDefaultDevice
+    // selects a ComputeDevice based on `servicePriority` and
+    // `deviceIdPriority`. It is guaranteed that at least one device like
+    // the cpu is available
     private func selectDefaultDevice() -> ComputeDevice {
         // try to exact match the service request
         var defaultDev: ComputeDevice?
-        let requestedDevice = deviceIdPriority?[0] ?? 0
+        let requestedDevice = deviceIdPriority[0]
         for serviceName in servicePriority where defaultDev == nil {
             defaultDev = requestDevice(serviceName: serviceName,
                                        deviceId: requestedDevice,

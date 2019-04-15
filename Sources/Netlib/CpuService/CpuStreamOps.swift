@@ -35,8 +35,10 @@ extension CpuStream {
         
     }
     
-    public func broadcast<T>(x: T, toShape shape: DataShape, result: inout T) throws where T : TensorView {
-        
+    public func asum<T>(x: T, axes: Vector<TensorIndex>?,
+                 result: inout T) throws where
+        T: TensorView, T.Scalar: Numeric {
+            
     }
     
     public func cast<T, R>(from: T, to result: inout R) throws where T : TensorView, R : TensorView, T.Scalar : AnyConvertable, R.Scalar : AnyConvertable {

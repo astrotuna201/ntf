@@ -86,13 +86,13 @@ public protocol DeviceStream: ObjectTracking, Logger {
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == TensorIndex
 
-    /// Broadcast x to the specified shape
-    /// - Parameter x: the pattern to broadcast
-    /// - Parameter shape: the shape of the result
-    /// - Precondition: The specified shape must be compatible for broadcasting.
-    func broadcast<T>(x: T, toShape shape: DataShape, result: inout T) throws
-        where T: TensorView
-
+    /// Sums the absolute value of the input along the specified axes
+    /// - Parameter x: the tensor value
+    /// - Parameter axes: The axes to reduce
+    func asum<T>(x: T, axes: Vector<TensorIndex>?,
+                 result: inout T) throws where
+        T: TensorView, T.Scalar: Numeric
+    
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output

@@ -210,6 +210,34 @@ class test_DataShape: XCTestCase {
         }
     }
     
+//    //==========================================================================
+//    // test_perfIterateMatrixIndices
+//    func test_perfSimpleSequenceBaseline() {
+//        struct Simple : Sequence {
+//            func makeIterator() -> SimpleIterator {
+//                return SimpleIterator()
+//            }
+//        }
+//
+//        struct SimpleIterator : IteratorProtocol {
+//            var pos = 0
+//            let count = 1024 * 1024 * 1024
+//
+//            mutating func next() -> Int? {
+//                let value = pos
+//                pos += 1
+//                return pos <= count ? value : nil
+//            }
+//        }
+//
+//        let s = Simple()
+//        self.measure {
+//            for value in s {
+//                var a = value
+//            }
+//        }
+//    }
+    
     //==========================================================================
     // test_perfIterateRepeatedRowMatrixIndices
     func test_perfIterateRepeatedRowMatrixIndices() {

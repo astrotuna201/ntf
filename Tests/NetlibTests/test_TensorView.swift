@@ -29,6 +29,7 @@ class test_TensorView: XCTestCase {
             log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             log.logLevel = .diagnostic
 
+            // create a Matrix and give it a name for logging
             let values = (0..<12).map { Float($0) }
             var m0 = Matrix<Float>(extents: [3, 4],
                                    name: "weights",

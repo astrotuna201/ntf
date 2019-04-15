@@ -201,9 +201,9 @@ final public class TensorData: ObjectTracking, Logging {
         
         if willLog(level: .diagnostic) {
             var message =
-                "\(createString) \(name)(\(trackingId))" +
-                "\(setText(" copying ", color: .blue))" +
-                "TensorData(\(other.trackingId)) bytes[\(other.byteCount)]"
+                "\(createString) \(name)(\(trackingId)) init with" +
+                "\(setText(" copy ", color: .blue))" +
+                "of TensorData(\(other.trackingId)) bytes[\(other.byteCount)]"
             if let stream = stream {
                 message += "on \(stream.name)"
             }

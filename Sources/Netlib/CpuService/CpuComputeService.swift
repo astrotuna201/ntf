@@ -8,14 +8,16 @@ public class CpuComputeService : ComputeService {
     //--------------------------------------------------------------------------
     // properties
     public private(set) var trackingId = 0
-    public var devices = [ComputeDevice]()
-    public var id = 0
+    public private(set) var devices = [ComputeDevice]()
+    public let id: Int
     public var logInfo: LogInfo
-    public let name = "cpu"
+    public let name: String
 
     //--------------------------------------------------------------------------
     // initializers
-    public required init(logInfo: LogInfo) throws    {
+    public required init(id: Int, logInfo: LogInfo, name: String?) throws {
+        self.id = id
+        self.name = name ?? "cpu"
         self.logInfo = logInfo
         
         // this is held statically by the Platform
@@ -25,15 +27,45 @@ public class CpuComputeService : ComputeService {
         devices.append(CpuDevice(service: self, deviceId: 0,
                                  logInfo: logInfo.child("cpu:0"),
                                  memoryAddressing: .unified))
+    }
+    deinit { ObjectTracker.global.remove(trackingId: trackingId) }
+}
+
+//==============================================================================
+/// CpuUnitTestComputeService
+/// This is used for unit testing only
+public class CpuUnitTestComputeService : ComputeService {
+    //--------------------------------------------------------------------------
+    // properties
+    public private(set) var trackingId = 0
+    public private(set) var devices = [ComputeDevice]()
+    public let id: Int
+    public var logInfo: LogInfo
+    public let name: String
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public required init(id: Int, logInfo: LogInfo, name: String?) throws {
+        self.id = id
+        self.name = name ?? "cpuUnitTest"
+        self.logInfo = logInfo
+        
+        // this is held statically by the Platform
+        trackingId = ObjectTracker.global.register(self, isStatic: true)
+        
+        // add cpu device
+        devices.append(CpuDevice(service: self, deviceId: 0,
+                                 logInfo: logInfo.child("cpu:0"),
+                                 memoryAddressing: .unified))
         
         // add two discreet versions for unit testing
         // TODO is there a better solution for testing
         devices.append(CpuDevice(service: self, deviceId: 1,
-                                 logInfo: logInfo.child("unitTestDiscreet:1"),
+                                 logInfo: logInfo.child("cpu:1"),
                                  memoryAddressing: .discreet))
-
+        
         devices.append(CpuDevice(service: self, deviceId: 2,
-                                 logInfo: logInfo.child("unitTestDiscreet:2"),
+                                 logInfo: logInfo.child("cpu:2"),
                                  memoryAddressing: .discreet))
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }

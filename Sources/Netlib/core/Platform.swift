@@ -89,18 +89,23 @@ final public class Platform: ComputePlatform {
     private func loadServices() -> [String: ComputeService] {
         var loadedServices = [String: ComputeService]()
         do {
-            func addService(_ service: ComputeService) {
-                service.id = loadedServices.count
-                loadedServices[service.name] = service
-            }
-            
-            // add cpu service by default
-            try addService(CpuComputeService(logInfo: logInfo))
+            // add required cpu service
+            let cpuService = try CpuComputeService(id: loadedServices.count,
+                                                   logInfo: logInfo, name: nil)
+            loadedServices[cpuService.name] = cpuService
+
+            // add cpu unit test service
+            let cpuUnitTestService =
+                try CpuUnitTestComputeService(id: loadedServices.count,
+                                              logInfo: logInfo,
+                                              name: "cpuUnitTest")
+            loadedServices[cpuUnitTestService.name] = cpuUnitTestService
+
             //            #if os(Linux)
             //            try add(service: CudaComputeService(logging: logging))
             //            #endif
             //-------------------------------------
-            // dynamically load services
+            // dynamically load installed services
             for bundle in Platform.plugInBundles {
                 try bundle.loadAndReturnError()
                 //            var unloadBundle = false
@@ -109,7 +114,9 @@ final public class Platform: ComputePlatform {
                     bundle.principalClass as? ComputeService.Type {
                     
                     // create the service
-                    let service = try serviceType.init(logInfo: logInfo)
+                    let service =
+                        try serviceType.init(id: loadedServices.count,
+                                             logInfo: logInfo, name: nil)
                     
                     if willLog(level: .diagnostic) {
                         diagnostic(
@@ -120,7 +127,7 @@ final public class Platform: ComputePlatform {
                     
                     if service.devices.count > 0 {
                         // add plugin service
-                        addService(service)
+                        loadedServices[service.name] = service
                     } else {
                         writeLog("Compute service '\(service.name)' " +
                             "successfully loaded, but reported devices = 0, " +

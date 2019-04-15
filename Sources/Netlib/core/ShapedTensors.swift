@@ -23,27 +23,27 @@ public extension UniformDenseScalar {
 
 //==============================================================================
 // Image Scalar types
-public protocol AnyRGBImageSample: UniformDenseScalar {
+public protocol RGBImageSample: UniformDenseScalar {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
 }
 
-public struct RGBSample<T>: AnyRGBImageSample
+public struct RGBSample<T>: RGBImageSample
 where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var r, g, b: T
     public init() { r = T.zero; g = T.zero; b = T.zero }
 }
 
-public protocol AnyRGBAImageSample: UniformDenseScalar {
+public protocol RGBAImageSample: UniformDenseScalar {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
     var a: ComponentScalar { get set }
 }
 
-public struct RGBASample<T> : AnyRGBAImageSample
+public struct RGBASample<T> : RGBAImageSample
 where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var r, g, b, a: T
@@ -52,12 +52,12 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // Audio sample types
-public protocol AnyStereoAudioSample: UniformDenseScalar {
+public protocol StereoAudioSample: UniformDenseScalar {
     var left: ComponentScalar { get set }
     var right: ComponentScalar { get set }
 }
 
-public struct StereoSample<T>: AnyStereoAudioSample
+public struct StereoSample<T>: StereoAudioSample
 where T: AnyNumeric & AnyFixedSizeScalar {
     public typealias ComponentScalar = T
     public var left, right: T
@@ -66,15 +66,16 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // ScalarTensorView
-public protocol ScalarView: TensorView
-    where BoolView == ScalarTensor<Bool>, IndexView == ScalarTensor<TensorIndex>{}
+public protocol ScalarView: TensorView where
+    BoolView == ScalarTensor<Bool>,
+    IndexView == ScalarTensor<TensorIndex>{}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil) {
+         name: String? = nil) {
         
         let shape = DataShape(extents: [1])
         self.init(shape: shape,
@@ -117,7 +118,7 @@ public extension VectorView {
     /// create empty space
     init(count: Int,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil) {
+         name: String? = nil) {
         
         let shape = DataShape(extents: [count])
         self.init(shape: shape,
@@ -127,8 +128,7 @@ public extension VectorView {
     
     /// initialize with scalar array
     init(name: String? = nil,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         logging: LogInfo? = nil, scalars: [Scalar]) {
+         padding: [Padding]? = nil, padValue: Scalar? = nil, scalars: [Scalar]) {
         
         self.init(count: scalars.count,
                   padding: padding, padValue: padValue,
@@ -171,7 +171,7 @@ public extension MatrixView {
     /// shaped initializers
     init(extents: [Int],
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
+         name: String? = nil,
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents)
@@ -186,7 +186,7 @@ public extension MatrixView {
     /// initialize with explicit labels
     init(_ rows: Int, _ cols: Int, isColMajor: Bool = false,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
+         name: String? = nil,
          scalars: [Scalar]? = nil) {
         self.init(extents: [rows, cols],
                   padding: padding, padValue: padValue,
@@ -230,7 +230,7 @@ public extension VolumeView {
     /// shaped initializers
     init(extents: [Int],
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
+         name: String? = nil,
          scalars: [Scalar]? = nil) {
         
         self.init(shape: DataShape(extents: extents),
@@ -246,7 +246,7 @@ public extension VolumeView {
     /// initialize with explicit labels
     init(_ depths: Int, _ rows: Int, _ cols: Int,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, logging: LogInfo? = nil,
+         name: String? = nil,
          scalars: [Scalar]? = nil) {
         
         self.init(extents: [depths, rows, cols],

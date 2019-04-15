@@ -27,7 +27,7 @@ public class CpuDevice : ComputeDevice {
 
     //--------------------------------------------------------------------------
 	// initializers
-	public init(service: CpuComputeService,
+	public init(service: ComputeService,
                 deviceId: Int,
                 logInfo: LogInfo,
                 memoryAddressing: MemoryAddressing,

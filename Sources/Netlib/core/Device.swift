@@ -82,12 +82,12 @@ public protocol ComputeService: ObjectTracking, Logger {
     /// a collection of available devices
     var devices: [ComputeDevice] { get }
     /// the service id
-    var id: Int { get set }
+    var id: Int { get }
     /// the service name used for `servicePriority` and logging
     var name: String { get }
     
     /// required initializer to support dynamiclly loaded services
-    init(logInfo: LogInfo) throws
+    init(id: Int, logInfo: LogInfo, name: String?) throws
 }
 
 //==============================================================================

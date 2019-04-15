@@ -30,7 +30,9 @@ class test_TensorView: XCTestCase {
             log.logLevel = .diagnostic
 
             let values = (0..<12).map { Float($0) }
-            var m0 = Matrix<Float>(extents: [3, 4], scalars: values)
+            var m0 = Matrix<Float>(extents: [3, 4],
+                                   name: "weights",
+                                   scalars: values)
             let _ = try m0.readWrite()
             XCTAssert(!m0.lastAccessMutatedView)
             let _ = try m0.readOnly()
@@ -65,9 +67,18 @@ class test_TensorView: XCTestCase {
 	
     //--------------------------------------------------------------------------
     // test_tensorDataMigration
-    // This test creates streams on unitTest cpu devices 1 and 2 because they
-    // are always available. The test is equally as valid with other non UMA
-    // devices such as cuda or tpu
+    // This test uses the default UMA cpu service stream, combined with the
+    // cpuUnitTest service, using 2 discreet memory device streams.
+    // The purpose is to test data replication and synchronization in the
+    // following combinations.
+    //
+    // `app` means app thread
+    // `uma` means any device that shares memory with the app thread
+    // `discreet` is any device that does not share memory
+    // `same service` means moving data within (cuda gpu:0 -> cuda gpu:1)
+    // `cross service` means moving data between services
+    //                 (cuda gpu:1 -> gcp tpu:0)
+    //
     func test_tensorDataMigration() {
         do {
             let log = Platform.local.log
@@ -76,8 +87,8 @@ class test_TensorView: XCTestCase {
             
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream = try Platform.local.createStreams(serviceName: "cpu",
-                                                          deviceIds: [1, 2])
+            let stream = try Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
             XCTAssert(stream[0].device.memoryAddressing == .discreet &&
                 stream[1].device.memoryAddressing == .discreet)
             

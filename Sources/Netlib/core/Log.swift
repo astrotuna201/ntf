@@ -46,7 +46,7 @@ extension Logger {
     //------------------------------------
     // willLog
     public func willLog(level: LogLevel) -> Bool {
-        return level <= log.logLevel || level <= logLevel
+        return level <= log.level || level <= logLevel
     }
     
     //------------------------------------
@@ -105,7 +105,7 @@ extension Logging {
     //------------------------------------
 	// willLog
 	public func willLog(level: LogLevel) -> Bool {
-		return level <= log.logLevel || level <= logLevel
+		return level <= log.level || level <= logLevel
 	}
 
 	//------------------------------------
@@ -146,7 +146,7 @@ final public class Log: ObjectTracking {
 	// properties
 	public var categories: LogCategories?
     public var history = [LogEvent]()
-    public var logLevel: LogLevel = .error
+    public var level: LogLevel = .error
 	public var maxHistory = 0
 	public var silent = false
 	public var tabSize = 2

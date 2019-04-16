@@ -25,7 +25,7 @@ class test_TensorView: XCTestCase {
 	// test_viewMutateOnWrite
 	func test_viewMutateOnWrite() {
 		do {
-            Platform.log.logLevel = .diagnostic
+            Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
             // create a Matrix and give it a name for logging
@@ -81,7 +81,7 @@ class test_TensorView: XCTestCase {
     //
     func test_tensorDataMigration() {
         do {
-            Platform.log.logLevel = .diagnostic
+            Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
             // create a named stream on two different discreet devices

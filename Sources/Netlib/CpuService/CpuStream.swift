@@ -4,7 +4,7 @@
 //
 import Foundation
 
-public final class CpuStream : DeviceStream {
+public final class CpuStream : DeviceStream, StreamGradients {    
     //--------------------------------------------------------------------------
 	// protocol properties
 	public private(set) var trackingId = 0

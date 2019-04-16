@@ -2,6 +2,8 @@
 // Created by Edward Connell on 4/3/19
 // Copyright © 2019 Connell Research. All rights reserved.
 //
+// Inspired by the Google S4TF project
+//
 /// TensorView operators are defined in several forms
 /// - in place: the result is written to a tensor provided by the caller
 ///
@@ -20,6 +22,7 @@
 ///     let m = Matrix<Float>()
 ///     let x = m + 1
 import Foundation
+import TensorFlow
 
 infix operator ++  : AdditionPrecedence
 infix operator .<  : ComparisonPrecedence
@@ -40,7 +43,8 @@ infix operator .=
 ///   then broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//  @differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
+// TODO: this complains, talk to the guys
+//@differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         

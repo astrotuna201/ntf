@@ -5,6 +5,32 @@
 import Dispatch
 
 //==============================================================================
+// AtomicCounter
+public final class AtomicCounter {
+    // properties
+    private var counter: Int
+    private let mutex = Mutex()
+    
+    public var value: Int {
+        get { return mutex.sync { counter } }
+        set { return mutex.sync { counter = newValue } }
+    }
+    
+    // initializers
+    public init(value: Int = 0) {
+        counter = value
+    }
+    
+    // functions
+    public func increment() -> Int {
+        return mutex.sync {
+            counter += 1
+            return counter
+        }
+    }
+}
+
+//==============================================================================
 // Mutex
 public final class Mutex {
     // properties
@@ -16,30 +42,4 @@ public final class Mutex {
         defer { semaphore.signal() }
         return try work()
     }
-}
-
-//==============================================================================
-// AtomicCounter
-public final class AtomicCounter {
-    // properties
-    private var counter: Int
-    private let mutex = Mutex()
-    
-    public var value: Int {
-        get { return mutex.sync { counter } }
-        set { return mutex.sync { counter = newValue } }
-    }
-
-    // initializers
-	public init(value: Int = 0) {
-        counter = value
-    }
-
-    // functions
-	public func increment() -> Int {
-		return mutex.sync {
-			counter += 1
-			return counter
-		}
-	}
 }

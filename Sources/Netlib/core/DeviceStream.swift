@@ -5,38 +5,92 @@
 import Foundation
 
 //==============================================================================
-// StreamIntrinsics
-/// The required set of base level intrinsic functions
+// DeviceStream
+/// A device stream is an asynchronous queue of commands executed on
+/// the associated device. It is a class protocol treated as an abstract
+/// driver interface.
+public protocol DeviceStream:
+    ObjectTracking, Logger,
+    StreamIntrinsicsProtocol,
+    StreamGradientsProtocol {
+    
+    //--------------------------------------------------------------------------
+    // properties
+    /// the device the stream is associated with
+    var device: ComputeDevice { get }
+    /// a unique id used to identify the stream
+    var id: Int { get }
+    /// a name used to identify the stream
+    var name: String { get }
+    /// the internval of time to wait for an operation to complete
+    var timeout: TimeInterval? { get set }
+    
+    /// for unit testing. It's part of the class protocol so that remote
+    /// streams throw the error remotely.
+    func throwAsynchronousTestError()
+    
+    //--------------------------------------------------------------------------
+    // synchronization functions
+    /// blocks the calling thread until the stream queue is empty
+    func blockCallerUntilComplete() throws
+    /// creates a StreamEvent
+    func createEvent(options: StreamEventOptions) throws -> StreamEvent
+    /// creates an artificial delay used to simulate work for debugging
+    func debugDelay(seconds: Double) throws
+    /// queues a stream event
+    func record(event: StreamEvent) throws -> StreamEvent
+    /// blocks caller until the event has occurred on this stream,
+    /// then recorded and occurred on the other stream
+    func sync(with other: DeviceStream, event: StreamEvent) throws
+    /// blocks caller until the event has occurred
+    func wait(for event: StreamEvent) throws
+}
+
+//==============================================================================
+// throwAsynchronousTestError
+public extension DeviceStream {
+    func throwAsynchronousTestError() {
+        _ThreadLocalStream.value.catchError { _ in
+            throw AsynchronousTestError.error
+        }
+    }
+}
+
+public enum AsynchronousTestError : Error { case error }
+
+//==============================================================================
+// StreamIntrinsicsProtocol
+/// The required set of base level intrinsic functions for a `DeviceStream`
 ///
-public protocol StreamIntrinsics {
+public protocol StreamIntrinsicsProtocol {
     /// Computes the absolute value of the specified TensorView element-wise.
     func abs<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar: SignedNumeric
-
+    
     /// Adds two tensors and produces their sum.
     func add<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func all<T>(x: T, axes: Vector<TensorIndex>?,
                 result: inout T) throws
         where T: TensorView, T.Scalar == Bool
-
+    
     /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func any<T>(x: T, axes: Vector<TensorIndex>?,
                 result: inout T) throws
         where T: TensorView, T.Scalar == Bool
-
+    
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
                                tolerance: ScalarTensor<T.Scalar>,
                                result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Returns the indices of the maximum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter x: the tensor value
@@ -46,7 +100,7 @@ public protocol StreamIntrinsics {
                    result: inout T.IndexView) throws where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == TensorIndex
-
+    
     /// Returns the indices of the minimum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter x: the tensor value
@@ -56,7 +110,7 @@ public protocol StreamIntrinsics {
                    result: inout T.IndexView) throws where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == TensorIndex
-
+    
     /// Sums the absolute value of the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
@@ -70,11 +124,11 @@ public protocol StreamIntrinsics {
     func cast<T, R>(from: T, to result: inout R) throws where
         T: TensorView, T.Scalar: AnyConvertable,
         R: TensorView, R.Scalar: AnyConvertable
-
+    
     /// Computes the ceiling of the specified TensorView element-wise.
     func ceil<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Concatenates tensors along the specified axis.
     /// - Precondition: The tensors must have the same dimensions, except for the
     ///                 specified axis.
@@ -82,44 +136,44 @@ public protocol StreamIntrinsics {
     func concatenate<T>(view: T, with other: T, alongAxis axis: Int,
                         result: inout T) throws where
         T: TensorView
-
+    
     /// Computes the element-wise `cos`
     func cos<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Computes the element-wise `cosh`
     func cosh<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     func div<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) throws
         where T: TensorView
-
+    
     /// Computes the element-wise `exp`
     func exp<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Computes the element-wise `floor`
     func floor<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Computes `lhs > rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     func greater<T>(lhs: T, rhs: T, result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes `lhs >= rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     func greaterOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes `lhs < rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     func less<T>(lhs: T, rhs: T, result: inout T.BoolView) throws
@@ -130,7 +184,7 @@ public protocol StreamIntrinsics {
     /// scalars.
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes the element-wise `log`
     func log<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
@@ -146,16 +200,16 @@ public protocol StreamIntrinsics {
     /// Computes the element-wise `lhs || rhs`
     func logicalOr<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorView, T.Scalar == Bool
-
+    
     /// Computes the element-wise `logSoftmax`
     func logSoftmax<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Performs matrix multiplication with another TensorView and produces the
     /// result.
     func matmul<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Returns the maximum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
@@ -167,7 +221,7 @@ public protocol StreamIntrinsics {
     /// - Note: `max` supports broadcasting.
     func maximum<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Returns the arithmetic mean along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter x: the tensor value
@@ -176,7 +230,7 @@ public protocol StreamIntrinsics {
     func mean<T>(x: T, axes: Vector<TensorIndex>?,
                  result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Returns the minimum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
@@ -188,20 +242,20 @@ public protocol StreamIntrinsics {
     /// - Note: `max` supports broadcasting.
     func minimum<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Returns the remainder of dividing the first TensorView by the second.
     /// - Note: `%` supports broadcasting.
     func mod<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// mul
     func mul<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes the element-wise negation
     func neg<T>(x: T, result: inout T) throws where
-    T: TensorView, T.Scalar: SignedNumeric
-
+        T: TensorView, T.Scalar: SignedNumeric
+    
     /// Computes `lhs != rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
@@ -211,7 +265,7 @@ public protocol StreamIntrinsics {
     /// Computes the element-wise `x**y`
     func pow<T>(x: T, y: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Product of the input elements to produce a scalar
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
@@ -219,11 +273,11 @@ public protocol StreamIntrinsics {
     func prod<T>(x: T, axes: Vector<TensorIndex>?,
                  result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes the element-wise `rsqrt`
     func rsqrt<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
     ///
     /// - Precondition: `x` and `other` must have the same shape. If
@@ -246,19 +300,19 @@ public protocol StreamIntrinsics {
     /// Computes the element-wise `square`
     func square<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes the element-wise `(lhs - rhs)**2`
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) throws where
         T: TensorView, T.Scalar: Numeric
-
+    
     /// Computes the element-wise `sqrt`
     func sqrt<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
-
+    
     /// subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T) throws
         where T: TensorView, T.Scalar: Numeric
-
+    
     /// Sums the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
@@ -274,3 +328,6 @@ public protocol StreamIntrinsics {
     func tanh<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
 }
+
+//==============================================================================
+// throwAsynchronousTestError

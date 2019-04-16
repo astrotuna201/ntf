@@ -6,7 +6,7 @@ import Foundation
 import TensorFlow
 
 //==============================================================================
-// DataShape
+// TensorShape
 public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // properties

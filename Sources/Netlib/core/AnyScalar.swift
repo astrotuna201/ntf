@@ -2,6 +2,8 @@
 //  Created by Edward Connell on 10/11/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
+// *** NOTE: There might eventually be no need for any of this
+//
 import Foundation
 
 //==============================================================================

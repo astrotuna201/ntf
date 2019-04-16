@@ -16,7 +16,7 @@ import Foundation
 
 //==============================================================================
 // Platform
-/// The root service to enumerate and select compute services and devices
+/// The root object to select compute services and devices
 final public class Platform: ComputePlatform {
     /// a device automatically selected based on service priority
     public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
@@ -284,4 +284,4 @@ final public class Platform: ComputePlatform {
         fatalError("not implemented yet")
     }
     
-} // ComputePlatform
+}

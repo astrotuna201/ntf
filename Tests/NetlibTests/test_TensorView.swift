@@ -8,26 +8,25 @@ import Foundation
 @testable import Netlib
 
 class test_TensorView: XCTestCase {
-//    static var allTests : [(String, (test_TensorView) -> () throws -> Void)] {
-//        return [
-//            ("test_viewMutateOnWrite", test_viewMutateOnWrite),
-//            ("test_tensorDataMigration"           , test_tensorDataMigration),
-//            ("test_mutateOnDevice"          , test_mutateOnDevice),
-//            ("test_copyOnWriteCrossDevice"  , test_copyOnWriteCrossDevice),
-//            ("test_copyOnWriteDevice"       , test_copyOnWriteDevice),
-//            ("test_copyOnWrite"             , test_copyOnWrite),
-//            ("test_columnMajorDataView"     , test_columnMajorDataView),
-//            ("test_columnMajorStrides"      , test_columnMajorStrides),
-//        ]
-//    }
+    static var allTests : [(String, (test_TensorView) -> () throws -> Void)] {
+        return [
+            ("test_viewMutateOnWrite", test_viewMutateOnWrite),
+            ("test_tensorDataMigration", test_tensorDataMigration),
+//            ("test_mutateOnDevice", test_mutateOnDevice),
+//            ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
+//            ("test_copyOnWriteDevice", test_copyOnWriteDevice),
+//            ("test_copyOnWrite", test_copyOnWrite),
+//            ("test_columnMajorDataView", test_columnMajorDataView),
+//            ("test_columnMajorStrides", test_columnMajorStrides),
+        ]
+    }
 	
 	//--------------------------------------------------------------------------
 	// test_viewMutateOnWrite
 	func test_viewMutateOnWrite() {
 		do {
-            let log = Platform.local.log
-            log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-            log.logLevel = .diagnostic
+            Platform.log.logLevel = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
             // create a Matrix and give it a name for logging
             let values = (0..<12).map { Float($0) }
@@ -82,10 +81,9 @@ class test_TensorView: XCTestCase {
     //
     func test_tensorDataMigration() {
         do {
-            let log = Platform.local.log
-            log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-            log.logLevel = .diagnostic
-            
+            Platform.log.logLevel = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
             let stream = try Platform.local

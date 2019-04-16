@@ -41,9 +41,9 @@ final public class Platform: ComputePlatform {
     /// the caller can specify a root log which will be inherited by the
     /// device stream hierarchy, but can be overriden at any point down
     /// the tree
-    public var log: Log {
-        get { return logInfo.log }
-        set { logInfo.log = newValue }
+    public static var log: Log {
+        get { return Platform.local.logInfo.log }
+        set { Platform.local.logInfo.log = newValue }
     }
     
     //--------------------------------------------------------------------------

@@ -14,6 +14,8 @@ public protocol ComputePlatform : ObjectTracking, Logger {
     // class members
     /// global shared instance
     static var local: Platform { get }
+    /// the root log
+    static var log: Log { get set }
     /// a stream selected based on `servicePriority` and `deviceIdPriority`
     static var defaultStream: DeviceStream { get }
     
@@ -32,8 +34,6 @@ public protocol ComputePlatform : ObjectTracking, Logger {
     /// a dynamically loaded collection of available compute services.
     /// The "cpu" service will always be available
     var services: [String : ComputeService] { get }
-    /// the root log
-    var log: Log { get set }
     
     //--------------------------------------------------------------------------
     /// createStreams will try to match the requested service name and

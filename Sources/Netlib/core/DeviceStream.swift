@@ -5,39 +5,10 @@
 import Foundation
 
 //==============================================================================
-// DeviceStream
-/// A device stream is an asynchronous queue of commands executed on
-/// the associated device
-public protocol DeviceStream: ObjectTracking, Logger {
-    //--------------------------------------------------------------------------
-    // properties
-    /// the device the stream is associated with
-    var device: ComputeDevice { get }
-    /// a unique id used to identify the stream
-    var id: Int { get }
-    /// a name used to identify the stream
-    var name: String { get }
-    /// the internval of time to wait for an operation to complete
-    var timeout: TimeInterval? { get set }
-
-    //--------------------------------------------------------------------------
-    // synchronization functions
-    /// blocks the calling thread until the stream queue is empty
-    func blockCallerUntilComplete() throws
-    /// creates a StreamEvent
-    func createEvent(options: StreamEventOptions) throws -> StreamEvent
-    /// creates an artificial delay used to simulate work for debugging
-    func debugDelay(seconds: Double) throws
-    /// queues a stream event
-    func record(event: StreamEvent) throws -> StreamEvent
-    /// blocks caller until the event has occurred on this stream,
-    /// then recorded and occurred on the other stream
-    func sync(with other: DeviceStream, event: StreamEvent) throws
-    /// blocks caller until the event has occurred
-    func wait(for event: StreamEvent) throws
-
-    //--------------------------------------------------------------------------
-    // intrinsic functions
+// StreamIntrinsics
+/// The required set of base level intrinsic functions
+///
+public protocol StreamIntrinsics {
     /// Computes the absolute value of the specified TensorView element-wise.
     func abs<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar: SignedNumeric

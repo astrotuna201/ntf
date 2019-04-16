@@ -117,6 +117,55 @@ public protocol ComputeDevice: ObjectTracking, Logger {
 public enum MemoryAddressing { case unified, discreet }
 
 //==============================================================================
+// DeviceStream
+/// A device stream is an asynchronous queue of commands executed on
+/// the associated device
+public protocol DeviceStream: StreamIntrinsics, ObjectTracking, Logger {
+    //--------------------------------------------------------------------------
+    // properties
+    /// the device the stream is associated with
+    var device: ComputeDevice { get }
+    /// a unique id used to identify the stream
+    var id: Int { get }
+    /// a name used to identify the stream
+    var name: String { get }
+    /// the internval of time to wait for an operation to complete
+    var timeout: TimeInterval? { get set }
+
+    /// for unit testing. It's part of the class protocol so that remote
+    /// streams throw the error remotely.
+    func throwAsynchronousTestError()
+    
+    //--------------------------------------------------------------------------
+    // synchronization functions
+    /// blocks the calling thread until the stream queue is empty
+    func blockCallerUntilComplete() throws
+    /// creates a StreamEvent
+    func createEvent(options: StreamEventOptions) throws -> StreamEvent
+    /// creates an artificial delay used to simulate work for debugging
+    func debugDelay(seconds: Double) throws
+    /// queues a stream event
+    func record(event: StreamEvent) throws -> StreamEvent
+    /// blocks caller until the event has occurred on this stream,
+    /// then recorded and occurred on the other stream
+    func sync(with other: DeviceStream, event: StreamEvent) throws
+    /// blocks caller until the event has occurred
+    func wait(for event: StreamEvent) throws
+}
+
+//==============================================================================
+// throwAsynchronousTestError
+public extension DeviceStream {
+    func throwAsynchronousTestError() {
+        _ThreadLocalStream.value.catchError { _ in
+            throw AsynchronousTestError.error
+        }
+    }
+}
+
+public enum AsynchronousTestError : Error { case error }
+
+//==============================================================================
 // DeviceArray
 //    This represents a device data array
 public protocol DeviceArray: ObjectTracking, Logger {

@@ -52,16 +52,6 @@ public protocol ComputePlatform : ObjectTracking, Logger {
                        deviceIds: [Int]?) throws -> [DeviceStream]
     
     //--------------------------------------------------------------------------
-    /// open
-    /// this is a placeholder. Additional parameters will be needed for
-    /// credentials, timeouts, etc...
-    ///
-    /// - Parameter url: the location of the remote platform
-    /// - Returns: a reference to the remote platform, which can be used
-    ///   to query resources and create remote streams.
-    static func open(platform url: URL) throws -> ComputePlatform
-    
-    //--------------------------------------------------------------------------
     /// requestDevices
     /// - Parameter deviceIds: an array of selected device ids
     /// - Parameter serviceName: an optional service name to allocate

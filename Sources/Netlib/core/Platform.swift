@@ -274,10 +274,14 @@ final public class Platform: ComputePlatform {
     
     //--------------------------------------------------------------------------
     /// open
+    /// this is a placeholder. Additional parameters will be needed for
+    /// credentials, timeouts, etc...
+    ///
     /// - Parameter url: the location of the remote platform
     /// - Returns: a reference to the remote platform, which can be used
     ///   to query resources and create remote streams.
     public static func open(platform url: URL) throws -> ComputePlatform {
         fatalError("not implemented yet")
     }
+    
 } // ComputePlatform

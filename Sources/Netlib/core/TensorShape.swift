@@ -153,7 +153,7 @@ public struct DataShape: Equatable, Codable {
     // TODO maybe we don't need these
     public func contains(offset: [Int]) -> Bool {
         assert(offset.count == rank, "rank mismatch")
-        return offset.reduce(1, +) <= elementCount
+        return linearIndex(of: offset) <= elementSpanCount
     }
     
     public func contains(shape: DataShape) -> Bool {
@@ -163,8 +163,8 @@ public struct DataShape: Equatable, Codable {
     
     public func contains(offset: [Int], extents: [Int]) -> Bool {
         assert(offset.count == rank && extents.count == rank, "rank mismatch")
-        let span = offset.reduce(1, +) + extents.reduce(1, +)
-        return span <= elementCount
+        let span = linearIndex(of: offset) + linearIndex(of: extents)
+        return span <= elementSpanCount
     }
 
     //--------------------------------------------------------------------------

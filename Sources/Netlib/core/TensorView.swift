@@ -28,13 +28,15 @@ public protocol TensorView: Logging, Equatable, DefaultInitializer {
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorData` copy on write.
     var isShared: Bool { get }
+    /// `true` if the view projects padded or repeated data
+    var isVirtual: Bool { get }
     /// specifies an amount of padding before and after each dimension used
     /// only during indexing and iteration. It is not reflected in the `shape`
     /// of the view or part of subview creation. It is passed
     /// as a parameter to iterators. It is not inherited by subviews.
-    var padding: [Padding]? { get }
+    var padding: [Padding] { get }
     /// the scalar value to be returned for indexes with padding regions
-    var padValue: Scalar? { get }
+    var padValue: Scalar { get }
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
@@ -83,13 +85,8 @@ public typealias ScalarConformance = DefaultInitializer
 public extension TensorView {
     //--------------------------------------------------------------------------
     // public property accessors
-
-    /// `true` if `shape` and `dataShape` extents are not equal
-    var dataIsRepeated: Bool { return dataShape.extents != shape.extents }
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
-    /// `true` if the view is padded
-    var isPadded: Bool { return padding != nil }
     /// is `true` if the last data access caused the view's underlying
     /// tensorData object to be copied.
     /// Used primarily for debugging and unit testing
@@ -196,7 +193,6 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// - Returns: the padded extents for the view used for iteration
     func getPaddedExtents() -> [Int] {
-        guard let padding = self.padding else { return shape.extents }
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
         var padExtents = [Int]()

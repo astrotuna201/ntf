@@ -370,13 +370,11 @@ public extension TensorView {
                                isReference: Bool) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
-        assert(extents[0] <= shape.extents[0])
-        assert(shape.contains(offset: offset,
-                              shape: DataShape(extents: extents)))
+        assert(shape.contains(offset: offset, extents: extents))
+
         // find subview relative offset and shape
-        let dataOffset = zip(offset, dataShape.extents).map { $0 % $1 }
-        let elementOffset = viewOffset + shape.linearIndex(of: dataOffset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
+        let offset = viewOffset + shape.linearIndex(of: offset)
         
         return Self.init(
             shape: subViewShape,
@@ -385,7 +383,7 @@ public extension TensorView {
             padding: padding,
             padValue: padValue,
             tensorData: tensorData,
-            viewOffset: elementOffset,
+            viewOffset: offset,
             isShared: isReference,
             scalars: nil)
     }
@@ -394,7 +392,7 @@ public extension TensorView {
     /// view
     /// Create a sub view of the tensorData relative to this view
     func view(at offset: [Int],
-              with extents: [Int],
+              extents: [Int],
               padding: [Padding]? = nil,
               padValue: Scalar? = nil) -> Self {
         // the view created will have the same isShared state as the parent

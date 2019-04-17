@@ -25,10 +25,105 @@ class test_TensorViewCollection: XCTestCase {
 //    ]
 //
     //==========================================================================
-    // test_perfIterateMatrixValues
+    // test_IterateValues
+    func test_IterateValues() {
+        // Vector
+        do {
+            let count: Int32 = 10
+            let expected = [Int32](0..<count)
+            let vector = Vector<Int32>(scalars: expected)
+//            try print(vector.formatted(numberFormat: (2,0)))
+            
+            let values = try [Int32](vector.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+
+        // Matrix
+        do {
+            let expected = [Int32](0..<12)
+            let matrix = Matrix<Int32>(extents: [3, 4], scalars: expected)
+            try print(matrix.formatted(numberFormat: (2,0)))
+            
+            let values = try [Int32](matrix.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        
+        // Volume
+        do {
+            let expected = [Int32](0..<24)
+            let volume = Volume<Int32>(extents: [2, 3, 4], scalars: expected)
+            try print(volume.formatted(numberFormat: (2,0)))
+            
+            let values = try [Int32](volume.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
+    //==========================================================================
+    // test_IterateSubView
+    func test_IterateSubView() {
+        // Vector
+//        do {
+//            let vector = Vector<Int32>(scalars: [Int32](0..<10))
+//            let subView = vector.view(at: [2], extents: [3])
+////            try print(subView.formatted(numberFormat: (2,0)))
+//
+//            let expected: [Int32] = [2, 3, 4]
+//            let values = try [Int32](subView.values())
+//            XCTAssert(values == expected, "values do not match")
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+        
+        // Matrix
+        do {
+            let matrix = Matrix<Int32>(extents: [3, 4],
+                                       scalars: [Int32](0..<12))
+            let subView = matrix.view(at: [1, 1], extents: [2, 2])
+            try print(subView.formatted(numberFormat: (2,0)))
+
+            let expected: [Int32] = [
+                5, 6,
+                9, 10
+            ]
+            let values = try [Int32](subView.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        
+//        // Volume
+//        do {
+//            let volume = Volume<Int32>(extents: [3, 3, 4],
+//                                       scalars: [Int32](0..<36))
+//            let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
+//            try print(subView.formatted(numberFormat: (2,0)))
+//
+//            let expected: [Int32] = [
+//                17, 18, 19,
+//                21, 22, 23,
+//
+//                29, 30, 31,
+//                33, 34, 35,
+//            ]
+//            let values = try [Int32](subView.values())
+//            XCTAssert(values == expected, "values do not match")
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+    }
+    
+    //==========================================================================
+    // test_perfIterateVector
     func test_perfIterateVector() {
         do {
-            let count: Int32 = 1024 * 1024
+            let count: Int32 = 3 //1024 * 1024
             let vector = Vector<Int32>(scalars: [Int32](0..<count))
 //            try print(vector.formatted(numberFormat: (2,0)))
 

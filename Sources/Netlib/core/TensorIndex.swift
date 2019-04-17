@@ -93,23 +93,23 @@ where View: TensorView {
 //==============================================================================
 /// TensorIndex
 public struct TensorIndex : Comparable {
-    public var shape: Int
+    public var view: Int
     public var data: Int
     
     public init(offset: Int) {
-        shape = offset
+        view = offset
         data = offset
     }
     
     public static func < (lhs: TensorIndex, rhs: TensorIndex) -> Bool {
-        return lhs.shape < rhs.shape
+        return lhs.view < rhs.view
     }
     
     public func next() -> TensorIndex {
-        var nextIndex = self
-        nextIndex.shape += 1
-        nextIndex.data += 1
-        return nextIndex
+        var index = self
+        index.view += 1
+        index.data += 1
+        return index
     }
 }
 

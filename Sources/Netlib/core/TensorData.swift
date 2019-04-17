@@ -25,14 +25,8 @@ final public class TensorData: ObjectTracking, Logging {
     public var lastAccessMutatedView: Bool = false
     /// the object tracking id
     public private(set) var trackingId = 0
-
-    /// an optional context specific name for logging
-    private var _name: String?
-    public var name: String {
-        get { return _name ?? "TensorData" }
-        set { _name = newValue }
-    }
-    public var hasName: Bool { return _name != nil }
+    /// name label used for logging
+    public let name: String
     
     // local
     private let streamRequired = "stream is required for device data transfers"
@@ -95,19 +89,21 @@ final public class TensorData: ObjectTracking, Logging {
 
     // Empty
     public convenience init() {
-        self.init(byteCount: 0)
+        self.init(byteCount: 0, name: "")
     }
 
     //----------------------------------------
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer,
+                name: String) {
         // store
         isReadOnlyReference = true
         byteCount = buffer.count
         masterVersion = 0
         hostVersion = 0
+        self.name = name
 
         // we won't ever actually mutate in this case
         hostBuffer = UnsafeMutableRawBufferPointer(
@@ -118,10 +114,11 @@ final public class TensorData: ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(buffer: UnsafeRawBufferPointer) {
+    public init(buffer: UnsafeRawBufferPointer, name: String) {
         isReadOnlyReference = false
         byteCount = buffer.count
-        
+        self.name = name
+
         do {
             _ = try readWriteHostBuffer()
                 .initializeMemory(as: UInt8.self, from: buffer)
@@ -134,20 +131,19 @@ final public class TensorData: ObjectTracking, Logging {
 
     //----------------------------------------
     // create new array based on scalar size
-    public init<Scalar>(type: Scalar.Type, count: Int,
-                        name: String? = nil) {
+    public init<Scalar>(type: Scalar.Type, count: Int, name: String) {
         isReadOnlyReference = false
         self.byteCount = count * MemoryLayout<Scalar>.size
-        self._name = name
+        self.name = name
         register()
     }
     
     //----------------------------------------
     // create new array based on byte count
-    public init(byteCount: Int, name: String? = nil) {
+    public init(byteCount: Int, name: String) {
         isReadOnlyReference = false
         self.byteCount = byteCount
-        self._name = name
+        self.name = name
         register()
     }
 

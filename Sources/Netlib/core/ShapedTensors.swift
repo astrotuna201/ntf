@@ -78,9 +78,10 @@ public extension ScalarView {
          name: String? = nil) {
         
         let shape = DataShape(extents: [1])
-        self.init(shape: shape,
+        self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  name: name)
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, scalars: nil)
     }
 }
 
@@ -88,17 +89,32 @@ public extension ScalarView {
 // ScalarTensor
 public struct ScalarTensor<Scalar>: ScalarView {
     // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar? = nil
-    public init() {}
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Scalar?
+    public let shape: DataShape
+    public var tensorData: TensorData
+    public var viewOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorData: TensorData?,
+                viewOffset: Int,
+                isShared: Bool,
+                scalars: [Scalar]?) {
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue
+        self.isShared = isShared
+        self.viewOffset = viewOffset
+        self.tensorData = TensorData()
+        initTensorData(tensorData, name, scalars)
+    }
 }
 
 //==============================================================================
@@ -117,23 +133,27 @@ public extension VectorView {
     /// shaped initializers
     /// create empty space
     init(count: Int,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         padding: [Padding]? = nil,
+         padValue: Scalar? = nil,
          name: String? = nil) {
         
         let shape = DataShape(extents: [count])
-        self.init(shape: shape,
+        self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  name: name)
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, scalars: nil)
     }
     
     /// initialize with scalar array
     init(name: String? = nil,
-         padding: [Padding]? = nil, padValue: Scalar? = nil, scalars: [Scalar]) {
-        
-        self.init(count: scalars.count,
+         padding: [Padding]? = nil,
+         padValue: Scalar? = nil,
+         scalars: [Scalar]) {
+        let shape = DataShape(extents: [scalars.count])
+        self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  name: name)
-        _ = try! readWrite().initialize(from: scalars)
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, scalars: scalars)
     }
 }
 
@@ -141,17 +161,32 @@ public extension VectorView {
 // Vector
 public struct Vector<Scalar>: VectorView {
     // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Scalar?
+    public let shape: DataShape
+    public var tensorData: TensorData
+    public var viewOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorData: TensorData?,
+                viewOffset: Int,
+                isShared: Bool,
+                scalars: [Scalar]?) {
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue
+        self.isShared = isShared
+        self.viewOffset = viewOffset
+        self.tensorData = TensorData()
+        initTensorData(tensorData, name, scalars)
+    }
 }
 
 //==============================================================================
@@ -174,13 +209,13 @@ public extension MatrixView {
          name: String? = nil,
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, padding: padding, padValue: padValue,name: name)
+        let shape = !isColMajor ? DataShape(extents: extents) :
+            DataShape(extents: extents).columnMajor()
         
-        // it's being initialized in host memory so it can't fail
-        if let scalars = scalars {
-            _ = try! readWrite().initialize(from: scalars)
-        }
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, scalars: scalars)
     }
     
     /// initialize with explicit labels
@@ -198,17 +233,32 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Scalar>: MatrixView {
     // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Scalar?
+    public let shape: DataShape
+    public var tensorData: TensorData
+    public var viewOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorData: TensorData?,
+                viewOffset: Int = 0,
+                isShared: Bool = false,
+                scalars: [Scalar]?) {
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue
+        self.isShared = isShared
+        self.viewOffset = viewOffset
+        self.tensorData = TensorData()
+        initTensorData(tensorData, name, scalars)
+    }
 }
 
 //==============================================================================
@@ -233,14 +283,11 @@ public extension VolumeView {
          name: String? = nil,
          scalars: [Scalar]? = nil) {
         
-        self.init(shape: DataShape(extents: extents),
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  name: name)
-        
-        // it's being initialized in host memory so it can't fail
-        if let scalars = scalars {
-            _ = try! readWrite().initialize(from: scalars)
-        }
+                  tensorData: nil, viewOffset: 0,
+                  isShared: false, scalars: scalars)
     }
     
     /// initialize with explicit labels
@@ -251,8 +298,7 @@ public extension VolumeView {
         
         self.init(extents: [depths, rows, cols],
                   padding: padding, padValue: padValue,
-                  name: name,
-                  scalars: scalars)
+                  name: name, scalars: scalars)
     }
 }
 
@@ -260,17 +306,32 @@ public extension VolumeView {
 /// Volume
 public struct Volume<Scalar>: VolumeView {
     // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Scalar?
+    public let shape: DataShape
+    public var tensorData: TensorData
+    public var viewOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorData: TensorData?,
+                viewOffset: Int,
+                isShared: Bool,
+                scalars: [Scalar]?) {
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue
+        self.isShared = isShared
+        self.viewOffset = viewOffset
+        self.tensorData = TensorData()
+        initTensorData(tensorData, name, scalars)
+    }
 }
 
 //==============================================================================
@@ -285,17 +346,32 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar>: NDTensorView {
     // properties
-    public var _dataShape: DataShape? = nil
-    public var _isReadOnly: Bool = false
-    public var _isShared: Bool = false
-    public var _name: String? = nil
-    public var _lastAccessCopiedTensorData: Bool = false
-    public var _shape: DataShape = DataShape()
-    public var _tensorData: TensorData = TensorData()
-    public var _viewOffset: Int = 0
-    public var padding: [Padding]? = nil
-    public var padValue: Scalar?
-    public init() {}
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Scalar?
+    public let shape: DataShape
+    public var tensorData: TensorData
+    public var viewOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorData: TensorData?,
+                viewOffset: Int,
+                isShared: Bool,
+                scalars: [Scalar]?) {
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue
+        self.isShared = isShared
+        self.viewOffset = viewOffset
+        self.tensorData = TensorData()
+        initTensorData(tensorData, name, scalars)
+    }
 }
 
 ////==============================================================================
@@ -353,14 +429,14 @@ public struct NDTensor<Scalar>: NDTensorView {
 //// NCHWTensor
 //public struct NCHWTensor<Scalar>: NCHWTensorView {
 //    // properties
-//    public var _dataShape: DataShape? = nil
+//    public var dataShape: DataShape? = nil
 //    public var _isReadOnly: Bool = false
 //    public var _isShared: Bool = false
 //    public var _name: String? = nil
 //    public var _lastAccessCopiedTensorData: Bool = false
 //    public var _shape: DataShape = DataShape()
-//    public var _tensorData: TensorData = TensorData()
-//    public var _viewOffset: Int = 0
+//    public var tensorData: TensorData = TensorData()
+//    public var viewOffset: Int = 0
 //    public var logging: LogInfo? = nil
 //    public var padding: [Padding]? = nil
 //    public var padValue: Scalar?
@@ -422,14 +498,14 @@ public struct NDTensor<Scalar>: NDTensorView {
 //// NHWCTensor
 //public struct NHWCTensor<Scalar>: NHWCTensorView {
 //    // properties
-//    public var _dataShape: DataShape? = nil
+//    public var dataShape: DataShape? = nil
 //    public var _isReadOnly: Bool = false
 //    public var _isShared: Bool = false
 //    public var _name: String? = nil
 //    public var _lastAccessCopiedTensorData: Bool = false
 //    public var _shape: DataShape = DataShape()
-//    public var _tensorData: TensorData = TensorData()
-//    public var _viewOffset: Int = 0
+//    public var tensorData: TensorData = TensorData()
+//    public var viewOffset: Int = 0
 //    public var logging: LogInfo? = nil
 //    public var padding: [Padding]? = nil
 //    public var padValue: Scalar?
@@ -445,7 +521,7 @@ public struct NDTensor<Scalar>: NDTensorView {
 //            let extents = [1, matrix.shape.extents[0],
 //                           matrix.shape.extents[1], M.Scalar.componentCount]
 //            self.init(shape: DataShape(extents: extents),
-//                      tensorData: matrix._tensorData, viewOffset: 0,
+//                      tensorData: matrix.tensorData, viewOffset: 0,
 //                      isShared: false, name: nil, logging: matrix.logging)
 //    }
 //}

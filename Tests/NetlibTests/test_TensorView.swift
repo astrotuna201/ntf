@@ -96,61 +96,61 @@ class test_TensorView: XCTestCase {
             var view = Volume<Float>(extents: [2, 3, 4], scalars: values)
             
             _ = try view.readOnly()
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             _ = try view.readOnly()
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // this device is not UMA so it
             // ALLOC device array on cpu:1
             // COPY  host --> cpu:1_s0
             _ = try view.readOnly(using: stream[0])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
 
             // write access hasn't been taken, so this is still up to date
             _ = try view.readOnly()
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // an up to date copy is already there, so won't copy
             _ = try view.readWrite(using: stream[0])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // ALLOC device array on cpu:1
             // COPY  cpu:1 --> cpu:2_s0
             _ = try view.readOnly(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             _ = try view.readOnly(using: stream[0])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             _ = try view.readOnly(using: stream[1])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             _ = try view.readWrite(using: stream[0])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
             _ = try view.readOnly(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             _ = try view.readWrite(using: stream[1])
-            XCTAssert(!view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // the master is on cpu:2 so we need to update cpu:1's version
             // COPY cpu:2 --> cpu:1_s0
             _ = try view.readWrite(using: stream[0])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
             _ = try view.readWrite(using: stream[1])
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             // accessing data without a stream causes transfer to the host
             // COPY cpu:2_s0 --> host
             _ = try view.readOnly()
-            XCTAssert(view._tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
 
         } catch {
             XCTFail(String(describing: error))

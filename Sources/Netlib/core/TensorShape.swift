@@ -149,8 +149,8 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    // contains
-    // TODO maybe we don't need these
+    /// contains
+    /// used primarily for asserts
     public func contains(offset: [Int]) -> Bool {
         assert(offset.count == rank, "rank mismatch")
         return linearIndex(of: offset) <= elementSpanCount

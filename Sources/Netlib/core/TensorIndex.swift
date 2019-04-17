@@ -175,13 +175,14 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     }
     
     //==========================================================================
-    /// advanceFirst(position:for:
-    /// sets up the first position for normal indexing. This is only called
+    /// initializePosition(at offset:
+    ///
+    /// sets up the first position for indexing. This is only called
     /// once per sequence iteration.
     /// Initialization moves from outer dimension to inner (0 -> rank)
-    /// - Returns: the index of the first position. If the view is empty then
-    ///   `nil` is returned
     mutating func initializePosition(at offset: Int) {
+        assert(view.shape.elementCount > 0)
+        
         // get the padding and set an increment if there is more than one
         let padding = view.padding
         let padIncrement = padding.count > 1 ? 1 : 0

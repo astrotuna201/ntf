@@ -98,8 +98,17 @@ where View: TensorView {
 }
 
 //==============================================================================
-/// ExtentPosition
-/// This is used to track the iterated position for each extent in the view
+/// ShapePosition
+public struct ShapePosition {
+    /// current cummulative iterative position accross the shapes
+    var current: Int
+    /// the strided span of the extent
+    let span: Int
+    /// the position just after the last element
+    var end: Int
+}
+
+/// This is used to track the iterated position for each dimension in the view
 public struct ExtentPosition {
     /// the position for the `view` being traversed, which might be
     /// different than the data view and includes padding
@@ -120,15 +129,6 @@ public struct ExtentPosition {
     var padAfter: Int
     /// the relative span size for the after padding
     let padAfterSpan: Int
-}
-
-public struct ShapePosition {
-    /// current cummulative iterative position accross the shapes
-    var current: Int
-    /// the strided span of the extent
-    let span: Int
-    /// the position just after the last element
-    var end: Int
 }
 
 public struct DataShapeIndex {

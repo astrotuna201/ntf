@@ -84,8 +84,12 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     // public property accessors
 
+    /// `true` if `shape` and `dataShape` extents are not equal
+    var dataIsRepeated: Bool { return dataShape.extents != shape.extents }
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
+    /// `true` if the view is padded
+    var isPadded: Bool { return padding != nil }
     /// is `true` if the last data access caused the view's underlying
     /// tensorData object to be copied.
     /// Used primarily for debugging and unit testing

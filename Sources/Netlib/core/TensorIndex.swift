@@ -169,7 +169,9 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     }
     
     public func next() -> TensorIndex {
-        fatalError()
+        var index = self
+        _ = index.advance(dim: lastDimension)
+        return index
     }
     
     //==========================================================================
@@ -180,8 +182,6 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     /// - Returns: the index of the first position. If the view is empty then
     ///   `nil` is returned
     mutating func initializePosition(at offset: Int) {
-        guard view.shape.elementCount > 0 else { return }
-
         // get the padding and set an increment if there is more than one
         let padding = view.padding
         let padIncrement = padding.count > 1 ? 1 : 0

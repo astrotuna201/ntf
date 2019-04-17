@@ -41,6 +41,8 @@ public struct TensorViewCollection<View>: Collection where View: TensorView {
         return TensorIndex(
             offset: view.viewOffset + view.shape.elementSpanCount)
     }
+    
+    public var count: Int { return view.shape.elementCount }
 
     public func index(after i: TensorIndex) -> TensorIndex {
         return i.next()
@@ -75,6 +77,8 @@ where View: TensorView {
         return TensorIndex(
             offset: view.viewOffset + view.shape.elementSpanCount)
     }
+    
+    public var count: Int { return view.shape.elementCount }
     
     public func index(after i: TensorIndex) -> TensorIndex {
         return i.next()

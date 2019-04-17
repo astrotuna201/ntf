@@ -138,7 +138,7 @@ public struct DataShape: Equatable, Codable {
         switch rank {
         case 0: result = 0
         case 1: result = index[0]
-        default: result = zip(extents, strides).reduce(0) { $0 + $1.0 * $1.1 }
+        default: result = zip(index, strides).reduce(0) { $0 + $1.0 * $1.1 }
         }
         assert(result <= elementSpanCount)
         return result
@@ -163,7 +163,8 @@ public struct DataShape: Equatable, Codable {
     
     public func contains(offset: [Int], extents: [Int]) -> Bool {
         assert(offset.count == rank && extents.count == rank, "rank mismatch")
-        let span = linearIndex(of: offset) + linearIndex(of: extents)
+        let span = linearIndex(of: offset) +
+            DataShape.spanCount(for: extents, with: strides)
         return span <= elementSpanCount
     }
 

@@ -23,7 +23,7 @@ public extension UniformDenseScalar {
 
 //==============================================================================
 // Image Scalar types
-public protocol RGBImageSample: UniformDenseScalar {
+public protocol RGBImageSample: UniformDenseScalar, DefaultInitializer {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
@@ -36,7 +36,7 @@ where T: AnyNumeric & AnyFixedSizeScalar {
     public init() { r = T.zero; g = T.zero; b = T.zero }
 }
 
-public protocol RGBAImageSample: UniformDenseScalar {
+public protocol RGBAImageSample: UniformDenseScalar, DefaultInitializer {
     var r: ComponentScalar { get set }
     var g: ComponentScalar { get set }
     var b: ComponentScalar { get set }
@@ -52,7 +52,7 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // Audio sample types
-public protocol StereoAudioSample: UniformDenseScalar {
+public protocol StereoAudioSample: UniformDenseScalar, DefaultInitializer {
     var left: ComponentScalar { get set }
     var right: ComponentScalar { get set }
 }

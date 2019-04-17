@@ -68,7 +68,7 @@ where T: AnyNumeric & AnyFixedSizeScalar {
 // ScalarTensorView
 public protocol ScalarView: TensorView where
     BoolView == ScalarTensor<Bool>,
-    IndexView == ScalarTensor<TensorIndex>{}
+    IndexView == ScalarTensor<IndexScalar>{}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
@@ -120,7 +120,7 @@ public struct ScalarTensor<Scalar>: ScalarView {
 //==============================================================================
 // VectorView
 public protocol VectorView: TensorView
-where BoolView == Vector<Bool>, IndexView == Vector<TensorIndex> {
+where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> {
     // properties
     var count: Int { get }
 }
@@ -192,7 +192,7 @@ public struct Vector<Scalar>: VectorView {
 //==============================================================================
 // MatrixView
 public protocol MatrixView: TensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<TensorIndex> {
+where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {
     // properties
     var rowStride: Int { get }
     var colStride: Int { get }
@@ -264,7 +264,7 @@ public struct Matrix<Scalar>: MatrixView {
 //==============================================================================
 // VolumeView
 public protocol VolumeView: TensorView
-where BoolView == Volume<Bool>, IndexView == Volume<TensorIndex> {
+where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> {
     var depthStride: Int { get }
     var rowStride: Int { get }
     var colStride: Int { get }
@@ -337,7 +337,7 @@ public struct Volume<Scalar>: VolumeView {
 //==============================================================================
 // NDTensorView
 public protocol NDTensorView: TensorView
-where BoolView == NDTensor<Bool>, IndexView == NDTensor<TensorIndex> {
+where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> {
     
 }
 
@@ -383,7 +383,7 @@ public struct NDTensor<Scalar>: NDTensorView {
 ///// h: rows
 ///// w: cols
 //public protocol NCHWTensorView: TensorView
-//where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<TensorIndex> {
+//where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> {
 //    var rowStride: Int { get }
 //    var colStride: Int { get }
 //}
@@ -452,7 +452,7 @@ public struct NDTensor<Scalar>: NDTensorView {
 ///// w: cols
 ///// c: channels
 //public protocol NHWCTensorView: TensorView
-//where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<TensorIndex> {
+//where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> {
 //    var rowStride: Int { get }
 //    var colStride: Int { get }
 //}

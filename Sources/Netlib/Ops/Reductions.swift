@@ -16,7 +16,7 @@ import Foundation
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func all<T>(_ x: T, alongAxes axes: Vector<TensorIndex>? = nil,
+public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar == Bool {
         
@@ -34,10 +34,10 @@ public extension TensorView where Self.Scalar == Bool {
     func all(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
         let axes = shape.makePositive(indices: alongAxes).map {
-            TensorIndex($0)
+            IndexScalar($0)
         }
         // turn into a vector
-        let axesVec = Vector<TensorIndex>(scalars: axes)
+        let axesVec = Vector<IndexScalar>(scalars: axes)
         var result = Self.init(shapedLike: self)
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result
@@ -58,8 +58,8 @@ public extension TensorView where Self.Scalar == Bool {
     func all(squeezingAxes: Int...) -> NDTensor<Scalar> {
         
         let axes = shape.makePositive(indices: squeezingAxes)
-        let axesVec = Vector<TensorIndex>(
-            scalars: axes.map {TensorIndex($0)})
+        let axesVec = Vector<IndexScalar>(
+            scalars: axes.map {IndexScalar($0)})
         
         var result = Self.init(shapedLike: self)
         Netlib.all(self, alongAxes: axesVec, result: &result)

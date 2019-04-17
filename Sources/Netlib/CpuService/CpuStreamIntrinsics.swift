@@ -13,11 +13,11 @@ public extension CpuStream {
         
     }
     
-    func all<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
+    func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
-    func any<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
+    func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {
         
     }
     
@@ -25,15 +25,15 @@ public extension CpuStream {
         
     }
     
-    func argmax<T>(x: T, axes: Vector<TensorIndex>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
+    func argmax<T>(x: T, axes: Vector<IndexScalar>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == IndexScalar {
         
     }
     
-    func argmin<T>(x: T, axes: Vector<TensorIndex>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == TensorIndex {
+    func argmin<T>(x: T, axes: Vector<IndexScalar>?, result: inout T.IndexView) throws where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == IndexScalar {
         
     }
     
-    func asum<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     
@@ -121,7 +121,7 @@ public extension CpuStream {
         
     }
     
-    func mean<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    func mean<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     
@@ -153,7 +153,7 @@ public extension CpuStream {
         
     }
     
-    func prod<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     
@@ -189,7 +189,7 @@ public extension CpuStream {
         
     }
     
-    func sum<T>(x: T, axes: Vector<TensorIndex>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
+    func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
         
     }
     

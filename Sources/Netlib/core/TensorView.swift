@@ -71,9 +71,10 @@ public protocol TensorView: Logging, Equatable {
     func squeezed(axes: [Int]?) -> NDTensor<Scalar>
 }
 
-//------------------------------------------------------------------------------
-/// The type used for indexing
-public typealias TensorIndex = Int32
+//==============================================================================
+/// IndexScalar
+/// The data type used for tensors that contain tensor spatial index values
+public typealias IndexScalar = Int32
 
 //==============================================================================
 // TensorView default implementation

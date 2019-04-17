@@ -87,7 +87,8 @@ public extension ScalarView {
 
 //------------------------------------------------------------------------------
 // ScalarTensor
-public struct ScalarTensor<Scalar>: ScalarView {
+public struct ScalarTensor<Scalar>: ScalarView
+where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -121,14 +122,9 @@ public struct ScalarTensor<Scalar>: ScalarView {
 // VectorView
 public protocol VectorView: TensorView
 where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> {
-    // properties
-    var count: Int { get }
 }
 
 public extension VectorView {
-    /// the number of elements in the vector
-    var count: Int { return shape.extents[0] }
-
     //--------------------------------------------------------------------------
     /// shaped initializers
     /// create empty space
@@ -159,7 +155,8 @@ public extension VectorView {
 
 //------------------------------------------------------------------------------
 // Vector
-public struct Vector<Scalar>: VectorView {
+public struct Vector<Scalar>: VectorView
+where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -231,7 +228,8 @@ public extension MatrixView {
 
 //------------------------------------------------------------------------------
 // Matrix
-public struct Matrix<Scalar>: MatrixView {
+public struct Matrix<Scalar>: MatrixView
+where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -304,7 +302,8 @@ public extension VolumeView {
 
 //------------------------------------------------------------------------------
 /// Volume
-public struct Volume<Scalar>: VolumeView {
+public struct Volume<Scalar>: VolumeView
+where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -344,7 +343,8 @@ where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> {
 //------------------------------------------------------------------------------
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
-public struct NDTensor<Scalar>: NDTensorView {
+public struct NDTensor<Scalar>: NDTensorView
+where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool

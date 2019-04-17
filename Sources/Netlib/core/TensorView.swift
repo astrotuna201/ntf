@@ -6,10 +6,10 @@ import Foundation
 
 //==============================================================================
 // TensorView protocol
-public protocol TensorView: Logging, Equatable {
+public protocol TensorView: Logging, Equatable, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
-    associatedtype Scalar
+    associatedtype Scalar: DefaultInitializer
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -76,6 +76,8 @@ public protocol TensorView: Logging, Equatable {
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexScalar = Int32
 
+public typealias ScalarConformance = DefaultInitializer
+
 //==============================================================================
 // TensorView default implementation
 public extension TensorView {
@@ -84,8 +86,6 @@ public extension TensorView {
 
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
-    /// `true` if the view contains zero elements
-    var isEmpty: Bool { return dataShape.isEmpty }
     /// is `true` if the last data access caused the view's underlying
     /// tensorData object to be copied.
     /// Used primarily for debugging and unit testing
@@ -558,18 +558,6 @@ public extension TensorView where Scalar: FloatingPoint {
 }
 
 //==============================================================================
-// PaddedView protocol
-public protocol PaddedView: TensorView {
-    /// specifies an amount of padding before and after each dimension used
-    /// only during indexing and iteration. It is not reflected in the `shape`
-    /// of the view or part of subview creation. It is passed
-    /// as a parameter to iterators. It is not inherited by subviews.
-    var padding: [Padding] { get set }
-    /// the scalar value to be returned for indexes with padding regions
-    var padValue: Scalar { get set }
-}
-
-//==============================================================================
 // QuantizedView protocol
 /// scalars are transformed from Scalar -> ViewedScalar during iteration
 public protocol QuantizedView: TensorView {
@@ -584,3 +572,19 @@ public protocol QuantizedView: TensorView {
     var scale: ViewedScalar { get set }
 }
 
+//==============================================================================
+/// DefaultInitializer
+public protocol DefaultInitializer {
+    init()
+}
+
+extension Int8 : DefaultInitializer {}
+extension UInt8 : DefaultInitializer {}
+extension UInt16 : DefaultInitializer {}
+extension Int16 : DefaultInitializer {}
+extension UInt32 : DefaultInitializer {}
+extension Int32 : DefaultInitializer {}
+extension UInt : DefaultInitializer {}
+extension Float : DefaultInitializer {}
+extension Double : DefaultInitializer {}
+extension Bool : DefaultInitializer {}

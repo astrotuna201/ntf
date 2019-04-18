@@ -227,8 +227,10 @@ public extension TensorView {
         return NDTensor<Scalar>(shape: squeezedShape,
                                 dataShape: squeezedShape,
                                 name: name,
-                                padding: padding, padValue: padValue,
-                                tensorData: tensorData, viewDataOffset: viewDataOffset,
+                                padding: padding,
+                                padValue: padValue,
+                                tensorData: tensorData,
+                                viewDataOffset: viewDataOffset,
                                 isShared: isShared,
                                 scalars: nil)
     }
@@ -258,7 +260,9 @@ public extension TensorView {
     static func == (lhs: Self, rhs: Self) -> Bool {
         if lhs.tensorData === rhs.tensorData {
             // If they both reference the same tensorData then compare the views
-            return lhs.viewDataOffset == rhs.viewDataOffset && lhs.shape == rhs.shape
+            return
+                lhs.viewDataOffset == rhs.viewDataOffset &&
+                lhs.shape == rhs.shape
             
         } else if lhs.shape.extents == rhs.shape.extents {
             // if the extents are equal then compare values

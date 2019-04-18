@@ -252,6 +252,21 @@ public struct DataShape: Equatable, Codable {
         }
         return DataShape(extent)
     }
+    
+    //--------------------------------------------------------------------------
+    // padded
+    public func padded(with padding: [Padding]) -> DataShape {
+        // get the padding and set an increment if there is more than one
+        let padIncrement = padding.count > 1 ? 1 : 0
+        var padIndex = 0
+        var paddedExtents = [Int]()
+        for i in 0..<rank {
+            paddedExtents.append(
+                extents[i] + padding[padIndex].before + padding[padIndex].after)
+            padIndex += padIncrement
+        }
+        return DataShape(extents: paddedExtents)
+    }
 }
 
 //==============================================================================

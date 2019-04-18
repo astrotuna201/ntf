@@ -11,9 +11,9 @@ public extension TensorView {
         return try TensorViewCollection(view: self)
     }
 
-    func mutableValues() throws -> TensorViewMutableCollection<Self> {
-        return try TensorViewMutableCollection(view: self)
-    }
+//    func mutableValues() throws -> TensorViewMutableCollection<Self> {
+//        return try TensorViewMutableCollection(view: self)
+//    }
 }
 
 //==============================================================================
@@ -35,9 +35,8 @@ where View: TensorView {
     public init(view: View) throws {
         self.view = view
         buffer = try view.readOnly()
-        startIndex = TensorIndex(view, startOffset: view.viewOffset)
-        endIndex = TensorIndex(view, endOffset:
-            view.viewOffset + view.shape.elementSpanCount)
+        startIndex = TensorIndex(view)
+        endIndex = TensorIndex(view, end: view.shape.elementSpanCount)
     }
 
     //--------------------------------------------------------------------------
@@ -52,51 +51,12 @@ where View: TensorView {
 }
 
 //==============================================================================
-/// TensorViewCollection
-/// returns a readonly collection view of the underlying tensorData.
-public struct TensorViewMutableCollection<View>: MutableCollection
-where View: TensorView {
-    // types
-    public typealias Scalar = View.Scalar
-    // properties
-    private var view: View
-    private let buffer: UnsafeMutableBufferPointer<Scalar>
-    public var startIndex: TensorIndex<View>
-    public var endIndex: TensorIndex<View>
-    public var count: Int { return view.shape.elementCount }
-    
-    
-    public init(view: View) throws {
-        self.view = view
-        buffer = try self.view.readWrite()
-        startIndex = TensorIndex(view, startOffset: view.viewOffset)
-        endIndex = TensorIndex(view, endOffset:
-            view.viewOffset + view.shape.elementSpanCount)
-    }
-
-    //--------------------------------------------------------------------------
-    // MutableCollectionCollection
-    public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
-        return i.next()
-    }
-    
-    public subscript(index: TensorIndex<View>) -> Scalar {
-        get {
-            return index.dataIndex < 0 ? view.padValue : buffer[index.dataIndex]
-        }
-        set {
-            buffer[index.dataIndex] = newValue
-        }
-    }
-}
-
-//==============================================================================
 /// ShapePosition
 public struct ShapePosition {
     /// current cummulative iterative position accross the shapes
     var current: Int
-    /// the strided span of the extent
-    let span: Int
+    /// the stride of the extent including padding
+    let stride: Int
     /// the position just after the last element
     var end: Int
 }
@@ -135,24 +95,30 @@ public struct DataShapeIndex {
 /// TensorIndex
 public struct TensorIndex<View> : Comparable where View: TensorView {
     // properties
-    let view: View
+    let tensorView: View
+    let viewShape: DataShape
+    let dataShape: DataShape
     var currentPosition: Int
     var position = [ExtentPosition]()
     
-    var rank: Int { return view.rank }
-    var lastDimension: Int { return view.shape.lastDimension }
+    var rank: Int { return viewShape.rank }
+    var lastDimension: Int { return viewShape.lastDimension }
     var dataIndex: Int { return position[lastDimension].data.current }
     
     // initializers
-    public init(_ view: View, startOffset: Int) {
-        self.view = view
-        currentPosition = startOffset
-        initializePosition(at: startOffset)
+    public init(_ tensorView: View) {
+        self.tensorView = tensorView
+        currentPosition = 0
+        viewShape = tensorView.shape.padded(with: tensorView.padding)
+        dataShape = tensorView.dataShape
+        initializePosition()
     }
 
-    public init(_ view: View, endOffset: Int) {
-        self.view = view
-        currentPosition = endOffset
+    public init(_ tensorView: View, end: Int) {
+        self.tensorView = tensorView
+        currentPosition = end
+        viewShape = tensorView.shape.padded(with: tensorView.padding)
+        dataShape = tensorView.dataShape
     }
     
     // Equatable
@@ -179,45 +145,39 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     /// sets up the first position for indexing. This is only called
     /// once per sequence iteration.
     /// Initialization moves from outer dimension to inner (0 -> rank)
-    mutating func initializePosition(at offset: Int) {
-        assert(view.shape.elementCount > 0)
+    mutating func initializePosition() {
+        assert(viewShape.elementCount > 0)
         
         // get the padding and set an increment if there is more than one
-        let padding = view.padding
+        let padding = tensorView.padding
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
-        let dataShape = view.dataShape
-        
-        for dim in 0..<view.rank {
-            let before = padding[padIndex].before
-            let after = padding[padIndex].after
-            let extent = view.shape.extents[dim]
-            let stride = view.shape.strides[dim]
-            
-            // the strided span of this dimension
-            let span = (before + after + extent) * stride
-            let beforeSpan = before * stride
-            let afterSpan = span - after * stride
-            
-            // set the current position and end
-            let current = offset
-            let end = current + span
+
+        for dim in 0..<viewShape.rank {
+            // compute view boundaries
+            let stride = viewShape.strides[dim]
+            let end = viewShape.extents[dim] * stride
+            let beforeSpan = padding[padIndex].before * stride
+            let afterSpan = end - padding[padIndex].after * stride
+            let viewPos = ShapePosition(current: 0, stride: stride, end: end)
             
             // if index 0 of any dimension is in the pad area, then all
             // contained dimensions are padding as well
             let parentIsPad = dim > 0 && position[dim - 1].currentIsPad
-            let currentIsPad = parentIsPad || before > 0
+            let currentIsPad = parentIsPad || beforeSpan > 0
             padIndex += padIncrement
             
             // setup the initial position relative to the data view
-            let dcurrent = offset
-            let dspan = dataShape.extents[dim] * dataShape.strides[dim]
-            let dend = dcurrent + dspan
+            let dataCurrent = tensorView.viewDataOffset
+            let dataStride = dataShape.strides[dim]
+            let dataEnd = dataCurrent + dataShape.extents[dim] * dataStride
+            let dataPos = ShapePosition(current: dataCurrent,
+                                        stride: dataStride, end: dataEnd)
             
             // append the fully initialized first position
             position.append(ExtentPosition(
-                view: ShapePosition(current: current, span: span, end: end),
-                data: ShapePosition(current: dcurrent, span: dspan, end: dend),
+                view: viewPos,
+                data: dataPos,
                 currentIsPad: currentIsPad,
                 parentIsPad: parentIsPad,
                 padBefore: beforeSpan,
@@ -234,7 +194,7 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     private mutating func advance(dim: Int) -> DataShapeIndex {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
-        position[dim].view.current += view.shape.strides[dim]
+        position[dim].view.current += position[dim].view.stride
 
         //--------------------------------
         // if view position is past the end
@@ -247,11 +207,11 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
             // update the view position
             let current = start.viewPos
             position[dim].view.current = current
-            position[dim].view.end = current + position[dim].view.span
+            position[dim].view.end = current + position[dim].view.stride
             
             // update the data position
             position[dim].data.current = start.dataPos
-            position[dim].data.end = start.dataPos + position[dim].data.span
+            position[dim].data.end = start.dataPos + position[dim].data.stride
             
             // update the padding ranges
             position[dim].padBefore = current + position[dim].padBeforeSpan
@@ -268,13 +228,13 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
             // if we are not in a padded region
             if !position[dim].currentIsPad {
                 // advance data index
-                position[dim].data.current += view.dataShape.strides[dim]
+                position[dim].data.current += position[dim].data.stride
                 
                 print("viewPos: \(position[dim].view.current) dataPos: \(position[dim].data.current)")
 
                 // if past the data end, then go back to beginning and repeat
                 if position[dim].data.current == position[dim].data.end {
-                    position[dim].data.current -= position[dim].data.span
+                    position[dim].data.current -= position[dim].data.stride
                 }
             }
         }

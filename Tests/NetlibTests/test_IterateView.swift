@@ -44,8 +44,8 @@ class test_IterateView: XCTestCase {
     // test_IterateMatrix
     func test_IterateMatrix() {
         do {
-            let expected = [Int32](0..<6)
-            let matrix = Matrix<Int32>(extents: [2, 3], scalars: expected)
+            let expected = [Int32](0..<12)
+            let matrix = Matrix<Int32>(extents: [3, 4], scalars: expected)
             try print(matrix.formatted(numberFormat: (2,0)))
             
             let values = try [Int32](matrix.values())
@@ -93,9 +93,10 @@ class test_IterateView: XCTestCase {
         do {
             let matrix = Matrix<Int32>(extents: [3, 4],
                                        scalars: [Int32](0..<12))
-            let subView = matrix.view(at: [1, 1], extents: [2, 2])
+            let subView = matrix.view(at: [0, 0], extents: [1, 1])
 
             let a = try [Int32](subView.values())
+            print(a)
             let b = try [Int32](subView.values())
 
 

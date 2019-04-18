@@ -8,7 +8,7 @@ import XCTest
 import Foundation
 @testable import Netlib
 
-class test_TensorViewCollection: XCTestCase {
+class test_IterateView: XCTestCase {
 //    static var allTests = [
 //        ("test_squeezed", test_squeezed),
 //        ("test_transposed", test_transposed),
@@ -32,7 +32,7 @@ class test_TensorViewCollection: XCTestCase {
             let count: Int32 = 10
             let expected = [Int32](0..<count)
             let vector = Vector<Int32>(scalars: expected)
-//            try print(vector.formatted(numberFormat: (2,0)))
+            try print(vector.formatted(numberFormat: (2,0)))
             
             let values = try [Int32](vector.values())
             XCTAssert(values == expected, "values do not match")

@@ -230,7 +230,8 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
                 // advance data index
                 position[dim].data.current += position[dim].data.stride
                 
-                print("viewPos: \(position[dim].view.current) dataPos: \(position[dim].data.current)")
+                print("viewPos: \(position[dim].view.current) " +
+                    "dataPos: \(position[dim].data.current)")
 
                 // if past the data end, then go back to beginning and repeat
                 if position[dim].data.current == position[dim].data.end {

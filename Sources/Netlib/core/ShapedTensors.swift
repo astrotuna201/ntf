@@ -80,7 +80,7 @@ public extension ScalarView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
 }
@@ -97,7 +97,7 @@ where Scalar: ScalarConformance {
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorData: TensorData
-    public var viewOffset: Int
+    public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -105,7 +105,7 @@ where Scalar: ScalarConformance {
                 padding: [Padding]?,
                 padValue: Scalar?,
                 tensorData: TensorData?,
-                viewOffset: Int,
+                viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
         self.shape = shape
@@ -114,7 +114,7 @@ where Scalar: ScalarConformance {
         self.padValue = padValue ?? Scalar()
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
-        self.viewOffset = viewOffset
+        self.viewDataOffset = viewDataOffset
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
@@ -138,7 +138,7 @@ public extension VectorView {
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
     
@@ -150,7 +150,7 @@ public extension VectorView {
         let shape = DataShape(extents: [scalars.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
 }
@@ -167,7 +167,7 @@ where Scalar: ScalarConformance {
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorData: TensorData
-    public var viewOffset: Int
+    public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -175,7 +175,7 @@ where Scalar: ScalarConformance {
                 padding: [Padding]?,
                 padValue: Scalar?,
                 tensorData: TensorData?,
-                viewOffset: Int,
+                viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
         self.shape = shape
@@ -184,7 +184,7 @@ where Scalar: ScalarConformance {
         self.padValue = padValue ?? Scalar()
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
-        self.viewOffset = viewOffset
+        self.viewDataOffset = viewDataOffset
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
@@ -215,7 +215,7 @@ public extension MatrixView {
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
     
@@ -242,7 +242,7 @@ where Scalar: ScalarConformance {
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorData: TensorData
-    public var viewOffset: Int
+    public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -250,7 +250,7 @@ where Scalar: ScalarConformance {
                 padding: [Padding]?,
                 padValue: Scalar?,
                 tensorData: TensorData?,
-                viewOffset: Int,
+                viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
         self.shape = shape
@@ -259,7 +259,7 @@ where Scalar: ScalarConformance {
         self.padValue = padValue ?? Scalar()
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
-        self.viewOffset = viewOffset
+        self.viewDataOffset = viewDataOffset
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
@@ -290,7 +290,7 @@ public extension VolumeView {
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
     
@@ -318,7 +318,7 @@ where Scalar: ScalarConformance {
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorData: TensorData
-    public var viewOffset: Int
+    public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -326,7 +326,7 @@ where Scalar: ScalarConformance {
                 padding: [Padding]?,
                 padValue: Scalar?,
                 tensorData: TensorData?,
-                viewOffset: Int,
+                viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
         self.shape = shape
@@ -335,7 +335,7 @@ where Scalar: ScalarConformance {
         self.padValue = padValue ?? Scalar()
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
-        self.viewOffset = viewOffset
+        self.viewDataOffset = viewDataOffset
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
@@ -361,7 +361,7 @@ where Scalar: ScalarConformance {
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorData: TensorData
-    public var viewOffset: Int
+    public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -369,7 +369,7 @@ where Scalar: ScalarConformance {
                 padding: [Padding]?,
                 padValue: Scalar?,
                 tensorData: TensorData?,
-                viewOffset: Int,
+                viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
         self.shape = shape
@@ -378,7 +378,7 @@ where Scalar: ScalarConformance {
         self.padValue = padValue ?? Scalar()
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
-        self.viewOffset = viewOffset
+        self.viewDataOffset = viewDataOffset
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
@@ -446,7 +446,7 @@ where Scalar: ScalarConformance {
 //    public var _lastAccessCopiedTensorData: Bool = false
 //    public var _shape: DataShape = DataShape()
 //    public var tensorData: TensorData = TensorData()
-//    public var viewOffset: Int = 0
+//    public var viewDataOffset: Int = 0
 //    public var logging: LogInfo? = nil
 //    public var padding: [Padding]? = nil
 //    public var padValue: Scalar?
@@ -515,7 +515,7 @@ where Scalar: ScalarConformance {
 //    public var _lastAccessCopiedTensorData: Bool = false
 //    public var _shape: DataShape = DataShape()
 //    public var tensorData: TensorData = TensorData()
-//    public var viewOffset: Int = 0
+//    public var viewDataOffset: Int = 0
 //    public var logging: LogInfo? = nil
 //    public var padding: [Padding]? = nil
 //    public var padValue: Scalar?
@@ -531,7 +531,7 @@ where Scalar: ScalarConformance {
 //            let extents = [1, matrix.shape.extents[0],
 //                           matrix.shape.extents[1], M.Scalar.componentCount]
 //            self.init(shape: DataShape(extents: extents),
-//                      tensorData: matrix.tensorData, viewOffset: 0,
+//                      tensorData: matrix.tensorData, viewDataOffset: 0,
 //                      isShared: false, name: nil, logging: matrix.logging)
 //    }
 //}

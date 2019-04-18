@@ -43,7 +43,7 @@ public protocol TensorView: Logging, Equatable, DefaultInitializer {
     /// class reference to the underlying byte buffer
     var tensorData: TensorData { get set }
     /// the linear element offset where the view begins
-    var viewOffset: Int { get set }
+    var viewDataOffset: Int { get set }
 
     //--------------------------------------------------------------------------
     /// create an empty view
@@ -60,7 +60,7 @@ public protocol TensorView: Logging, Equatable, DefaultInitializer {
          padding: [Padding]?,
          padValue: Scalar?,
          tensorData: TensorData?,
-         viewOffset: Int,
+         viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
     
@@ -105,7 +105,7 @@ public extension TensorView {
                   padding: nil,
                   padValue: nil,
                   tensorData: TensorData(),
-                  viewOffset: 0,
+                  viewDataOffset: 0,
                   isShared: false,
                   scalars: nil)
     }
@@ -121,7 +121,7 @@ public extension TensorView {
                   padding: padding,
                   padValue: padValue,
                   tensorData: other.tensorData,
-                  viewOffset: other.viewOffset,
+                  viewDataOffset: other.viewDataOffset,
                   isShared: other.isShared,
                   scalars: nil)
     }
@@ -173,7 +173,7 @@ public extension TensorView {
     init<T>(shapedLike other: T) where T: TensorView {
         self.init(shape: other.shape, dataShape: other.shape, name: nil,
                   padding: nil, padValue: nil,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
     
@@ -186,7 +186,7 @@ public extension TensorView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: nil,
                   padding: nil, padValue: nil,
-                  tensorData: nil, viewOffset: 0,
+                  tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 
@@ -228,7 +228,7 @@ public extension TensorView {
                                 dataShape: squeezedShape,
                                 name: name,
                                 padding: padding, padValue: padValue,
-                                tensorData: tensorData, viewOffset: viewOffset,
+                                tensorData: tensorData, viewDataOffset: viewDataOffset,
                                 isShared: isShared,
                                 scalars: nil)
     }
@@ -243,7 +243,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// viewByteOffset
     /// the byte offset into the `tensorData` buffer where this view begins
-    var viewByteOffset: Int { return viewOffset * MemoryLayout<Scalar>.size }
+    var viewByteOffset: Int { return viewDataOffset * MemoryLayout<Scalar>.size }
     
     //--------------------------------------------------------------------------
     /// viewSpanByteCount
@@ -258,7 +258,7 @@ public extension TensorView {
     static func == (lhs: Self, rhs: Self) -> Bool {
         if lhs.tensorData === rhs.tensorData {
             // If they both reference the same tensorData then compare the views
-            return lhs.viewOffset == rhs.viewOffset && lhs.shape == rhs.shape
+            return lhs.viewDataOffset == rhs.viewDataOffset && lhs.shape == rhs.shape
             
         } else if lhs.shape.extents == rhs.shape.extents {
             // if the extents are equal then compare values
@@ -322,7 +322,7 @@ public extension TensorView {
         return try queue.sync {
             tensorData.lastAccessMutatedView = false
             let buffer = try tensorData.readOnlyDevicePointer(using: stream)
-            return buffer.advanced(by: viewOffset)
+            return buffer.advanced(by: viewDataOffset)
         }
     }
     
@@ -354,7 +354,7 @@ public extension TensorView {
         return try queue.sync {
             try copyIfMutates(using: stream)
             let buffer = try tensorData.readWriteDevicePointer(using: stream)
-            return buffer.advanced(by: viewOffset)
+            return buffer.advanced(by: viewDataOffset)
         }
     }
     
@@ -369,7 +369,7 @@ public extension TensorView {
         assert(shape.contains(offset: offset, extents: extents))
 
         // the subview offset is the current plus the offset of index
-        let subViewOffset = viewOffset + shape.linearIndex(of: offset)
+        let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
         
         return Self.init(
@@ -379,7 +379,7 @@ public extension TensorView {
             padding: padding,
             padValue: padValue,
             tensorData: tensorData,
-            viewOffset: subViewOffset,
+            viewDataOffset: subViewOffset,
             isShared: isReference,
             scalars: nil)
     }
@@ -461,7 +461,7 @@ public extension TensorView {
                          padding: padding,
                          padValue: padValue,
                          tensorData: tensorData,
-                         viewOffset: viewOffset,
+                         viewDataOffset: viewDataOffset,
                          isShared: isShared,
                          scalars: nil)
     }
@@ -485,7 +485,7 @@ public extension TensorView {
                              padding: padding,
                              padValue: padValue,
                              tensorData: tensorData,
-                             viewOffset: viewOffset,
+                             viewDataOffset: viewDataOffset,
                              isShared: true,
                              scalars: nil)
         }

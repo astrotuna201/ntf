@@ -23,28 +23,25 @@ public struct TensorViewCollection<View>: Collection
 where View: TensorView {
     // types
     public typealias Scalar = View.Scalar
+
     // properties
     private let view: View
     private let buffer: UnsafeBufferPointer<Scalar>
+    public var startIndex: TensorIndex<View>
+    public var endIndex: TensorIndex<View>
+    public var count: Int { return view.shape.elementCount }
+
     
     public init(view: View) throws {
         self.view = view
         buffer = try view.readOnly()
+        startIndex = TensorIndex(view, startOffset: view.viewOffset)
+        endIndex = TensorIndex(view, endOffset:
+            view.viewOffset + view.shape.elementSpanCount)
     }
 
     //--------------------------------------------------------------------------
     // Collection
-    public var startIndex: TensorIndex<View> {
-        return TensorIndex(view, startOffset: view.viewOffset)
-    }
-    
-    public var endIndex: TensorIndex<View> {
-        let offset = view.viewOffset + view.shape.elementSpanCount
-        return TensorIndex(view, pastEndOffset: offset)
-    }
-
-    public var count: Int { return view.shape.elementCount }
-
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
         return i.next()
     }
@@ -64,25 +61,21 @@ where View: TensorView {
     // properties
     private var view: View
     private let buffer: UnsafeMutableBufferPointer<Scalar>
+    public var startIndex: TensorIndex<View>
+    public var endIndex: TensorIndex<View>
+    public var count: Int { return view.shape.elementCount }
+    
     
     public init(view: View) throws {
         self.view = view
         buffer = try self.view.readWrite()
-    }
-    
-    //--------------------------------------------------------------------------
-    // MutableCollectionCollection
-    public var startIndex: TensorIndex<View> {
-        return TensorIndex(view, startOffset: view.viewOffset)
+        startIndex = TensorIndex(view, startOffset: view.viewOffset)
+        endIndex = TensorIndex(view, endOffset:
+            view.viewOffset + view.shape.elementSpanCount)
     }
 
-    public var endIndex: TensorIndex<View> {
-        let offset = view.viewOffset + view.shape.elementSpanCount
-        return TensorIndex(view, pastEndOffset: offset)
-    }
-    
-    public var count: Int { return view.shape.elementCount }
-    
+    //--------------------------------------------------------------------------
+    // MutableCollectionCollection
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
         return i.next()
     }
@@ -157,9 +150,9 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
         initializePosition(at: startOffset)
     }
 
-    public init(_ view: View, pastEndOffset: Int) {
+    public init(_ view: View, endOffset: Int) {
         self.view = view
-        currentPosition = pastEndOffset
+        currentPosition = endOffset
     }
     
     // Equatable

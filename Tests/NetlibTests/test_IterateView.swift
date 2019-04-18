@@ -94,6 +94,11 @@ class test_IterateView: XCTestCase {
             let matrix = Matrix<Int32>(extents: [3, 4],
                                        scalars: [Int32](0..<12))
             let subView = matrix.view(at: [1, 1], extents: [2, 2])
+
+            let a = try [Int32](subView.values())
+            let b = try [Int32](subView.values())
+
+
             try print(subView.formatted(numberFormat: (2,0)))
             
             let expected: [Int32] = [

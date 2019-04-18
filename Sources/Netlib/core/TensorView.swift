@@ -368,18 +368,18 @@ public extension TensorView {
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
 
-        // find subview relative offset and shape
+        // the subview offset is the current plus the offset of index
+        let subViewOffset = viewOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
-        let offset = viewOffset + shape.linearIndex(of: offset)
         
         return Self.init(
             shape: subViewShape,
-            dataShape: dataShape,
+            dataShape: subViewShape,
             name: "\(name).subview",
             padding: padding,
             padValue: padValue,
             tensorData: tensorData,
-            viewOffset: offset,
+            viewOffset: subViewOffset,
             isShared: isReference,
             scalars: nil)
     }

@@ -56,14 +56,14 @@ class _ThreadLocalStream {
     }
     
     //--------------------------------------------------------------------------
-    // properties
-    /// stack of default device streams and logging
+    /// stack of default device streams, logging, and exception handler
     public fileprivate(set) var streamScope: [Scope] = [
         Scope(stream: Platform.defaultStream,
               logInfo: Platform.defaultStream.logInfo,
               exceptionHandler: nil)
     ]
 
+    //--------------------------------------------------------------------------
     /// thread data key
     private static let key: pthread_key_t = {
         var key = pthread_key_t()
@@ -79,10 +79,12 @@ class _ThreadLocalStream {
     
     // there will always be the platform default stream and logInfo
     public var currentStream: DeviceStream { return streamScope.last!.stream }
-    public var defaultLogging: LogInfo { return streamScope.last!.logInfo }
+    public var currentLogInfo: LogInfo { return streamScope.last!.logInfo }
 
     //--------------------------------------------------------------------------
-    // stack functions
+    /// push(stream:
+    /// pushes the specified stream onto a stream stack which makes
+    /// it the current stream used by operator functions
     @usableFromInline
     func push(stream: DeviceStream, logInfo: LogInfo? = nil) {
         streamScope.append(
@@ -91,19 +93,26 @@ class _ThreadLocalStream {
                   exceptionHandler: streamScope.last!.exceptionHandler))
     }
     
+    //--------------------------------------------------------------------------
+    /// popStream
+    /// restores the previous current stream
     @usableFromInline
     func popStream() {
         assert(streamScope.count > 1)
         _ = streamScope.popLast()
     }
 
+    //--------------------------------------------------------------------------
+    /// catchError
+    /// this is used inside operator implementations to catch asynchronous
+    /// errors and propagate them back to the user
     @usableFromInline
     func catchError(perform body: (DeviceStream) throws -> Void) {
         do {
             try body(currentStream)
         } catch {
             // write the error to the log
-            defaultLogging.log.write(level: .error,
+            currentLogInfo.log.write(level: .error,
                                      message: String(describing: error))
             
             // call the handler if there is one
@@ -117,12 +126,11 @@ class _ThreadLocalStream {
             }
         }
     }
-
+    
     //--------------------------------------------------------------------------
     // shared singleton initializer
     @usableFromInline
-    static var value: _ThreadLocalStream
- {
+    static var value: _ThreadLocalStream {
         // try to get an existing state
         if let state = pthread_getspecific(key) {
             return Unmanaged.fromOpaque(state).takeUnretainedValue()

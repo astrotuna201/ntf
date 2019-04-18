@@ -87,19 +87,19 @@ public protocol Logging { }
 
 extension Logging {
     public var log: Log {
-        get { return _ThreadLocalStream.value.defaultLogging.log }
+        get { return _ThreadLocalStream.value.currentLogInfo.log }
     }
     
     public var logLevel: LogLevel {
-        get { return _ThreadLocalStream.value.defaultLogging.logLevel }
+        get { return _ThreadLocalStream.value.currentLogInfo.logLevel }
     }
     
     public var logNamePath: String {
-        get { return _ThreadLocalStream.value.defaultLogging.namePath }
+        get { return _ThreadLocalStream.value.currentLogInfo.namePath }
     }
     
     public var logNestingLevel: Int {
-        get { return _ThreadLocalStream.value.defaultLogging.nestingLevel }
+        get { return _ThreadLocalStream.value.currentLogInfo.nestingLevel }
     }
 
     //------------------------------------

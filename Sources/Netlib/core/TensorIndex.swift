@@ -41,7 +41,7 @@ where View: TensorView {
     //--------------------------------------------------------------------------
     // Collection
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
-        return i.next()
+        return i.increment()
     }
 
     public subscript(index: TensorIndex<View>) -> Scalar {
@@ -74,7 +74,7 @@ where View: TensorView {
     //--------------------------------------------------------------------------
     // Collection
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
-        return i.next()
+        return i.increment()
     }
     
     public subscript(index: TensorIndex<View>) -> Scalar {
@@ -170,8 +170,8 @@ public class TensorIndex<View> : Comparable where View: TensorView {
         return lhs.currentPosition < rhs.currentPosition
     }
     
-    public func next() -> TensorIndex {
-        advance(dim: lastDimension)
+    public func increment() -> TensorIndex {
+        incrementPosition(dim: lastDimension)
         return self
     }
     
@@ -226,10 +226,10 @@ public class TensorIndex<View> : Comparable where View: TensorView {
     }
     
     //==========================================================================
-    /// advance(dim:
-    /// Advances the current position
+    /// incrementPosition(dim:
+    /// increments the current position
     /// Minimal cost per: 4 cmp, 1 inc
-    private func advance(dim: Int) {
+    private func incrementPosition(dim: Int) {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
         position[dim].view.current += viewShape.strides[dim]
@@ -252,7 +252,7 @@ public class TensorIndex<View> : Comparable where View: TensorView {
         // then advance parent dimension if there is one
         if dim > 0 && position[dim].view.current == position[dim].view.end {
             // make a recursive call to advance the parent dimension
-            advance(dim: dim - 1)
+            incrementPosition(dim: dim - 1)
             
             // rebase positions and boundaries
             let parent = position[dim - 1]

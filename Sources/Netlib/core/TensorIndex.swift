@@ -8,18 +8,40 @@ import Foundation
 /// TensorView Collection extensions
 public extension TensorView {
     func values() throws -> TensorViewCollection<Self> {
-        return try TensorViewCollection(view: self)
+        return try TensorViewCollection(view: self, buffer: readOnly())
     }
 
     mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
-        return try TensorViewMutableCollection(view: &self)
+        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
+    }
+
+    func deviceValues(using stream: DeviceStream) throws
+        -> TensorViewCollection<Self> {
+        return try TensorViewCollection(
+            view: self, buffer: readOnlyDeviceBuffer(using: stream))
+    }
+    
+    mutating func mutableDeviceValues(using stream: DeviceStream) throws
+        -> TensorViewMutableCollection<Self> {
+        return try TensorViewMutableCollection(
+            view: &self, buffer: readWriteDeviceBuffer(using: stream))
+    }
+    
+    func value(at index: [Int]) throws -> Scalar {
+        let tindex = TensorIndex<Self>(self, at: index, offset: viewDataOffset)
+        return try value(at: tindex)
+    }
+    
+    func value(at index: TensorIndex<Self>) throws -> Scalar {
+        let buffer = try readOnly()
+        return index.isPad ? padValue : buffer[index.dataIndex]
     }
 }
 
 //==============================================================================
 /// TensorViewCollection
 /// returns a readonly collection view of the underlying tensorData.
-public struct TensorViewCollection<View>: Collection
+public struct TensorViewCollection<View>: RandomAccessCollection
 where View: TensorView {
     // types
     public typealias Scalar = View.Scalar
@@ -33,17 +55,20 @@ where View: TensorView {
     public var startIndex: TensorIndex<View> {
         return TensorIndex(view, paddedViewShape)
     }
-
     
-    public init(view: View) throws {
+    public init(view: View, buffer: UnsafeBufferPointer<Scalar>) throws {
         self.view = view
-        buffer = try view.readOnly()
+        self.buffer = buffer
         paddedViewShape = view.shape.padded(with: view.padding)
         endIndex = TensorIndex(view, end: paddedViewShape.elementCount)
     }
 
     //--------------------------------------------------------------------------
     // Collection
+    public func index(before i: TensorIndex<View>) -> TensorIndex<View> {
+        fatalError()
+    }
+    
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
         return i.increment()
     }
@@ -56,7 +81,9 @@ where View: TensorView {
 //==============================================================================
 /// TensorViewMutableCollection
 /// returns a readonly collection view of the underlying tensorData.
-public struct TensorViewMutableCollection<View>: MutableCollection
+public struct TensorViewMutableCollection<View>:
+    RandomAccessCollection,
+    MutableCollection
 where View: TensorView {
     // types
     public typealias Scalar = View.Scalar
@@ -72,15 +99,20 @@ where View: TensorView {
     }
     
     
-    public init(view: inout View) throws {
+    public init(view: inout View,
+                buffer: UnsafeMutableBufferPointer<Scalar>) throws {
         self.view = view
-        buffer = try self.view.readWrite()
+        self.buffer = buffer
         paddedViewShape = view.shape.padded(with: view.padding)
         endIndex = TensorIndex(view, end: paddedViewShape.elementCount)
     }
     
     //--------------------------------------------------------------------------
     // Collection
+    public func index(before i: TensorIndex<View>) -> TensorIndex<View> {
+        fatalError()
+    }
+    
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
         return i.increment()
     }
@@ -131,9 +163,9 @@ public struct ExtentPosition {
 
 //==============================================================================
 /// TensorIndex
-public class TensorIndex<View> : Comparable where View: TensorView {
+public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
     // properties
-    let tensorView: View
+    let tensorView: T
     let viewShape: DataShape
     let dataShape: DataShape
     var currentPosition: Int
@@ -146,7 +178,7 @@ public class TensorIndex<View> : Comparable where View: TensorView {
     var rank: Int { return viewShape.rank }
 
     /// start position initializer (faster)
-    public init(_ tensorView: View,
+    public init(_ tensorView: T,
                 _ paddedViewShape: DataShape,
                 offset: Int = 0) {
         self.tensorView = tensorView
@@ -157,11 +189,17 @@ public class TensorIndex<View> : Comparable where View: TensorView {
     }
 
     /// end position initializer (faster)
-    public init(_ tensorView: View, end: Int) {
+    public init(_ tensorView: T, end: Int) {
         self.tensorView = tensorView
         currentPosition = end
         viewShape = tensorView.shape.padded(with: tensorView.padding)
         dataShape = tensorView.dataShape
+    }
+    
+    public convenience init(_ tensorView: T, at: [Int], offset: Int) {
+        self.init(tensorView,
+                  tensorView.shape.padded(with: tensorView.padding),
+                  offset: offset)
     }
     
     // Equatable
@@ -179,6 +217,15 @@ public class TensorIndex<View> : Comparable where View: TensorView {
     public func increment() -> TensorIndex {
         incrementPosition(dim: lastDimension)
         return self
+    }
+    
+    public func advanced(by n: Int) -> TensorIndex {
+        for _ in 0..<n { incrementPosition(dim: lastDimension) }
+        return self
+    }
+    
+    public func distance(to other: TensorIndex<T>) -> Int {
+        return other.currentPosition - currentPosition
     }
     
     //==========================================================================

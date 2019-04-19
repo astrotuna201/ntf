@@ -158,58 +158,61 @@ class test_DataMigration: XCTestCase {
         }
     }
 
-//    //==========================================================================
-//    // test_mutateOnDevice
-//    func test_mutateOnDevice() {
-//        do {
-//            Platform.log.level = .diagnostic
-//            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-//
-//            // create a named stream on two different discreet devices
-//            // cpu devices 1 and 2 are discreet memory versions for testing
-//            let stream = try Platform.local
-//                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
-//            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
-//                stream[1].device.memoryAddressing == .discreet)
-//
-//
-//            let values = (0..<6).map { Float($0) }
-//            var data0 = Matrix<Float>(extents: [3, 2], scalars: values)
-//            try stream[0].fillWithIndex(data: &data0, startingAt: 0)
-//
-//            let value1: Float = try data0.get(at: [1, 1])
-//            XCTAssert(value1 == 3.0)
-//
-//            // migrate the data to the devices
-//            _ = try data0.ro(using: stream[0])
-//
-//            // sum device 0 copy should be 15
-//            var sum = DataView(count: 1)
-//            try stream[0].asum(x: data0.flattened(), result: &sum)
-//            var sumValue: Float = try sum.get()
-//            XCTAssert(sumValue == 15.0)
-//
-//            let data1 = data0
-//            _ = try data1.ro(using: stream[1])
-//
-//            // sum device 1 copy should be 15
-//            try stream[1].asum(x: data0.flattened(), result: &sum)
-//            sumValue = try sum.get()
-//            XCTAssert(sumValue == 15.0)
-//
-//            // clear stream 0 copy
-//            try stream[0].fill(data: &data0, with: 0)
-//
-//            // sum device 1 copy should still be 15
-//            try stream[1].asum(x: data1.flattened(), result: &sum)
-//            sumValue = try sum.get()
-//            XCTAssert(sumValue == 15.0)
-//            //            print(sumValue)
-//
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
+    //==========================================================================
+    // test_mutateOnDevice
+    func test_mutateOnDevice() {
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+
+            // create a named stream on two different discreet devices
+            // cpu devices 1 and 2 are discreet memory versions for testing
+            let stream = try Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
+            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
+                stream[1].device.memoryAddressing == .discreet)
+            
+            var matrix = using(stream[0]) {
+                Matrix<Float>(extents: [3, 2]).filledWithIndex()
+            }
+
+            let value1 = try matrix.value(at: [1, 1])
+            XCTAssert(value1 == 3.0)
+
+            // force migrate the data to the device0
+            _ = try matrix.readOnly(using: stream[0])
+
+            // sum device 0 copy should be 15
+            var sum = using(stream[0]) {
+                matrix.asum().scalarValue()
+            }
+            XCTAssert(sum == 15.0)
+
+            // copy and force migrate the data to the device1
+            let matrix2 = matrix
+            _ = try matrix2.readOnly(using: stream[1])
+
+            // sum device 1 copy should be 15
+            sum = using(stream[1]) {
+                matrix.asum().scalarValue()
+            }
+            XCTAssert(sum == 15.0)
+
+            // clear stream 0 copy
+            matrix = using(stream[0]) {
+                matrix.fill(with: 0)
+            }
+
+            // sum device 1 copy should be 15
+            sum = using(stream[1]) {
+                matrix.asum().scalarValue()
+            }
+            XCTAssert(sum == 15.0)
+
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
 
 //    //----------------------------------------------------------------------------
 //    // test_copyOnWriteDevice

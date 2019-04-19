@@ -71,18 +71,29 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// fill(x:with:
-    func fill<T>(x: T, with: T.Scalar) throws where T : TensorView {
-        _ = try x.tensorData.readWriteDevicePointer(using: self)
-        commandQueue.async {
-            
+    func fill<T>(x: T, with value: T.Scalar) throws where T : TensorView {
+        commandQueue.async { [x] in
+            var x = x
+            var values = try! x.mutableDeviceValues(using: self)
+            for i in values.startIndex..<values.endIndex {
+                values[i] = value
+            }
         }
     }
     
     //--------------------------------------------------------------------------
     /// fillWithIndex(x:startAt:
-    func fillWithIndex<T>(x: T, startAt: Int32) throws
-        where T : TensorView {
-            
+    func fillWithIndex<T>(x: T, startAt: Int) throws
+        where T : TensorView, T.Scalar: AnyNumeric {
+            commandQueue.async {
+                var x = x
+                var values = try! x.mutableDeviceValues(using: self)
+                var value = startAt
+                for i in values.startIndex..<values.endIndex {
+                    values[i] = T.Scalar(any: value)
+                    value += 1
+                }
+            }
     }
 
     func floor<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : FloatingPoint {

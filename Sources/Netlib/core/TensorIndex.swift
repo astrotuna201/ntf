@@ -29,7 +29,7 @@ where View: TensorView {
     private let paddedViewShape: DataShape
     private let buffer: UnsafeBufferPointer<Scalar>
     public var endIndex: TensorIndex<View>
-    public var count: Int { return view.shape.elementCount }
+    public var count: Int { return paddedViewShape.elementCount }
     public var startIndex: TensorIndex<View> {
         return TensorIndex(view, paddedViewShape)
     }
@@ -237,19 +237,6 @@ public class TensorIndex<View> : Comparable where View: TensorView {
         position[dim].view.current += viewShape.strides[dim]
 
         //--------------------------------
-        // advance the `data` position for this dimension by it's stride
-        // if we are not in a padded region
-        if !position[dim].currentIsPad {
-            // advance data index
-            position[dim].data.current += dataShape.strides[dim]
-            
-            // if past the data end, then go back to beginning and repeat
-            if position[dim].data.current == position[dim].data.end {
-                position[dim].data.current -= position[dim].data.span
-            }
-        }
-
-        //--------------------------------
         // if view position is past the end
         // then advance parent dimension if there is one
         if dim > 0 && position[dim].view.current == position[dim].view.end {
@@ -273,6 +260,18 @@ public class TensorIndex<View> : Comparable where View: TensorView {
             let dataCurrent = parent.data.current
             position[dim].data.current = dataCurrent
             position[dim].data.end = dataCurrent + position[dim].data.span
+            
+        } else if !position[dim].currentIsPad {
+            //--------------------------------
+            // advance the `data` position for this dimension by it's stride
+            // if we are not in a padded region
+            // advance data index
+            position[dim].data.current += dataShape.strides[dim]
+            
+            // if past the data end, then go back to beginning and repeat
+            if position[dim].data.current == position[dim].data.end {
+                position[dim].data.current -= position[dim].data.span
+            }
         }
         
 //        if dim == viewShape.lastDimension {

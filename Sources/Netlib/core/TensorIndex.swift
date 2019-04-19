@@ -27,7 +27,10 @@ where View: TensorView {
     // properties
     private let view: View
     private let buffer: UnsafeBufferPointer<Scalar>
-    public var startIndex: TensorIndex<View>
+    public var _startIndex: TensorIndex<View>
+    public var startIndex: TensorIndex<View> {
+        return _startIndex
+    }
     public var endIndex: TensorIndex<View>
     public var count: Int { return view.shape.elementCount }
 
@@ -35,8 +38,8 @@ where View: TensorView {
     public init(view: View) throws {
         self.view = view
         buffer = try view.readOnly()
-        startIndex = TensorIndex(view)
-        endIndex = TensorIndex(view, end: view.shape.elementSpanCount)
+        _startIndex = TensorIndex(view)
+        endIndex = TensorIndex(view, end: view.shape.elementCount)
     }
 
     //--------------------------------------------------------------------------
@@ -55,8 +58,8 @@ where View: TensorView {
 public struct ShapePosition {
     /// current cummulative iterative position accross the shapes
     var current: Int
-    /// the stride of the extent including padding
-    let stride: Int
+    /// the span of the extent including padding used to compute relative `end`
+    let span: Int
     /// the position just after the last element
     var end: Int
 }
@@ -155,24 +158,26 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
 
         for dim in 0..<viewShape.rank {
             // compute view position
+            let current = 0
             let stride = viewShape.strides[dim]
-            let end = viewShape.extents[dim] * stride
-            let beforeSpan = padding[padIndex].before * stride
+            let span = viewShape.extents[dim] * stride
+            let end = current + span
+            let beforeSpan = current + padding[padIndex].before * stride
             let afterSpan = end - padding[padIndex].after * stride
-            let viewPos = ShapePosition(current: 0, stride: stride, end: end)
-            
+            let viewPos = ShapePosition(current: current, span: span, end: end)
+            padIndex += padIncrement
+
             // if index 0 of any dimension is in the pad area, then all
             // contained dimensions are padding as well
             let parentIsPad = dim > 0 && position[dim - 1].currentIsPad
             let currentIsPad = parentIsPad || beforeSpan > 0
-            padIndex += padIncrement
             
             // setup the initial position relative to the data view
             let dataCurrent = tensorView.viewDataOffset
-            let dataStride = dataShape.strides[dim]
-            let dataEnd = dataCurrent + dataShape.extents[dim] * dataStride
+            let dataSpan = dataShape.extents[dim] * dataShape.strides[dim]
+            let dataEnd = dataCurrent + dataSpan
             let dataPos = ShapePosition(current: dataCurrent,
-                                        stride: dataStride, end: dataEnd)
+                                        span: dataSpan, end: dataEnd)
             
             // append the fully initialized first position
             position.append(ExtentPosition(
@@ -194,7 +199,20 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     private mutating func advance(dim: Int) {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
-        position[dim].view.current += position[dim].view.stride
+        position[dim].view.current += viewShape.strides[dim]
+
+        //--------------------------------
+        // advance the `data` position for this dimension by it's stride
+        // if we are not in a padded region
+        if !position[dim].currentIsPad {
+            // advance data index
+            position[dim].data.current += dataShape.strides[dim]
+            
+            // if past the data end, then go back to beginning and repeat
+            if position[dim].data.current == position[dim].data.end {
+                position[dim].data.current -= position[dim].data.span
+            }
+        }
 
         //--------------------------------
         // if view position is past the end
@@ -202,14 +220,16 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
         if dim > 0 && position[dim].view.current == position[dim].view.end {
             // make a recursive call to advance the parent dimension
             advance(dim: dim - 1)
+            
+            // rebase positions and boundaries
             let parent = position[dim - 1]
             position[dim].parentIsPad = parent.currentIsPad
             
             // update the view position
             let current = parent.view.current
             position[dim].view.current = current
-            position[dim].view.end = current + parent.view.stride
-            
+            position[dim].view.end = current + position[dim].view.span
+
             // update the padding ranges
             position[dim].padBefore = current + position[dim].padBeforeSpan
             position[dim].padAfter = current + position[dim].padAfterSpan
@@ -221,26 +241,16 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
                 current >= position[dim].padAfter
 
             // update the data position
-            position[dim].data.current = parent.data.current
-            position[dim].data.end = parent.data.current + parent.data.stride
+            let dataCurrent = parent.data.current
+            position[dim].data.current = dataCurrent
+            position[dim].data.end = dataCurrent + position[dim].data.span
         }
         
-        //--------------------------------
-        // advance the `data` position for this dimension by it's stride
-        // if we are not in a padded region
-        if !position[dim].currentIsPad {
-            // advance data index
-            position[dim].data.current += position[dim].data.stride
-            
-            print("viewPos: \(position[dim].view.current) " +
-                "dataPos: \(position[dim].data.current)")
-            
-            // if past the data end, then go back to beginning and repeat
-            if position[dim].data.current == position[dim].data.end {
-                position[dim].data.current -= position[dim].data.stride
-            }
-        }
-
+//        if dim == viewShape.lastDimension {
+//            let dataPos = position[dim].data.current
+//            print("viewPos: \(position[dim].view.current) dataPos: \(dataPos)")
+//        }
+//
         // return the new position
         currentPosition = position[dim].view.current
     }

@@ -296,6 +296,6 @@ public extension DataShape {
 
 public extension TensorFlow.TensorShape {
     init(_ shape: Netlib.DataShape) {
-        self = TensorFlow.TensorShape(shape.extents.map { Int32($0) })
+        self = TensorFlow.TensorShape(shape.extents)
     }
 }

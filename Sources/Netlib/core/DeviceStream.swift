@@ -44,6 +44,13 @@ public protocol DeviceStream:
     func sync(with other: DeviceStream, event: StreamEvent) throws
     /// blocks caller until the event has occurred
     func wait(for event: StreamEvent) throws
+
+    //--------------------------------------------------------------------------
+    // memory initialization functions
+    /// fills the view with the scalar value
+    func fill<T>(x: T, with: T.Scalar) throws where T: TensorView
+    /// fills the view with the spatial sequential index
+    func fillWithIndex<T>(x: T, startAt: Int32) throws where T: TensorView
 }
 
 //==============================================================================
@@ -328,6 +335,3 @@ public protocol StreamIntrinsicsProtocol {
     func tanh<T>(x: T, result: inout T) throws where
         T: TensorView, T.Scalar: FloatingPoint
 }
-
-//==============================================================================
-// throwAsynchronousTestError

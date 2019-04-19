@@ -7,28 +7,28 @@ import Foundation
 
 @testable import Netlib
 
-class test_TensorView: XCTestCase {
-    static var allTests : [(String, (test_TensorView) -> () throws -> Void)] {
-        return [
-            ("test_viewMutateOnWrite", test_viewMutateOnWrite),
-            ("test_tensorDataMigration", test_tensorDataMigration),
-//            ("test_mutateOnDevice", test_mutateOnDevice),
-//            ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
-//            ("test_copyOnWriteDevice", test_copyOnWriteDevice),
-//            ("test_copyOnWrite", test_copyOnWrite),
-//            ("test_columnMajorDataView", test_columnMajorDataView),
-//            ("test_columnMajorStrides", test_columnMajorStrides),
-        ]
-    }
+class test_DataMigration: XCTestCase {
+    //==========================================================================
+    // support terminal test run
+    static var allTests = [
+        ("test_viewMutateOnWrite", test_viewMutateOnWrite),
+        ("test_tensorDataMigration", test_tensorDataMigration),
+        //            ("test_mutateOnDevice", test_mutateOnDevice),
+        //            ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
+        //            ("test_copyOnWriteDevice", test_copyOnWriteDevice),
+        //            ("test_copyOnWrite", test_copyOnWrite),
+        //            ("test_columnMajorDataView", test_columnMajorDataView),
+        //            ("test_columnMajorStrides", test_columnMajorStrides),
+    ]
 	
-	//--------------------------------------------------------------------------
+    //==========================================================================
 	// test_viewMutateOnWrite
 	func test_viewMutateOnWrite() {
 		do {
             Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
-            // create a Matrix and give it a name for logging
+            // create a Matrix and give it an optional name for logging
             let values = (0..<12).map { Float($0) }
             var m0 = Matrix<Float>(extents: [3, 4],
                                    name: "weights",
@@ -65,8 +65,9 @@ class test_TensorView: XCTestCase {
 		}
 	}
 	
-    //--------------------------------------------------------------------------
+    //==========================================================================
     // test_tensorDataMigration
+    //
     // This test uses the default UMA cpu service stream, combined with the
     // cpuUnitTest service, using 2 discreet memory device streams.
     // The purpose is to test data replication and synchronization in the
@@ -157,15 +158,23 @@ class test_TensorView: XCTestCase {
         }
     }
 
-    //----------------------------------------------------------------------------
+//    //==========================================================================
 //    // test_mutateOnDevice
 //    func test_mutateOnDevice() {
 //        do {
-//            let model = Model()
-//            try model.setup()
-//            let stream = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
+//            Platform.log.level = .diagnostic
+//            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 //
-//            var data0 = DataView(rows: 3, cols: 2)
+//            // create a named stream on two different discreet devices
+//            // cpu devices 1 and 2 are discreet memory versions for testing
+//            let stream = try Platform.local
+//                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
+//            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
+//                stream[1].device.memoryAddressing == .discreet)
+//
+//
+//            let values = (0..<6).map { Float($0) }
+//            var data0 = Matrix<Float>(extents: [3, 2], scalars: values)
 //            try stream[0].fillWithIndex(data: &data0, startingAt: 0)
 //
 //            let value1: Float = try data0.get(at: [1, 1])
@@ -201,7 +210,7 @@ class test_TensorView: XCTestCase {
 //            XCTFail(String(describing: error))
 //        }
 //    }
-//
+
 //    //----------------------------------------------------------------------------
 //    // test_copyOnWriteDevice
 //    func test_copyOnWriteDevice() {

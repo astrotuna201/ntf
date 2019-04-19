@@ -11,9 +11,9 @@ public extension TensorView {
         return try TensorViewCollection(view: self)
     }
 
-//    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
-//        return try TensorViewMutableCollection(view: &self)
-//    }
+    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
+        return try TensorViewMutableCollection(view: &self)
+    }
 }
 
 //==============================================================================
@@ -52,44 +52,48 @@ where View: TensorView {
         return index.isPad ? view.padValue : buffer[index.dataIndex]
     }
 }
-//
-////==============================================================================
-///// TensorViewMutableCollection
-///// returns a readonly collection view of the underlying tensorData.
-//public struct TensorViewMutableCollection<View>: MutableCollection
-//where View: TensorView {
-//    // types
-//    public typealias Scalar = View.Scalar
-//
-//    // properties
-//    private var view: View
-//    private let buffer: UnsafeMutableBufferPointer<Scalar>
-//    public var startIndex: TensorIndex<View> { return TensorIndex(view) }
-//    public var endIndex: TensorIndex<View>
-//    public var count: Int { return view.shape.elementCount }
-//
-//
-//    public init(view: inout View) throws {
-//        self.view = view
-//        buffer = try self.view.readWrite()
-//        endIndex = TensorIndex(view, end: view.shape.elementCount)
-//    }
-//
-//    //--------------------------------------------------------------------------
-//    // Collection
-//    public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
-//        return i.increment()
-//    }
-//
-//    public subscript(index: TensorIndex<View>) -> Scalar {
-//        get {
-//            return index.dataIndex < 0 ? view.padValue : buffer[index.dataIndex]
-//        }
-//        set {
-//            buffer[index.dataIndex] = newValue
-//        }
-//    }
-//}
+
+//==============================================================================
+/// TensorViewMutableCollection
+/// returns a readonly collection view of the underlying tensorData.
+public struct TensorViewMutableCollection<View>: MutableCollection
+where View: TensorView {
+    // types
+    public typealias Scalar = View.Scalar
+    
+    // properties
+    private var view: View
+    private let paddedViewShape: DataShape
+    private let buffer: UnsafeMutableBufferPointer<Scalar>
+    public var endIndex: TensorIndex<View>
+    public var count: Int { return paddedViewShape.elementCount }
+    public var startIndex: TensorIndex<View> {
+        return TensorIndex(view, paddedViewShape)
+    }
+    
+    
+    public init(view: inout View) throws {
+        self.view = view
+        buffer = try self.view.readWrite()
+        paddedViewShape = view.shape.padded(with: view.padding)
+        endIndex = TensorIndex(view, end: paddedViewShape.elementCount)
+    }
+    
+    //--------------------------------------------------------------------------
+    // Collection
+    public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
+        return i.increment()
+    }
+    
+    public subscript(index: TensorIndex<View>) -> Scalar {
+        get {
+            return index.isPad ? view.padValue : buffer[index.dataIndex]
+        }
+        set {
+            buffer[index.dataIndex] = newValue
+        }
+    }
+}
 
 //==============================================================================
 /// ShapePosition

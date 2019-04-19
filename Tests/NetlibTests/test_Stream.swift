@@ -1,36 +1,28 @@
-//
-//  CodableTests.swift
-//  NetlibTests
-//
-//  Created by Edward Connell on 3/23/19.
+//******************************************************************************
+//  Created by Edward Connell on 3/23/19
+//  Copyright © 2019 Connell Research. All rights reserved.
 //
 import XCTest
 import Foundation
 @testable import Netlib
 
-class test_Ops: XCTestCase {
+class test_Stream: XCTestCase {
+    //==========================================================================
+    // support terminal test run
     static var allTests = [
-        ("test_Casting", test_Casting),
         ("test_GetDefaultStream", test_GetDefaultStream),
         ("test_AddSubMulDiv", test_AddSubMulDiv),
     ]
     
-    func test_Casting() {
-//        do {
-//            let a = Vector<Float>(scalars: [1, 2, 3, 4])
-//            let b = try Vector<Int32>(a)
-//            XCTAssert(a == b)
-//
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-    }
-    
+    //==========================================================================
+    // test_GetDefaultStream
     func test_GetDefaultStream() {
         let stream = Platform.defaultStream
         XCTAssert(!stream.name.isEmpty)
     }
     
+    //==========================================================================
+    // test_AddSubMulDiv
     func test_AddSubMulDiv() {
         // handle unexpected stream error
         handleStreamExceptions { error in

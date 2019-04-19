@@ -25,8 +25,8 @@ class test_IterateView: XCTestCase {
 //    ]
 //
     //==========================================================================
-    // test_IterateVector
-    func test_IterateVector() {
+    // test_Vector
+    func test_Vector() {
         do {
             let count: Int32 = 10
             let expected = [Int32](0..<count)
@@ -41,8 +41,8 @@ class test_IterateView: XCTestCase {
     }
 
     //==========================================================================
-    // test_IterateMatrix
-    func test_IterateMatrix() {
+    // test_Matrix
+    func test_Matrix() {
         do {
             let expected = [Int32](0..<4)
             let matrix = Matrix<Int32>(extents: [2, 2], scalars: expected)
@@ -57,8 +57,8 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_IterateVolume
-    func test_IterateVolume() {
+    // test_Volume
+    func test_Volume() {
         do {
             let expected = [Int32](0..<24)
             let volume = Volume<Int32>(extents: [2, 3, 4], scalars: expected)
@@ -72,8 +72,8 @@ class test_IterateView: XCTestCase {
     }
 
     //==========================================================================
-    // test_IterateVectorSubView
-    func test_IterateVectorSubView() {
+    // test_VectorSubView
+    func test_VectorSubView() {
         do {
             let vector = Vector<Int32>(scalars: [Int32](0..<10))
             let subView = vector.view(at: [2], extents: [3])
@@ -88,8 +88,8 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_IterateMatrixSubView
-    func test_IterateMatrixSubView() {
+    // test_MatrixSubView
+    func test_MatrixSubView() {
         do {
             let matrix = Matrix<Int32>(extents: [3, 4],
                                        scalars: [Int32](0..<12))
@@ -108,8 +108,8 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_IterateVolumeSubView
-    func test_IterateVolumeSubView() {
+    // test_VolumeSubView
+    func test_VolumeSubView() {
         do {
             let volume = Volume<Int32>(extents: [3, 3, 4],
                                        scalars: [Int32](0..<36))
@@ -131,8 +131,8 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_perfIterateVector
-    func test_perfIterateVector() {
+    // test_perfVector
+    func test_perfVector() {
         do {
             let count: Int32 = 512 * 512
             let vector = Vector<Int32>(scalars: [Int32](0..<count))
@@ -147,167 +147,188 @@ class test_IterateView: XCTestCase {
         }
     }
     
+    //==========================================================================
+    // test_transposedMatrix
+    func test_transposedMatrix() {
+        //        let avals = (0..<6).map { Float($0) }
+        //        let a = TensorView<Float>(extents: 2,3, scalars: avals)
+
+    }
+
+    //==========================================================================
+    // test_repeatingValue
+    func test_repeatingValue() {
+        do {
+            // try repeating a scalar
+            let value = Matrix<Int32>(extents: [1, 1], scalars: [42])
+            let matrix = Matrix<Int32>(extents: [2, 3], repeating: value)
+//            try print(vector.formatted(numberFormat: (2,0)))
+
+            let expected: [Int32] = [
+                42, 42, 42,
+                42, 42, 42,
+            ]
+
+            let values = try [Int32](matrix.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_repeatingRow
+    func test_repeatingRow() {
+        do {
+            // try repeating a row vector
+            let row = Matrix<Int32>(extents: [1, 3], scalars: [Int32](0..<3))
+            let matrix = Matrix<Int32>(extents: [2, 3], repeating: row)
+            try print(matrix.formatted(numberFormat: (2,0)))
+            
+            let expected: [Int32] = [
+                0, 1, 2,
+                0, 1, 2,
+            ]
+            
+            let values = try [Int32](matrix.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_repeatingCol
+    func test_repeatingCol() {
+        do {
+            // try repeating a row vector
+            let col = Matrix<Int32>(extents: [3, 1], scalars: [Int32](0..<3))
+            let matrix = Matrix<Int32>(extents: [3, 2], repeating: col)
+            try print(matrix.formatted(numberFormat: (2,0)))
+            
+            let expected: [Int32] = [
+                0, 0,
+                1, 1,
+                2, 2,
+            ]
+            
+            let values = try [Int32](matrix.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+
+    //==========================================================================
+    // test_repeatingMatrix
+    func test_repeatingMatrix() {
+        do {
+            let pattern = Matrix<Int32>(extents: [2,2], scalars: [
+                1, 0,
+                0, 1,
+            ])
+            
+            let matrix = Matrix<Int32>(extents: [3, 4], repeating: pattern)
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+            ]
+            
+            let values = try [Int32](matrix.values())
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_repeatingVolume
+    func test_repeatingVolume() {
+        do {
+            let pattern = Volume<Int32>(extents: [2,2,2], scalars:[
+                1, 0,
+                0, 1,
+                
+                2, 3,
+                3, 2
+            ])
+            
+            // create a virtual view and get it's values
+            let volume = Volume<Int32>(extents: [2, 3, 4], repeating: pattern)
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+                
+                2, 3, 2, 3,
+                3, 2, 3, 2,
+                2, 3, 2, 3,
+            ]
+
+            let values = try [Int32](volume.values())
+            XCTAssert(values == expected, "indices do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
 //    //==========================================================================
-//    // test_transposed
-//    func test_transposed() {
-//        //        let avals = (0..<6).map { Float($0) }
-//        //        let a = TensorView<Float>(extents: 2,3, scalars: avals)
-//
-//    }
-//
-//    //==========================================================================
-//    // test_iterateRepeatedSequence
-//    func test_iterateRepeatedSequence() {
+//    // test_paddedVector
+//    func test_paddedVector() {
 //        do {
-//            // try repeating a scalar
-//            let shape = DataShape(extents: [2, 3])
-//            let dataShape = DataShape(extents: [1, 1])
-//            let expected = [
-//                0, 0, 0,
-//                0, 0, 0,
+//            let padding = [
+//                Padding(before: 2, after: 3)  // col pad
+//            ]
+//            let vector = Vector<Int32>(padding: padding,
+//                                       padValue: -1,
+//                                       scalars: [Int32](0..<3))
+//            try print(vector.formatted(numberFormat: (2,0)))
+//            
+//            let expectedValues: [Int32] = [
+//                -1, -1,  0,  1,  2, -1, -1, -1,
 //            ]
 //
-//            let indices = [Int](shape.indices(repeating: dataShape))
-//            XCTAssert(indices == expected, "indices do not match")
-//        }
-//
-//        do {
-//            // try repeating a row vector
-//            let shape = DataShape(extents: [2, 3])
-//            let dataShape = DataShape(extents: [1, 3])
-//            let expected = [
-//                0, 1, 2,
-//                0, 1, 2,
-//            ]
-//
-//            let indices = [Int](shape.indices(repeating: dataShape))
-//            XCTAssert(indices == expected, "indices do not match")
-//        }
-//
-//        do {
-//            // try repeating a col vector
-//            let shape = DataShape(extents: [3, 2])
-//            let dataShape = DataShape(extents: [3, 1])
-//            let expected = [
-//                0, 0,
-//                1, 1,
-//                2, 2,
-//            ]
-//
-//            let indices = [Int](shape.indices(repeating: dataShape))
-//            XCTAssert(indices == expected, "indices do not match")
-//        }
-//    }
-//
-//    //==========================================================================
-//    // test_iterateRepeatedView
-//    func test_iterateRepeatedView() {
-//        do {
-//            // values to repeat
-//            let data = Matrix<Int32>(extents: [2,2], scalars: [
-//                1, 0,
-//                0, 1,
-//            ])
-//
-//            // create a virtual view and get it's values
-//            let view = Matrix<Int32>(extents: [3, 4], repeating: data)
-//            let values = try [Int32](view.values())
-//
-//            // compare
-//            let expected: [Int32] = [
-//                1, 0, 1, 0,
-//                0, 1, 0, 1,
-//                1, 0, 1, 0,
-//            ]
-//            XCTAssert(values == expected, "indices do not match")
+//            let values = try [Int32](vector.values())
+//            XCTAssert(values == expectedValues, "indices do not match")
+//            
 //        } catch {
 //            XCTFail(String(describing: error))
 //        }
-//
-//        do {
-//            // values to repeat
-//            let data = Volume<Int32>(extents: [2,2,2], scalars:[
-//                1, 0,
-//                0, 1,
-//
-//                2, 3,
-//                3, 2
-//            ])
-//
-//            // create a virtual view and get it's values
-//            let view = Volume<Int32>(extents: [2, 3, 4], repeating: data)
-//            let values = try [Int32](view.values())
-//
-//            // compare
-//            let expected: [Int32] = [
-//                1, 0, 1, 0,
-//                0, 1, 0, 1,
-//                1, 0, 1, 0,
-//
-//                2, 3, 2, 3,
-//                3, 2, 3, 2,
-//                2, 3, 2, 3,
-//            ]
-//            XCTAssert(values == expected, "indices do not match")
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
 //    }
 //
 //    //==========================================================================
-//    // test_iteratePaddedSequence
-//    func test_iteratePaddedSequence() {
+//    // test_paddedMatrix
+//    func test_paddedMatrix() {
 //        do {
 //            // create matrix with padding
 //            let padding = [
-//                Padding(1), // row pad
+//                Padding(1),                   // row pad
 //                Padding(before: 2, after: 3)  // col pad
 //            ]
-//            let m = Matrix<Int32>(extents: [2,3],
-//                                  padding: padding,
-//                                  padValue: -1,
-//                                  scalars: [Int32](0..<6))
 //
-//            //            try print(m.formatted(numberFormat: (2,0)))
+//            let matrix = Matrix<Int32>(extents: [2,3],
+//                                       padding: padding,
+//                                       padValue: -1,
+//                                       scalars: [Int32](0..<6))
+//            try print(matrix.formatted(numberFormat: (2,0)))
 //
-//            let indices = [Int](m.shape.indices())
-//            let expectedIndices = [0, 1, 2, 3, 4, 5]
-//            XCTAssert(indices == expectedIndices, "indices do not match")
-//
-//            let values = try [Int32](m.values())
 //            let expectedValues: [Int32] = [
 //                -1, -1, -1, -1, -1, -1, -1, -1,
 //                -1, -1,  0,  1,  2, -1, -1, -1,
 //                -1, -1,  3,  4,  5, -1, -1, -1,
 //                -1, -1, -1, -1, -1, -1, -1, -1,
 //            ]
+//
+//            let values = try [Int32](matrix.values())
 //            XCTAssert(values == expectedValues, "indices do not match")
 //
 //        } catch {
 //            XCTFail(String(describing: error))
 //        }
 //    }
-//
-//    //==========================================================================
-//    // test_iterateSequence
-//    func test_iterateSequence() {
-//        do {
-//            // try to iterate empty shape
-//            let empty = Volume<Int32>()
-//            for _ in empty.shape.indices() {
-//                XCTFail("an empty shape should have an empty sequence")
-//            }
-//
-//            // try volume with shape
-//            let expected = [Int](0..<24)
-//            let v1 = Volume<Int32>(extents: [2, 3, 4],
-//                                   scalars: expected.map { Int32($0) })
-//
-//            let indices = [Int](v1.shape.indices())
-//            XCTAssert(indices == expected, "indices do not match")
-//        }
-//    }
-//
+
 //    //==========================================================================
 //    // test_perfIterateMatrixIndices
 //    func test_perfIterateMatrixIndices() {

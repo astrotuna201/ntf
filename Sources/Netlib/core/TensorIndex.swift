@@ -135,7 +135,7 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     
     public func next() -> TensorIndex {
         var index = self
-        _ = index.advance(dim: lastDimension)
+        index.advance(dim: lastDimension)
         return index
     }
     
@@ -154,7 +154,7 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
         var padIndex = 0
 
         for dim in 0..<viewShape.rank {
-            // compute view boundaries
+            // compute view position
             let stride = viewShape.strides[dim]
             let end = viewShape.extents[dim] * stride
             let beforeSpan = padding[padIndex].before * stride
@@ -190,8 +190,8 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     //==========================================================================
     /// advance(dim:
     /// Advances the current position
-    /// Minimal cost per value: 6 cmp, 1 inc, 1 sub
-    private mutating func advance(dim: Int) -> DataShapeIndex {
+    /// Minimal cost per: 4 cmp, 1 inc
+    private mutating func advance(dim: Int) {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
         position[dim].view.current += position[dim].view.stride
@@ -199,49 +199,49 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
         //--------------------------------
         // if view position is past the end
         // then advance parent dimension if there is one
-        if position[dim].view.current == position[dim].view.end && dim > 0 {
+        if dim > 0 && position[dim].view.current == position[dim].view.end {
             // make a recursive call to advance the parent dimension
-            let start = advance(dim: dim - 1)
-            position[dim].parentIsPad = position[dim - 1].currentIsPad
+            advance(dim: dim - 1)
+            let parent = position[dim - 1]
+            position[dim].parentIsPad = parent.currentIsPad
             
             // update the view position
-            let current = start.viewPos
+            let current = parent.view.current
             position[dim].view.current = current
-            position[dim].view.end = current + position[dim].view.stride
-            
-            // update the data position
-            position[dim].data.current = start.dataPos
-            position[dim].data.end = start.dataPos + position[dim].data.stride
+            position[dim].view.end = current + parent.view.stride
             
             // update the padding ranges
             position[dim].padBefore = current + position[dim].padBeforeSpan
             position[dim].padAfter = current + position[dim].padAfterSpan
-
+            
             // if the parent is pad or if current is in a padding area
             position[dim].currentIsPad =
                 position[dim].parentIsPad ||
                 current < position[dim].padBefore ||
                 current >= position[dim].padAfter
-        } else {
-            //--------------------------------
-            // advance the `data` position for this dimension by it's stride
-            // if we are not in a padded region
-            if !position[dim].currentIsPad {
-                // advance data index
-                position[dim].data.current += position[dim].data.stride
-                
-                print("viewPos: \(position[dim].view.current) " +
-                    "dataPos: \(position[dim].data.current)")
 
-                // if past the data end, then go back to beginning and repeat
-                if position[dim].data.current == position[dim].data.end {
-                    position[dim].data.current -= position[dim].data.stride
-                }
+            // update the data position
+            position[dim].data.current = parent.data.current
+            position[dim].data.end = parent.data.current + parent.data.stride
+        }
+        
+        //--------------------------------
+        // advance the `data` position for this dimension by it's stride
+        // if we are not in a padded region
+        if !position[dim].currentIsPad {
+            // advance data index
+            position[dim].data.current += position[dim].data.stride
+            
+            print("viewPos: \(position[dim].view.current) " +
+                "dataPos: \(position[dim].data.current)")
+            
+            // if past the data end, then go back to beginning and repeat
+            if position[dim].data.current == position[dim].data.end {
+                position[dim].data.current -= position[dim].data.stride
             }
         }
+
         // return the new position
         currentPosition = position[dim].view.current
-        return DataShapeIndex(viewPos: currentPosition,
-                              dataPos: position[dim].data.current)
     }
 }

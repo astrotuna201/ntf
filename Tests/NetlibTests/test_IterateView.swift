@@ -134,7 +134,7 @@ class test_IterateView: XCTestCase {
     // test_perfIterateVector
     func test_perfIterateVector() {
         do {
-            let count: Int32 = 1024 * 1024
+            let count: Int32 = 512 * 512
             let vector = Vector<Int32>(scalars: [Int32](0..<count))
 //            try print(vector.formatted(numberFormat: (2,0)))
 
@@ -147,22 +147,6 @@ class test_IterateView: XCTestCase {
         }
     }
     
-//    //==========================================================================
-//    // test_squeezed
-//    func test_squeezed() {
-//        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed().extents == [10,4,3])
-//        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed().extents == [10,4,3])
-//        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed().extents == [4,3])
-//        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed().extents == [4,3,5])
-//        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed().extents == [4,3,5])
-//
-//        XCTAssert(DataShape(10, 1, 4, 3, 1).squeezed(axes: [0,4]).extents == [10,1,4,3])
-//        XCTAssert(DataShape(10, 1, 4, 3, 1, 1).squeezed(axes: [0,5]).extents == [10,1,4,3,1])
-//        XCTAssert(DataShape(1, 1, 4, 3, 1).squeezed(axes: [1,3]).extents == [1,4,3,1])
-//        XCTAssert(DataShape(1, 1, 4, 3, 5).squeezed(axes: [3,3]).extents == [1,1,4,3,5])
-//        XCTAssert(DataShape(1, 1, 4, 1, 1, 3, 5).squeezed(axes: []).extents == [1, 1, 4, 1, 1, 3, 5])
-//    }
-//
 //    //==========================================================================
 //    // test_transposed
 //    func test_transposed() {

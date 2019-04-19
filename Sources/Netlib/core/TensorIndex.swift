@@ -11,9 +11,9 @@ public extension TensorView {
         return try TensorViewCollection(view: self)
     }
 
-//    func mutableValues() throws -> TensorViewMutableCollection<Self> {
-//        return try TensorViewMutableCollection(view: self)
-//    }
+    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
+        return try TensorViewMutableCollection(view: &self)
+    }
 }
 
 //==============================================================================
@@ -27,10 +27,7 @@ where View: TensorView {
     // properties
     private let view: View
     private let buffer: UnsafeBufferPointer<Scalar>
-    public var _startIndex: TensorIndex<View>
-    public var startIndex: TensorIndex<View> {
-        return _startIndex
-    }
+    public var startIndex: TensorIndex<View> { return TensorIndex(view) }
     public var endIndex: TensorIndex<View>
     public var count: Int { return view.shape.elementCount }
 
@@ -38,7 +35,6 @@ where View: TensorView {
     public init(view: View) throws {
         self.view = view
         buffer = try view.readOnly()
-        _startIndex = TensorIndex(view)
         endIndex = TensorIndex(view, end: view.shape.elementCount)
     }
 
@@ -50,6 +46,44 @@ where View: TensorView {
 
     public subscript(index: TensorIndex<View>) -> Scalar {
         return index.dataIndex < 0 ? view.padValue : buffer[index.dataIndex]
+    }
+}
+
+//==============================================================================
+/// TensorViewMutableCollection
+/// returns a readonly collection view of the underlying tensorData.
+public struct TensorViewMutableCollection<View>: MutableCollection
+where View: TensorView {
+    // types
+    public typealias Scalar = View.Scalar
+    
+    // properties
+    private var view: View
+    private let buffer: UnsafeMutableBufferPointer<Scalar>
+    public var startIndex: TensorIndex<View> { return TensorIndex(view) }
+    public var endIndex: TensorIndex<View>
+    public var count: Int { return view.shape.elementCount }
+    
+    
+    public init(view: inout View) throws {
+        self.view = view
+        buffer = try self.view.readWrite()
+        endIndex = TensorIndex(view, end: view.shape.elementCount)
+    }
+    
+    //--------------------------------------------------------------------------
+    // Collection
+    public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
+        return i.next()
+    }
+    
+    public subscript(index: TensorIndex<View>) -> Scalar {
+        get {
+            return index.dataIndex < 0 ? view.padValue : buffer[index.dataIndex]
+        }
+        set {
+            buffer[index.dataIndex] = newValue
+        }
     }
 }
 
@@ -96,7 +130,7 @@ public struct DataShapeIndex {
 
 //==============================================================================
 /// TensorIndex
-public struct TensorIndex<View> : Comparable where View: TensorView {
+public class TensorIndex<View> : Comparable where View: TensorView {
     // properties
     let tensorView: View
     let viewShape: DataShape
@@ -137,9 +171,8 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     }
     
     public func next() -> TensorIndex {
-        var index = self
-        index.advance(dim: lastDimension)
-        return index
+        advance(dim: lastDimension)
+        return self
     }
     
     //==========================================================================
@@ -148,7 +181,7 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     /// sets up the first position for indexing. This is only called
     /// once per sequence iteration.
     /// Initialization moves from outer dimension to inner (0 -> rank)
-    mutating func initializePosition() {
+    func initializePosition() {
         assert(viewShape.elementCount > 0)
         
         // get the padding and set an increment if there is more than one
@@ -196,7 +229,7 @@ public struct TensorIndex<View> : Comparable where View: TensorView {
     /// advance(dim:
     /// Advances the current position
     /// Minimal cost per: 4 cmp, 1 inc
-    private mutating func advance(dim: Int) {
+    private func advance(dim: Int) {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
         position[dim].view.current += viewShape.strides[dim]

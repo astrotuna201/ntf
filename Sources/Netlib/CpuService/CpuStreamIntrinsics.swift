@@ -69,6 +69,22 @@ public extension CpuStream {
         
     }
     
+    //--------------------------------------------------------------------------
+    /// fill(x:with:
+    func fill<T>(x: T, with: T.Scalar) throws where T : TensorView {
+        _ = try x.tensorData.readWriteDevicePointer(using: self)
+        commandQueue.async {
+            
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// fillWithIndex(x:startAt:
+    func fillWithIndex<T>(x: T, startAt: Int32) throws
+        where T : TensorView {
+            
+    }
+
     func floor<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : FloatingPoint {
         
     }

@@ -346,10 +346,10 @@ public extension TensorView {
         }
     }
     
-    /// readWrite(using stream:
+    /// readWritePointer(using stream:
     /// Returns a read write device memory pointer synced with the specified
-    /// stream. This version is by accelerator APIs
-    mutating func readWrite(using stream: DeviceStream) throws
+    /// stream. This version is used by accelerator APIs
+    mutating func readWritePointer(using stream: DeviceStream) throws
         -> UnsafeMutableRawPointer {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
@@ -360,6 +360,18 @@ public extension TensorView {
             let buffer = try tensorData.readWriteDevicePointer(using: stream)
             return buffer.advanced(by: viewDataOffset)
         }
+    }
+    
+    /// readWriteBuffer(using stream:
+    /// Returns a read write device memory pointer synced with the specified
+    /// stream. This version is used by accelerator APIs
+    mutating func readWriteBuffer(using stream: DeviceStream) throws
+        -> UnsafeMutableBufferPointer<Scalar> {
+            let pointer = try readWritePointer(using: stream)
+                .bindMemory(to: Scalar.self,
+                            capacity: dataShape.elementSpanCount)
+            return UnsafeMutableBufferPointer<Scalar>(
+                start: pointer, count: dataShape.elementSpanCount)
     }
     
     //--------------------------------------------------------------------------

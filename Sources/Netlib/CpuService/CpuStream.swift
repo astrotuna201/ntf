@@ -123,17 +123,4 @@ public final class CpuStream : DeviceStream, StreamGradients {
         }
 		return event
 	}
-    
-    //--------------------------------------------------------------------------
-    /// fill(x:with:
-    public func fill<T>(x: T, with: T.Scalar) throws where T : TensorView {
-        
-    }
-    
-    //--------------------------------------------------------------------------
-    /// fillWithIndex(x:startAt:
-    public func fillWithIndex<T>(x: T, startAt: Int32) throws
-        where T : TensorView {
-        
-    }
 }

@@ -4,6 +4,9 @@
 //
 import Foundation
 
+//**** This design is in flux!
+
+
 //==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {

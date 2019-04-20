@@ -83,7 +83,7 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView, T.Scalar == Bool
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
-                               tolerance: ScalarTensor<T.Scalar>,
+                               tolerance: ScalarValue<T.Scalar>,
                                result: inout T.BoolView) throws
         where T: TensorView, T.Scalar: FloatingPoint
     /// Returns the indices of the maximum values along the specified axes. The

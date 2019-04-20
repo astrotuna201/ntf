@@ -21,7 +21,7 @@ public extension CpuStream {
         
     }
     
-    func approximatelyEqual<T>(lhs: T, rhs: T, tolerance: ScalarTensor<T.Scalar>, result: inout T.BoolView) throws where T : TensorView, T.Scalar : FloatingPoint {
+    func approximatelyEqual<T>(lhs: T, rhs: T, tolerance: ScalarValue<T.Scalar>, result: inout T.BoolView) throws where T : TensorView, T.Scalar : FloatingPoint {
         
     }
     

@@ -69,8 +69,8 @@ where Component: AnyNumeric & AnyFixedSizeScalar {
 //==============================================================================
 // ScalarTensorView
 public protocol ScalarView: TensorView where
-    BoolView == ScalarTensor<Bool>,
-    IndexView == ScalarTensor<IndexScalar>{}
+    BoolView == ScalarValue<Bool>,
+    IndexView == ScalarValue<IndexScalar>{}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
@@ -88,8 +88,8 @@ public extension ScalarView {
 }
 
 //------------------------------------------------------------------------------
-// ScalarTensor
-public struct ScalarTensor<Scalar>: ScalarView
+// ScalarValue
+public struct ScalarValue<Scalar>: ScalarView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape

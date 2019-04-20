@@ -20,7 +20,7 @@ public func approximatelyEqual<T>(_ lhs: T, _ rhs: T, result: inout T.BoolView,
                                   tolerance: Double = 0.00001)
     where T: TensorView, T.Scalar: FloatingPoint & AnyConvertable {
         
-        let toleranceTensor = ScalarTensor(T.Scalar(any: tolerance))
+        let toleranceTensor = ScalarValue(T.Scalar(any: tolerance))
         _Streams.local.catchError { stream in
             try stream.approximatelyEqual(lhs: lhs, rhs: rhs,
                                           tolerance: toleranceTensor,

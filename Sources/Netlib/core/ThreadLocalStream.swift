@@ -27,8 +27,8 @@ public func using<R>(_ stream: DeviceStream,
                      handler: StreamExceptionHandler? = nil,
                      perform body: () throws -> R) rethrows -> R {
     // sets the default stream and logging info for the current scope
-    _ThreadLocalStream.value.push(stream: stream, logInfo: logInfo)
-    defer { _ThreadLocalStream.value.popStream() }
+    _Streams.local.push(stream: stream, logInfo: logInfo)
+    defer { _Streams.local.popStream() }
     // execute the body
     return try body()
 }
@@ -38,16 +38,15 @@ public typealias StreamExceptionHandler = (Error) -> Void
 //==============================================================================
 /// handleStreamExceptions
 public func handleStreamExceptions(handler: @escaping StreamExceptionHandler) {
-    let index = _ThreadLocalStream.value.streamScope.count - 1
-    _ThreadLocalStream.value.streamScope[index].exceptionHandler = handler
+    let index = _Streams.local.streamScope.count - 1
+    _Streams.local.streamScope[index].exceptionHandler = handler
 }
 
 //==============================================================================
-/// _ThreadLocalStream
-
-/// Manages the current scope for the current stream, log, and error handlers
+/// _Streams
+/// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
-class _ThreadLocalStream {
+class _Streams {
     // types
     struct Scope {
         let stream: DeviceStream
@@ -79,7 +78,7 @@ class _ThreadLocalStream {
     
     // there will always be the platform default stream and logInfo
     public var currentStream: DeviceStream { return streamScope.last!.stream }
-    public var currentLogInfo: LogInfo { return streamScope.last!.logInfo }
+    public var logInfo: LogInfo { return streamScope.last!.logInfo }
 
     //--------------------------------------------------------------------------
     /// push(stream:
@@ -112,7 +111,7 @@ class _ThreadLocalStream {
             try body(currentStream)
         } catch {
             // write the error to the log
-            currentLogInfo.log.write(level: .error,
+            logInfo.log.write(level: .error,
                                      message: String(describing: error))
             
             // call the handler if there is one
@@ -128,15 +127,15 @@ class _ThreadLocalStream {
     }
     
     //--------------------------------------------------------------------------
-    // shared singleton initializer
+    /// returns the thread local instance of the streams stack
     @usableFromInline
-    static var value: _ThreadLocalStream {
+    static var local: _Streams {
         // try to get an existing state
         if let state = pthread_getspecific(key) {
             return Unmanaged.fromOpaque(state).takeUnretainedValue()
         } else {
             // create and return new state
-            let state = _ThreadLocalStream()
+            let state = _Streams()
             pthread_setspecific(key, Unmanaged.passRetained(state).toOpaque())
             return state
         }

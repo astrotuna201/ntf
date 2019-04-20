@@ -20,7 +20,7 @@ public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar == Bool {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.all(x: x, axes: axes, result: &result)
         }
 }

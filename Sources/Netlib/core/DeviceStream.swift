@@ -50,7 +50,7 @@ public protocol DeviceStream:
 // throwAsynchronousTestError
 public extension DeviceStream {
     func throwAsynchronousTestError() {
-        _ThreadLocalStream.value.catchError { _ in
+        _Streams.local.catchError { _ in
             throw AsynchronousTestError.error
         }
     }

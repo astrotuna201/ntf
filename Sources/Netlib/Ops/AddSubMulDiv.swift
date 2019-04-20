@@ -48,7 +48,7 @@ infix operator .=
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.add(lhs: lhs, rhs: rhs, result: &result)
         }
 }
@@ -119,7 +119,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.subtract(lhs: lhs, rhs: rhs, result: &result)
         }
 }
@@ -189,7 +189,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.mul(lhs: lhs, rhs: rhs, result: &result)
         }
 }
@@ -259,7 +259,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.div(lhs: lhs, rhs: rhs, result: &result)
         }
 }

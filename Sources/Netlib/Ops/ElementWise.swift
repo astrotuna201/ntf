@@ -16,7 +16,7 @@ import Foundation
 public func log<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.log(x: x, result: &result)
         }
 }
@@ -58,7 +58,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 public func logSoftmax<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: FloatingPoint {
         
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.logSoftmax(x: x, result: &result)
         }
 }
@@ -101,7 +101,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.pow(x: x, y: y, result: &result)
         }
 }
@@ -168,7 +168,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 /// fills the view with the scalar value
 public func fill<T>(x: T, with value: T.Scalar)
     where T: TensorView {
-    _ThreadLocalStream.value.catchError { stream in
+    _Streams.local.catchError { stream in
         try stream.fill(x: x, with: value)
     }
 }
@@ -176,7 +176,7 @@ public func fill<T>(x: T, with value: T.Scalar)
 public extension TensorView {
     func fill(with value: Scalar) -> Self {
         let result = Self.init(shapedLike: self)
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.fill(x: result, with: value)
         }
         return result
@@ -188,7 +188,7 @@ public extension TensorView {
 /// fills the view with the spatial sequential index
 public func fillWithIndex<T>(x: T, startAt index: Int = 0) where
     T: TensorView, T.Scalar: AnyNumeric {
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.fillWithIndex(x: x, startAt: index)
         }
 }
@@ -196,7 +196,7 @@ public func fillWithIndex<T>(x: T, startAt index: Int = 0) where
 public extension TensorView where Scalar: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
         let result = Self.init(shapedLike: self)
-        _ThreadLocalStream.value.catchError { stream in
+        _Streams.local.catchError { stream in
             try stream.fillWithIndex(x: result, startAt: index)
         }
         return result

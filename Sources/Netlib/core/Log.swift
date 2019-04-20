@@ -99,10 +99,10 @@ public extension _Logging {
 public protocol Logging : _Logging { }
 
 public extension Logging {
-    var log: Log { return _ThreadLocalStream.value.currentLogInfo.log }
-    var logLevel: LogLevel { return _ThreadLocalStream.value.currentLogInfo.logLevel }
-    var logNamePath: String { return _ThreadLocalStream.value.currentLogInfo.namePath }
-    var logNestingLevel: Int { return _ThreadLocalStream.value.currentLogInfo.nestingLevel }
+    var log: Log { return _Streams.local.logInfo.log }
+    var logLevel: LogLevel { return _Streams.local.logInfo.logLevel }
+    var logNamePath: String { return _Streams.local.logInfo.namePath }
+    var logNestingLevel: Int { return _Streams.local.logInfo.nestingLevel }
 }
 
 //==============================================================================
@@ -119,84 +119,124 @@ extension Logger {
 }
 
 //==============================================================================
-// Log
-final public class Log: ObjectTracking {
-	// properties
-	public var categories: LogCategories?
-    public var history = [LogEvent]()
-    public var level: LogLevel = .error
-	public var maxHistory = 0
-	public var silent = false
-	public var tabSize = 2
-	public var url: URL?
+/// LogWriter
+/// implemented by objects that write to a log.
+public protocol LogWriter: ObjectTracking {
+    /// the diagnostic categories that will be logged. If `nil`,
+    /// all diagnostic categories will be logged
+    var categories: LogCategories? { get set }
+    /// message levels greater than or equal to this will be logged
+    var level: LogLevel { get set }
+    /// if `true`, messages are silently discarded
+    var _silent: Bool { get set }
+    /// the tabsize to use for message formatting
+    var _tabSize: Int { get set }
+    /// the URL of the file to write messages to. If 'nil', messages are
+    /// written to stdout
+    var url: URL? { get }
+    /// A log can be written to freely by any thread, so create write queue
+    var queue: DispatchQueue { get }
+    
+    //--------------------------------------------------------------------------
+    /// initialzers
+    /// initializes the log
+    /// - Parameter url: the file to write to. If `nil`, output will be written
+    ///   to stdout.
+    init(url: URL?)
 
-    // ObjectTracking
-    public private(set) var trackingId: Int = 0
-
-    // A log can be written to freely by any thread,
-    // so create write queue
-	private let queue = DispatchQueue(label: "Log.queue")
-	private static let levelColWidth =
-		String(describing: LogLevel.diagnostic).count
-
-	//--------------------------------------------------------------------------
-	/// write
+    //--------------------------------------------------------------------------
+    /// write
     /// writes an entry into the log
     /// - Parameter level: the level of the message
-    /// - Parameter message:
-    /// - Parameter nestingLevel:
-    /// - Parameter trailing:
-    /// - Parameter minCount:
-	public func write(level: LogLevel,
-                      message: @autoclosure () -> String,
-                      nestingLevel: Int = 0,
-	                  trailing: String = "",
-                      minCount: Int = 0) {
+    /// - Parameter message: the message string to write
+    /// - Parameter nestingLevel: formatting nesting level
+    /// - Parameter trailing: a trailing fill character to add to the message
+    /// - Parameter minCount: the minimum length of the message. If it exceeds
+    ///   the actual message length, then trailing fill is used. This is used
+    ///   mainly for creating message partitions i.e. "---------"
+    func write(level: LogLevel,
+               message: @autoclosure () -> String,
+               nestingLevel: Int,
+               trailing: String,
+               minCount: Int)
+}
+
+//==============================================================================
+// LogWriter
+public extension LogWriter {
+    var silent: Bool {
+        get { return queue.sync { return _silent } }
+        set { queue.sync { _silent = newValue } }
+    }
+    var tabSize: Int {
+        get { return queue.sync { return _tabSize } }
+        set { queue.sync { _tabSize = newValue } }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// write
+    // TODO: add write to log file support
+    func write(level: LogLevel,
+               message: @autoclosure () -> String,
+               nestingLevel: Int = 0,
+               trailing: String = "",
+               minCount: Int = 0) {
         // protect against mt writes
-		queue.sync { [unowned self] in
-            // record in history
-            let messageStr = message()
-			if maxHistory > 0 {
-				if self.history.count == self.maxHistory {
-                    self.history.removeFirst()
-                }
-				self.history.append(LogEvent(level: level,
-                                             nestingLevel: nestingLevel,
-				                             message: messageStr))
-			}
-
+        queue.sync { [unowned self] in
+            guard !self._silent else { return }
+            
             // create fixed width string for level column
-			let levelStr = String(describing: level).padding(
-				toLength: Log.levelColWidth, withPad: " ", startingAt: 0)
-
-			let indent = String(repeating: " ",
-                                count: nestingLevel * self.tabSize)
-			var eventStr = levelStr + ": " + indent + messageStr
-
-			// add trailing fill if desired
-			if !trailing.isEmpty {
-				let fillCount = minCount - eventStr.count
-				if messageStr.isEmpty {
-					eventStr += String(repeating: trailing, count: fillCount)
-				} else {
-					if fillCount > 1 {
-						eventStr += " " + String(repeating: trailing,
+            let messageStr = message()
+            let levelStr = String(describing: level).padding(
+                toLength: LogLevel.maxStringWidth, withPad: " ", startingAt: 0)
+            
+            let indent = String(repeating: " ",
+                                count: nestingLevel * self._tabSize)
+            var eventStr = levelStr + ": " + indent + messageStr
+            
+            // add trailing fill if desired
+            if !trailing.isEmpty {
+                let fillCount = minCount - eventStr.count
+                if messageStr.isEmpty {
+                    eventStr += String(repeating: trailing, count: fillCount)
+                } else {
+                    if fillCount > 1 {
+                        eventStr += " " + String(repeating: trailing,
                                                  count: fillCount - 1)
-					}
-				}
-			}
+                    }
+                }
+            }
 
-			// TODO: add write to log file support
-			//		if let uri = uri {
-			//
-			//		}
+            // write to the console
+            print(eventStr)
+        }
+    }
+}
 
-			// write to the console
-			if !self.silent && self.url == nil && self.maxHistory == 0 {
-				print(eventStr)
-			}
-		}
-	}
+//==============================================================================
+// Log
+final public class Log: LogWriter {
+    // properties
+    public var categories: LogCategories?
+    public var level: LogLevel
+    public var _silent: Bool
+    public var _tabSize: Int
+    public var url: URL?
+    public private(set) var trackingId: Int = 0
+	public let queue = DispatchQueue(label: "Log.queue")
+
+    //--------------------------------------------------------------------------
+    // initialzers
+    public init(url: URL? = nil) {
+        self.url = url
+        level = .error
+        _silent = false
+        _tabSize = 2
+        trackingId = ObjectTracker.global.register(self)
+    }
+    deinit {
+        ObjectTracker.global.remove(trackingId: trackingId)
+    }
 }
 
 //==============================================================================
@@ -275,6 +315,9 @@ public enum LogLevel: Int, Comparable {
 		default: return nil
 		}
 	}
+    
+    public static let maxStringWidth =
+        String(describing: LogLevel.diagnostic).count
 }
 
 public func<(lhs: LogLevel, rhs: LogLevel) -> Bool {

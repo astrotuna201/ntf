@@ -33,23 +33,45 @@ public struct LogInfo {
 //==============================================================================
 // _Logging
 public protocol _Logging {
+    /// the log to write to
     var log: Log { get }
+    /// the level of reporting for this node
     var logLevel: LogLevel { get }
+    /// the name path of this node for hierarchical structures
     var logNamePath: String { get }
+    /// the nesting level within a hierarchical model to aid in
+    /// message formatting.
     var logNestingLevel: Int { get }
+
     /// reports whether a message at the specified level will be logged
     /// - Parameter level: the level to test
     func willLog(level: LogLevel) -> Bool
     /// writes a message to the log
-    ///
+    /// - Parameter message: the message to write
+    /// - Parameter level: the level of the message (error, warning, ...)
+    /// - Parameter indent: optional indent level for formatting
+    /// - Parameter trailing: a trailing fill character to add to the message
+    /// - Parameter minCount: the minimum length of the message. If it exceeds
+    ///   the actual message length, then trailing fill is used. This is used
+    ///   mainly for creating message partitions i.e. "---------"
     func writeLog(_ message: @autoclosure () -> String,
                   level: LogLevel,
-                  indent: Int, trailing: String,
+                  indent: Int,
+                  trailing: String,
                   minCount: Int)
-    ///
+    
+    /// writes a diagnostic message to the log
+    /// - Parameter message: the message to write
+    /// - Parameter categories: the categories this message applies to
+    /// - Parameter indent: optional indent level for formatting
+    /// - Parameter trailing: a trailing fill character to add to the message
+    /// - Parameter minCount: the minimum length of the message. If it exceeds
+    ///   the actual message length, then trailing fill is used. This is used
+    ///   mainly for creating message partitions i.e. "---------"
     func diagnostic(_ message: @autoclosure () -> String,
                     categories: LogCategories,
-                    indent: Int, trailing: String,
+                    indent: Int,
+                    trailing: String,
                     minCount: Int)
 }
 
@@ -65,7 +87,8 @@ public extension _Logging {
     ///
     func writeLog(_ message: @autoclosure () -> String,
                   level: LogLevel = .error,
-                  indent: Int = 0, trailing: String = "",
+                  indent: Int = 0,
+                  trailing: String = "",
                   minCount: Int = 80) {
         guard level <= log.level || level <= logLevel else { return }
         log.write(level: level,
@@ -78,7 +101,8 @@ public extension _Logging {
     // diagnostic
     func diagnostic(_ message: @autoclosure () -> String,
                     categories: LogCategories,
-                    indent: Int = 0, trailing: String = "",
+                    indent: Int = 0,
+                    trailing: String = "",
                     minCount: Int = 80) {
         guard log.level >= .diagnostic || logLevel >= .diagnostic else { return}
         // if subcategories have been selected on the log object

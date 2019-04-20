@@ -2,6 +2,15 @@
 //  Created by Edward Connell on 3/5/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
+//  Platform (local)
+//      services[]
+//        ComputeService (cpu, cuda, amd, tpu, ...)
+//          devices[]
+//            ComputeDevice (gpu:0, gpu:1, ...)
+//            DeviceArray
+//              DeviceStream
+//            StreamEvent
+//
 import Foundation
 
 //==============================================================================

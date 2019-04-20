@@ -62,33 +62,6 @@ public struct DataShape: Equatable, Codable {
     }
 
     //--------------------------------------------------------------------------
-    /// Initialize with an array literal representing the shape extents.
-    /// The rank of the tensor is the number of extents.
-    /// - Parameter elements: The shape extents.
-    @inlinable @inline(__always)
-    public init(arrayLiteral elements: Int...) {
-        self.init(extents: elements)
-    }
-
-    //--------------------------------------------------------------------------
-    /// Initialize with variadic elements representing the shape extents.
-    /// The rank of the tensor is the number of elements.
-    /// - Parameter elements: The shape extents.
-    @inlinable @inline(__always)
-    public init(_ elements: Int...) {
-        self.init(extents: elements)
-    }
-
-    //--------------------------------------------------------------------------
-    /// Initialize with an array representing the shape extents.
-    /// The rank of the tensor is the number of elements.
-    /// - Parameter elements: The shape extents.
-    @inlinable @inline(__always)
-    public init(_ elements: [Int]) {
-        self.init(extents: elements)
-    }
-
-    //--------------------------------------------------------------------------
     /// returns a dense version of self
     public var dense: DataShape {
         guard !isContiguous else { return self }
@@ -241,16 +214,16 @@ public struct DataShape: Equatable, Codable {
         assert(axis < rank)
 
         // create a new flat view
-        var extent: [Int]
+        var flatExtents: [Int]
         switch axis {
-        case 0: extent = [elementCount]
-        case 1: extent = [extents[0], elementCount / extents[0]]
+        case 0: flatExtents = [elementCount]
+        case 1: flatExtents = [extents[0], elementCount / extents[0]]
         default:
-            extent = [Int](extents.prefix(upTo: axis)) +
+            flatExtents = [Int](extents.prefix(upTo: axis)) +
                 [extents.suffix(from: axis).reduce(1, *)] +
                 [Int](repeating: 1, count: rank - axis - 1)
         }
-        return DataShape(extent)
+        return DataShape(extents: flatExtents)
     }
     
     //--------------------------------------------------------------------------

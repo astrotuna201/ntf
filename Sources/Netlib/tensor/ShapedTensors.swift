@@ -11,57 +11,59 @@ import Foundation
 /// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
 public protocol UniformDenseScalar {
-    associatedtype ComponentScalar: AnyFixedSizeScalar
+    associatedtype Component: AnyFixedSizeScalar
     static var componentCount: Int { get }
 }
 
 public extension UniformDenseScalar {
     static var componentCount: Int {
-        return MemoryLayout<Self>.size / MemoryLayout<ComponentScalar>.size
+        return MemoryLayout<Self>.size / MemoryLayout<Component>.size
     }
 }
 
 //==============================================================================
 // Image Scalar types
 public protocol RGBImageSample: UniformDenseScalar, DefaultInitializer {
-    var r: ComponentScalar { get set }
-    var g: ComponentScalar { get set }
-    var b: ComponentScalar { get set }
+    var r: Component { get set }
+    var g: Component { get set }
+    var b: Component { get set }
 }
 
-public struct RGBSample<T>: RGBImageSample
-where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ComponentScalar = T
-    public var r, g, b: T
-    public init() { r = T.zero; g = T.zero; b = T.zero }
+public struct RGBSample<Component>: RGBImageSample
+where Component: AnyNumeric & AnyFixedSizeScalar {
+    public var r, g, b: Component
+    public init() { r = Component.zero; g = Component.zero; b = Component.zero }
 }
 
 public protocol RGBAImageSample: UniformDenseScalar, DefaultInitializer {
-    var r: ComponentScalar { get set }
-    var g: ComponentScalar { get set }
-    var b: ComponentScalar { get set }
-    var a: ComponentScalar { get set }
+    var r: Component { get set }
+    var g: Component { get set }
+    var b: Component { get set }
+    var a: Component { get set }
 }
 
-public struct RGBASample<T> : RGBAImageSample
-where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ComponentScalar = T
-    public var r, g, b, a: T
-    public init() { r = T.zero; g = T.zero; b = T.zero; a = T.zero }
+public struct RGBASample<Component> : RGBAImageSample
+where Component: AnyNumeric & AnyFixedSizeScalar {
+    public var r, g, b, a: Component
+    public init() {
+        r = Component.zero
+        g = Component.zero
+        b = Component.zero
+        a = Component.zero
+    }
 }
 
 //==============================================================================
 // Audio sample types
 public protocol StereoAudioSample: UniformDenseScalar, DefaultInitializer {
-    var left: ComponentScalar { get set }
-    var right: ComponentScalar { get set }
+    var left: Component { get set }
+    var right: Component { get set }
 }
 
-public struct StereoSample<T>: StereoAudioSample
-where T: AnyNumeric & AnyFixedSizeScalar {
-    public typealias ComponentScalar = T
-    public var left, right: T
-    public init() { left = T.zero; right = T.zero }
+public struct StereoSample<Component>: StereoAudioSample
+where Component: AnyNumeric & AnyFixedSizeScalar {
+    public var left, right: Component
+    public init() { left = Component.zero; right = Component.zero }
 }
 
 //==============================================================================
@@ -520,7 +522,7 @@ public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M: MatrixView>(_ matrix: M, name: String? = nil) where
         M.Scalar: UniformDenseScalar,
-        M.Scalar.ComponentScalar == Scalar {
+        M.Scalar.Component == Scalar {
             let extents = [1, matrix.shape.extents[0],
                            matrix.shape.extents[1], M.Scalar.componentCount]
             

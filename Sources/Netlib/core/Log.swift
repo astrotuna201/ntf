@@ -6,138 +6,116 @@ import Foundation
 import Dispatch
 
 //==============================================================================
-// Logger
+/// LogInfo
+/// this is used to manage which log to use and message parameters
 public struct LogInfo {
+    /// the log to write to
     var log: Log
+    /// the reporting level of the object, which allows different objects
+    /// to have different reporting levels to fine tune output
     var logLevel: LogLevel = .error
+    /// `namePath` is used when reporting from hierarchical structures
+    /// such as a model, so that duplicate names such as `weights` are
+    /// put into context
     var namePath: String
+    /// the nesting level within a hierarchical model to aid in
+    /// message formatting.
     var nestingLevel: Int
-    
+    /// a helper to create logging info for a child object in a hierarchy
     public func child(_ name: String) -> LogInfo {
-        return LogInfo(log: log, logLevel: .error,
+        return LogInfo(log: log,
+                       logLevel: .error,
                        namePath: "\(namePath)/\(name)",
-            nestingLevel: nestingLevel + 1)
+                       nestingLevel: nestingLevel + 1)
     }
 }
 
 //==============================================================================
+// _Logging
+public protocol _Logging {
+    var log: Log { get }
+    var logLevel: LogLevel { get }
+    var logNamePath: String { get }
+    var logNestingLevel: Int { get }
+    /// reports whether a message at the specified level will be logged
+    /// - Parameter level: the level to test
+    func willLog(level: LogLevel) -> Bool
+    /// writes a message to the log
+    ///
+    func writeLog(_ message: @autoclosure () -> String,
+                  level: LogLevel,
+                  indent: Int, trailing: String,
+                  minCount: Int)
+    ///
+    func diagnostic(_ message: @autoclosure () -> String,
+                    categories: LogCategories,
+                    indent: Int, trailing: String,
+                    minCount: Int)
+}
+
+public extension _Logging {
+    //--------------------------------------------------------------------------
+    // willLog
+    func willLog(level: LogLevel) -> Bool {
+        return level <= log.level || level <= logLevel
+    }
+    
+    //--------------------------------------------------------------------------
+    /// writeLog
+    ///
+    func writeLog(_ message: @autoclosure () -> String,
+                  level: LogLevel = .error,
+                  indent: Int = 0, trailing: String = "",
+                  minCount: Int = 80) {
+        guard level <= log.level || level <= logLevel else { return }
+        log.write(level: level,
+                  message: message(),
+                  nestingLevel: indent + logNestingLevel,
+                  trailing: trailing, minCount: minCount)
+    }
+    
+    //--------------------------------------------------------------------------
+    // diagnostic
+    func diagnostic(_ message: @autoclosure () -> String,
+                    categories: LogCategories,
+                    indent: Int = 0, trailing: String = "",
+                    minCount: Int = 80) {
+        guard log.level >= .diagnostic || logLevel >= .diagnostic else { return}
+        // if subcategories have been selected on the log object
+        // then make sure the caller's category is desired
+        if let mask = log.categories?.rawValue,
+            categories.rawValue & mask == 0 { return }
+        
+        log.write(level: .diagnostic,
+                  message: message(),
+                  nestingLevel: indent + logNestingLevel,
+                  trailing: trailing, minCount: minCount)
+    }
+}
+
+
+//==============================================================================
+// Logging
+public protocol Logging : _Logging { }
+
+public extension Logging {
+    var log: Log { return _ThreadLocalStream.value.currentLogInfo.log }
+    var logLevel: LogLevel { return _ThreadLocalStream.value.currentLogInfo.logLevel }
+    var logNamePath: String { return _ThreadLocalStream.value.currentLogInfo.namePath }
+    var logNestingLevel: Int { return _ThreadLocalStream.value.currentLogInfo.nestingLevel }
+}
+
+//==============================================================================
 // Logger
-public protocol Logger {
+public protocol Logger : _Logging {
     var logInfo: LogInfo { get }
 }
 
 extension Logger {
-    public var log: Log {
-        get { return logInfo.log }
-    }
-    
-    public var logLevel: LogLevel {
-        get { return logInfo.logLevel }
-    }
-    
-    public var logNamePath: String {
-        get { return logInfo.namePath }
-    }
-    
-    public var logNestingLevel: Int {
-        get { return logInfo.nestingLevel }
-    }
-    
-    //------------------------------------
-    // willLog
-    public func willLog(level: LogLevel) -> Bool {
-        return level <= log.level || level <= logLevel
-    }
-    
-    //------------------------------------
-    // writeLog
-    public func writeLog(_ message: String, level: LogLevel = .error,
-                         indent: Int = 0, trailing: String = "",
-                         minCount: Int = 80) {
-        if willLog(level: level) {
-            log.write(level: level,
-                      message: message,
-                      nestingLevel: indent + logNestingLevel,
-                      trailing: trailing, minCount: minCount)
-        }
-    }
-    
-    //------------------------------------
-    // diagnostic
-    public func diagnostic(_ message: String, categories: LogCategories,
-                           indent: Int = 0, trailing: String = "",
-                           minCount: Int = 80) {
-        if willLog(level: .diagnostic) {
-            // if subcategories have been selected on the log object
-            // then make sure the caller's category is desired
-            if let mask = log.categories?.rawValue,
-                categories.rawValue & mask == 0 { return }
-            
-            log.write(level: .diagnostic,
-                      message: message,
-                      nestingLevel: indent + logNestingLevel,
-                      trailing: trailing, minCount: minCount)
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
-// Logging
-public protocol Logging { }
-
-extension Logging {
-    public var log: Log {
-        get { return _ThreadLocalStream.value.currentLogInfo.log }
-    }
-    
-    public var logLevel: LogLevel {
-        get { return _ThreadLocalStream.value.currentLogInfo.logLevel }
-    }
-    
-    public var logNamePath: String {
-        get { return _ThreadLocalStream.value.currentLogInfo.namePath }
-    }
-    
-    public var logNestingLevel: Int {
-        get { return _ThreadLocalStream.value.currentLogInfo.nestingLevel }
-    }
-
-    //------------------------------------
-	// willLog
-	public func willLog(level: LogLevel) -> Bool {
-		return level <= log.level || level <= logLevel
-	}
-
-	//------------------------------------
-	// writeLog
-	public func writeLog(_ message: String, level: LogLevel = .error,
-	                     indent: Int = 0, trailing: String = "",
-	                     minCount: Int = 80) {
-        if willLog(level: level) {
-            log.write(level: level,
-                      message: message,
-                      nestingLevel: indent + logNestingLevel,
-                      trailing: trailing, minCount: minCount)
-        }
-	}
-
-	//------------------------------------
-	// diagnostic
-    public func diagnostic(_ message: String, categories: LogCategories,
-                           indent: Int = 0, trailing: String = "",
-                           minCount: Int = 80) {
-        if willLog(level: .diagnostic) {
-            // if subcategories have been selected on the log object
-            // then make sure the caller's category is desired
-            if let mask = log.categories?.rawValue,
-                categories.rawValue & mask == 0 { return }
-            
-            log.write(level: .diagnostic,
-                      message: message,
-                      nestingLevel: indent + logNestingLevel,
-                      trailing: trailing, minCount: minCount)
-        }
-    }
+    public var log: Log { return logInfo.log }
+    public var logLevel: LogLevel { return logInfo.logLevel }
+    public var logNamePath: String { return logInfo.namePath }
+    public var logNestingLevel: Int { return logInfo.nestingLevel }
 }
 
 //==============================================================================
@@ -170,34 +148,40 @@ final public class Log: ObjectTracking {
     /// - Parameter trailing:
     /// - Parameter minCount:
 	public func write(level: LogLevel,
-                      message: String,
+                      message: @autoclosure () -> String,
                       nestingLevel: Int = 0,
 	                  trailing: String = "",
                       minCount: Int = 0) {
         // protect against mt writes
 		queue.sync { [unowned self] in
             // record in history
+            let messageStr = message()
 			if maxHistory > 0 {
-				if self.history.count == self.maxHistory { self.history.removeFirst() }
-				self.history.append(LogEvent(level: level, nestingLevel: nestingLevel,
-				                             message: message))
+				if self.history.count == self.maxHistory {
+                    self.history.removeFirst()
+                }
+				self.history.append(LogEvent(level: level,
+                                             nestingLevel: nestingLevel,
+				                             message: messageStr))
 			}
 
             // create fixed width string for level column
 			let levelStr = String(describing: level).padding(
 				toLength: Log.levelColWidth, withPad: " ", startingAt: 0)
 
-			let indent = String(repeating: " ", count: nestingLevel * self.tabSize)
-			var eventStr = levelStr + ": " + indent + message
+			let indent = String(repeating: " ",
+                                count: nestingLevel * self.tabSize)
+			var eventStr = levelStr + ": " + indent + messageStr
 
 			// add trailing fill if desired
 			if !trailing.isEmpty {
 				let fillCount = minCount - eventStr.count
-				if message.isEmpty {
+				if messageStr.isEmpty {
 					eventStr += String(repeating: trailing, count: fillCount)
 				} else {
 					if fillCount > 1 {
-						eventStr += " " + String(repeating: trailing, count: fillCount - 1)
+						eventStr += " " + String(repeating: trailing,
+                                                 count: fillCount - 1)
 					}
 				}
 			}

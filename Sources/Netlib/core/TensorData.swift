@@ -154,7 +154,7 @@ final public class TensorData: ObjectTracking, Logging {
             .register(self, namePath: logNamePath,
                       supplementalInfo: "byteCount: \(byteCount)")
 
-        if byteCount > 0 && willLog(level: .diagnostic) {
+        if byteCount > 0 {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
                     "bytes[\(byteCount)]", categories: .dataAlloc)
         }
@@ -177,7 +177,7 @@ final public class TensorData: ObjectTracking, Logging {
         }
         ObjectTracker.global.remove(trackingId: trackingId)
 
-        if byteCount > 0 && willLog(level: .diagnostic) {
+        if byteCount > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) " +
                 "bytes: \(byteCount)", categories: .dataAlloc)
         }
@@ -340,11 +340,10 @@ final public class TensorData: ObjectTracking, Logging {
 
         } else {
             // create the device array
-            if willLog(level: .diagnostic) {
-                diagnostic("\(allocString) \(name)(\(trackingId)) " +
-                    "device array on \(device.name)  bytes[\(byteCount)]",
-                    categories: .dataAlloc)
-            }
+            diagnostic("\(allocString) \(name)(\(trackingId)) " +
+                "device array on \(device.name)  bytes[\(byteCount)]",
+                categories: .dataAlloc)
+            
             let array = try device.createArray(count: byteCount)
             array.version = -1
             let info = ArrayInfo(array: array, stream: stream)
@@ -356,10 +355,8 @@ final public class TensorData: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // createHostArray
     private func createHostArray() throws {
-        if willLog(level: .diagnostic) {
-            diagnostic("\(allocString) \(name)(\(trackingId)) " +
-                "host array  bytes[\(byteCount)]", categories: .dataAlloc)
-        }
+        diagnostic("\(allocString) \(name)(\(trackingId)) " +
+            "host array  bytes[\(byteCount)]", categories: .dataAlloc)
         hostVersion = -1
         hostBuffer = UnsafeMutableRawBufferPointer.allocate(
             byteCount: byteCount,
@@ -369,12 +366,9 @@ final public class TensorData: ObjectTracking, Logging {
     //-----------------------------------
     // releaseHostArray
     private func releaseHostArray() {
-        precondition(!isReadOnlyReference)
-        if willLog(level: .diagnostic) {
-            diagnostic(
-                "\(releaseString) \(name) TensorData(\(trackingId)) " +
-                "host array  bytes[\(byteCount)]", categories: .dataAlloc)
-        }
+        assert(!isReadOnlyReference)
+        diagnostic("\(releaseString) \(name) TensorData(\(trackingId)) " +
+            "host array  bytes[\(byteCount)]", categories: .dataAlloc)
         hostBuffer.deallocate()
         hostBuffer = nil
     }
@@ -405,12 +399,10 @@ final public class TensorData: ObjectTracking, Logging {
 
         } else if array.version != masterVersion {
             // copy host data to device if it exists and is needed
-            if willLog(level: .diagnostic) {
-                diagnostic("\(copyString) \(name)(\(trackingId)) host" +
-                    "\(setText(" --> ", color: .blue))" +
-                    "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
-                    categories: .dataCopy)
-            }
+            diagnostic("\(copyString) \(name)(\(trackingId)) host" +
+                "\(setText(" --> ", color: .blue))" +
+                "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
+                categories: .dataCopy)
 
             try array.copyAsync(from: UnsafeRawBufferPointer(hostBuffer!),
                                 using: stream)
@@ -443,12 +435,10 @@ final public class TensorData: ObjectTracking, Logging {
 
         // copy if needed
         if hostVersion != masterVersion {
-            if willLog(level: .diagnostic) {
-                diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                    "\(master.stream.device.name)_s\(master.stream.id)" +
-                    "\(setText(" --> ", color: .blue))host " +
-                    "  bytes[\(byteCount)]", categories: .dataCopy)
-            }
+            diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                "\(master.stream.device.name)_s\(master.stream.id)" +
+                "\(setText(" --> ", color: .blue))host " +
+                "  bytes[\(byteCount)]", categories: .dataCopy)
 
             // synchronous copy
             try master.array.copy(to: hostBuffer, using: master.stream)
@@ -482,13 +472,11 @@ final public class TensorData: ObjectTracking, Logging {
             if master.stream.device.service.id == stream.device.service.id {
                 // copy cross device within the same service if needed
                 if master.stream.device.id != stream.device.id {
-                    if willLog(level: .diagnostic) {
-                        diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                            "\(master.stream.device.name)" +
-                            "\(setText(" --> ", color: .blue))" +
-                            "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
-                            categories: .dataCopy)
-                    }
+                    diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                        "\(master.stream.device.name)" +
+                        "\(setText(" --> ", color: .blue))" +
+                        "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
+                        categories: .dataCopy)
                     try array.copyAsync(from: master.array, using: stream)
                     lastAccessCopiedBuffer = true
                 }

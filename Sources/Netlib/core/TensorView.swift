@@ -290,11 +290,9 @@ public extension TensorView {
         tensorData.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
         
-        if willLog(level: .diagnostic) == true {
-            diagnostic("\(mutationString) \(name)(\(tensorData.trackingId)) " +
-                "elements[\(dataShape.elementCount)]",
-                categories: [.dataCopy, .dataMutation])
-        }
+        diagnostic("\(mutationString) \(name)(\(tensorData.trackingId)) " +
+            "elements[\(dataShape.elementCount)]",
+            categories: [.dataCopy, .dataMutation])
         
         tensorData = try TensorData(withContentsOf: tensorData, using: stream)
         tensorData.lastAccessMutatedView = true

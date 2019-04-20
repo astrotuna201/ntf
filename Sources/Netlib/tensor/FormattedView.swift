@@ -20,7 +20,7 @@ public extension TensorView where Scalar: AnyConvertable {
         var iterator = try self.values().makeIterator()
         var itemCount = 0
         let indentSize = "  "
-        let extents = getPaddedExtents()
+        let extents = shape.padded(with: padding).extents
         let lastDimension = shape.lastDimension
 
         // clamp ranges

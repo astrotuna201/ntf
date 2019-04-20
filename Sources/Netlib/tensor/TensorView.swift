@@ -5,7 +5,29 @@
 import Foundation
 
 //==============================================================================
-// TensorView protocol
+/// TensorView protocol
+/// A TensorView object is the primary interface for working with data in
+/// the app and on various devices. Specialized shaped instances such as
+/// Vector, Matrix, Volume, etc.. adopt this protocol. They will generically
+/// be referred to as tensors after this.
+///
+/// Data can be safely accessed on the app thread and asynchronously on
+/// device streams without the user needing be concerned with synchronization.
+///
+/// When a tensor is created, no memory is allocated until the first time
+/// access is requested. The location of the access determines where the
+/// buffer is created. No host shadow buffer is created. So temporary tensors
+/// on local discrete devices or remote hosts can be freely created and
+/// manipulated without any host resources being used, or data being transited
+/// to the target device.
+///
+/// Data replication and synchronization are transparent to the user.
+///
+/// TensorViews are references to data and respect copy on write semantics,
+/// locally and on device. Many operations can be performed with zero copy.
+///
+/// Data repeating (broadcasting) and padding are instrinsic features
+///
 public protocol TensorView: Logging, Equatable, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
@@ -112,8 +134,10 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// repeated view
-    init(extents: [Int], repeating other: Self,
-         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+    init(extents: [Int],
+         repeating other: Self,
+         padding: [Padding]? = nil,
+         padValue: Scalar? = nil) {
 
         self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
@@ -191,24 +215,6 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// - Returns: the padded extents for the view used for iteration
-    func getPaddedExtents() -> [Int] {
-        let padIncrement = padding.count > 1 ? 1 : 0
-        var padIndex = 0
-        var padExtents = [Int]()
-        
-        for dim in 0..<rank {
-            let span = padding[padIndex].before +
-                shape.extents[dim] +
-                padding[padIndex].after
-            
-            padExtents.append(span)
-            padIndex += padIncrement
-        }
-        return padExtents
-    }
-    
-    //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Scalar {
@@ -245,7 +251,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// viewByteOffset
     /// the byte offset into the `tensorData` buffer where this view begins
-    var viewByteOffset: Int { return viewDataOffset * MemoryLayout<Scalar>.size }
+    var viewByteOffset: Int { return viewDataOffset * MemoryLayout<Scalar>.size}
     
     //--------------------------------------------------------------------------
     /// viewSpanByteCount

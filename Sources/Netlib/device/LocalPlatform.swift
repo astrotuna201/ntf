@@ -136,14 +136,16 @@ public extension LocalPlatform {
         return device
     }
     
+    //--------------------------------------------------------------------------
+    /// createDefaultStream
+    /// creates a stream on the default device
     static func createDefaultStream() -> DeviceStream {
         do {
             return try local.defaultDevice
                 .createStream(name: "Platform.defaultStream")
         } catch {
-            // this should never fail
             local.writeLog(String(describing: error))
-            fatalError()
+            fatalError("unable to create the default stream")
         }
     }
 

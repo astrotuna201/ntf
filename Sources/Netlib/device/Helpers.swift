@@ -33,3 +33,43 @@ public func almostEquals<T: AnyNumeric>(_ a: T, _ b: T,
                                        tolerance: Double = 0.00001) -> Bool {
     return abs(a.asDouble - b.asDouble) < tolerance
 }
+
+//==============================================================================
+// AtomicCounter
+public final class AtomicCounter {
+    // properties
+    private var counter: Int
+    private let mutex = Mutex()
+    
+    public var value: Int {
+        get { return mutex.sync { counter } }
+        set { return mutex.sync { counter = newValue } }
+    }
+    
+    // initializers
+    public init(value: Int = 0) {
+        counter = value
+    }
+    
+    // functions
+    public func increment() -> Int {
+        return mutex.sync {
+            counter += 1
+            return counter
+        }
+    }
+}
+
+//==============================================================================
+// Mutex
+public final class Mutex {
+    // properties
+    private let semaphore = DispatchSemaphore(value: 1)
+    
+    // functions
+    func sync<R>(execute work: () throws -> R) rethrows -> R {
+        semaphore.wait()
+        defer { semaphore.signal() }
+        return try work()
+    }
+}

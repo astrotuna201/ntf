@@ -2,7 +2,7 @@
 //  Created by Edward Connell on 3/5/16
 //  Copyright © 2016 Connell Research. All rights reserved.
 //
-//  Platform (local)
+//  ComputePlatform
 //      services[]
 //        ComputeService (cpu, cuda, amd, tpu, ...)
 //          devices[]

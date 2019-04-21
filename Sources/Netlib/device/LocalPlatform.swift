@@ -249,6 +249,7 @@ final public class Platform: LocalPlatform {
     }()
     public var defaultDevicesToAllocate = -1
     public var deviceIdPriority: [Int] = [0]
+    public var id: Int = 0
     public static let local = Platform()
     public var serviceModuleDirectory: URL = URL(fileURLWithPath: "TODO")
     public var servicePriority = ["cuda", "cpu"]

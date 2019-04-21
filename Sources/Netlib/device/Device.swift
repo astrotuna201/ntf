@@ -73,7 +73,6 @@ public protocol ComputePlatform : ObjectTracking, Logger {
     ///   and `deviceIdPriority`
     func requestDevices(deviceIds: [Int],
                         serviceName: String?) -> [ComputeDevice]
-    
 }
 
 //==============================================================================

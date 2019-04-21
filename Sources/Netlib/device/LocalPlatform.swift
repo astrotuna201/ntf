@@ -25,12 +25,11 @@ public extension LocalPlatform {
     
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
+    /// The default platform error handler has nowhere else to go, so
+    /// print the message, break to the debugger if possible, and exit.
     func defaultDeviceErrorHandler(error: DeviceError) {
         print(String(describing: error))
-        // if there is no user handler then break to the debugger
-        #if DEBUG
         raise(SIGINT)
-        #endif
         exit(1)
     }
 

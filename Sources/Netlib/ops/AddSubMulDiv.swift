@@ -46,8 +46,9 @@ infix operator .=
 // TODO: this complains, talk to the guys
 //@differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric {
-        _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
+    where T: TensorView, T.Scalar: Numeric
+{
+    _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
 }
 
 /// returns new view
@@ -57,11 +58,11 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric {
-        
-        var result = T.init(shapedLike: lhs)
-        add(lhs, rhs, result: &result)
-        return result
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: lhs)
+    add(lhs, rhs, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: Numeric {
@@ -84,8 +85,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return add(lhs, scalarTensor)
+        return add(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -97,8 +97,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return add(lhs, scalarTensor)
+        return add(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -114,11 +113,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
 public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric {
-        
-        _Streams.local.catchError { stream in
-            try stream.subtract(lhs: lhs, rhs: rhs, result: &result)
-        }
+    where T: TensorView, T.Scalar: Numeric
+{
+    _Streams.current.subtract(lhs: lhs, rhs: rhs, result: &result)
 }
 
 /// returning new view
@@ -128,11 +125,11 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric {
-        
-        var result = T.init(shapedLike: lhs)
-        subtract(lhs, rhs, result: &result)
-        return result
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: lhs)
+    subtract(lhs, rhs, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: Numeric {
@@ -155,8 +152,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return subtract(lhs, scalarTensor)
+        return subtract(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -168,8 +164,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return subtract(lhs, scalarTensor)
+        return subtract(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -184,11 +179,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric {
-        
-        _Streams.local.catchError { stream in
-            try stream.mul(lhs: lhs, rhs: rhs, result: &result)
-        }
+    where T: TensorView, T.Scalar: Numeric
+{
+    _Streams.current.mul(lhs: lhs, rhs: rhs, result: &result)
 }
 
 /// returning new view
@@ -198,11 +191,11 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric {
-        
-        var result = T.init(shapedLike: lhs)
-        mul(lhs, rhs, result: &result)
-        return result
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: lhs)
+    mul(lhs, rhs, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: Numeric {
@@ -225,8 +218,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return mul(lhs, scalarTensor)
+        return mul(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -238,8 +230,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return mul(lhs, scalarTensor)
+        return mul(lhs, Self.init(Scalar(any: rhs)))
     }
 }
 
@@ -254,11 +245,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric {
-        
-        _Streams.local.catchError { stream in
-            try stream.div(lhs: lhs, rhs: rhs, result: &result)
-        }
+    where T: TensorView, T.Scalar: Numeric
+{
+    _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
 
 /// returning new view
@@ -268,11 +257,11 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric {
-        
-        var result = T.init(shapedLike: lhs)
-        div(lhs, rhs, result: &result)
-        return result
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: lhs)
+    div(lhs, rhs, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: Numeric {

@@ -20,8 +20,8 @@ public class CpuDevice: LocalComputeDevice {
     public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var lastDeviceError: DeviceError = .none
-    
+    public var _lastDeviceError: DeviceError? = nil
+    public var errorMutex: Mutex = Mutex()
 
     // TODO this should be currently available and not physicalMemory
     public lazy var availableMemory: UInt64 = {

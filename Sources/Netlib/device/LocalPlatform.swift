@@ -26,7 +26,12 @@ public extension LocalPlatform {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
     func defaultDeviceErrorHandler(error: DeviceError) {
-        
+        print(String(describing: error))
+        // if there is no user handler then break to the debugger
+        #if DEBUG
+        raise(SIGINT)
+        #endif
+        exit(1)
     }
 
     //--------------------------------------------------------------------------
@@ -39,13 +44,15 @@ public extension LocalPlatform {
         var loadedServices = [String: ComputeService]()
         do {
             // add required cpu service
-            let cpuService = try CpuComputeService(id: loadedServices.count,
+            let cpuService = try CpuComputeService(platform: Platform.local,
+                                                   id: loadedServices.count,
                                                    logInfo: logInfo, name: nil)
             loadedServices[cpuService.name] = cpuService
             
             // add cpu unit test service
             let cpuUnitTestService =
-                try CpuUnitTestComputeService(id: loadedServices.count,
+                try CpuUnitTestComputeService(platform: Platform.local,
+                                              id: loadedServices.count,
                                               logInfo: logInfo,
                                               name: "cpuUnitTest")
             loadedServices[cpuUnitTestService.name] = cpuUnitTestService
@@ -65,7 +72,8 @@ public extension LocalPlatform {
                     
                     // create the service
                     let service =
-                        try serviceType.init(id: loadedServices.count,
+                        try serviceType.init(platform: Platform.local,
+                                             id: loadedServices.count,
                                              logInfo: logInfo, name: nil)
                     
                     if willLog(level: .diagnostic) {
@@ -255,7 +263,8 @@ final public class Platform: LocalPlatform {
     }()
     public var defaultDevicesToAllocate = -1
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var lastDeviceError: DeviceError = .none
+    public var _lastDeviceError: DeviceError? = nil
+    public var errorMutex: Mutex = Mutex()
     public var deviceIdPriority: [Int] = [0]
     public var id: Int = 0
     public static let local = Platform()

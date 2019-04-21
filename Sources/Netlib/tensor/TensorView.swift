@@ -594,8 +594,15 @@ public extension TensorView where Scalar: FloatingPoint {
 }
 
 //==============================================================================
-// map(to:
+// map
 public extension Zip2Sequence {
+    @inlinable func map<T>(_ transform: ((Sequence1.Element, Sequence2.Element))
+        throws -> T.Scalar) rethrows -> T
+        where T: TensorView {
+            
+            fatalError("not implemented yet")
+    }
+
     @inlinable func map<T>(to: inout T,
                            _ transform: ((Sequence1.Element, Sequence2.Element))
         throws -> T.Scalar) rethrows
@@ -603,6 +610,14 @@ public extension Zip2Sequence {
         
         fatalError("not implemented yet")
     }
+}
+
+//==============================================================================
+// map
+public func zip<T1, T2>(_ t1: T1, _ t2: T2) throws ->
+    Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
+    where T1: TensorView, T2: TensorView {
+        fatalError("not implemented yet")
 }
 
 //==============================================================================

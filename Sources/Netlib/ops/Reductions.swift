@@ -18,11 +18,9 @@ import Foundation
 @inlinable @inline(__always)
 public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
-    where T: TensorView, T.Scalar == Bool {
-        
-        _Streams.local.catchError { stream in
-            try stream.all(x: x, axes: axes, result: &result)
-        }
+    where T: TensorView, T.Scalar == Bool
+{
+    _Streams.current.all(x: x, axes: axes, result: &result)
 }
 
 /// returns new view
@@ -58,9 +56,7 @@ public extension TensorView where Self.Scalar == Bool {
     func all(squeezingAxes: Int...) -> NDTensor<Scalar> {
         
         let axes = shape.makePositive(indices: squeezingAxes)
-        let axesVec = Vector<IndexScalar>(
-            scalars: axes.map {IndexScalar($0)})
-        
+        let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)

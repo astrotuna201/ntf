@@ -8,17 +8,23 @@ import Foundation
 /// CpuComputeService
 public class CpuComputeService : LocalComputeService {
     // properties
+    public private(set) weak var platform: ComputePlatform!
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var lastDeviceError: DeviceError = .none
+    public var _lastDeviceError: DeviceError? = nil
+    public var errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
 
     //--------------------------------------------------------------------------
     // initializers
-    public required init(id: Int, logInfo: LogInfo, name: String?) throws {
+    public required init(platform: ComputePlatform,
+                         id: Int,
+                         logInfo: LogInfo,
+                         name: String?) throws {
+        self.platform = platform
         self.id = id
         self.name = name ?? "cpu"
         self.logInfo = logInfo
@@ -41,19 +47,24 @@ public class CpuComputeService : LocalComputeService {
 /// CpuUnitTestComputeService
 /// This is used for unit testing only
 public class CpuUnitTestComputeService : LocalComputeService {
-    //--------------------------------------------------------------------------
     // properties
+    public private(set) weak var platform: ComputePlatform!
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var lastDeviceError: DeviceError = .none
+    public var _lastDeviceError: DeviceError? = nil
+    public var errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
     
     //--------------------------------------------------------------------------
     // initializers
-    public required init(id: Int, logInfo: LogInfo, name: String?) throws {
+    public required init(platform: ComputePlatform,
+                         id: Int,
+                         logInfo: LogInfo,
+                         name: String?) throws {
+        self.platform = platform
         self.id = id
         self.name = name ?? "cpuUnitTest"
         self.logInfo = logInfo

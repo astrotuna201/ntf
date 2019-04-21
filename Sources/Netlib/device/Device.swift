@@ -82,16 +82,17 @@ public protocol ComputePlatform:
 //==============================================================================
 /// DeviceError
 public enum DeviceError : Error {
-    case none
+    case streamError(idPath: [Int], error: Error)
     case streamInvalidArgument(idPath: [Int], message: String, aux: Error?)
     case streamTimeout(idPath: [Int], message: String)
 }
 
 public typealias DeviceErrorHandler = (DeviceError) -> Void
 
-public protocol DeviceErrorHandling {
+public protocol DeviceErrorHandling: class {
     var _deviceErrorHandler: DeviceErrorHandler! { get set }
-    var lastDeviceError: DeviceError { get set }
+    var _lastDeviceError: DeviceError? { get set }
+    var errorMutex: Mutex { get }
 }
 
 public extension DeviceErrorHandling {
@@ -99,6 +100,12 @@ public extension DeviceErrorHandling {
     var deviceErrorHandler: DeviceErrorHandler {
         get { return _deviceErrorHandler }
         set { _deviceErrorHandler = newValue }
+    }
+    
+    /// safe access
+    var lastDeviceError: DeviceError? {
+        get { return errorMutex.sync { _lastDeviceError } }
+        set { errorMutex.sync { _lastDeviceError = newValue } }
     }
 }
 
@@ -113,9 +120,11 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     var id: Int { get }
     /// the service name used for `servicePriority` and logging
     var name: String { get }
-    
+    /// the platform this service belongs to
+    var platform: ComputePlatform! { get }
     /// required initializer to support dynamiclly loaded services
-    init(id: Int, logInfo: LogInfo, name: String?) throws
+    init(platform: ComputePlatform, id: Int,
+         logInfo: LogInfo, name: String?) throws
 }
 
 //==============================================================================
@@ -126,7 +135,7 @@ public extension LocalComputeService {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
     func defaultDeviceErrorHandler(error: DeviceError) {
-    
+        platform.deviceErrorHandler(error)
     }
 }
 
@@ -174,7 +183,7 @@ public extension LocalComputeDevice {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
     func defaultDeviceErrorHandler(error: DeviceError) {
-        
+        service.deviceErrorHandler(error)
     }
 }
 

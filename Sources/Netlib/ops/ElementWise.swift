@@ -14,11 +14,9 @@ import Foundation
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: FloatingPoint {
-        
-        _Streams.local.catchError { stream in
-            try stream.log(x: x, result: &result)
-        }
+    where T: TensorView, T.Scalar: FloatingPoint
+{
+    _Streams.current.log(x: x, result: &result)
 }
 
 /// returns new view
@@ -27,11 +25,11 @@ public func log<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: FloatingPoint {
-        
-        var result = T.init(shapedLike: x)
-        log(x, result: &result)
-        return result
+    where T: TensorView, T.Scalar: FloatingPoint
+{
+    var result = T.init(shapedLike: x)
+    log(x, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: FloatingPoint {
@@ -56,11 +54,9 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: FloatingPoint {
-        
-        _Streams.local.catchError { stream in
-            try stream.logSoftmax(x: x, result: &result)
-        }
+    where T: TensorView, T.Scalar: FloatingPoint
+{
+    _Streams.current.logSoftmax(x: x, result: &result)
 }
 
 /// returns new view
@@ -69,11 +65,11 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: FloatingPoint {
-        
-        var result = T.init(shapedLike: x)
-        logSoftmax(x, result: &result)
-        return result
+    where T: TensorView, T.Scalar: FloatingPoint
+{
+    var result = T.init(shapedLike: x)
+    logSoftmax(x, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: FloatingPoint {
@@ -100,10 +96,9 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric {
-        _Streams.local.catchError { stream in
-            try stream.pow(x: x, y: y, result: &result)
-        }
+    where T: TensorView, T.Scalar: Numeric
+{
+    _Streams.current.pow(x: x, y: y, result: &result)
 }
 
 /// returns new view
@@ -114,11 +109,11 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
-    where T: TensorView, T.Scalar: Numeric {
-        
-        var result = T.init(shapedLike: x)
-        pow(x, y, result: &result)
-        return result
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: x)
+    pow(x, y, result: &result)
+    return result
 }
 
 public extension TensorView where Self.Scalar: Numeric {
@@ -166,19 +161,14 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 //==============================================================================
 /// fill(x:with:
 /// fills the view with the scalar value
-public func fill<T>(x: T, with value: T.Scalar)
-    where T: TensorView {
-    _Streams.local.catchError { stream in
-        try stream.fill(x: x, with: value)
-    }
+public func fill<T>(x: inout T, with value: T.Scalar) where T: TensorView {
+    _Streams.current.fill(x: &x, with: value)
 }
 
 public extension TensorView {
     func fill(with value: Scalar) -> Self {
-        let result = Self.init(shapedLike: self)
-        _Streams.local.catchError { stream in
-            try stream.fill(x: result, with: value)
-        }
+        var result = Self.init(shapedLike: self)
+        _Streams.current.fill(x: &result, with: value)
         return result
     }
 }
@@ -186,19 +176,16 @@ public extension TensorView {
 //==============================================================================
 /// fillWithIndex(x:startAt:
 /// fills the view with the spatial sequential index
-public func fillWithIndex<T>(x: T, startAt index: Int = 0) where
-    T: TensorView, T.Scalar: AnyNumeric {
-        _Streams.local.catchError { stream in
-            try stream.fillWithIndex(x: x, startAt: index)
-        }
+public func fillWithIndex<T>(x: inout T, startAt index: Int = 0) where
+    T: TensorView, T.Scalar: AnyNumeric
+{
+    _Streams.current.fillWithIndex(x: &x, startAt: index)
 }
 
 public extension TensorView where Scalar: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
-        let result = Self.init(shapedLike: self)
-        _Streams.local.catchError { stream in
-            try stream.fillWithIndex(x: result, startAt: index)
-        }
+        var result = Self.init(shapedLike: self)
+        _Streams.current.fillWithIndex(x: &result, startAt: index)
         return result
     }
 }

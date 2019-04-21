@@ -107,32 +107,6 @@ class _Streams {
         return _Streams.local.currentStream
     }
     
-
-    //--------------------------------------------------------------------------
-    /// catchError
-    /// this is used inside operator implementations to catch asynchronous
-    /// errors and propagate them back to the user
-    @usableFromInline
-    func catchError(perform body: (DeviceStream) throws -> Void) {
-        do {
-            try body(currentStream)
-        } catch {
-            // write the error to the log
-            logInfo.log.write(level: .error,
-                                     message: String(describing: error))
-            
-            // call the handler if there is one
-            if let handler = streamScope.last!.exceptionHandler {
-                DispatchQueue.main.async {
-                    handler(error)
-                }
-            } else {
-                // if there is no handler then break to the debugger
-                raise(SIGINT)
-            }
-        }
-    }
-    
     //--------------------------------------------------------------------------
     /// returns the thread local instance of the streams stack
     @usableFromInline

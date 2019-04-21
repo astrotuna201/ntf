@@ -12,16 +12,15 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	public let name: String
     public var logInfo: LogInfo
     public var timeout: TimeInterval?
-    /// the last error thrown by a stream function
-    public private(set) var lastStreamError: Error?
     public var executeAsync: Bool = false
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var lastDeviceError: DeviceError = .none
+    public var _lastDeviceError: DeviceError? = nil
+    public var errorMutex: Mutex = Mutex()
 
     // serial queue
-    public let commandQueue: DispatchQueue
+    private let commandQueue: DispatchQueue
     let errorQueue: DispatchQueue
-    let completionEvent: CpuStreamEvent
+    private let completionEvent: CpuStreamEvent
 
     //--------------------------------------------------------------------------
     // initializers
@@ -48,10 +47,49 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
     //--------------------------------------------------------------------------
-    ///
-    // TODO fix taking ref shouldn't mutate
-    public func getViewReference<T: TensorView>(_ view: inout T) -> T {
-        return try! view.reference()
+    /// throwTestError
+    /// used for unit testing
+    public func throwTestError() {
+        queue {
+            throw DeviceError.streamInvalidArgument(idPath: [],
+                                                    message: "TestError",
+                                                    aux: nil)
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    /// reportDeviceError
+    /// sets and propagates a stream error
+    func reportDeviceError(_ error: Error) {
+        let error = (error as? DeviceError) ??
+            .streamError(idPath: [], error: error)
+        
+        // set the error state
+        lastDeviceError = error
+        
+        // write the error to the log
+        logInfo.log.write(level: .error, message: String(describing: error))
+        
+        // propagate on app thread
+        DispatchQueue.main.async {
+            self.defaultDeviceErrorHandler(error: error)
+        }
+        
+        // signal the completion event in case the app thread is waiting
+        completionEvent.signal()
+    }
+
+    //--------------------------------------------------------------------------
+    /// tryCatch
+    /// tries a throwing function and reports any errors thrown
+    func tryCatch<T: DefaultInitializer>(_ body: () throws -> T) -> T {
+        guard lastDeviceError == nil else { return T() }
+        do {
+            return try body()
+        } catch {
+            reportDeviceError(error)
+            return T()
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -60,26 +98,24 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// This will catch and propagate the last asynchronous error thrown.
     /// I wish there was a better way to do this!
     public func queue(_ body: @escaping () throws -> Void) {
-//        // check for a pending error from the last operation
-//        try errorQueue.sync {
-//            guard lastStreamError == nil else { throw lastStreamError! }
-//        }
-//
-//        // queue the work
-//        if executeAsync {
-//            commandQueue.async {
-//                do {
-//                    try body()
-//                } catch {
-//                    self.errorQueue.sync {
-//                        self.lastStreamError = error
-//                        self.writeLog(String(describing: error))
-//                    }
-//                }
-//            }
-//        } else {
-//            try body()
-//        }
+        // if the stream is in an error state, no additional work
+        // will be queued
+        guard (errorMutex.sync { self._lastDeviceError == nil }) else { return }
+
+        func workFunction() {
+            do {
+                try body()
+            } catch {
+                self.reportDeviceError(error)
+            }
+        }
+        
+        // queue the work
+        if executeAsync {
+            commandQueue.async { workFunction() }
+        } else {
+            workFunction()
+        }
     }
 
 	//--------------------------------------------------------------------------

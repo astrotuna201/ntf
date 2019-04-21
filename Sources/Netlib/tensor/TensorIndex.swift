@@ -293,7 +293,7 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
         //--------------------------------
         // if view position is past the end
         // then advance parent dimension if there is one
-        if dim > 0 && position[dim].view.current == position[dim].view.end {
+        if position[dim].view.current == position[dim].view.end && dim > 0 {
             // make a recursive call to advance the parent dimension
             incrementPosition(dim: dim - 1)
             

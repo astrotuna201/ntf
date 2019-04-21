@@ -74,6 +74,21 @@ public protocol ComputePlatform : ObjectTracking, Logger {
 }
 
 //==============================================================================
+/// PlatformError
+public enum PlatformError : Error {
+    case Platform(platform: Int)
+    case Service(platform: Int, service: Int)
+    case Device(platform: Int, service: Int, device: Int)
+    case Stream(platform: Int, service: Int,
+        device: Int, stream: Int, error: Error)
+}
+
+public protocol AsyncErrorHandler {
+    var asyncErrorHandler: ((PlatformError) -> Void)? { get set }
+    var lastAsyncError: PlatformError? { get set }
+}
+
+//==============================================================================
 /// ComputeService
 /// a compute service represents category of installed devices on the platform,
 /// such as (cpu, cuda, tpu, ...)

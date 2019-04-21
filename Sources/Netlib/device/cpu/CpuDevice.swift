@@ -5,7 +5,7 @@
 import Foundation
 import Dispatch
 
-public class CpuDevice : ComputeDevice {
+public class CpuDevice: LocalComputeDevice {
     //--------------------------------------------------------------------------
     // properties
     public private(set) var trackingId = 0
@@ -19,6 +19,9 @@ public class CpuDevice : ComputeDevice {
     public var timeout: TimeInterval?
     public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
+    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var lastDeviceError: DeviceError = .none
+    
 
     // TODO this should be currently available and not physicalMemory
     public lazy var availableMemory: UInt64 = {
@@ -43,6 +46,9 @@ public class CpuDevice : ComputeDevice {
         trackingId = ObjectTracker.global.register(self,
                                                    namePath: logNamePath,
                                                    isStatic: true)
+        
+        // pointer to instance error handler function
+        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 

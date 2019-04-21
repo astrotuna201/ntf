@@ -102,6 +102,13 @@ class _Streams {
     }
 
     //--------------------------------------------------------------------------
+    /// current
+    public static var current: DeviceStream {
+        return _Streams.local.currentStream
+    }
+    
+
+    //--------------------------------------------------------------------------
     /// catchError
     /// this is used inside operator implementations to catch asynchronous
     /// errors and propagate them back to the user
@@ -116,7 +123,7 @@ class _Streams {
             
             // call the handler if there is one
             if let handler = streamScope.last!.exceptionHandler {
-                DispatchQueue.main.sync {
+                DispatchQueue.main.async {
                     handler(error)
                 }
             } else {

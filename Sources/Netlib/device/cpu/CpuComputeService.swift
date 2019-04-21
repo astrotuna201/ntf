@@ -4,11 +4,14 @@
 //
 import Foundation
 
-public class CpuComputeService : ComputeService {
-    //--------------------------------------------------------------------------
+//==============================================================================
+/// CpuComputeService
+public class CpuComputeService : LocalComputeService {
     // properties
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
+    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var lastDeviceError: DeviceError = .none
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
@@ -27,6 +30,9 @@ public class CpuComputeService : ComputeService {
         devices.append(CpuDevice(service: self, deviceId: 0,
                                  logInfo: logInfo.child("cpu:0"),
                                  memoryAddressing: .unified))
+        
+        // pointer to instance error handler function
+        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }
@@ -34,11 +40,13 @@ public class CpuComputeService : ComputeService {
 //==============================================================================
 /// CpuUnitTestComputeService
 /// This is used for unit testing only
-public class CpuUnitTestComputeService : ComputeService {
+public class CpuUnitTestComputeService : LocalComputeService {
     //--------------------------------------------------------------------------
     // properties
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
+    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var lastDeviceError: DeviceError = .none
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
@@ -67,6 +75,9 @@ public class CpuUnitTestComputeService : ComputeService {
         devices.append(CpuDevice(service: self, deviceId: 2,
                                  logInfo: logInfo.child("cpu:2"),
                                  memoryAddressing: .discreet))
+        
+        // pointer to instance error handler function
+        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

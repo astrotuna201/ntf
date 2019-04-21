@@ -4,8 +4,7 @@
 //
 import Foundation
 
-public final class CpuStream : DeviceStream, StreamGradients {
-    //--------------------------------------------------------------------------
+public final class CpuStream: LocalDeviceStream, StreamGradients {
 	// protocol properties
 	public private(set) var trackingId = 0
 	public let device: ComputeDevice
@@ -16,9 +15,11 @@ public final class CpuStream : DeviceStream, StreamGradients {
     /// the last error thrown by a stream function
     public private(set) var lastStreamError: Error?
     public var executeAsync: Bool = false
+    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var lastDeviceError: DeviceError = .none
 
     // serial queue
-    let commandQueue: DispatchQueue
+    public let commandQueue: DispatchQueue
     let errorQueue: DispatchQueue
     let completionEvent: CpuStreamEvent
 
@@ -26,7 +27,9 @@ public final class CpuStream : DeviceStream, StreamGradients {
     // initializers
     public init(logInfo: LogInfo,
                 device: ComputeDevice,
-                name: String, id: Int) throws {
+                name: String,
+                id: Int) throws {
+        
         // create serial queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         errorQueue = DispatchQueue(label: "\(name).errorQueue")
@@ -38,35 +41,45 @@ public final class CpuStream : DeviceStream, StreamGradients {
         self.name = name
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)
+        
+        // pointer to instance error handler function
+        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
+    //--------------------------------------------------------------------------
+    ///
+    // TODO fix taking ref shouldn't mutate
+    public func getViewReference<T: TensorView>(_ view: inout T) -> T {
+        return try! view.reference()
+    }
+    
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     ///
     /// This will catch and propagate the last asynchronous error thrown.
     /// I wish there was a better way to do this!
-    public func queue(_ body: @escaping () throws -> Void) throws {
-        // check for a pending error from the last operation
-        try errorQueue.sync {
-            guard lastStreamError == nil else { throw lastStreamError! }
-        }
-        
-        // queue the work
-        if executeAsync {
-            commandQueue.async {
-                do {
-                    try body()
-                } catch {
-                    self.errorQueue.sync {
-                        self.lastStreamError = error
-                        self.writeLog(String(describing: error))
-                    }
-                }
-            }
-        } else {
-            try body()
-        }
+    public func queue(_ body: @escaping () throws -> Void) {
+//        // check for a pending error from the last operation
+//        try errorQueue.sync {
+//            guard lastStreamError == nil else { throw lastStreamError! }
+//        }
+//
+//        // queue the work
+//        if executeAsync {
+//            commandQueue.async {
+//                do {
+//                    try body()
+//                } catch {
+//                    self.errorQueue.sync {
+//                        self.lastStreamError = error
+//                        self.writeLog(String(describing: error))
+//                    }
+//                }
+//            }
+//        } else {
+//            try body()
+//        }
     }
 
 	//--------------------------------------------------------------------------

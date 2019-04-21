@@ -511,7 +511,7 @@ public extension TensorView {
     /// reference view creation if not uniquely held. References will not
     /// be checked on the resulting view when a write pointer is taken
     mutating func reference(using stream: DeviceStream? = nil) throws -> Self {
-        // get the queue, if we reference it as a dataArray member it
+        // get the queue, if we reference it as a tensorData member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
         
@@ -590,6 +590,18 @@ public extension TensorView where Scalar: FloatingPoint {
             }
         }
         return true
+    }
+}
+
+//==============================================================================
+// map(to:
+public extension Zip2Sequence {
+    @inlinable func map<T>(to: inout T,
+                           _ transform: ((Sequence1.Element, Sequence2.Element))
+        throws -> T.Scalar) rethrows
+        where T: TensorView {
+        
+        fatalError("not implemented yet")
     }
 }
 

@@ -24,6 +24,12 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
+    /// defaultDeviceErrorHandler
+    func defaultDeviceErrorHandler(error: DeviceError) {
+        
+    }
+
+    //--------------------------------------------------------------------------
     // loadServices
     // dynamically loads ComputeService bundles/dylib from the
     // `serviceModuleDirectory` and adds them to the `services` list
@@ -248,6 +254,8 @@ final public class Platform: LocalPlatform {
         createDefaultStream()
     }()
     public var defaultDevicesToAllocate = -1
+    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var lastDeviceError: DeviceError = .none
     public var deviceIdPriority: [Int] = [0]
     public var id: Int = 0
     public static let local = Platform()
@@ -264,10 +272,14 @@ final public class Platform: LocalPlatform {
     //--------------------------------------------------------------------------
     // initializers
     /// `init` is private because this is a singleton. Use the `local` static
-    /// member to access the global instance.
+    /// member to access the shared instance.
     private init() {
-        self.logInfo = LogInfo(log: Log(), logLevel: .error,
-                               namePath: String(describing: Platform.self),
-                               nestingLevel: 0)
+        // log
+        logInfo = LogInfo(log: Log(), logLevel: .error,
+                          namePath: String(describing: Platform.self),
+                          nestingLevel: 0)
+        
+        // pointer to instance error handler function
+        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
 }

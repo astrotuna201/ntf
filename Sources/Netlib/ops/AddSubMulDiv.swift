@@ -47,10 +47,7 @@ infix operator .=
 //@differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Scalar: Numeric {
-        
-        _Streams.local.catchError { stream in
-            try stream.add(lhs: lhs, rhs: rhs, result: &result)
-        }
+        _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
 }
 
 /// returns new view

@@ -18,7 +18,11 @@ import Foundation
 /// this represents the root for managing all services, devices, and streams
 /// on a platform. There is one local instance per process, and possibly
 /// many remote instances.
-public protocol ComputePlatform : ObjectTracking, Logger {
+public protocol ComputePlatform:
+    DeviceErrorHandling,
+    ObjectTracking,
+    Logger
+{
     //--------------------------------------------------------------------------
     // class members
     /// global shared instance
@@ -78,23 +82,31 @@ public protocol ComputePlatform : ObjectTracking, Logger {
 //==============================================================================
 /// DeviceError
 public enum DeviceError : Error {
-    case None
-    case StreamInvalidArgument(idPath: [Int], message: String, aux: Error?)
-    case StreamTimeout(idPath: [Int], message: String)
+    case none
+    case streamInvalidArgument(idPath: [Int], message: String, aux: Error?)
+    case streamTimeout(idPath: [Int], message: String)
 }
 
 public typealias DeviceErrorHandler = (DeviceError) -> Void
 
 public protocol DeviceErrorHandling {
-    var deviceErrorHandler: DeviceErrorHandler { get set }
+    var _deviceErrorHandler: DeviceErrorHandler! { get set }
     var lastDeviceError: DeviceError { get set }
+}
+
+public extension DeviceErrorHandling {
+    /// use access get/set to prevent setting `nil`
+    var deviceErrorHandler: DeviceErrorHandler {
+        get { return _deviceErrorHandler }
+        set { _deviceErrorHandler = newValue }
+    }
 }
 
 //==============================================================================
 /// ComputeService
 /// a compute service represents category of installed devices on the platform,
 /// such as (cpu, cuda, tpu, ...)
-public protocol ComputeService: ObjectTracking, Logger {
+public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     /// a collection of available devices
     var devices: [ComputeDevice] { get }
     /// the service id
@@ -107,10 +119,22 @@ public protocol ComputeService: ObjectTracking, Logger {
 }
 
 //==============================================================================
+/// LocalComputeService
+public protocol LocalComputeService: ComputeService { }
+
+public extension LocalComputeService {
+    //--------------------------------------------------------------------------
+    /// defaultDeviceErrorHandler
+    func defaultDeviceErrorHandler(error: DeviceError) {
+    
+    }
+}
+
+//==============================================================================
 /// ComputeDevice
 /// a compute device represents a physical service device installed
 /// on the platform
-public protocol ComputeDevice: ObjectTracking, Logger {
+public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     //-------------------------------------
     // properties
     /// a dictionary of device specific attributes describing the device
@@ -141,6 +165,18 @@ public protocol ComputeDevice: ObjectTracking, Logger {
 }
 
 public enum MemoryAddressing { case unified, discreet }
+
+//==============================================================================
+/// LocalComputeDevice
+public protocol LocalComputeDevice: ComputeDevice { }
+
+public extension LocalComputeDevice {
+    //--------------------------------------------------------------------------
+    /// defaultDeviceErrorHandler
+    func defaultDeviceErrorHandler(error: DeviceError) {
+        
+    }
+}
 
 //==============================================================================
 // DeviceArray

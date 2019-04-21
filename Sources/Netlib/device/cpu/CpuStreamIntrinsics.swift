@@ -3,14 +3,17 @@
 //  Copyright © 2019 Connell Research. All rights reserved.
 //
 import Foundation
-//
+
 public extension CpuStream {
     func abs<T>(x: T, result: inout T) throws where T : TensorView, T.Scalar : SignedNumeric {
         
     }
     
-    func add<T>(lhs: T, rhs: T, result: inout T) throws where T : TensorView, T.Scalar : Numeric {
-        
+    func add<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
+        var result = getViewReference(&result)
+        queue {
+            try zip(lhs.values(), rhs.values()).map(to: &result) { $0 + $1 }
+        }
     }
     
     func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) throws where T : TensorView, T.Scalar == Bool {

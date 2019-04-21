@@ -10,10 +10,12 @@ import Foundation
 /// the associated device. It is a class protocol treated as an abstract
 /// driver interface.
 public protocol DeviceStream:
-    ObjectTracking, Logger,
+    ObjectTracking,
+    Logger,
+    DeviceErrorHandling,
     StreamIntrinsicsProtocol,
-    StreamGradientsProtocol {
-    
+    StreamGradientsProtocol
+{
     //--------------------------------------------------------------------------
     // properties
     /// the device the stream is associated with
@@ -47,6 +49,18 @@ public protocol DeviceStream:
 }
 
 //==============================================================================
+/// LocalDeviceStream
+public protocol LocalDeviceStream: DeviceStream { }
+
+public extension LocalDeviceStream {
+    //--------------------------------------------------------------------------
+    /// defaultDeviceErrorHandler
+    func defaultDeviceErrorHandler(error: DeviceError) {
+        
+    }
+}
+
+//==============================================================================
 // throwAsynchronousTestError
 public extension DeviceStream {
     func throwAsynchronousTestError() {
@@ -67,7 +81,7 @@ public protocol StreamIntrinsicsProtocol {
     func abs<T>(x: T, result: inout T) throws
         where T: TensorView, T.Scalar: SignedNumeric
     /// Adds two tensors and produces their sum.
-    func add<T>(lhs: T, rhs: T, result: inout T) throws
+    func add<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Scalar: Numeric
     /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value

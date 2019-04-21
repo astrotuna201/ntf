@@ -36,6 +36,9 @@ public protocol ComputePlatform : ObjectTracking, Logger {
     var defaultDevicesToAllocate: Int { get set }
     /// ordered list of device ids specifying the order for auto selection
     var deviceIdPriority: [Int] { get set }
+    /// the platform id. Usually zero, but can be assigned in case a higher
+    /// level object (e.g. cluster) will maintain a platform collection
+    var id: Int { get set }
     /// location of dynamically loaded service modules
     var serviceModuleDirectory: URL { get set }
     /// ordered list of service names specifying the order for auto selection
@@ -74,18 +77,18 @@ public protocol ComputePlatform : ObjectTracking, Logger {
 }
 
 //==============================================================================
-/// PlatformError
-public enum PlatformError : Error {
-    case Platform(platform: Int)
-    case Service(platform: Int, service: Int)
-    case Device(platform: Int, service: Int, device: Int)
-    case Stream(platform: Int, service: Int,
-        device: Int, stream: Int, error: Error)
+/// DeviceError
+public enum DeviceError : Error {
+    case None
+    case StreamInvalidArgument(idPath: [Int], message: String, aux: Error?)
+    case StreamTimeout(idPath: [Int], message: String)
 }
 
-public protocol AsyncErrorHandler {
-    var asyncErrorHandler: ((PlatformError) -> Void)? { get set }
-    var lastAsyncError: PlatformError? { get set }
+public typealias DeviceErrorHandler = (DeviceError) -> Void
+
+public protocol DeviceErrorHandling {
+    var deviceErrorHandler: DeviceErrorHandler { get set }
+    var lastDeviceError: DeviceError { get set }
 }
 
 //==============================================================================
@@ -156,18 +159,17 @@ public protocol DeviceArray: ObjectTracking, Logger {
     var version: Int { get set }
 
     //-------------------------------------
-    // functions
     /// clears the array to zero
     func zero(using stream: DeviceStream?) throws
     /// asynchronously copies the contents of another device array
     func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
-    /// asynchronously copies the contents of a memory buffer
+    /// asynchronously copies the contents of an app memory buffer
     func copyAsync(from buffer: UnsafeRawBufferPointer,
                    using stream: DeviceStream) throws
-    /// copies the contents to a memory buffer synchronously
+    /// copies the contents to an app memory buffer synchronously
     func copy(to buffer: UnsafeMutableRawBufferPointer,
               using stream: DeviceStream) throws
-    /// copies the contents to a memory buffer asynchronously
+    /// copies the contents to an app memory buffer asynchronously
     func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                    using stream: DeviceStream) throws
 }

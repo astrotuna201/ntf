@@ -15,31 +15,16 @@ import Glibc
 //==============================================================================
 /// Executes a closure on the specified stream
 /// - Parameter stream: the stream to set as the `currentStream`
-/// - Parameter logInfo: optional logging, if nil then it is inherited from
-///             the previous scope
-/// - Parameter handler: a handler for asynchronous errors, if nil it is
-///             inherited from the previous scope
 /// - Parameter body: A closure whose operations are to be executed on the
 ///             specified stream
 @inline(never)
 public func using<R>(_ stream: DeviceStream,
-                     logInfo: LogInfo? = nil,
-                     handler: StreamExceptionHandler? = nil,
                      perform body: () throws -> R) rethrows -> R {
     // sets the default stream and logging info for the current scope
-    _Streams.local.push(stream: stream, logInfo: logInfo)
+    _Streams.local.push(stream: stream)
     defer { _Streams.local.popStream() }
     // execute the body
     return try body()
-}
-
-public typealias StreamExceptionHandler = (Error) -> Void
-
-//==============================================================================
-/// handleStreamExceptions
-public func handleStreamExceptions(handler: @escaping StreamExceptionHandler) {
-    let index = _Streams.local.streamScope.count - 1
-    _Streams.local.streamScope[index].exceptionHandler = handler
 }
 
 //==============================================================================
@@ -47,20 +32,8 @@ public func handleStreamExceptions(handler: @escaping StreamExceptionHandler) {
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
-    // types
-    struct Scope {
-        let stream: DeviceStream
-        let logInfo: LogInfo
-        var exceptionHandler: StreamExceptionHandler?
-    }
-    
-    //--------------------------------------------------------------------------
     /// stack of default device streams, logging, and exception handler
-    public fileprivate(set) var streamScope: [Scope] = [
-        Scope(stream: Platform.defaultStream,
-              logInfo: Platform.defaultStream.logInfo,
-              exceptionHandler: nil)
-    ]
+    var streamScope: [DeviceStream] = []
 
     //--------------------------------------------------------------------------
     /// thread data key
@@ -75,38 +48,7 @@ class _Streams {
         }
         return key
     }()
-    
-    // there will always be the platform default stream and logInfo
-    public var currentStream: DeviceStream { return streamScope.last!.stream }
-    public var logInfo: LogInfo { return streamScope.last!.logInfo }
 
-    //--------------------------------------------------------------------------
-    /// push(stream:
-    /// pushes the specified stream onto a stream stack which makes
-    /// it the current stream used by operator functions
-    @usableFromInline
-    func push(stream: DeviceStream, logInfo: LogInfo? = nil) {
-        streamScope.append(
-            Scope(stream: stream,
-                  logInfo: logInfo ?? streamScope.last!.logInfo,
-                  exceptionHandler: streamScope.last!.exceptionHandler))
-    }
-    
-    //--------------------------------------------------------------------------
-    /// popStream
-    /// restores the previous current stream
-    @usableFromInline
-    func popStream() {
-        assert(streamScope.count > 1)
-        _ = streamScope.popLast()
-    }
-
-    //--------------------------------------------------------------------------
-    /// current
-    public static var current: DeviceStream {
-        return _Streams.local.currentStream
-    }
-    
     //--------------------------------------------------------------------------
     /// returns the thread local instance of the streams stack
     @usableFromInline
@@ -120,5 +62,50 @@ class _Streams {
             pthread_setspecific(key, Unmanaged.passRetained(state).toOpaque())
             return state
         }
+    }
+
+    //--------------------------------------------------------------------------
+    /// current
+    public static var current: DeviceStream {
+        return _Streams.local.streamScope.last!
+    }
+    
+    // there will always be the platform default stream and logInfo
+    public var logInfo: LogInfo { return streamScope.last!.logInfo }
+
+    //--------------------------------------------------------------------------
+    /// updateDefault
+    public func updateDefault(stream: DeviceStream) {
+        streamScope[0] = stream
+    }
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    private init() {
+        do {
+            let stream = try Platform.local.defaultDevice
+                .createStream(name: "default")
+            streamScope = [stream]
+        } catch {
+            Platform.local.reportDevice(error: error)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// push(stream:
+    /// pushes the specified stream onto a stream stack which makes
+    /// it the current stream used by operator functions
+    @usableFromInline
+    func push(stream: DeviceStream) {
+        streamScope.append(stream)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// popStream
+    /// restores the previous current stream
+    @usableFromInline
+    func popStream() {
+        assert(streamScope.count > 1)
+        _ = streamScope.popLast()
     }
 }

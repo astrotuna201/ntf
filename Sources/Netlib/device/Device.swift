@@ -29,8 +29,6 @@ public protocol ComputePlatform:
     static var local: Platform { get }
     /// the root log
     static var log: Log { get set }
-    /// a stream selected based on `servicePriority` and `deviceIdPriority`
-    static var defaultStream: DeviceStream { get }
     
     // instance members
     /// a device automatically selected based on service priority
@@ -65,7 +63,7 @@ public protocol ComputePlatform:
     ///   the number of available devices, then id % available will be used.
     func createStreams(name: String,
                        serviceName: String?,
-                       deviceIds: [Int]?) throws -> [DeviceStream]
+                       deviceIds: [Int]?) -> [DeviceStream]
     
     //--------------------------------------------------------------------------
     /// requestDevices
@@ -77,36 +75,6 @@ public protocol ComputePlatform:
     ///   and `deviceIdPriority`
     func requestDevices(deviceIds: [Int],
                         serviceName: String?) -> [ComputeDevice]
-}
-
-//==============================================================================
-/// DeviceError
-public enum DeviceError : Error {
-    case streamError(idPath: [Int], error: Error)
-    case streamInvalidArgument(idPath: [Int], message: String, aux: Error?)
-    case streamTimeout(idPath: [Int], message: String)
-}
-
-public typealias DeviceErrorHandler = (DeviceError) -> Void
-
-public protocol DeviceErrorHandling: class {
-    var _deviceErrorHandler: DeviceErrorHandler! { get set }
-    var _lastDeviceError: DeviceError? { get set }
-    var errorMutex: Mutex { get }
-}
-
-public extension DeviceErrorHandling {
-    /// use access get/set to prevent setting `nil`
-    var deviceErrorHandler: DeviceErrorHandler {
-        get { return _deviceErrorHandler }
-        set { _deviceErrorHandler = newValue }
-    }
-    
-    /// safe access
-    var lastDeviceError: DeviceError? {
-        get { return errorMutex.sync { _lastDeviceError } }
-        set { errorMutex.sync { _lastDeviceError = newValue } }
-    }
 }
 
 //==============================================================================
@@ -134,7 +102,7 @@ public protocol LocalComputeService: ComputeService { }
 public extension LocalComputeService {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: DeviceError) {
+    func defaultDeviceErrorHandler(error: Error) {
         platform.deviceErrorHandler(error)
     }
 }
@@ -182,7 +150,7 @@ public protocol LocalComputeDevice: ComputeDevice { }
 public extension LocalComputeDevice {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: DeviceError) {
+    func defaultDeviceErrorHandler(error: Error) {
         service.deviceErrorHandler(error)
     }
 }
@@ -226,10 +194,15 @@ public protocol DeviceArray: ObjectTracking, Logger {
 /// - waited on by one or more threads for group synchronization
 public protocol StreamEvent: ObjectTracking, Logger {
     /// is `true` if the even has occurred, used for polling
-    var occurred: Bool { get }
+    var occurred: Bool { get set }
     
     // TODO: consider adding time outs for failed remote events
     init(logInfo: LogInfo, options: StreamEventOptions) throws
+    /// signals that the event has occurred
+    func signal()
+    /// will block the caller until the timeout has elapsed, or
+    /// if `nil` it will wait forever
+    func wait(until timeout: TimeInterval?) throws
 }
 
 public struct StreamEventOptions: OptionSet {

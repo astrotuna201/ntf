@@ -87,7 +87,7 @@ class test_DataMigration: XCTestCase {
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream = try Platform.local
+            let stream = Platform.local
                 .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
             XCTAssert(stream[0].device.memoryAddressing == .discreet &&
                 stream[1].device.memoryAddressing == .discreet)

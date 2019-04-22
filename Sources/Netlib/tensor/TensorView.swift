@@ -217,9 +217,9 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
-    func scalarValue() throws -> Scalar {
+    func scalarValue() -> Scalar {
         assert(shape.elementCount == 1)
-        return try readOnly()[0]
+        return _Streams.current.tryCatch { try readOnly()[0] }
     }
 
     //--------------------------------------------------------------------------
@@ -596,28 +596,42 @@ public extension TensorView where Scalar: FloatingPoint {
 //==============================================================================
 // map
 public extension Zip2Sequence {
-    @inlinable func map<T>(_ transform: ((Sequence1.Element, Sequence2.Element))
-        throws -> T.Scalar) rethrows -> T
-        where T: TensorView {
-            
-            fatalError("not implemented yet")
-    }
+    @inlinable
+    func map<T>(to result: inout T,
+                _ transform: ((Sequence1.Element, Sequence2.Element))
+        -> T.Scalar) where T: TensorView {
+        var iterator = self.makeIterator()
+        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
 
-    @inlinable func map<T>(to: inout T,
-                           _ transform: ((Sequence1.Element, Sequence2.Element))
-        throws -> T.Scalar) rethrows
-        where T: TensorView {
-        
-        fatalError("not implemented yet")
+        for i in mutableValues.startIndex..<mutableValues.endIndex {
+            if let pair = iterator.next() {
+                mutableValues[i] = transform(pair)
+            }
+        }
     }
 }
 
 //==============================================================================
-// map
-public func zip<T1, T2>(_ t1: T1, _ t2: T2) throws ->
+// zip
+public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
     Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
-    where T1: TensorView, T2: TensorView {
-        fatalError("not implemented yet")
+    where T1: TensorView, T2: TensorView
+{
+    let t1values = _Streams.current.tryCatch { try t1.values() }
+    let t2values = _Streams.current.tryCatch { try t2.values() }
+    return zip(t1values, t2values)
+}
+
+//==============================================================================
+// reduce
+public extension Sequence {
+    func reduce<T>(to: T, _ initialResult: T.Scalar,
+    _ nextPartialResult: (T.Scalar, Element) throws -> T.Scalar) rethrows
+        where T: TensorView
+    {
+    fatalError()
+    
+    }
 }
 
 //==============================================================================

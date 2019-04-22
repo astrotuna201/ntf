@@ -44,8 +44,8 @@ public extension TensorView {
 //==============================================================================
 /// TensorViewCollection
 /// returns a readonly collection view of the underlying tensorData.
-public struct TensorViewCollection<View>: RandomAccessCollection
-where View: TensorView {
+public struct TensorViewCollection<View>:
+    RandomAccessCollection, DefaultInitializer where View: TensorView {
     // types
     public typealias Scalar = View.Scalar
 
@@ -59,6 +59,13 @@ where View: TensorView {
         return TensorIndex(view, paddedViewShape)
     }
     
+    public init() {
+        view = View()
+        buffer = UnsafeBufferPointer<Scalar>(start: nil, count: 0)
+        paddedViewShape = view.shape
+        endIndex = TensorIndex(view, paddedViewShape)
+    }
+
     public init(view: View, buffer: UnsafeBufferPointer<Scalar>) throws {
         self.view = view
         self.buffer = buffer
@@ -85,9 +92,9 @@ where View: TensorView {
 /// TensorViewMutableCollection
 /// returns a readonly collection view of the underlying tensorData.
 public struct TensorViewMutableCollection<View>:
-    RandomAccessCollection,
-    MutableCollection
-where View: TensorView {
+    RandomAccessCollection, DefaultInitializer, MutableCollection
+    where View: TensorView
+{
     // types
     public typealias Scalar = View.Scalar
     
@@ -101,6 +108,12 @@ where View: TensorView {
         return TensorIndex(view, paddedViewShape)
     }
     
+    public init() {
+        view = View()
+        buffer = UnsafeMutableBufferPointer<Scalar>(start: nil, count: 0)
+        paddedViewShape = view.shape
+        endIndex = TensorIndex(view, paddedViewShape)
+    }
     
     public init(view: inout View,
                 buffer: UnsafeMutableBufferPointer<Scalar>) throws {

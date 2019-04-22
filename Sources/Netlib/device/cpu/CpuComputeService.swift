@@ -12,7 +12,7 @@ public class CpuComputeService : LocalComputeService {
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastDeviceError: DeviceError? = nil
+    public var _lastError: Error? = nil
     public var errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo
@@ -52,7 +52,7 @@ public class CpuUnitTestComputeService : LocalComputeService {
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastDeviceError: DeviceError? = nil
+    public var _lastError: Error? = nil
     public var errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo

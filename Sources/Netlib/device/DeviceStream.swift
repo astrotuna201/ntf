@@ -18,6 +18,8 @@ public protocol DeviceStream:
 {
     //--------------------------------------------------------------------------
     // properties
+    /// an event used to signal when all queued commands have completed
+    var completionEvent: StreamEvent { get }
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// a unique id used to identify the stream
@@ -48,6 +50,29 @@ public protocol DeviceStream:
     func wait(for event: StreamEvent) throws
 }
 
+public extension DeviceStream where Self: DeviceErrorHandling {
+    /// catches errors and reports them through the device error handling path
+    /// tries a throwing function and reports any errors thrown
+    func tryCatch(_ body: () throws -> Void) {
+        guard lastError == nil else { return }
+        do {
+            try body()
+        } catch {
+            reportDevice(error: error, event: completionEvent)
+        }
+    }
+    
+    func tryCatch<T: DefaultInitializer>(_ body: () throws -> T) -> T {
+        guard lastError == nil else { return T() }
+        do {
+            return try body()
+        } catch {
+            reportDevice(error: error, event: completionEvent)
+            return T()
+        }
+    }
+}
+
 //==============================================================================
 /// LocalDeviceStream
 public protocol LocalDeviceStream: DeviceStream { }
@@ -55,7 +80,7 @@ public protocol LocalDeviceStream: DeviceStream { }
 public extension LocalDeviceStream {
     //--------------------------------------------------------------------------
     /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: DeviceError) {
+    func defaultDeviceErrorHandler(error: Error) {
         device.deviceErrorHandler(error)
     }
 }
@@ -108,7 +133,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Scalar: Numeric & Comparable
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output

@@ -27,7 +27,7 @@ public extension LocalPlatform {
     /// defaultDeviceErrorHandler
     /// The default platform error handler has nowhere else to go, so
     /// print the message, break to the debugger if possible, and exit.
-    func defaultDeviceErrorHandler(error: DeviceError) {
+    func defaultDeviceErrorHandler(error: Error) {
         print(String(describing: error))
         raise(SIGINT)
         exit(1)
@@ -117,11 +117,11 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
-    // selectDefaultDevice
+    // defaultDevice
     // selects a ComputeDevice based on `servicePriority` and
     // `deviceIdPriority`. It is guaranteed that at least one device like
     // the cpu is available
-    func selectDefaultDevice() -> ComputeDevice {
+    var defaultDevice: ComputeDevice {
         // try to exact match the service request
         var defaultDev: ComputeDevice?
         let requestedDevice = deviceIdPriority[0]
@@ -150,19 +150,6 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
-    /// createDefaultStream
-    /// creates a stream on the default device
-    static func createDefaultStream() -> DeviceStream {
-        do {
-            return try local.defaultDevice
-                .createStream(name: "Platform.defaultStream")
-        } catch {
-            local.writeLog(String(describing: error))
-            fatalError("unable to create the default stream")
-        }
-    }
-
-    //--------------------------------------------------------------------------
     /// createStreams
     //
     /// This will try to match the requested service and device ids returning
@@ -177,7 +164,7 @@ public extension LocalPlatform {
     ///   is returned.
     func createStreams(name: String = "stream",
                        serviceName: String? = nil,
-                       deviceIds: [Int]? = nil) throws -> [DeviceStream]{
+                       deviceIds: [Int]? = nil) -> [DeviceStream]{
         
         // choose the service to select the device from
         let serviceName = serviceName ?? defaultDevice.service.name
@@ -191,10 +178,15 @@ public extension LocalPlatform {
         let ids = deviceIds ?? [Int](0..<maxDeviceCount)
         
         // create the streams
-        return try ids.map {
-            let device = requestDevice(serviceName: serviceName,
-                                       deviceId: $0, allowSubstitute: true)!
-            return try device.createStream(name: name)
+        do {
+            return try ids.map {
+                let device = requestDevice(serviceName: serviceName,
+                                           deviceId: $0, allowSubstitute: true)!
+                return try device.createStream(name: name)
+            }
+        } catch {
+            reportDevice(error: error)
+            return []
         }
     }
     
@@ -256,13 +248,9 @@ public extension LocalPlatform {
 /// The root object to select compute services and devices
 final public class Platform: LocalPlatform {
     // properties
-    public lazy var defaultDevice: ComputeDevice = { selectDefaultDevice() }()
-    public private(set) static var defaultStream: DeviceStream = {
-        createDefaultStream()
-    }()
     public var defaultDevicesToAllocate = -1
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastDeviceError: DeviceError? = nil
+    public var _lastError: Error? = nil
     public var errorMutex: Mutex = Mutex()
     public var deviceIdPriority: [Int] = [0]
     public var id: Int = 0

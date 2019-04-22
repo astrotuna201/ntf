@@ -12,7 +12,7 @@ public extension CpuStream {
     func add<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
         var resultRef = tryCatch { try result.reference() }
         queue {
-            try zip(lhs, rhs).map(to: &resultRef) { $0 + $1 }
+            zip(lhs, rhs).map(to: &resultRef) { $0 + $1 }
         }
     }
     
@@ -36,8 +36,13 @@ public extension CpuStream {
         
     }
     
-    func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+    func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T)
+        where T : TensorView, T.Scalar : Numeric & Comparable {
+            
+//        var resultRef = tryCatch { try result.reference() }
+        queue {
+//            x.values().reduce(to: &resultRef) { Foundation.abs($0) }
+        }
     }
     
     func cast<T, R>(from: T, to result: inout R) where T : TensorView, R : TensorView, T.Scalar : AnyConvertable, R.Scalar : AnyConvertable {

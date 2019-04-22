@@ -10,6 +10,7 @@ import Foundation
 public protocol LocalPlatform : ComputePlatform {
     /// the global services collection
     static var _services: [String: ComputeService]? { get set }
+    var _defaultDevice: ComputeDevice? { get set }
 }
 
 public extension LocalPlatform {
@@ -122,28 +123,29 @@ public extension LocalPlatform {
     // `deviceIdPriority`. It is guaranteed that at least one device like
     // the cpu is available
     var defaultDevice: ComputeDevice {
+        guard _defaultDevice == nil else { return _defaultDevice! }
+        
         // try to exact match the service request
-        var defaultDev: ComputeDevice?
         let requestedDevice = deviceIdPriority[0]
-        for serviceName in servicePriority where defaultDev == nil {
-            defaultDev = requestDevice(serviceName: serviceName,
-                                       deviceId: requestedDevice,
-                                       allowSubstitute: false)
+        for serviceName in servicePriority where _defaultDevice == nil {
+            _defaultDevice = requestDevice(serviceName: serviceName,
+                                           deviceId: requestedDevice,
+                                           allowSubstitute: false)
         }
         
         // if the search failed, then allow substitutes
-        if defaultDev == nil {
+        if _defaultDevice == nil {
             let priority = servicePriority + ["cpu"]
-            for serviceName in priority where defaultDev == nil {
-                defaultDev = requestDevice(serviceName: serviceName,
-                                           deviceId: 0,
-                                           allowSubstitute: true)
+            for serviceName in priority where _defaultDevice == nil {
+                _defaultDevice = requestDevice(serviceName: serviceName,
+                                               deviceId: 0,
+                                               allowSubstitute: true)
             }
         }
         
         // we had to find at least one device like the cpu
-        assert(defaultDev != nil, "There must be at least one device")
-        let device = defaultDev!
+        assert(_defaultDevice != nil, "There must be at least one device")
+        let device = _defaultDevice!
         writeLog("default device: [\(device.service.name)] \(device.name)",
             level: .status)
         return device
@@ -248,6 +250,7 @@ public extension LocalPlatform {
 /// The root object to select compute services and devices
 final public class Platform: LocalPlatform {
     // properties
+    public var _defaultDevice: ComputeDevice?
     public var defaultDevicesToAllocate = -1
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
     public var _lastError: Error? = nil

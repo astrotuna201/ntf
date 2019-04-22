@@ -175,6 +175,7 @@ class test_DataMigration: XCTestCase {
             var matrix = using(stream[0]) {
                 Matrix<Float>(extents: [3, 2]).filledWithIndex()
             }
+            try print(matrix.formatted(numberFormat: (9,3)))
 
             let value1 = try matrix.value(at: [1, 1])
             XCTAssert(value1 == 3.0)

@@ -83,8 +83,8 @@ class _Streams {
     // initializers
     private init() {
         do {
-            let stream = try Platform.local.defaultDevice
-                .createStream(name: "default")
+            let stream = try
+                Platform.local.defaultDevice.createStream(name: "default")
             streamScope = [stream]
         } catch {
             Platform.local.reportDevice(error: error)

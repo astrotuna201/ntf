@@ -50,9 +50,11 @@ public protocol DeviceStream:
     func wait(for event: StreamEvent) throws
 }
 
+//==============================================================================
+/// tryCatch
+/// catches errors and reports them through the device error handling path
+/// tries a throwing function and reports any errors thrown
 public extension DeviceStream where Self: DeviceErrorHandling {
-    /// catches errors and reports them through the device error handling path
-    /// tries a throwing function and reports any errors thrown
     func tryCatch(_ body: () throws -> Void) {
         guard lastError == nil else { return }
         do {

@@ -26,26 +26,57 @@ public class CpuDeviceArray : DeviceArray {
 
 	//--------------------------------------------------------------------------
 	// zero
-	public func zero(using stream: DeviceStream?) throws {
+	public func zero(using stream: DeviceStream) throws {
+        let stream = stream as! CpuStream
+        stream.queue {
+            self.data.initializeMemory(as: UInt8.self,
+                                       repeating: 0,
+                                       count: self.count)
+        }
 	}
 
 	// copyAsync(from deviceArray
 	public func copyAsync(from other: DeviceArray,
                           using stream: DeviceStream) throws {
+        assert(count == other.count, "buffer sizes don't match")
+        let stream = stream as! CpuStream
+        stream.queue {
+            self.data.copyMemory(from: other.data, byteCount: other.count)
+        }
 	}
 
 	// copyAsync(from buffer
 	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
+        assert(buffer.baseAddress != nil)
+        assert(count == buffer.count, "buffer sizes don't match")
+        let stream = stream as! CpuStream
+        stream.queue {
+            self.data.copyMemory(from: buffer.baseAddress!,
+                                 byteCount: buffer.count)
+        }
 	}
 
 	// copy(to buffer
 	public func copy(to buffer: UnsafeMutableRawBufferPointer,
                      using stream: DeviceStream) throws {
+        assert(buffer.baseAddress != nil)
+        assert(count == buffer.count, "buffer sizes don't match")
+        let dataBuffer = UnsafeRawBufferPointer(start: self.data,
+                                                count: self.count)
+        buffer.copyMemory(from: dataBuffer)
 	}
 
 	// copyAsync(to buffer
 	public func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                           using stream: DeviceStream) throws {
+        assert(buffer.baseAddress != nil)
+        assert(count == buffer.count, "buffer sizes don't match")
+        let stream = stream as! CpuStream
+        stream.queue {
+            let dataBuffer = UnsafeRawBufferPointer(start: self.data,
+                                                    count: self.count)
+            buffer.copyMemory(from: dataBuffer)
+        }
 	}
 }

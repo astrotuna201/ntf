@@ -172,7 +172,7 @@ public protocol DeviceArray: ObjectTracking, Logger {
 
     //-------------------------------------
     /// clears the array to zero
-    func zero(using stream: DeviceStream?) throws
+    func zero(using stream: DeviceStream) throws
     /// asynchronously copies the contents of another device array
     func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
     /// asynchronously copies the contents of an app memory buffer

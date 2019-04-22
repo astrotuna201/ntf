@@ -184,7 +184,7 @@ class test_DataMigration: XCTestCase {
 //
 //            // sum device 0 copy should be 15
 //            var sum = using(stream[0]) {
-//                matrix.asum().scalarValue()
+//                matrix.sum().scalarValue()
 //            }
 //            XCTAssert(sum == 15.0)
 //
@@ -194,7 +194,7 @@ class test_DataMigration: XCTestCase {
 //
 //            // sum device 1 copy should be 15
 //            sum = using(stream[1]) {
-//                matrix.asum().scalarValue()
+//                matrix.sum().scalarValue()
 //            }
 //            XCTAssert(sum == 15.0)
 //
@@ -205,7 +205,7 @@ class test_DataMigration: XCTestCase {
 //
 //            // sum device 1 copy should be 15
 //            sum = using(stream[1]) {
-//                matrix.asum().scalarValue()
+//                matrix.sum().scalarValue()
 //            }
 //            XCTAssert(sum == 15.0)
 //
@@ -272,7 +272,7 @@ class test_DataMigration: XCTestCase {
 //
 //            // sum device 0 copy should be 15
 //            var sum = DataView(count: 1)
-//            try stream[0].asum(x: data1.flattened(), result: &sum)
+//            try stream[0].sum(x: data1.flattened(), result: &sum)
 //            var sumValue: Float = try sum.get()
 //            XCTAssert(sumValue == 15.0)
 //
@@ -280,7 +280,7 @@ class test_DataMigration: XCTestCase {
 //            try stream[0].fill(data: &data1, with: 0)
 //
 //            // sum device 1 copy should now also be 0
-//            try stream[1].asum(x: data1.flattened(), result: &sum)
+//            try stream[1].sum(x: data1.flattened(), result: &sum)
 //            sumValue = try sum.get()
 //            XCTAssert(sumValue == 0.0)
 //        } catch {

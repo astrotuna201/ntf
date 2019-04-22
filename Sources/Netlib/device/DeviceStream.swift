@@ -258,7 +258,7 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `x**y`
     func pow<T>(x: T, y: T, result: inout T)
-        where T: TensorView, T.Scalar: AnyFloatingPoint
+        where T: TensorView, T.Scalar: AnyNumeric
     /// Product of the input elements to produce a scalar
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce

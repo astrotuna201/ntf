@@ -241,14 +241,7 @@ public extension CpuStream {
     // TODO something is wrong, I shouldn't need to do this to interface
     // with math functions
     func pow<T>(x: T, y: T, result: inout T) where
-        T : TensorView, T.Scalar == Float {
-            
-        var resultRef = tryCatch { try result.reference() }
-        queue { zip(x, y).map(to: &resultRef) { powf($0, $1) } }
-    }
-
-    func pow<T>(x: T, y: T, result: inout T) where
-        T : TensorView, T.Scalar : AnyFloatingPoint {
+        T : TensorView, T.Scalar : AnyNumeric {
             
         var resultRef = tryCatch { try result.reference() }
         queue {

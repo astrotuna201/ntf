@@ -96,7 +96,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Scalar: AnyNumeric
 {
     _Streams.current.pow(x: x, y: y, result: &result)
 }
@@ -109,14 +109,14 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Scalar: AnyNumeric
 {
     var result = T.init(shapedLike: x)
     pow(x, y, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Scalar: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -129,7 +129,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
         return result
     }
 }
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Scalar: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -143,7 +143,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
     }
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Scalar: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.

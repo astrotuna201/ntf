@@ -14,7 +14,7 @@ import Foundation
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: FloatingPoint
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     _Streams.current.log(x: x, result: &result)
 }
@@ -25,14 +25,14 @@ public func log<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
 public func log<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: FloatingPoint
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     var result = T.init(shapedLike: x)
     log(x, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint {
+public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -54,7 +54,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: FloatingPoint
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     _Streams.current.logSoftmax(x: x, result: &result)
 }
@@ -65,14 +65,14 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: FloatingPoint
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     var result = T.init(shapedLike: x)
     logSoftmax(x, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint {
+public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -96,7 +96,7 @@ public extension TensorView where Self.Scalar: FloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     _Streams.current.pow(x: x, y: y, result: &result)
 }
@@ -109,14 +109,14 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Scalar: AnyFloatingPoint
 {
     var result = T.init(shapedLike: x)
     pow(x, y, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -129,7 +129,7 @@ public extension TensorView where Self.Scalar: Numeric {
         return result
     }
 }
-public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
+public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -143,7 +143,7 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyNumeric {
     }
 }
 
-public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.

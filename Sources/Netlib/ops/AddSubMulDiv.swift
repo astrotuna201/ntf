@@ -245,7 +245,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Scalar: FloatingPoint
 {
     _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -257,14 +257,14 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Scalar: FloatingPoint
 {
     var result = T.init(shapedLike: lhs)
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Scalar: FloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -284,19 +284,6 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
-        return div(lhs, scalarTensor)
-    }
-}
-
-public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
-    /// operator (Self - scalar)
-    /// - Parameter lhs: left hand tensor
-    /// - Parameter rhs: right hand scalar. If the extents are smaller than
-    ///   `lhs` then broadcasting is performed via repeated indexing.
-    /// - Returns: a new tensor containing the result
-    @inlinable @inline(__always)
-    static func / <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
         let scalarTensor = Self.init(Scalar(any: rhs))
         return div(lhs, scalarTensor)
     }

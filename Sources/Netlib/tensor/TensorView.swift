@@ -611,6 +611,22 @@ public extension Zip2Sequence {
     }
 }
 
+public extension Sequence {
+    @inlinable
+    func map<T>(to result: inout T, _ transform: (Element) -> T.Scalar)
+        where T: TensorView {
+            
+        var iterator = self.makeIterator()
+        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
+        
+        for i in mutableValues.startIndex..<mutableValues.endIndex {
+            if let pair = iterator.next() {
+                mutableValues[i] = transform(pair)
+            }
+        }
+    }
+}
+
 //==============================================================================
 // zip
 public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
@@ -625,12 +641,19 @@ public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
 //==============================================================================
 // reduce
 public extension Sequence {
-    func reduce<T>(to: T, _ initialResult: T.Scalar,
-    _ nextPartialResult: (T.Scalar, Element) throws -> T.Scalar) rethrows
-        where T: TensorView
+    func reduce<T>(to result: inout T,
+                   _ initialResult: T.Scalar,
+                   _ nextPartialResult: (T.Scalar, T.Scalar) throws
+        -> T.Scalar) rethrows where
+        T: TensorView, T.Scalar == Self.Element
     {
-    fatalError()
-    
+        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
+        var partial = initialResult
+        
+        for value in self {
+            partial = try nextPartialResult(partial, value)
+        }
+        mutableValues[mutableValues.startIndex] = partial
     }
 }
 

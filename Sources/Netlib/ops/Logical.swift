@@ -15,19 +15,22 @@ import Foundation
 @inlinable @inline(__always)
 public func approximatelyEqual<T>(_ lhs: T, _ rhs: T,
                                   result: inout T.BoolView,
-                                  tolerance: Double = 0.00001)
-    where T: TensorView, T.Scalar: FloatingPoint & AnyConvertable
+                                  tolerance: Double = 0.00001) where
+    T: TensorView, T.Scalar: AnyFloatingPoint,
+    T.BoolView.Scalar == Bool
 {
-    let toleranceTensor = ScalarValue(T.Scalar(any: tolerance))
     _Streams.current.approximatelyEqual(lhs: lhs, rhs: rhs,
-                                        tolerance: toleranceTensor,
+                                        tolerance: T.Scalar(any: tolerance),
                                         result: &result)
 }
 
 /// returns new view
 /// - Parameter rhs: right hand tensor
 /// - Returns: a new tensor containing the result
-public extension TensorView where Self.Scalar: FloatingPoint & AnyConvertable {
+public extension TensorView where
+    Self.Scalar: AnyFloatingPoint,
+    Self.BoolView.Scalar == Bool
+{
     @inlinable @inline(__always)
     func approximatelyEqual(to rhs: Self,
                             tolerance: Double = 0.00001) -> Self.BoolView {

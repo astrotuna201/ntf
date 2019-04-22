@@ -6,7 +6,7 @@ import XCTest
 import Foundation
 @testable import Netlib
 
-class test_Stream: XCTestCase {
+class test_StreamOps: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [

@@ -110,9 +110,10 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView, T.Scalar == Bool
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
-                               tolerance: ScalarValue<T.Scalar>,
-                               result: inout T.BoolView)
-        where T: TensorView, T.Scalar: FloatingPoint
+                               tolerance: T.Scalar,
+                               result: inout T.BoolView) where
+        T: TensorView, T.Scalar: AnyFloatingPoint,
+        T.BoolView.Scalar == Bool
     /// Returns the indices of the maximum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter x: the tensor value
@@ -135,7 +136,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric & Comparable
+        T: TensorView, T.Scalar: AnyNumeric
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output
@@ -160,7 +161,7 @@ public protocol StreamIntrinsicsProtocol {
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     func div<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Scalar: Numeric
+        where T: TensorView, T.Scalar: FloatingPoint
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
@@ -196,7 +197,7 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `log`
     func log<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes the element-wise `!x`
     func logicalNot<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar == Bool
@@ -257,7 +258,7 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `x**y`
     func pow<T>(x: T, y: T, result: inout T)
-        where T: TensorView, T.Scalar: Numeric
+        where T: TensorView, T.Scalar: AnyFloatingPoint
     /// Product of the input elements to produce a scalar
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce

@@ -69,7 +69,7 @@ public protocol AnyConvertable: AnyScalar {
 
 public protocol AnyNumeric: AnyConvertable, AnyFixedSizeScalar, Numeric {}
 public protocol AnyInteger: AnyNumeric {}
-public protocol AnyFloatingPoint: AnyNumeric {}
+public protocol AnyFloatingPoint: FloatingPoint, AnyNumeric {}
 
 //------------------------------------------------------------------------------
 extension Int8: AnyInteger {

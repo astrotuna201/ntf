@@ -4,6 +4,10 @@
 //
 import Foundation
 
+
+///****** THESE NEED TO BE SMOOTHER!!
+///       work is in flux
+
 public extension CpuStream {
     func abs<T>(x: T, result: inout T) where T : TensorView, T.Scalar : SignedNumeric {
         
@@ -16,16 +20,52 @@ public extension CpuStream {
         }
     }
     
+    //--------------------------------------------------------------------------
+    /// all
     func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar == Bool {
-        
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            let values = try x.values()
+            let buffer = try resultRef.readWrite()
+            for value in values {
+                if !value {
+                    buffer[0] = false
+                    return
+                }
+            }
+            buffer[0] = true
+        }
     }
     
+    //--------------------------------------------------------------------------
+    /// any
     func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar == Bool {
-        
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            let values = try x.values()
+            let buffer = try resultRef.readWrite()
+            for value in values {
+                if value {
+                    buffer[0] = true
+                    return
+                }
+            }
+            buffer[0] = false
+        }
     }
     
-    func approximatelyEqual<T>(lhs: T, rhs: T, tolerance: ScalarValue<T.Scalar>, result: inout T.BoolView) where T : TensorView, T.Scalar : FloatingPoint {
-        
+    //--------------------------------------------------------------------------
+    /// approximatelyEqual
+    func approximatelyEqual<T>(lhs: T, rhs: T,
+                               tolerance: T.Scalar,
+                               result: inout T.BoolView) where
+        T : TensorView, T.Scalar : AnyFloatingPoint,
+        T.BoolView.Scalar == Bool
+    {
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            zip(lhs, rhs).map(to: &resultRef) { $0.0 - $0.1 <= tolerance }
+        }
     }
     
     func argmax<T>(x: T, axes: Vector<IndexScalar>?, result: inout T.IndexView) where T : TensorView, T.Scalar : Numeric, T.IndexView.Scalar == IndexScalar {
@@ -37,11 +77,13 @@ public extension CpuStream {
     }
     
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T)
-        where T : TensorView, T.Scalar : Numeric & Comparable {
-            
-//        var resultRef = tryCatch { try result.reference() }
+        where T : TensorView, T.Scalar : AnyNumeric {
+        var resultRef = tryCatch { try result.reference() }
         queue {
-//            x.values().reduce(to: &resultRef) { Foundation.abs($0) }
+            try x.values().reduce(to: &resultRef, T.Scalar.zero) {
+                // TODO: can't seem to call Foundation.abs($1)
+                $0 + $1
+            }
         }
     }
     
@@ -65,8 +107,11 @@ public extension CpuStream {
         
     }
     
-    func div<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+    func div<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            zip(lhs, rhs).map(to: &resultRef) { $0 / $1 }
+        }
     }
     
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where T : TensorView {
@@ -125,8 +170,11 @@ public extension CpuStream {
         
     }
     
-    func log<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
-        
+    func log<T>(x: T, result: inout T) where T : TensorView, T.Scalar : AnyFloatingPoint {
+        var resultRef = tryCatch { try result.reference() }
+        queue { try x.values().map(to: &resultRef) {
+            T.Scalar(any: Foundation.log($0.asDouble)) }
+        }
     }
     
     func logicalNot<T>(x: T, result: inout T) where T : TensorView, T.Scalar == Bool {
@@ -174,7 +222,10 @@ public extension CpuStream {
     }
     
     func mul<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            zip(lhs, rhs).map(to: &resultRef) { $0 * $1 }
+        }
     }
     
     func neg<T>(x: T, result: inout T) where T : TensorView, T.Scalar : SignedNumeric {
@@ -184,13 +235,37 @@ public extension CpuStream {
     func notEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where T : TensorView, T.Scalar : Numeric {
         
     }
-    
-    func pow<T>(x: T, y: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+
+    //--------------------------------------------------------------------------
+    // pow
+    // TODO something is wrong, I shouldn't need to do this to interface
+    // with math functions
+    func pow<T>(x: T, y: T, result: inout T) where
+        T : TensorView, T.Scalar == Float {
+            
+        var resultRef = tryCatch { try result.reference() }
+        queue { zip(x, y).map(to: &resultRef) { powf($0, $1) } }
     }
-    
-    func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+
+    func pow<T>(x: T, y: T, result: inout T) where
+        T : TensorView, T.Scalar : AnyFloatingPoint {
+            
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            zip(x, y).map(to: &resultRef) {
+                T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // prod
+    func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
+        T : TensorView, T.Scalar : Numeric {
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            try x.values().reduce(to: &resultRef, T.Scalar.zero) { $0 * $1 }
+        }
     }
     
     func rsqrt<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
@@ -222,11 +297,18 @@ public extension CpuStream {
     }
     
     func subtract<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            zip(lhs, rhs).map(to: &resultRef) { $0 - $1 }
+        }
     }
     
-    func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        
+    func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
+        T : TensorView, T.Scalar : Numeric {
+        var resultRef = tryCatch { try result.reference() }
+        queue {
+            try x.values().reduce(to: &resultRef, T.Scalar.zero) { $0 + $1 }
+        }
     }
     
     func tan<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {

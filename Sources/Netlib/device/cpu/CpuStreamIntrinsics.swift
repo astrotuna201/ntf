@@ -148,10 +148,26 @@ public extension CpuStream {
         }
     }
     
-    func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where T : TensorView {
-        
+    //--------------------------------------------------------------------------
+    /// equal
+    func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
+        T : TensorView, T.BoolView.Scalar == Bool {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0 == $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
+        }
     }
     
+    //--------------------------------------------------------------------------
+    /// exp
     func exp<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
         
     }

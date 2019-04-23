@@ -110,6 +110,7 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_perfVector
     func test_perfVector() {
+        #if RELEASE
         let count: Int32 = 512 * 512
         let vector = Vector<Int32>(scalars: [Int32](0..<count))
         //            try print(vector.formatted(numberFormat: (2,0)))
@@ -118,6 +119,7 @@ class test_IterateView: XCTestCase {
         self.measure {
             for _ in values {}
         }
+        #endif
     }
 
     //==========================================================================

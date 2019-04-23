@@ -31,7 +31,7 @@ import Foundation
 public protocol TensorView: Logging, Equatable, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
-    associatedtype Scalar: DefaultInitializer
+    associatedtype Scalar: ScalarConformance
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -100,7 +100,7 @@ public protocol TensorView: Logging, Equatable, DefaultInitializer {
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexScalar = Int32
 
-public typealias ScalarConformance = DefaultInitializer
+public typealias ScalarConformance = Equatable & DefaultInitializer
 
 //==============================================================================
 // TensorView default implementation
@@ -273,32 +273,6 @@ public extension TensorView {
         return dataShape.elementSpanCount * MemoryLayout<Scalar>.size
     }
 
-    //--------------------------------------------------------------------------
-    /// Equal values
-    /// performs an element wise value comparison
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        if lhs.tensorData === rhs.tensorData {
-            // If they both reference the same tensorData then compare the views
-            return
-                lhs.viewDataOffset == rhs.viewDataOffset &&
-                lhs.shape == rhs.shape
-            
-        } else if lhs.shape.extents == rhs.shape.extents {
-            // if the extents are equal then compare values
-            // TODO use Ops
-            fatalError("Not implemented")
-        } else {
-            return false
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    /// Equal references
-    /// `true` if the views reference the same elements
-    static func === (lhs: Self, rhs: Self) -> Bool {
-        return lhs.tensorData === rhs.tensorData && lhs == rhs
-    }
-    
     //--------------------------------------------------------------------------
     /// copyIfMutates
     /// Creates a copy of the tensorData if read-write access will cause mutation
@@ -588,6 +562,37 @@ public extension TensorView {
     }
 }
 
+public extension TensorView where Self.BoolView.Scalar == Bool {
+    //==========================================================================
+    /// Equal values
+    /// performs an element wise value comparison
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        if lhs.tensorData === rhs.tensorData {
+            // If they both reference the same tensorData then compare the views
+            return
+                lhs.viewDataOffset == rhs.viewDataOffset &&
+                    lhs.shape == rhs.shape
+            
+        } else if lhs.shape.extents == rhs.shape.extents {
+            // if the extents are equal then compare values
+            var result = Self.BoolView.init(shapedLike: lhs)
+            equal(lhs: lhs, rhs: rhs, result: &result)
+            return result.all().scalarValue()
+        } else {
+            return false
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// Equal references
+    /// `true` if the views reference the same elements
+    static func === (lhs: Self, rhs: Self) -> Bool {
+        return lhs.tensorData === rhs.tensorData && lhs == rhs
+    }
+}
+
+//==============================================================================
+//
 public extension TensorView where Scalar: FloatingPoint {
     //--------------------------------------------------------------------------
     /// isFinite

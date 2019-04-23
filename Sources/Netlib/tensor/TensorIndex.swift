@@ -312,10 +312,14 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
             let currentIsPad = parentIsPad || current < beforeSpan
             
             // find initial data starting point
-            dataCurrent +=
-                ((initialIndex[dim] - padding[padIndex].before) %
-                    dataShape.extents[dim]) * dataShape.strides[dim]
-
+            if currentIsPad {
+                dataCurrent = 0
+            } else {
+                dataCurrent +=
+                    ((initialIndex[dim] - padding[padIndex].before) %
+                        dataShape.extents[dim]) * dataShape.strides[dim]
+            }
+            
             // setup the initial position relative to the data view
             let dataCurrent = dataCurrent
             let dataSpan = dataShape.extents[dim] * dataShape.strides[dim]

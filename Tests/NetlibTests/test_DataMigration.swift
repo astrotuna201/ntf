@@ -354,18 +354,23 @@ class test_DataMigration: XCTestCase {
     //--------------------------------------------------------------------------
     // test_columnMajorDataView
     // NOTE: uses the default stream
+    //   0, 1,
+    //   2, 3,
+    //   4, 5
     func test_columnMajorDataView() {
-        let cmArray: [Int32] = [0, 3, 1, 4, 2, 5]
+        let cmArray: [Int32] = [0, 2, 4, 1, 3, 5]
+        let expected = (0..<cmArray.count).map { Int32($0) }
+
         let cmMatrix = Matrix<Int32>(extents: [3, 2],
                                      isColMajor: true,
                                      scalars: cmArray)
-        let expected = (0..<cmMatrix.shape.elementCount).map { Int32($0) }
-        let rowMajorValues = [Int32](cmMatrix.values())
-        XCTAssert(rowMajorValues == expected, "values don't match")
+        
+        let cmMatrixValues = [Int32](cmMatrix.values())
+        XCTAssert(cmMatrixValues == expected, "values don't match")
         
         // create row major view from cmData, this will copy and reorder
-        let rmMatrix = Matrix<Int32>(extents: [3, 2], scalars: cmArray.values())
-        let rowMajorValues2 = [Int32](rmMatrix.values())
-        XCTAssert(rowMajorValues2 == expected, "values don't match")
+        let rmMatrix = Matrix<Int32>(extents: [3, 2], scalars: cmMatrixValues)
+        let rowMajorValues = [Int32](rmMatrix.values())
+        XCTAssert(rowMajorValues == expected, "values don't match")
     }
 }

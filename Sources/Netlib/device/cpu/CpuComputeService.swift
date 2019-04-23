@@ -34,7 +34,7 @@ public class CpuComputeService : LocalComputeService {
 
         // add cpu device
         devices.append(CpuDevice(service: self, deviceId: 0,
-                                 logInfo: logInfo.child("cpu:0"),
+                                 logInfo: logInfo.flat("cpu:0"),
                                  memoryAddressing: .unified))
         
         // pointer to instance error handler function
@@ -74,17 +74,17 @@ public class CpuUnitTestComputeService : LocalComputeService {
         
         // add cpu device
         devices.append(CpuDevice(service: self, deviceId: 0,
-                                 logInfo: logInfo.child("cpu:0"),
+                                 logInfo: logInfo.flat("cpu:0"),
                                  memoryAddressing: .unified))
         
         // add two discreet versions for unit testing
         // TODO is there a better solution for testing
         devices.append(CpuDevice(service: self, deviceId: 1,
-                                 logInfo: logInfo.child("cpu:1"),
+                                 logInfo: logInfo.flat("cpu:1"),
                                  memoryAddressing: .discreet))
         
         devices.append(CpuDevice(service: self, deviceId: 2,
-                                 logInfo: logInfo.child("cpu:2"),
+                                 logInfo: logInfo.flat("cpu:2"),
                                  memoryAddressing: .discreet))
         
         // pointer to instance error handler function

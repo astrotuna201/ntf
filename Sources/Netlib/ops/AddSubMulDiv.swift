@@ -22,7 +22,6 @@
 ///     let m = Matrix<Float>()
 ///     let x = m + 1
 import Foundation
-import TensorFlow
 
 infix operator ++  : AdditionPrecedence
 infix operator .<  : ComparisonPrecedence

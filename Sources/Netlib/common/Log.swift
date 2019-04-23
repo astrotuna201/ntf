@@ -28,6 +28,14 @@ public struct LogInfo {
                        namePath: "\(namePath)/\(name)",
                        nestingLevel: nestingLevel + 1)
     }
+    /// a helper to create logging info for an object in a flat
+    /// reporting structure
+    public func flat(_ name: String) -> LogInfo {
+        return LogInfo(log: log,
+                       logLevel: .error,
+                       namePath: "\(namePath)/\(name)",
+                       nestingLevel: nestingLevel)
+    }
 }
 
 //==============================================================================

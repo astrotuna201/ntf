@@ -41,7 +41,8 @@ final public class TensorData: ObjectTracking, Logging {
     /// like a memory mapped file without copying it.
     private var hostVersion = -1
     private var hostBuffer: UnsafeMutableRawBufferPointer!
-    public  let byteCount: Int
+    public let byteCount: Int
+    public let elementCount: Int
 
     //-----------------------------------
     // stream sync
@@ -89,7 +90,7 @@ final public class TensorData: ObjectTracking, Logging {
 
     // Empty
     public convenience init() {
-        self.init(byteCount: 0, name: "")
+        self.init(type: UInt8.self, count: 0, name: "")
     }
 
     //----------------------------------------
@@ -100,6 +101,7 @@ final public class TensorData: ObjectTracking, Logging {
                 name: String) {
         // store
         isReadOnlyReference = true
+        elementCount = buffer.count
         byteCount = buffer.count
         masterVersion = 0
         hostVersion = 0
@@ -116,6 +118,7 @@ final public class TensorData: ObjectTracking, Logging {
     // copy from buffer
     public init(buffer: UnsafeRawBufferPointer, name: String) {
         isReadOnlyReference = false
+        elementCount = buffer.count
         byteCount = buffer.count
         self.name = name
 
@@ -133,20 +136,12 @@ final public class TensorData: ObjectTracking, Logging {
     // create new array based on scalar size
     public init<Scalar>(type: Scalar.Type, count: Int, name: String) {
         isReadOnlyReference = false
+        self.elementCount = count
         self.byteCount = count * MemoryLayout<Scalar>.size
         self.name = name
         register()
     }
     
-    //----------------------------------------
-    // create new array based on byte count
-    public init(byteCount: Int, name: String) {
-        isReadOnlyReference = false
-        self.byteCount = byteCount
-        self.name = name
-        register()
-    }
-
     //----------------------------------------
     // object lifetime tracking for leak detection
     private func register() {
@@ -156,7 +151,7 @@ final public class TensorData: ObjectTracking, Logging {
 
         if byteCount > 0 {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
-                    "bytes[\(byteCount)]", categories: .dataAlloc)
+                    "elements[\(elementCount)]", categories: .dataAlloc)
         }
     }
 
@@ -179,7 +174,7 @@ final public class TensorData: ObjectTracking, Logging {
 
         if byteCount > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) " +
-                "bytes: \(byteCount)", categories: .dataAlloc)
+                "elements[\(elementCount)]", categories: .dataAlloc)
         }
     }
 
@@ -190,21 +185,17 @@ final public class TensorData: ObjectTracking, Logging {
         // init
         isReadOnlyReference = other.isReadOnlyReference
         byteCount = other.byteCount
+        elementCount = other.byteCount
         name = other.name
         masterVersion = 0
         hostVersion = masterVersion
         register()
         
-        if willLog(level: .diagnostic) {
-            var message =
-                "\(createString) \(name)(\(trackingId)) init with" +
-                "\(setText(" copy ", color: .blue))" +
-                "of TensorData(\(other.trackingId)) bytes[\(other.byteCount)]"
-            if let stream = stream {
-                message += "on \(stream.name)"
-            }
-            diagnostic(message, categories: [.dataAlloc, .dataCopy])
-        }
+        diagnostic(
+            "\(createString) \(name)(\(trackingId)) init" +
+            "\(setText(" copying ", color: .blue))" +
+            "TensorData(\(other.trackingId)) elements[\(elementCount)]",
+            categories: [.dataAlloc, .dataCopy])
         
         if isReadOnlyReference {
             // point to external data buffer, such as memory mapped file
@@ -222,7 +213,13 @@ final public class TensorData: ObjectTracking, Logging {
                 try stream.sync(with: otherMaster.stream,
                                 event: getSyncEvent(using: stream))
                 try array.copyAsync(from: otherMaster.array, using: stream)
-                
+
+                diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                    "\(otherMaster.stream.device.name)" +
+                    "\(setText(" --> ", color: .blue))" +
+                    "\(stream.device.name)_s\(stream.id) " +
+                    "elements[\(elementCount)]",
+                    categories: .dataCopy)
             } else {
                 // uma to device
                 try array.copyAsync(from: other.readOnlyHostBuffer(),
@@ -341,7 +338,7 @@ final public class TensorData: ObjectTracking, Logging {
         } else {
             // create the device array
             diagnostic("\(allocString) \(name)(\(trackingId)) " +
-                "device array on \(device.name)  bytes[\(byteCount)]",
+                "device array on \(device.name) elements[\(elementCount)]",
                 categories: .dataAlloc)
             
             let array = try device.createArray(count: byteCount)
@@ -356,7 +353,7 @@ final public class TensorData: ObjectTracking, Logging {
     // createHostArray
     private func createHostArray() throws {
         diagnostic("\(allocString) \(name)(\(trackingId)) " +
-            "host array  bytes[\(byteCount)]", categories: .dataAlloc)
+            "host array elements[\(elementCount)]", categories: .dataAlloc)
         hostVersion = -1
         hostBuffer = UnsafeMutableRawBufferPointer.allocate(
             byteCount: byteCount,
@@ -368,7 +365,7 @@ final public class TensorData: ObjectTracking, Logging {
     private func releaseHostArray() {
         assert(!isReadOnlyReference)
         diagnostic("\(releaseString) \(name) TensorData(\(trackingId)) " +
-            "host array  bytes[\(byteCount)]", categories: .dataAlloc)
+            "host array elements[\(elementCount)]", categories: .dataAlloc)
         hostBuffer.deallocate()
         hostBuffer = nil
     }
@@ -401,7 +398,7 @@ final public class TensorData: ObjectTracking, Logging {
             // copy host data to device if it exists and is needed
             diagnostic("\(copyString) \(name)(\(trackingId)) host" +
                 "\(setText(" --> ", color: .blue))" +
-                "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
+                "\(stream.device.name)_s\(stream.id) elements[\(elementCount)]",
                 categories: .dataCopy)
 
             try array.copyAsync(from: UnsafeRawBufferPointer(hostBuffer!),
@@ -437,8 +434,8 @@ final public class TensorData: ObjectTracking, Logging {
         if hostVersion != masterVersion {
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(master.stream.device.name)_s\(master.stream.id)" +
-                "\(setText(" --> ", color: .blue))host " +
-                "  bytes[\(byteCount)]", categories: .dataCopy)
+                "\(setText(" --> ", color: .blue))host" +
+                " elements[\(elementCount)]", categories: .dataCopy)
 
             // synchronous copy
             try master.array.copy(to: hostBuffer, using: master.stream)
@@ -475,7 +472,8 @@ final public class TensorData: ObjectTracking, Logging {
                     diagnostic("\(copyString) \(name)(\(trackingId)) " +
                         "\(master.stream.device.name)" +
                         "\(setText(" --> ", color: .blue))" +
-                        "\(stream.device.name)_s\(stream.id)  bytes[\(byteCount)]",
+                        "\(stream.device.name)_s\(stream.id) " +
+                        "elements[\(elementCount)]",
                         categories: .dataCopy)
                     try array.copyAsync(from: master.array, using: stream)
                     lastAccessCopiedBuffer = true

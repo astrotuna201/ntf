@@ -3,7 +3,6 @@
 //  Copyright © 2016 Edward Connell. All rights reserved.
 //
 import Foundation
-import TensorFlow
 
 //==============================================================================
 // TensorShape
@@ -259,16 +258,16 @@ public struct Padding: Equatable, Codable {
     }
 }
 
-//==============================================================================
-// Legacy TensorFlow.TensorShape
-public extension DataShape {
-    init(legacy shape: TensorFlow.TensorShape) {
-        self.init(extents: shape.dimensions.map { Int($0) })
-    }
-}
-
-public extension TensorFlow.TensorShape {
-    init(_ shape: Netlib.DataShape) {
-        self = TensorFlow.TensorShape(shape.extents)
-    }
-}
+////==============================================================================
+//// Legacy TensorFlow.TensorShape
+//public extension DataShape {
+//    init(legacy shape: TensorFlow.TensorShape) {
+//        self.init(extents: shape.dimensions.map { Int($0) })
+//    }
+//}
+//
+//public extension TensorFlow.TensorShape {
+//    init(_ shape: Netlib.DataShape) {
+//        self = TensorFlow.TensorShape(shape.extents)
+//    }
+//}

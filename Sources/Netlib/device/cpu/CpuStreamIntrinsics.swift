@@ -14,43 +14,61 @@ public extension CpuStream {
     }
     
     func add<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            zip(lhs, rhs).map(to: &resultRef) { $0 + $1 }
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0 + $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
     //--------------------------------------------------------------------------
     /// all
-    func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar == Bool {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            let values = try x.values()
-            let buffer = try resultRef.readWrite()
-            for value in values {
-                if !value {
-                    buffer[0] = false
+    func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
+        T : TensorView, T.Scalar == Bool
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            let result = try resultRef.readWrite()
+            let x = try x.deviceValues(using: self)
+            queue {
+                for value in x where !value {
+                    result[0] = false
                     return
                 }
+                result[0] = true
             }
-            buffer[0] = true
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
     //--------------------------------------------------------------------------
     /// any
-    func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where T : TensorView, T.Scalar == Bool {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            let values = try x.values()
-            let buffer = try resultRef.readWrite()
-            for value in values {
-                if value {
-                    buffer[0] = true
+    func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
+        T : TensorView, T.Scalar == Bool
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            let result = try resultRef.readWrite()
+            let x = try x.deviceValues(using: self)
+            queue {
+                for value in x where value {
+                    result[0] = true
                     return
                 }
+                result[0] = false
             }
-            buffer[0] = false
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -62,9 +80,17 @@ public extension CpuStream {
         T : TensorView, T.Scalar : AnyFloatingPoint,
         T.BoolView.Scalar == Bool
     {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            zip(lhs, rhs).map(to: &resultRef) { $0.0 - $0.1 <= tolerance }
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0.0 - $0.1 <= tolerance }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -78,9 +104,9 @@ public extension CpuStream {
     
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T)
         where T : TensorView, T.Scalar : AnyNumeric {
-        var resultRef = tryCatch { try result.reference() }
+        var resultRef = tryCatch { try result.reference(using: self) }
         queue {
-            try x.values().reduce(to: &resultRef, T.Scalar.zero) {
+            try x.deviceValues(using: self).reduce(to: &resultRef, T.Scalar.zero) {
                 // TODO: can't seem to call Foundation.abs($1)
                 $0 + $1
             }
@@ -108,9 +134,17 @@ public extension CpuStream {
     }
     
     func div<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            zip(lhs, rhs).map(to: &resultRef) { $0 / $1 }
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0 / $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -125,28 +159,38 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// fill(x:with:
     func fill<T>(x: inout T, with value: T.Scalar) where T : TensorView {
-        var xref = tryCatch { try x.reference() }
-        queue {
+        guard lastError == nil else { return }
+        do {
+            var xref = try x.reference(using: self)
             var values = try xref.mutableDeviceValues(using: self)
-            for i in values.startIndex..<values.endIndex {
-                values[i] = value
+            queue {
+                for index in values.indices {
+                    values[index] = value
+                }
             }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
     //--------------------------------------------------------------------------
     /// fillWithIndex(x:startAt:
-    func fillWithIndex<T>(x: inout T, startAt: Int) where
+    func fillWithIndex<T>(result: inout T, startAt: Int) where
         T : TensorView, T.Scalar: AnyNumeric
     {
-        var xref = tryCatch { try x.reference() }
-        queue {
-            var values = try xref.mutableDeviceValues(using: self)
-            var value = startAt
-            for i in values.startIndex..<values.endIndex {
-                values[i] = T.Scalar(any: value)
-                value += 1
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var values = try resultRef.mutableDeviceValues(using: self)
+            queue {
+                var value = startAt
+                for index in values.indices {
+                    values[index] = T.Scalar(any: value)
+                    value += 1
+                }
             }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
 
@@ -171,8 +215,8 @@ public extension CpuStream {
     }
     
     func log<T>(x: T, result: inout T) where T : TensorView, T.Scalar : AnyFloatingPoint {
-        var resultRef = tryCatch { try result.reference() }
-        queue { try x.values().map(to: &resultRef) {
+        var resultRef = tryCatch { try result.reference(using: self) }
+        queue { try x.deviceValues(using: self).map(to: &resultRef) {
             T.Scalar(any: Foundation.log($0.asDouble)) }
         }
     }
@@ -222,9 +266,17 @@ public extension CpuStream {
     }
     
     func mul<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            zip(lhs, rhs).map(to: &resultRef) { $0 * $1 }
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0 * $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -243,7 +295,7 @@ public extension CpuStream {
     func pow<T>(x: T, y: T, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric {
             
-        var resultRef = tryCatch { try result.reference() }
+        var resultRef = tryCatch { try result.reference(using: self) }
         queue {
             zip(x, y).map(to: &resultRef) {
                 T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
@@ -255,9 +307,9 @@ public extension CpuStream {
     // prod
     func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference() }
+        var resultRef = tryCatch { try result.reference(using: self) }
         queue {
-            try x.values().reduce(to: &resultRef, T.Scalar.zero) { $0 * $1 }
+            try x.deviceValues(using: self).reduce(to: &resultRef, T.Scalar.zero) { $0 * $1 }
         }
     }
     
@@ -290,17 +342,33 @@ public extension CpuStream {
     }
     
     func subtract<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            zip(lhs, rhs).map(to: &resultRef) { $0 - $1 }
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let lhs = try lhs.deviceValues(using: self)
+            let rhs = try rhs.deviceValues(using: self)
+            queue {
+                zip(lhs, rhs).map(to: &results) { $0 - $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
     func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference() }
-        queue {
-            try x.values().reduce(to: &resultRef, T.Scalar.zero) { $0 + $1 }
+        T : TensorView, T.Scalar : Numeric
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let x = try x.deviceValues(using: self)
+            queue {
+                x.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     

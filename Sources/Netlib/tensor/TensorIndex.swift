@@ -5,6 +5,7 @@
 import Foundation
 
 //**** This design is in flux!
+//     I feel it is not fast enough
 
 
 //==============================================================================
@@ -30,14 +31,27 @@ public extension TensorView {
             view: &self, buffer: readWriteDeviceBuffer(using: stream))
     }
     
-    func value(at index: [Int]) throws -> Scalar {
-        let tindex = TensorIndex<Self>(self, at: index, offset: viewDataOffset)
-        return try value(at: tindex)
+    func value(at index: [Int]) -> Scalar {
+        do {
+            let buffer = try readOnly()
+            let padded = shape.padded(with: padding)
+            let tensorIndex = TensorIndex<Self>(self, padded, at: index)
+            return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
+        } catch {
+            _Streams.current.reportDevice(error: error)
+            return Scalar()
+        }
     }
-    
-    func value(at index: TensorIndex<Self>) throws -> Scalar {
-        let buffer = try readOnly()
-        return index.isPad ? padValue : buffer[index.dataIndex]
+
+    mutating func set(value: Scalar, at index: [Int]) {
+        do {
+            let buffer = try readWrite()
+            let padded = shape.padded(with: padding)
+            let tensorIndex = TensorIndex<Self>(self, padded, at: index)
+            buffer[tensorIndex.dataIndex] = value
+        } catch {
+            _Streams.current.reportDevice(error: error)
+        }
     }
 }
 
@@ -129,6 +143,10 @@ public struct TensorViewMutableCollection<View>:
         fatalError()
     }
     
+    public var indices: Range<TensorIndex<View>> {
+        return startIndex..<endIndex
+    }
+
     public func index(after i: TensorIndex<View>) -> TensorIndex<View> {
         return i.increment()
     }
@@ -179,7 +197,7 @@ public struct ExtentPosition {
 
 //==============================================================================
 /// TensorIndex
-public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
+public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
     // properties
     let tensorView: T
     let viewShape: DataShape
@@ -188,6 +206,7 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
     var position = [ExtentPosition]()
     
     // computed properties
+    var viewIndex: Int { return position[lastDimension].view.current }
     var dataIndex: Int { return position[lastDimension].data.current }
     var isPad: Bool { return position[lastDimension].currentIsPad }
     var lastDimension: Int { return viewShape.lastDimension }
@@ -196,12 +215,13 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
     /// start position initializer (faster)
     public init(_ tensorView: T,
                 _ paddedViewShape: DataShape,
-                offset: Int = 0) {
+                at initialIndex: [Int]? = nil) {
         self.tensorView = tensorView
-        currentPosition = offset
+        currentPosition = 0
         viewShape = paddedViewShape
         dataShape = tensorView.dataShape
-        initializePosition()
+        initializePosition(
+            at: initialIndex ?? [Int](repeating: 0, count: viewShape.rank))
     }
 
     /// end position initializer (faster)
@@ -210,12 +230,6 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
         currentPosition = end
         viewShape = tensorView.shape.padded(with: tensorView.padding)
         dataShape = tensorView.dataShape
-    }
-    
-    public convenience init(_ tensorView: T, at: [Int], offset: Int) {
-        self.init(tensorView,
-                  tensorView.shape.padded(with: tensorView.padding),
-                  offset: offset)
     }
     
     // Equatable
@@ -231,13 +245,15 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
     }
     
     public func increment() -> TensorIndex {
-        incrementPosition(dim: lastDimension)
-        return self
+        var next = self
+        next.incrementPosition(dim: lastDimension)
+        return next
     }
     
     public func advanced(by n: Int) -> TensorIndex {
-        for _ in 0..<n { incrementPosition(dim: lastDimension) }
-        return self
+        var next = self
+        for _ in 0..<n { next.incrementPosition(dim: lastDimension) }
+        return next
     }
     
     public func distance(to other: TensorIndex<T>) -> Int {
@@ -250,18 +266,22 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
     /// sets up the first position for indexing. This is only called
     /// once per sequence iteration.
     /// Initialization moves from outer dimension to inner (0 -> rank)
-    func initializePosition() {
+    mutating func initializePosition(at initialIndex: [Int]) {
         assert(viewShape.elementCount > 0)
+        assert(initialIndex.count == viewShape.rank, "rank mismatch")
         
         // get the padding and set an increment if there is more than one
         let padding = tensorView.padding
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
+        var viewCurrent = 0
+        var dataCurrent = tensorView.viewDataOffset
 
         for dim in 0..<viewShape.rank {
             // compute view position
-            let current = 0
             let stride = viewShape.strides[dim]
+            viewCurrent += initialIndex[dim] * stride
+            let current = viewCurrent
             let span = viewShape.extents[dim] * stride
             let end = current + span
             let beforeSpan = current + padding[padIndex].before * stride
@@ -272,10 +292,15 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
             // if index 0 of any dimension is in the pad area, then all
             // contained dimensions are padding as well
             let parentIsPad = dim > 0 && position[dim - 1].currentIsPad
-            let currentIsPad = parentIsPad || beforeSpan > 0
+            let currentIsPad = parentIsPad || current < beforeSpan
             
+            // find initial data starting point
+            dataCurrent +=
+                ((initialIndex[dim] - padding[padIndex].before) %
+                    dataShape.extents[dim]) * dataShape.strides[dim]
+
             // setup the initial position relative to the data view
-            let dataCurrent = tensorView.viewDataOffset
+            let dataCurrent = dataCurrent
             let dataSpan = dataShape.extents[dim] * dataShape.strides[dim]
             let dataEnd = dataCurrent + dataSpan
             let dataPos = ShapePosition(current: dataCurrent,
@@ -292,13 +317,14 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
                 padAfter: afterSpan,
                 padAfterSpan: afterSpan))
         }
+        currentPosition = viewIndex
     }
     
     //==========================================================================
     /// incrementPosition(dim:
     /// increments the current position
     /// Minimal cost per: 4 cmp, 1 inc
-    private func incrementPosition(dim: Int) {
+    private mutating func incrementPosition(dim: Int) {
         //--------------------------------
         // advance the `view` position for this dimension by it's stride
         position[dim].view.current += viewShape.strides[dim]
@@ -347,7 +373,7 @@ public final class TensorIndex<T> : Strideable, Comparable where T: TensorView {
 //        }
 
         // cache the new position to simplify the Compare < function
-        currentPosition = position[dim].view.current
+        currentPosition = viewIndex
 
         // test if the current position is in a padding area
         position[dim].currentIsPad =

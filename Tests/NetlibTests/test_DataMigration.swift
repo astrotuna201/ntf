@@ -13,7 +13,7 @@ class test_DataMigration: XCTestCase {
     static var allTests = [
         ("test_viewMutateOnWrite", test_viewMutateOnWrite),
         ("test_tensorDataMigration", test_tensorDataMigration),
-        //            ("test_mutateOnDevice", test_mutateOnDevice),
+        ("test_mutateOnDevice", test_mutateOnDevice),
         //            ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
         //            ("test_copyOnWriteDevice", test_copyOnWriteDevice),
         //            ("test_copyOnWrite", test_copyOnWrite),
@@ -172,50 +172,85 @@ class test_DataMigration: XCTestCase {
             XCTAssert(stream[0].device.memoryAddressing == .discreet &&
                 stream[1].device.memoryAddressing == .discreet)
 
+            // create a Matrix on device 1 and fill with indexes
+            // memory is only allocated on device 1. This also shows how a
+            // temporary can be used in a scope. No memory is copied.
             var matrix = using(stream[0]) {
                 Matrix<Float>(extents: [3, 2]).filledWithIndex()
             }
-            try print(matrix.formatted(numberFormat: (9,3)))
 
-            let value1 = try matrix.value(at: [1, 1])
+            // retreive value on app thread
+            // memory is allocated in the host app space and the data is copied
+            // from device 1 to the host using stream 0.
+            let value1 = matrix.value(at: [1, 1])
             XCTAssert(value1 == 3.0)
 
-            // force migrate the data to the device0
+            // simulate a readonly kernel access on device 1.
+            // matrix was not previously modified, so it is up to date
+            // and no data movement is necessary
             _ = try matrix.readOnly(using: stream[0])
 
-            // sum device 0 copy should be 15
+            // sum device 1 copy, which should equal 15.
+            // This `sum` syntax creates a temporary result on device 1,
+            // then `scalarValue` causes the temporary to be transferred to
+            // the host, the value is retrieved, and the temp is released.
+            // This syntax is good for experiments, but should not be used
+            // for repetitive actions
             var sum = using(stream[0]) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
-            // copy and force migrate the data to the device1
+            // copy the matrix and simulate a readOnly operation on device2
+            // a device array is allocated on device 2 then the master copy
+            // on device 1 is copied to device 2.
+            // Since device 1 and 2 are in the same service, a device to device
+            // async copy is performed. In the case of Cuda, it would travel
+            // across nvlink and not the PCI bus
             let matrix2 = matrix
             _ = try matrix2.readOnly(using: stream[1])
+            
+            // copy matrix2 and simulate a readWrite operation on device2
+            // this causes copy on write and mutate on device
+            var matrix3 = matrix2
+            _ = try matrix3.readWrite(using: stream[1])
 
             // sum device 1 copy should be 15
+            // `sum` creates a temp result tensor, allocates an array on
+            // device 2, and performs the reduction.
+            // Then `scalarValue` causes a host array to be allocated, and the
+            // the data is copied from device 2 to host, the value is returned
+            // and the temporary tensor is released.
             sum = using(stream[1]) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
-            // clear stream 0 copy
+            // matrix is overwritten with a new array on device 1
             matrix = using(stream[0]) {
-                matrix.fill(with: 0)
+                matrix.filledWithIndex()
             }
-
-            // sum device 1 copy should be 15
+            
+            // sum matrix on device 2
+            // `sum` creates a temporary result tensor on device 2
+            // a device array for `matrix` is allocated on device 2 and
+            // the matrix data is copied from device 1 to device 2
+            // then `scalarValue` creates a host array and the result is
+            // copied from device 2 to the host array, and then the tensor
+            // is released.
             sum = using(stream[1]) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
+            // exiting the scopy, matrix and matrix2 are released along
+            // with all resources on all devices.
         } catch {
             XCTFail(String(describing: error))
         }
     }
 
-//    //----------------------------------------------------------------------------
+//    //--------------------------------------------------------------------------
 //    // test_copyOnWriteDevice
 //    func test_copyOnWriteDevice() {
 //        do {
@@ -249,7 +284,7 @@ class test_DataMigration: XCTestCase {
 //        }
 //    }
 //
-//    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 //    // test_copyOnWriteCrossDevice
 //    func test_copyOnWriteCrossDevice() {
 //        do {

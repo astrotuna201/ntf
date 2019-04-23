@@ -43,7 +43,8 @@ public extension TensorView where Self.Scalar == Bool {
     
     @inlinable @inline(__always)
     func all() -> Self {
-        var result = Self.init(shapedLike: self)
+        let extents = [Int](repeating: 1, count: shape.rank)
+        var result = Self.init(shapedLike: self, with: extents)
         Netlib.all(self, result: &result)
         return result
     }
@@ -102,7 +103,8 @@ public extension TensorView where Self.Scalar: Numeric {
     
     @inlinable @inline(__always)
     func sum() -> Self {
-        var result = Self.init(shapedLike: self)
+        let extents = [Int](repeating: 1, count: shape.rank)
+        var result = Self.init(shapedLike: self, with: extents)
         Netlib.sum(self, result: &result)
         return result
     }

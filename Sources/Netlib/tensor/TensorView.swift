@@ -192,10 +192,23 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// init<T>(shapedLike other:
-    /// convenience initializer used by generics
-    /// - Parameter other: the other object whose shape and logging to use
-    init<T>(shapedLike other: T) where T: TensorView {
-        self.init(shape: other.shape, dataShape: other.shape, name: nil,
+    /// convenience initializer used by generics to create typed result
+    /// views of a matching size.
+    /// - Parameter other: the desired shape
+    init<T>(shapedLike other: T,
+            with extents: [Int]? = nil) where T: TensorView {
+        
+        // create dense shaped view with specified extents or matching other
+        let newShape: DataShape
+        if let extents = extents {
+            newShape = DataShape(extents: extents)
+        } else {
+            newShape = other.shape.dense.padded(with: other.padding)
+        }
+        
+        self.init(shape: newShape,
+                  dataShape: newShape,
+                  name: nil,
                   padding: nil, padValue: nil,
                   tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
@@ -338,18 +351,13 @@ public extension TensorView {
     /// Returns a read only device memory buffer synced with the specified
     /// stream. This version is used by accelerator APIs
     func readOnlyDeviceBuffer(using stream: DeviceStream) throws
-        -> UnsafeBufferPointer<Scalar> {
-        // get the queue, if we reference it directly as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
-        return try queue.sync {
-            tensorData.lastAccessMutatedView = false
-            let buffer = try readOnly(using: stream)
-                .bindMemory(to: Scalar.self,
-                            capacity: dataShape.elementSpanCount)
-            return UnsafeBufferPointer(start: buffer,
-                                       count: dataShape.elementSpanCount)
-        }
+        -> UnsafeBufferPointer<Scalar>
+    {
+        let buffer = try readOnly(using: stream)
+            .bindMemory(to: Scalar.self, capacity: dataShape.elementSpanCount)
+
+        return UnsafeBufferPointer(start: buffer,
+                                   count: dataShape.elementSpanCount)
     }
 
     //--------------------------------------------------------------------------
@@ -388,12 +396,13 @@ public extension TensorView {
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     mutating func readWriteDeviceBuffer(using stream: DeviceStream) throws
-        -> UnsafeMutableBufferPointer<Scalar> {
-            let pointer = try readWrite(using: stream)
-                .bindMemory(to: Scalar.self,
-                            capacity: dataShape.elementSpanCount)
-            return UnsafeMutableBufferPointer<Scalar>(
-                start: pointer, count: dataShape.elementSpanCount)
+        -> UnsafeMutableBufferPointer<Scalar>
+    {
+        let pointer = try readWrite(using: stream)
+            .bindMemory(to: Scalar.self, capacity: dataShape.elementSpanCount)
+        
+        return UnsafeMutableBufferPointer<Scalar>(
+            start: pointer, count: dataShape.elementSpanCount)
     }
     
     //--------------------------------------------------------------------------
@@ -596,32 +605,70 @@ public extension TensorView where Scalar: FloatingPoint {
 //==============================================================================
 // map
 public extension Zip2Sequence {
+    /// map tensors
     @inlinable
-    func map<T>(to result: inout T,
-                _ transform: ((Sequence1.Element, Sequence2.Element))
-        -> T.Scalar) where T: TensorView {
-        var iterator = self.makeIterator()
-        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
+    func map<T: TensorView>(
+        to result: inout T,
+        _ transform: ((Sequence1.Element, Sequence2.Element)) -> T.Scalar)
+    {
+        do {
+            var iterator = self.makeIterator()
+            var results = try result.mutableValues()
+            
+            for i in results.indices {
+                if let pair = iterator.next() {
+                    results[i] = transform(pair)
+                }
+            }
+        } catch {
+            _Streams.current.reportDevice(error: error)
+        }
+    }
 
-        for i in mutableValues.startIndex..<mutableValues.endIndex {
+    /// map to a mutable collection
+    @inlinable
+    func map<Result: MutableCollection>(
+        to result: inout Result,
+        _ transform: ((Sequence1.Element, Sequence2.Element)) -> Result.Element)
+    {
+        var iterator = self.makeIterator()
+        for i in result.indices {
             if let pair = iterator.next() {
-                mutableValues[i] = transform(pair)
+                result[i] = transform(pair)
             }
         }
     }
 }
 
 public extension Sequence {
+    /// map a sequence to a tensor
     @inlinable
-    func map<T>(to result: inout T, _ transform: (Element) -> T.Scalar)
-        where T: TensorView {
+    func map<T: TensorView>(
+        to result: inout T, _ transform: (Element) -> T.Scalar)
+    {
+        do {
+            var iterator = self.makeIterator()
+            var results = try result.mutableValues()
             
+            for i in results.indices {
+                if let value = iterator.next() {
+                    results[i] = transform(value)
+                }
+            }
+        } catch {
+            _Streams.current.reportDevice(error: error)
+        }
+    }
+
+    /// map to a mutable collection
+    @inlinable
+    func map<Result: MutableCollection>(
+        to result: inout Result, _ transform: (Element) -> Result.Element) {
+
         var iterator = self.makeIterator()
-        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
-        
-        for i in mutableValues.startIndex..<mutableValues.endIndex {
-            if let pair = iterator.next() {
-                mutableValues[i] = transform(pair)
+        for i in result.indices {
+            if let value = iterator.next() {
+                result[i] = transform(value)
             }
         }
     }
@@ -633,27 +680,50 @@ public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
     Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
     where T1: TensorView, T2: TensorView
 {
-    let t1values = _Streams.current.tryCatch { try t1.values() }
-    let t2values = _Streams.current.tryCatch { try t2.values() }
-    return zip(t1values, t2values)
+    do {
+        return try zip(t1.values(), t2.values())
+    } catch {
+        _Streams.current.reportDevice(error: error)
+        return zip(TensorViewCollection<T1>(), TensorViewCollection<T2>())
+    }
 }
 
 //==============================================================================
 // reduce
 public extension Sequence {
-    func reduce<T>(to result: inout T,
-                   _ initialResult: T.Scalar,
-                   _ nextPartialResult: (T.Scalar, T.Scalar) throws
-        -> T.Scalar) rethrows where
-        T: TensorView, T.Scalar == Self.Element
+    /// reduce to a tensor
+    func reduce<T>(
+        to result: inout T,
+        _ initialResult: T.Scalar,
+        _ nextPartialResult: (T.Scalar, T.Scalar) throws -> T.Scalar) rethrows
+        where T: TensorView, T.Scalar == Self.Element
     {
-        var mutableValues = _Streams.current.tryCatch { try result.mutableValues() }
+        do {
+            var results = try result.mutableValues()
+            var partial = initialResult
+            for value in self {
+                partial = try nextPartialResult(partial, value)
+            }
+            results[results.startIndex] = partial
+            
+        } catch {
+            _Streams.current.reportDevice(error: error)
+        }
+    }
+
+    /// reduce to a mutable collection
+    @inlinable
+    func reduce<Result: MutableCollection>(
+        to result: inout Result,
+        _ initialResult: Element,
+        _ nextPartialResult: (Element, Element) throws -> Result.Element)
+        rethrows where Self.Element == Result.Element
+    {
         var partial = initialResult
-        
         for value in self {
             partial = try nextPartialResult(partial, value)
         }
-        mutableValues[mutableValues.startIndex] = partial
+        result[result.startIndex] = partial
     }
 }
 

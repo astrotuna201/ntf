@@ -173,7 +173,7 @@ public protocol StreamIntrinsicsProtocol {
     /// fills the view with the scalar value
     func fill<T>(x: inout T, with: T.Scalar) where T: TensorView
     /// fills the view with the spatial sequential index
-    func fillWithIndex<T>(x: inout T, startAt: Int) where
+    func fillWithIndex<T>(result: inout T, startAt: Int) where
         T: TensorView, T.Scalar: AnyNumeric
     /// Computes the element-wise `floor`
     func floor<T>(x: T, result: inout T) where

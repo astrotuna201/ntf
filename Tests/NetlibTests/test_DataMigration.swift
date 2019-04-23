@@ -250,198 +250,122 @@ class test_DataMigration: XCTestCase {
         }
     }
 
-//    //--------------------------------------------------------------------------
-//    // test_copyOnWriteDevice
-//    func test_copyOnWriteDevice() {
-//        do {
-//            let model = Model()
-//            try model.setup()
-//            let stream = try model.compute.requestStreams(label: "dataStream")[0]
-//
-//            let testIndex = [1, 1]
-//            var data1 = DataView(rows: 3, cols: 2)
-//            try cpuFillWithIndex(data: &data1, startingAt: 0)
-//            let value1: Float = try data1.get(at: testIndex)
-//            XCTAssert(value1 == 3.0)
-//
-//            // migrate the data to the device
-//            _ = try data1.ro(using: stream)
-//
-//            // copy and mutate data
-//            // the data will be duplicated wherever the source is
-//            var data2 = data1
-//            let value2: Float = try data2.get(at: testIndex)
-//            XCTAssert(value2 == 3.0)
-//            try data2.set(value: 7, at: [1, 1])
-//
-//            let value1a: Float = try data1.get(at: testIndex)
-//            XCTAssert(value1a == 3.0)
-//
-//            let value2a: Float = try data2.get(at: testIndex)
-//            XCTAssert(value2a == 7.0)
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
-//
     //--------------------------------------------------------------------------
-//    // test_copyOnWriteCrossDevice
-//    func test_copyOnWriteCrossDevice() {
-//        do {
-//            let model = Model()
-//            try model.setup()
-//            let stream = try model.compute.requestStreams(label: "dataStream", deviceIds: [0, 1])
-//            let multiDevice = stream[0].device.id != stream[1].device.id
-//
-//            // don't test unless we have multiple devices
-//            if !multiDevice { return }
-//
-//            let testIndex = [0, 0, 1, 1]
-//            var data1 = DataView(rows: 3, cols: 2)
-//            try stream[0].fillWithIndex(data: &data1, startingAt: 0)
-//            let value1: Float = try data1.get(at: testIndex)
-//            XCTAssert(value1 == 3.0)
-//
-//            // migrate the data to the devices
-//            _ = try data1.ro(using: stream[0])
-//            _ = try data1.ro(using: stream[1])
-//
-//            // sum device 0 copy should be 15
-//            var sum = DataView(count: 1)
-//            try stream[0].sum(x: data1.flattened(), result: &sum)
-//            var sumValue: Float = try sum.get()
-//            XCTAssert(sumValue == 15.0)
-//
-//            // clear the device 0 master copy
-//            try stream[0].fill(data: &data1, with: 0)
-//
-//            // sum device 1 copy should now also be 0
-//            try stream[1].sum(x: data1.flattened(), result: &sum)
-//            sumValue = try sum.get()
-//            XCTAssert(sumValue == 0.0)
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
-//
-//    //----------------------------------------------------------------------------
-//    // test_copyOnWrite
-//    func test_copyOnWrite() {
-//        do {
-//            let testIndex = [1, 1]
-//            var data1 = DataView(rows: 3, cols: 2)
-//            try cpuFillWithIndex(data: &data1, startingAt: 0)
-//            let value1: Float = try data1.get(at: testIndex)
-//            XCTAssert(value1 == 3.0)
-//
-//            var data2 = data1
-//            let value2: Float = try data2.get(at: testIndex)
-//            XCTAssert(value2 == 3.0)
-//            try data2.set(value: 7, at: testIndex)
-//
-//            let value1a: Float = try data1.get(at: testIndex)
-//            XCTAssert(value1a == 3.0)
-//
-//            let value2a: Float = try data2.get(at: testIndex)
-//            XCTAssert(value2a == 7.0)
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
-//
-//    //----------------------------------------------------------------------------
-//    // test_columnMajorStrides
-//    func test_columnMajorStrides() {
-//        let extent_nchw = [1, 2, 3, 4]
-//        let rmShape4 = Shape(extent: extent_nchw)
-//        XCTAssert(rmShape4.strides == [24, 12, 4, 1])
-//
-//        let cmShape4 = Shape(extent: extent_nchw, colMajor: true)
-//        XCTAssert(cmShape4.strides == [24, 12, 1, 3])
-//
-//        let extent_nhwc = [1, 3, 4, 2]
-//        let irmShape4 = Shape(extent: extent_nhwc, layout: .nhwc)
-//        XCTAssert(irmShape4.strides == [24, 8, 2, 1])
-//
-//        let icmShape4 = Shape(extent: extent_nhwc, layout: .nhwc, colMajor: true)
-//        XCTAssert(icmShape4.strides == [24, 2, 6, 1])
-//
-//        //-------------------------------------
-//        // rank 5
-////        let extent5  = Extent(10, 3, 4, 2, 3)
-////        let rmShape5 = Shape(extent: extent5)
-////        XCTAssert(rmShape5.strides[0] == 72)
-////        XCTAssert(rmShape5.strides[1] == 24)
-////        XCTAssert(rmShape5.strides[2] == 6)
-////        XCTAssert(rmShape5.strides[3] == 3)
-////        XCTAssert(rmShape5.strides[4] == 1)
-////
-////        // rank 5
-////        let irmShape5 = Shape(extent: extent5, isInterleaved: true)
-////        XCTAssert(irmShape5.strides[0] == 72)
-////        XCTAssert(irmShape5.strides[1] == 1)
-////        XCTAssert(irmShape5.strides[2] == 18)
-////        XCTAssert(irmShape5.strides[3] == 9)
-////        XCTAssert(irmShape5.strides[4] == 3)
-////
-////        // rank 5
-////        let cmShape5 = Shape(extent: extent5, isColMajor: true)
-////        XCTAssert(cmShape5.strides[0] == 72)
-////        XCTAssert(cmShape5.strides[1] == 24)
-////        XCTAssert(cmShape5.strides[2] == 6)
-////        XCTAssert(cmShape5.strides[3] == 1)
-////        XCTAssert(cmShape5.strides[4] == 2)
-////
-////        // rank 5
-////        let icmShape5 = Shape(extent: extent5, isInterleaved: true, isColMajor: true)
-////        XCTAssert(icmShape5.strides[0] == 72)
-////        XCTAssert(icmShape5.strides[1] == 1)
-////        XCTAssert(icmShape5.strides[2] == 18)
-////        XCTAssert(icmShape5.strides[3] == 3)
-////        XCTAssert(icmShape5.strides[4] == 6)
-//    }
-//
-//    //----------------------------------------------------------------------------
-//    // test_columnMajorDataView
-//    func test_columnMajorDataView() {
-//        do {
-//            // load linear buffer with values in col major order
-//            let cmArray: [UInt8] = [0, 3, 1, 4, 2, 5]
-//            let extent  = [2, 3]
-//            let cmShape = Shape(extent: extent, colMajor: true)
-//
-//            // create a data view
-//            var cmData   = DataView(shape: cmShape, dataType: .real8U)
-//            let cmBuffer = try cmData.rwReal8U()
-//            for i in 0..<cmArray.count { cmBuffer[i] = cmArray[i] }
-//
-//            // test col major indexing
-//            var i: UInt8 = 0
-//            for row in 0..<cmData.rows {
-//                for col in 0..<cmData.cols {
-//                    let value: UInt8 = try cmData.get(at: [row, col])
-//                    XCTAssert(value == i)
-//                    i += 1
-//                }
-//            }
-//
-//            // create row major view from cmData, this will copy and reorder
-//            let rmShape = Shape(extent: extent)
-//            let rmData = try DataView(from: cmData, asShape: rmShape)
-//            let rmBuffer = try rmData.roReal8U()
-//            for i in 0..<rmData.elementCount { XCTAssert(rmBuffer[i] == UInt8(i))    }
-//
-//            // test row major indexing
-//            i = 0
-//            for row in 0..<rmData.rows {
-//                for col in 0..<rmData.cols {
-//                    let value: UInt8 = try rmData.get(at: [row, col])
-//                    XCTAssert(value == i)
-//                    i += 1
-//                }
-//            }
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//    }
+    // test_copyOnWriteDevice
+    func test_copyOnWriteDevice() {
+        Platform.log.level = .diagnostic
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+        
+        // create a named stream on two different discreet devices
+        // cpu devices 1 and 2 are discreet memory versions for testing
+        let stream = Platform.local
+            .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
+        XCTAssert(stream[0].device.memoryAddressing == .discreet &&
+            stream[1].device.memoryAddressing == .discreet)
+        
+        // fill with index on device 1
+        let index = [1, 1]
+        var matrix1 = Matrix<Float>(extents: [3, 2])
+        using(stream[0]) {
+            fillWithIndex(&matrix1)
+        }
+        // testing a value causes the data to be copied to the host
+        XCTAssert(matrix1.value(at: index) == 3.0)
+        
+        // copy and mutate data
+        // the data will be duplicated wherever the source is
+        var matrix2 = matrix1
+        XCTAssert(matrix2.value(at: index) == 3.0)
+        
+        // writing to matrix2 causes view mutation and copy on write
+        matrix2.set(value: 7, at: index)
+        XCTAssert(matrix1.value(at: index) == 3.0)
+        XCTAssert(matrix2.value(at: index) == 7.0)
+    }
+
+    //--------------------------------------------------------------------------
+    // test_copyOnWriteCrossDevice
+    func test_copyOnWriteCrossDevice() {
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            
+            // create a named stream on two different discreet devices
+            // cpu devices 1 and 2 are discreet memory versions for testing
+            let stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
+            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
+                stream[1].device.memoryAddressing == .discreet)
+
+            let index = [1, 1]
+            var matrix1 = Matrix<Float>(extents: [3, 2])
+            using(stream[0]) {
+                fillWithIndex(&matrix1)
+            }
+            // testing a value causes the data to be copied to the host
+            XCTAssert(matrix1.value(at: index) == 3.0)
+
+            // simulate read only access on device 1 and 2
+            _ = try matrix1.readOnly(using: stream[0])
+            _ = try matrix1.readOnly(using: stream[1])
+
+            // sum device 1 copy should be 15
+            let sum1 = using(stream[0]) {
+                matrix1.sum().scalarValue()
+            }
+            XCTAssert(sum1 == 15.0)
+
+            // clear the device 0 master copy
+            using(stream[0]) {
+                fill(&matrix1, with: 0)
+            }
+
+            // sum device 1 copy should now also be 0
+            // sum device 1 copy should be 15
+            let sum2 = using(stream[1]) {
+                matrix1.sum().scalarValue()
+            }
+            XCTAssert(sum2 == 0)
+            
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // test_copyOnWrite
+    // NOTE: uses the default stream
+    func test_copyOnWrite() {
+        Platform.log.level = .diagnostic
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+        
+        let index = [1, 1]
+        var matrix1 = Matrix<Float>(extents: [3, 2])
+        fillWithIndex(&matrix1)
+        XCTAssert(matrix1.value(at: index) == 3.0)
+        
+        var matrix2 = matrix1
+        XCTAssert(matrix2.value(at: index) == 3.0)
+        matrix2.set(value: 7, at: index)
+        XCTAssert(matrix1.value(at: index) == 3.0)
+        XCTAssert(matrix2.value(at: index) == 7.0)
+    }
+
+    //--------------------------------------------------------------------------
+    // test_columnMajorDataView
+    // NOTE: uses the default stream
+    func test_columnMajorDataView() {
+        let cmArray: [Int32] = [0, 3, 1, 4, 2, 5]
+        let cmMatrix = Matrix<Int32>(extents: [3, 2],
+                                     isColMajor: true,
+                                     scalars: cmArray)
+        let expected = (0..<cmMatrix.shape.elementCount).map { Int32($0) }
+        let rowMajorValues = [Int32](cmMatrix.values())
+        XCTAssert(rowMajorValues == expected, "values don't match")
+        
+        // create row major view from cmData, this will copy and reorder
+        let rmMatrix = Matrix<Int32>(extents: [3, 2], scalars: cmArray.values())
+        let rowMajorValues2 = [Int32](rmMatrix.values())
+        XCTAssert(rowMajorValues2 == expected, "values don't match")
+    }
 }

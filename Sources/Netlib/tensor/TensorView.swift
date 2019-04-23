@@ -611,17 +611,13 @@ public extension Zip2Sequence {
         to result: inout T,
         _ transform: ((Sequence1.Element, Sequence2.Element)) -> T.Scalar)
     {
-        do {
-            var iterator = self.makeIterator()
-            var results = try result.mutableValues()
-            
-            for i in results.indices {
-                if let pair = iterator.next() {
-                    results[i] = transform(pair)
-                }
+        var iterator = self.makeIterator()
+        var results = result.mutableValues()
+        
+        for i in results.indices {
+            if let pair = iterator.next() {
+                results[i] = transform(pair)
             }
-        } catch {
-            _Streams.current.reportDevice(error: error)
         }
     }
 
@@ -646,17 +642,13 @@ public extension Sequence {
     func map<T: TensorView>(
         to result: inout T, _ transform: (Element) -> T.Scalar)
     {
-        do {
-            var iterator = self.makeIterator()
-            var results = try result.mutableValues()
-            
-            for i in results.indices {
-                if let value = iterator.next() {
-                    results[i] = transform(value)
-                }
+        var iterator = self.makeIterator()
+        var results = result.mutableValues()
+        
+        for i in results.indices {
+            if let value = iterator.next() {
+                results[i] = transform(value)
             }
-        } catch {
-            _Streams.current.reportDevice(error: error)
         }
     }
 
@@ -680,12 +672,7 @@ public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
     Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
     where T1: TensorView, T2: TensorView
 {
-    do {
-        return try zip(t1.values(), t2.values())
-    } catch {
-        _Streams.current.reportDevice(error: error)
-        return zip(TensorViewCollection<T1>(), TensorViewCollection<T2>())
-    }
+    return zip(t1.values(), t2.values())
 }
 
 //==============================================================================
@@ -698,17 +685,12 @@ public extension Sequence {
         _ nextPartialResult: (T.Scalar, T.Scalar) throws -> T.Scalar) rethrows
         where T: TensorView, T.Scalar == Self.Element
     {
-        do {
-            var results = try result.mutableValues()
-            var partial = initialResult
-            for value in self {
-                partial = try nextPartialResult(partial, value)
-            }
-            results[results.startIndex] = partial
-            
-        } catch {
-            _Streams.current.reportDevice(error: error)
+        var results = result.mutableValues()
+        var partial = initialResult
+        for value in self {
+            partial = try nextPartialResult(partial, value)
         }
+        results[results.startIndex] = partial
     }
 
     /// reduce to a mutable collection

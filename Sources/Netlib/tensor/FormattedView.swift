@@ -12,12 +12,12 @@ public extension TensorView where Scalar: AnyConvertable {
     func formatted(
         maxCols: Int = 10,
         maxItems: [Int]? = nil,
-        numberFormat: (width: Int, precision: Int)? = nil) throws -> String {
+        numberFormat: (width: Int, precision: Int)? = nil) -> String {
         
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""
         var index = [Int](repeating: 0, count: shape.rank)
-        var iterator = try self.values().makeIterator()
+        var iterator = self.values().makeIterator()
         var itemCount = 0
         let indentSize = "  "
         let extents = shape.padded(with: padding).extents

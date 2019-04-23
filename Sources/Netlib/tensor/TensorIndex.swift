@@ -11,12 +11,29 @@ import Foundation
 //==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {
-    func values() throws -> TensorViewCollection<Self> {
-        return try TensorViewCollection(view: self, buffer: readOnly())
+    func values() -> TensorViewCollection<Self> {
+        do {
+            guard _Streams.current.lastError == nil else {
+                return TensorViewCollection<Self>()
+            }
+            return try TensorViewCollection(view: self, buffer: readOnly())
+        } catch {
+            _Streams.current.reportDevice(error: error)
+            return TensorViewCollection<Self>()
+        }
     }
-
-    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
-        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
+    
+    mutating func mutableValues() -> TensorViewMutableCollection<Self> {
+        do {
+            guard _Streams.current.lastError == nil else {
+                return TensorViewMutableCollection<Self>()
+            }
+            return try TensorViewMutableCollection(view: &self,
+                                                   buffer: readWrite())
+        } catch {
+            _Streams.current.reportDevice(error: error)
+            return TensorViewMutableCollection<Self>()
+        }
     }
 
     func deviceValues(using stream: DeviceStream) throws

@@ -197,8 +197,8 @@ public protocol MatrixView: TensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
 public extension MatrixView {
-    var rowStride: Int { return shape.strides[0] }
-    var colStride: Int { return shape.strides[1]  }
+    var rowCount: Int { return shape.extents[0] }
+    var colCount: Int { return shape.extents[1] }
     
     //--------------------------------------------------------------------------
     /// shaped initializers

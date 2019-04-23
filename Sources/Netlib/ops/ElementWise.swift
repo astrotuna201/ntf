@@ -159,18 +159,36 @@ public extension TensorView where Self.Scalar: AnyNumeric {
 }
 
 //==============================================================================
+/// fill<T>(result:value:
+/// fills the view with the specified value
+public func fill<T>(_ result: inout T, with value: T.Scalar) where
+    T: TensorView
+{
+    _Streams.current.fill(&result, with: value)
+}
+
+public extension TensorView {
+    func filled(with value: Scalar) -> Self {
+        var result = Self.init(shapedLike: self)
+        _Streams.current.fill(&result, with: value)
+        return result
+    }
+}
+
+//==============================================================================
 /// fillWithIndex(x:startAt:
 /// fills the view with the spatial sequential index
-public func fillWithIndex<T>(result: inout T, startAt index: Int = 0) where
+public func fillWithIndex<T>(_ result: inout T, startAt index: Int = 0) where
     T: TensorView, T.Scalar: AnyNumeric
 {
-    _Streams.current.fillWithIndex(result: &result, startAt: index)
+    _Streams.current.fillWithIndex(&result, startAt: index)
 }
 
 public extension TensorView where Scalar: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
         var result = Self.init(shapedLike: self)
-        _Streams.current.fillWithIndex(result: &result, startAt: index)
+        _Streams.current.fillWithIndex(&result, startAt: index)
         return result
     }
 }
+

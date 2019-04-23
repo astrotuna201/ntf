@@ -157,12 +157,12 @@ public extension CpuStream {
     }
     
     //--------------------------------------------------------------------------
-    /// fill(x:with:
-    func fill<T>(x: inout T, with value: T.Scalar) where T : TensorView {
+    /// fill(result:with:
+    func fill<T>(_ result: inout T, with value: T.Scalar) where T : TensorView {
         guard lastError == nil else { return }
         do {
-            var xref = try x.reference(using: self)
-            var values = try xref.mutableDeviceValues(using: self)
+            var resultRef = try result.reference(using: self)
+            var values = try resultRef.mutableDeviceValues(using: self)
             queue {
                 for index in values.indices {
                     values[index] = value
@@ -175,7 +175,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// fillWithIndex(x:startAt:
-    func fillWithIndex<T>(result: inout T, startAt: Int) where
+    func fillWithIndex<T>(_ result: inout T, startAt: Int) where
         T : TensorView, T.Scalar: AnyNumeric
     {
         guard lastError == nil else { return }

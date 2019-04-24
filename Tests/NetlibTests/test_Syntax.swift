@@ -22,6 +22,7 @@ class test_Syntax: XCTestCase {
         // use shortcut syntax for extents
         do {
             let matrix = Matrix<Float>(3, 5, sequence: 0..<15)
+            print(matrix.formatted(scalarFormat: (2,0)))
             let sum = matrix.sum().scalarValue()
             XCTAssert(sum == 105.0)
         }
@@ -35,8 +36,10 @@ class test_Syntax: XCTestCase {
         do {
             let volume = Volume<Int32>(extents: [3, 4, 5]).filledWithIndex()
             print(volume.formatted(scalarFormat: (2,0)))
+            
             let sample = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
             print(sample.formatted(scalarFormat: (2,0)))
+            
             let sampleSum = sum(sample).scalarValue()
             XCTAssert(sampleSum == 312)
         }
@@ -57,8 +60,12 @@ class test_Syntax: XCTestCase {
         // from `rowVector` and repeats it through indexing
         do {
             let rowVector = Matrix<Int32>(1, 10, sequence: 0..<10)
-            let matrix = Matrix(extents: [10, 10], repeating: rowVector)
-            print(matrix.formatted(scalarFormat: (2,0)))
+            let rmatrix = Matrix(extents: [10, 10], repeating: rowVector)
+            print(rmatrix.formatted(scalarFormat: (2,0)))
+
+            let colVector = Matrix<Int32>(10, 1, sequence: 0..<10)
+            let cmatrix = Matrix(extents: [10, 10], repeating: colVector)
+            print(cmatrix.formatted(scalarFormat: (2,0)))
         }
     }
 }

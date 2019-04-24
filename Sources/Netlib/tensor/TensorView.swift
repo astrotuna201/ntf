@@ -63,7 +63,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
     /// class reference to the underlying byte buffer
-    var tensorData: TensorData { get set }
+    var tensorData: TensorData! { get set }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 
@@ -162,27 +162,23 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// initTensorData
     /// a helper to correctly initialize the tensorData object
-    mutating func initTensorData(_ data: TensorData?,
-                                 _ name: String?,
-                                 _ scalars: [Scalar]?) {
-        if let data = data {
-            // this views existing data
-            tensorData = data
-        } else {
-            // allocate backing tensorData
-            assert(shape.isContiguous, "new views should have a dense shape")
-            let tensorName = name ?? String(describing: Self.self)
-            if let scalars = scalars {
-                scalars.withUnsafeBytes {
-                    tensorData = TensorData(buffer: $0, name: tensorName)
-                }
-            } else {
-                tensorData = TensorData(type: Scalar.self,
-                                        count: dataShape.elementSpanCount,
-                                        name: tensorName)
+    mutating func initTensorData(_ name: String?,
+                                 _ scalars: [Scalar]?) -> TensorData {
+        // allocate backing tensorData
+        assert(shape.isContiguous, "new views should have a dense shape")
+        let data: TensorData
+        let tensorName = name ?? String(describing: Self.self)
+        if let scalars = scalars {
+            data = scalars.withUnsafeBytes {
+                TensorData(buffer: $0, name: tensorName)
             }
-            assert(viewByteOffset + viewSpanByteCount <= tensorData.byteCount)
+        } else {
+            data = TensorData(type: Scalar.self,
+                              count: dataShape.elementSpanCount,
+                              name: tensorName)
         }
+        assert(viewByteOffset + viewSpanByteCount <= data.byteCount)
+        return data
     }
     
     // TODO: investigate need for this check

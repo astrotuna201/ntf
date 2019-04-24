@@ -98,7 +98,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -117,8 +117,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -216,7 +215,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -235,8 +234,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -345,7 +343,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -364,8 +362,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -465,7 +462,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -484,8 +481,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -550,7 +546,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -569,8 +565,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -676,7 +671,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -695,8 +690,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 
@@ -803,7 +797,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData
+    public var tensorData: TensorData!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -822,8 +816,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = TensorData()
-        initTensorData(tensorData, name, scalars)
+        self.tensorData = tensorData ?? initTensorData(name, scalars)
     }
 }
 

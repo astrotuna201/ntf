@@ -70,7 +70,7 @@ public extension TensorView where Self.Scalar == Bool {
 /// axes. The result extent along the specified axes will be 1.
 /// Rank is not reduced.
 
-/// in place
+/// to result
 /// - Parameter x: value tensor
 /// - Parameter alongAxes: the axes to operate on
 /// - Parameter result: the scalar tensor where the result will be written
@@ -81,6 +81,20 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
     where T: TensorView, T.Scalar: Numeric
 {
     _Streams.current.sum(x: x, axes: axes, result: &result)
+}
+
+/// return result
+/// - Parameter x: value tensor
+/// - Parameter alongAxes: the axes to operate on
+/// - Parameter result: the scalar tensor where the result will be written
+/// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
+@inlinable @inline(__always)
+public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
+    where T: TensorView, T.Scalar: Numeric
+{
+    var result = T.init(shapedLike: x)
+    _Streams.current.sum(x: x, axes: axes, result: &result)
+    return result
 }
 
 /// returns new view

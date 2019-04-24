@@ -10,9 +10,9 @@ public extension TensorView where Scalar: AnyConvertable {
     //--------------------------------------------------------------------------
     // formatted
     func formatted(
+        scalarFormat: (width: Int, precision: Int)? = nil,
         maxCols: Int = 10,
-        maxItems: [Int]? = nil,
-        scalarFormat: (width: Int, precision: Int)? = nil) -> String {
+        maxItems: [Int]? = nil) -> String {
         
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""

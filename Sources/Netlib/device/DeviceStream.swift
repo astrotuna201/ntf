@@ -140,8 +140,9 @@ public protocol StreamIntrinsicsProtocol {
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
-    func equal<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.BoolView.Scalar == Bool
+    func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
+        T: TensorView, T.Scalar: Equatable,
+        T.BoolView.Scalar == Bool
     /// Computes the element-wise `exp`
     func exp<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: FloatingPoint

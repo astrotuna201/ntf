@@ -169,7 +169,9 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// equal
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T : TensorView, T.BoolView.Scalar == Bool {
+        T: TensorView, T.Scalar: Equatable,
+        T.BoolView.Scalar == Bool
+    {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)

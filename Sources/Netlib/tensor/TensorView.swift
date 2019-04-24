@@ -31,7 +31,7 @@ import Foundation
 public protocol TensorView: Logging, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
-    associatedtype Scalar: ScalarConformance
+    associatedtype Scalar: DefaultInitializer
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -100,7 +100,7 @@ public protocol TensorView: Logging, DefaultInitializer {
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexScalar = Int32
 
-public typealias ScalarConformance = Equatable & DefaultInitializer
+public typealias ScalarConformance = DefaultInitializer
 
 //==============================================================================
 // TensorView default implementation

@@ -195,12 +195,17 @@ public extension TensorView where Scalar: AnyNumeric {
 //==============================================================================
 /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
 /// scalars.
-public func equal<T>(lhs: T, rhs: T, result: inout T.BoolView)
-    where T: TensorView, T.BoolView.Scalar == Bool {
+public func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
+    T: TensorView, T.Scalar: Equatable,
+    T.BoolView.Scalar == Bool
+{
     _Streams.current.equal(lhs: lhs, rhs: rhs, result: &result)
 }
 
-public extension TensorView where BoolView.Scalar == Bool{
+public extension TensorView where
+    Scalar: Equatable,
+    BoolView.Scalar == Bool
+{
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than

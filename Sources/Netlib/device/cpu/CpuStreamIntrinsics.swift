@@ -13,7 +13,11 @@ public extension CpuStream {
         
     }
     
-    func add<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
+    //--------------------------------------------------------------------------
+    /// add
+    func add<T>(lhs: T, rhs: T, result: inout T) where
+        T : TensorView, T.Scalar : Numeric
+    {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
@@ -102,14 +106,24 @@ public extension CpuStream {
         
     }
     
+    //--------------------------------------------------------------------------
+    /// asum
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T)
-        where T : TensorView, T.Scalar : AnyNumeric {
-        var resultRef = tryCatch { try result.reference(using: self) }
-        queue {
-            try x.deviceValues(using: self).reduce(to: &resultRef, T.Scalar.zero) {
+        where T : TensorView, T.Scalar : AnyNumeric
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let x = try x.deviceValues(using: self)
+            queue {
                 // TODO: can't seem to call Foundation.abs($1)
-                $0 + $1
+                x.reduce(to: &results, T.Scalar.zero) {
+                    $0 + $1
+                }
             }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -133,7 +147,11 @@ public extension CpuStream {
         
     }
     
-    func div<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
+    //--------------------------------------------------------------------------
+    /// div
+    func div<T>(lhs: T, rhs: T, result: inout T) where
+        T : TensorView, T.Scalar : FloatingPoint
+    {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
@@ -168,7 +186,9 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// exp
-    func exp<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
+    func exp<T>(x: T, result: inout T) where
+        T : TensorView, T.Scalar : FloatingPoint
+    {
         
     }
     
@@ -230,10 +250,23 @@ public extension CpuStream {
         
     }
     
-    func log<T>(x: T, result: inout T) where T : TensorView, T.Scalar : AnyFloatingPoint {
-        var resultRef = tryCatch { try result.reference(using: self) }
-        queue { try x.deviceValues(using: self).map(to: &resultRef) {
-            T.Scalar(any: Foundation.log($0.asDouble)) }
+    //--------------------------------------------------------------------------
+    /// log(x:result:
+    func log<T>(x: T, result: inout T) where
+        T : TensorView, T.Scalar : AnyFloatingPoint
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let x = try x.deviceValues(using: self)
+            queue {
+                x.map(to: &results) {
+                    T.Scalar(any: Foundation.log($0.asDouble))
+                }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -309,23 +342,39 @@ public extension CpuStream {
     // TODO something is wrong, I shouldn't need to do this to interface
     // with math functions
     func pow<T>(x: T, y: T, result: inout T) where
-        T : TensorView, T.Scalar : AnyNumeric {
-            
-        var resultRef = tryCatch { try result.reference(using: self) }
-        queue {
-            zip(x, y).map(to: &resultRef) {
-                T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
+        T : TensorView, T.Scalar : AnyNumeric
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let x = try x.deviceValues(using: self)
+            let y = try y.deviceValues(using: self)
+            queue {
+                zip(x, y).map(to: &results) {
+                    T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
+                }
             }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
 
     //--------------------------------------------------------------------------
     // prod
     func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T : TensorView, T.Scalar : Numeric {
-        var resultRef = tryCatch { try result.reference(using: self) }
-        queue {
-            try x.deviceValues(using: self).reduce(to: &resultRef, T.Scalar.zero) { $0 * $1 }
+        T : TensorView, T.Scalar : AnyNumeric
+    {
+        guard lastError == nil else { return }
+        do {
+            var resultRef = try result.reference(using: self)
+            var results = try resultRef.mutableDeviceValues(using: self)
+            let x = try x.deviceValues(using: self)
+            queue {
+                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
+            }
+        } catch {
+            reportDevice(error: error, event: completionEvent)
         }
     }
     
@@ -357,7 +406,11 @@ public extension CpuStream {
         
     }
     
-    func subtract<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
+    //--------------------------------------------------------------------------
+    // subtract
+    func subtract<T>(lhs: T, rhs: T, result: inout T) where
+        T : TensorView, T.Scalar : Numeric
+    {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
@@ -372,6 +425,8 @@ public extension CpuStream {
         }
     }
     
+    //--------------------------------------------------------------------------
+    // sum
     func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {

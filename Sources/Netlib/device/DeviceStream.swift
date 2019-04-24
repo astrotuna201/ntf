@@ -51,31 +51,6 @@ public protocol DeviceStream:
 }
 
 //==============================================================================
-/// tryCatch
-/// catches errors and reports them through the device error handling path
-/// tries a throwing function and reports any errors thrown
-public extension DeviceStream where Self: DeviceErrorHandling {
-    func tryCatch(_ body: () throws -> Void) {
-        guard lastError == nil else { return }
-        do {
-            try body()
-        } catch {
-            reportDevice(error: error, event: completionEvent)
-        }
-    }
-    
-    func tryCatch<T: DefaultInitializer>(_ body: () throws -> T) -> T {
-        guard lastError == nil else { return T() }
-        do {
-            return try body()
-        } catch {
-            reportDevice(error: error, event: completionEvent)
-            return T()
-        }
-    }
-}
-
-//==============================================================================
 /// LocalDeviceStream
 public protocol LocalDeviceStream: DeviceStream { }
 
@@ -264,7 +239,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
     func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Scalar: AnyNumeric
     /// Computes the element-wise `rsqrt`
     func rsqrt<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: FloatingPoint

@@ -232,7 +232,13 @@ public extension TensorView {
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() -> Scalar {
         assert(shape.elementCount == 1)
-        return _Streams.current.tryCatch { try readOnly()[0] }
+        do {
+            guard _Streams.current.lastError == nil else { return Scalar() }
+            return try readOnly()[0]
+        } catch {
+            _Streams.current.reportDevice(error: error)
+            return Scalar()
+        }
     }
 
     //--------------------------------------------------------------------------

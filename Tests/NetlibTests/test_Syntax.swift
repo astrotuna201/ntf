@@ -17,11 +17,11 @@ class test_Syntax: XCTestCase {
     //==========================================================================
     // test_simple
     func test_simple() {
-//        // initialize a matrix with a sequence and take the sum
-//        // use shortcut syntax for extents
-//        let matrix = Matrix<Float>(3, 5, sequence: 0..<15)
-//        let sum1 = matrix.sum().scalarValue()
-//        XCTAssert(sum1 == 105.0)
+        // initialize a matrix with a sequence and take the sum
+        // use shortcut syntax for extents
+        let matrix = Matrix<Float>(3, 5, sequence: 0..<15)
+        let sum1 = matrix.sum().scalarValue()
+        XCTAssert(sum1 == 105.0)
         
         // - initialize a volume using explicit extents
         // - fill with indexes on the default device
@@ -31,9 +31,9 @@ class test_Syntax: XCTestCase {
 //        print(volume.formatted(scalarFormat: (2,0)))
         
         let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-        print(subView.formatted(scalarFormat: (2,0)))
+//        print(subView.formatted(scalarFormat: (2,0)))
         
         let sum2 = sum(subView).scalarValue()
-        XCTAssert(sum2 == 105)
+        XCTAssert(sum2 == 312)
     }
 }

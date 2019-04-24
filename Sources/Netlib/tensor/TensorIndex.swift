@@ -292,7 +292,7 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
         var viewCurrent = 0
-        var dataCurrent = tensorView.viewDataOffset
+        var dataCurrent = 0
 
         for dim in 0..<viewShape.rank {
             // compute view position

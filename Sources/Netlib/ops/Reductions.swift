@@ -92,7 +92,8 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
 public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
     where T: TensorView, T.Scalar: Numeric
 {
-    var result = T.init(shapedLike: x)
+    let extents = [Int](repeating: 1, count: x.rank)
+    var result = T.init(shapedLike: x, with: extents)
     _Streams.current.sum(x: x, axes: axes, result: &result)
     return result
 }

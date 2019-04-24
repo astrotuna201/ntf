@@ -250,7 +250,7 @@ class test_IterateView: XCTestCase {
                                    padding: padding,
                                    padValue: -1,
                                    sequence: 0..<6)
-        //            print(matrix.formatted(scalarFormat: (2,0)))
+        print(matrix.formatted(scalarFormat: (2,0)))
         
         let expectedValues: [Int32] = [
             -1, -1, -1, -1, -1, -1, -1, -1,

@@ -313,8 +313,13 @@ public extension TensorView {
         let queue = tensorData.accessQueue
         return try queue.sync {
             tensorData.lastAccessMutatedView = false
-            let buffer = try tensorData.readOnlyHostBuffer()
-            return buffer.bindMemory(to: Scalar.self)
+            let pointer = try tensorData.readOnlyHostBuffer()
+                .baseAddress!.advanced(by: viewByteOffset)
+                .bindMemory(to: Scalar.self,
+                            capacity: dataShape.elementSpanCount)
+            
+            return UnsafeBufferPointer(start: pointer,
+                                       count: dataShape.elementSpanCount)
         }
     }
     
@@ -325,10 +330,11 @@ public extension TensorView {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorData.accessQueue
+        
         return try queue.sync {
             tensorData.lastAccessMutatedView = false
             let buffer = try tensorData.readOnlyDevicePointer(using: stream)
-            return buffer.advanced(by: viewDataOffset)
+            return buffer.advanced(by: viewByteOffset)
         }
     }
     
@@ -338,10 +344,10 @@ public extension TensorView {
     func readOnlyDeviceBuffer(using stream: DeviceStream) throws
         -> UnsafeBufferPointer<Scalar>
     {
-        let buffer = try readOnly(using: stream)
+        let pointer = try readOnly(using: stream)
             .bindMemory(to: Scalar.self, capacity: dataShape.elementSpanCount)
 
-        return UnsafeBufferPointer(start: buffer,
+        return UnsafeBufferPointer(start: pointer,
                                    count: dataShape.elementSpanCount)
     }
 
@@ -356,8 +362,14 @@ public extension TensorView {
         let queue = tensorData.accessQueue
         return try queue.sync {
             try copyIfMutates(using: nil)
-            let buffer = try tensorData.readWriteHostBuffer()
-            return buffer.bindMemory(to: Scalar.self)
+            
+            let pointer = try tensorData.readWriteHostBuffer()
+                .baseAddress!.advanced(by: viewByteOffset)
+                .bindMemory(to: Scalar.self,
+                            capacity: dataShape.elementSpanCount)
+            
+            return UnsafeMutableBufferPointer(
+                start: pointer, count: dataShape.elementSpanCount)
         }
     }
     
@@ -373,7 +385,7 @@ public extension TensorView {
         return try queue.sync {
             try copyIfMutates(using: stream)
             let buffer = try tensorData.readWriteDevicePointer(using: stream)
-            return buffer.advanced(by: viewDataOffset)
+            return buffer.advanced(by: viewByteOffset)
         }
     }
     

@@ -436,9 +436,9 @@ public extension CpuStream {
         do {
             var resultRef = try result.reference(using: self)
             var results = try resultRef.mutableDeviceValues(using: self)
-            let x = try x.deviceValues(using: self)
+            let xseq = try x.deviceValues(using: self)
             queue {
-                x.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
+                xseq.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
             }
         } catch {
             reportDevice(error: error, event: completionEvent)

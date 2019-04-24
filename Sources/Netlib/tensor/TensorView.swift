@@ -28,7 +28,7 @@ import Foundation
 ///
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
-public protocol TensorView: Logging, Equatable, DefaultInitializer {
+public protocol TensorView: Logging, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
     associatedtype Scalar: ScalarConformance
@@ -562,8 +562,13 @@ public extension TensorView {
     }
 }
 
-public extension TensorView where Self.BoolView.Scalar == Bool {
-    //==========================================================================
+//==============================================================================
+/// Equal
+public extension TensorView where
+    Self.Scalar: Equatable,
+    Self.BoolView.Scalar == Bool
+{
+    //--------------------------------------------------------------------------
     /// Equal values
     /// performs an element wise value comparison
     static func == (lhs: Self, rhs: Self) -> Bool {

@@ -83,7 +83,7 @@ public extension ScalarView {
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
                   tensorData: nil, viewDataOffset: 0,
-                  isShared: false, scalars: nil)
+                  isShared: false, scalars: [value])
     }
 }
 
@@ -133,7 +133,16 @@ where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
 public extension VectorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-
+    init(_ value: Scalar, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let shape = DataShape(extents: [1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+    
     /// with Array
     init(count: Int, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
@@ -253,7 +262,16 @@ public extension MatrixView {
     
     //--------------------------------------------------------------------------
     /// shaped initializers
-
+    init(_ value: Scalar, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let shape = DataShape(extents: [1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+    
     //-------------------------------------
     /// with Array
     init(extents: [Int], name: String? = nil,
@@ -378,7 +396,16 @@ where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 public extension VolumeView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    
+    init(_ value: Scalar, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let shape = DataShape(extents: [1, 1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+
     //-------------------------------------
     /// with Array
     init(extents: [Int], name: String? = nil,
@@ -587,7 +614,16 @@ where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 public extension NCHWTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    
+    init(_ value: Scalar, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let shape = DataShape(extents: [1, 1, 1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+
     //-------------------------------------
     /// with Array
     init(extents: [Int], name: String? = nil,
@@ -712,7 +748,16 @@ where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 public extension NHWCTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    
+    init(_ value: Scalar, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let shape = DataShape(extents: [1, 1, 1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+
     //-------------------------------------
     /// with Array
     init(extents: [Int], name: String? = nil,

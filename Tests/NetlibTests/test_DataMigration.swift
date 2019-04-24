@@ -14,11 +14,10 @@ class test_DataMigration: XCTestCase {
         ("test_viewMutateOnWrite", test_viewMutateOnWrite),
         ("test_tensorDataMigration", test_tensorDataMigration),
         ("test_mutateOnDevice", test_mutateOnDevice),
-        //            ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
-        //            ("test_copyOnWriteDevice", test_copyOnWriteDevice),
-        //            ("test_copyOnWrite", test_copyOnWrite),
-        //            ("test_columnMajorDataView", test_columnMajorDataView),
-        //            ("test_columnMajorStrides", test_columnMajorStrides),
+        ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
+        ("test_copyOnWriteDevice", test_copyOnWriteDevice),
+        ("test_copyOnWrite", test_copyOnWrite),
+        ("test_columnMajorDataView", test_columnMajorDataView),
     ]
 	
     //==========================================================================
@@ -87,10 +86,13 @@ class test_DataMigration: XCTestCase {
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
-            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
-                stream[1].device.memoryAddressing == .discreet)
+            let device1Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
+            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+
+            let device2Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
+            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
             
             // create a tensor and validate migration
             var view = Volume<Float>(extents: [2, 3, 4], sequence: 0..<24)
@@ -104,7 +106,7 @@ class test_DataMigration: XCTestCase {
             // this device is not UMA so it
             // ALLOC device array on cpu:1
             // COPY  host --> cpu:1_s0
-            _ = try view.readOnly(using: stream[0])
+            _ = try view.readOnly(using: device1Stream)
             XCTAssert(view.tensorData.lastAccessCopiedBuffer)
 
             // write access hasn't been taken, so this is still up to date
@@ -112,39 +114,39 @@ class test_DataMigration: XCTestCase {
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // an up to date copy is already there, so won't copy
-            _ = try view.readWrite(using: stream[0])
+            _ = try view.readWrite(using: device1Stream)
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // ALLOC device array on cpu:1
             // COPY  cpu:1 --> cpu:2_s0
-            _ = try view.readOnly(using: stream[1])
+            _ = try view.readOnly(using: device2Stream)
             XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
-            _ = try view.readOnly(using: stream[0])
+            _ = try view.readOnly(using: device1Stream)
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
-            _ = try view.readOnly(using: stream[1])
+            _ = try view.readOnly(using: device2Stream)
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
-            _ = try view.readWrite(using: stream[0])
+            _ = try view.readWrite(using: device1Stream)
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
-            _ = try view.readOnly(using: stream[1])
+            _ = try view.readOnly(using: device2Stream)
             XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
-            _ = try view.readWrite(using: stream[1])
+            _ = try view.readWrite(using: device2Stream)
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
 
             // the master is on cpu:2 so we need to update cpu:1's version
             // COPY cpu:2 --> cpu:1_s0
-            _ = try view.readWrite(using: stream[0])
+            _ = try view.readWrite(using: device1Stream)
             XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
-            _ = try view.readWrite(using: stream[1])
+            _ = try view.readWrite(using: device2Stream)
             XCTAssert(view.tensorData.lastAccessCopiedBuffer)
             
             // accessing data without a stream causes transfer to the host
@@ -166,15 +168,18 @@ class test_DataMigration: XCTestCase {
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
-            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
-                stream[1].device.memoryAddressing == .discreet)
+            let device1Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
+            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+            
+            let device2Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
+            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
 
             // create a Matrix on device 1 and fill with indexes
             // memory is only allocated on device 1. This also shows how a
             // temporary can be used in a scope. No memory is copied.
-            var matrix = using(stream[0]) {
+            var matrix = using(device1Stream) {
                 Matrix<Float>(3, 2).filledWithIndex()
             }
 
@@ -187,7 +192,7 @@ class test_DataMigration: XCTestCase {
             // simulate a readonly kernel access on device 1.
             // matrix was not previously modified, so it is up to date
             // and no data movement is necessary
-            _ = try matrix.readOnly(using: stream[0])
+            _ = try matrix.readOnly(using: device1Stream)
 
             // sum device 1 copy, which should equal 15.
             // This `sum` syntax creates a temporary result on device 1,
@@ -195,7 +200,7 @@ class test_DataMigration: XCTestCase {
             // the host, the value is retrieved, and the temp is released.
             // This syntax is good for experiments, but should not be used
             // for repetitive actions
-            var sum = using(stream[0]) {
+            var sum = using(device1Stream) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
@@ -207,12 +212,12 @@ class test_DataMigration: XCTestCase {
             // async copy is performed. In the case of Cuda, it would travel
             // across nvlink and not the PCI bus
             let matrix2 = matrix
-            _ = try matrix2.readOnly(using: stream[1])
+            _ = try matrix2.readOnly(using: device2Stream)
             
             // copy matrix2 and simulate a readWrite operation on device2
             // this causes copy on write and mutate on device
             var matrix3 = matrix2
-            _ = try matrix3.readWrite(using: stream[1])
+            _ = try matrix3.readWrite(using: device2Stream)
 
             // sum device 1 copy should be 15
             // `sum` creates a temp result tensor, allocates an array on
@@ -220,13 +225,13 @@ class test_DataMigration: XCTestCase {
             // Then `scalarValue` causes a host array to be allocated, and the
             // the data is copied from device 2 to host, the value is returned
             // and the temporary tensor is released.
-            sum = using(stream[1]) {
+            sum = using(device2Stream) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
             // matrix is overwritten with a new array on device 1
-            matrix = using(stream[0]) {
+            matrix = using(device1Stream) {
                 matrix.filledWithIndex()
             }
             
@@ -237,7 +242,7 @@ class test_DataMigration: XCTestCase {
             // then `scalarValue` creates a host array and the result is
             // copied from device 2 to the host array, and then the tensor
             // is released.
-            sum = using(stream[1]) {
+            sum = using(device2Stream) {
                 matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
@@ -257,15 +262,18 @@ class test_DataMigration: XCTestCase {
         
         // create a named stream on two different discreet devices
         // cpu devices 1 and 2 are discreet memory versions for testing
-        let stream = Platform.local
-            .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
-        XCTAssert(stream[0].device.memoryAddressing == .discreet &&
-            stream[1].device.memoryAddressing == .discreet)
+        let device1Stream = Platform.local
+            .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
+        XCTAssert(device1Stream.device.memoryAddressing == .discreet)
         
+        let device2Stream = Platform.local
+            .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
+        XCTAssert(device2Stream.device.memoryAddressing == .discreet)
+
         // fill with index on device 1
         let index = [1, 1]
         var matrix1 = Matrix<Float>(extents: [3, 2])
-        using(stream[0]) {
+        using(device1Stream) {
             fillWithIndex(&matrix1)
         }
         // testing a value causes the data to be copied to the host
@@ -291,37 +299,40 @@ class test_DataMigration: XCTestCase {
             
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1, 2])
-            XCTAssert(stream[0].device.memoryAddressing == .discreet &&
-                stream[1].device.memoryAddressing == .discreet)
+            let device1Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
+            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+            
+            let device2Stream = Platform.local
+                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
+            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
 
             let index = [1, 1]
             var matrix1 = Matrix<Float>(extents: [3, 2])
-            using(stream[0]) {
+            using(device1Stream) {
                 fillWithIndex(&matrix1)
             }
             // testing a value causes the data to be copied to the host
             XCTAssert(matrix1.value(at: index) == 3.0)
 
             // simulate read only access on device 1 and 2
-            _ = try matrix1.readOnly(using: stream[0])
-            _ = try matrix1.readOnly(using: stream[1])
+            _ = try matrix1.readOnly(using: device1Stream)
+            _ = try matrix1.readOnly(using: device2Stream)
 
             // sum device 1 copy should be 15
-            let sum1 = using(stream[0]) {
+            let sum1 = using(device1Stream) {
                 matrix1.sum().scalarValue()
             }
             XCTAssert(sum1 == 15.0)
 
             // clear the device 0 master copy
-            using(stream[0]) {
+            using(device1Stream) {
                 fill(&matrix1, with: 0)
             }
 
             // sum device 1 copy should now also be 0
             // sum device 1 copy should be 15
-            let sum2 = using(stream[1]) {
+            let sum2 = using(device2Stream) {
                 matrix1.sum().scalarValue()
             }
             XCTAssert(sum2 == 0)

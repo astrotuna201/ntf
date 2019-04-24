@@ -21,8 +21,8 @@ class test_StreamOps: XCTestCase {
         }
         
         // create some tensors
-        let _ = Matrix<RGBASample<UInt8>>(4, 3)
-        let _ = Vector<StereoSample<Int16>>(count: 1024)
+        _ = Matrix<RGBASample<UInt8>>(4, 3)
+        _ = Vector<StereoSample<Int16>>(count: 1024)
 
         let m = Matrix<UInt8>(4, 3)
         let a = Vector<Float>(scalars: [1, 2, 3, 4])
@@ -63,13 +63,13 @@ class test_StreamOps: XCTestCase {
         //---------------------------------
         // syntax variations
         // transparent type conversion if the Scalar is compatible
-        let _ = a.pow(3)
-        let _ = a.pow(3.5)
+        _ = a.pow(3)
+        _ = a.pow(3.5)
         // integer array
-        let _ = m.pow(2) // okay
+        _ = m.pow(2) // okay
         // let _ = try m.pow(2.5)  Ints raised to float power won't compile
-        let _ = a + 1    // floats + broadcast Int is okay
-        let _ = m + 1
+        _ = a + 1    // floats + broadcast Int is okay
+        _ = m + 1
         // let _ = try m + 1.5  won't compile
         
         //---------------------------------
@@ -83,7 +83,7 @@ class test_StreamOps: XCTestCase {
         }
         
         // can compose easily (but log(x) is computed twice in this case)
-        let _ = x.log() / (x.log() + 1)
+        _ = x.log() / (x.log() + 1)
         
         // temporary results are okay, they won't cause data movement
         let logx = log(x)

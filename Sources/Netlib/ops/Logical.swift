@@ -28,14 +28,14 @@ public func approximatelyEqual<T>(_ lhs: T, _ rhs: T,
 /// - Parameter rhs: right hand tensor
 /// - Returns: a new tensor containing the result
 public extension TensorView where
-    Self.Scalar: AnyFloatingPoint,
-    Self.BoolView.Scalar == Bool
+    Scalar: AnyFloatingPoint,
+    BoolView.Scalar == Bool
 {
     @inlinable @inline(__always)
     func approximatelyEqual(to rhs: Self,
-                            tolerance: Double = 0.00001) -> Self.BoolView {
+                            tolerance: Double = 0.00001) -> BoolView {
 
-        var result = Self.BoolView.init(shapedLike: self)
+        var result = BoolView(shapedLike: self)
         Netlib.approximatelyEqual(self, rhs, result: &result,
                                   tolerance: tolerance)
         return result

@@ -212,8 +212,8 @@ public extension TensorView where
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func .== (lhs: Self, rhs: Self) -> Self.BoolView {
-        var result = Self.BoolView.init(shapedLike: lhs)
+    static func .== (lhs: Self, rhs: Self) -> BoolView {
+        var result = BoolView(shapedLike: lhs)
         equal(lhs: lhs, rhs: rhs, result: &result)
         return result
     }

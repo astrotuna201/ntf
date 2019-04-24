@@ -571,8 +571,8 @@ public extension TensorView {
 //==============================================================================
 /// Equal
 public extension TensorView where
-    Self.Scalar: Equatable,
-    Self.BoolView.Scalar == Bool
+    Scalar: Equatable,
+    BoolView.Scalar == Bool
 {
     //--------------------------------------------------------------------------
     /// Equal values
@@ -585,7 +585,7 @@ public extension TensorView where
             
         } else if lhs.shape.extents == rhs.shape.extents {
             // if the extents are equal then compare values
-            var result = Self.BoolView.init(shapedLike: lhs)
+            var result = BoolView(shapedLike: lhs)
             equal(lhs: lhs, rhs: rhs, result: &result)
             return result.all().scalarValue()
         } else {

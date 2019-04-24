@@ -193,8 +193,8 @@ where Scalar: ScalarConformance {
 
 //==============================================================================
 // MatrixView
-public protocol MatrixView: TensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
+public protocol MatrixView: TensorView where
+BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
 public extension MatrixView {
     var rowCount: Int { return shape.extents[0] }
@@ -231,6 +231,13 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Scalar>: MatrixView
 where Scalar: ScalarConformance {
+    
+    public func create<S>(scalar type: S.Type, with extents: [Int]) -> Matrix<S>
+        where S: DefaultInitializer
+    {
+        return Matrix<S>(extents: extents)
+    }
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool

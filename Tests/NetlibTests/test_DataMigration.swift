@@ -29,10 +29,10 @@ class test_DataMigration: XCTestCase {
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
             // create a Matrix and give it an optional name for logging
-            let values = (0..<12).map { Float($0) }
             var m0 = Matrix<Float>(extents: [3, 4],
                                    name: "weights",
-                                   scalars: values)
+                                   sequence: 0..<12)
+            
             let _ = try m0.readWrite()
             XCTAssert(!m0.lastAccessMutatedView)
             let _ = try m0.readOnly()
@@ -93,8 +93,7 @@ class test_DataMigration: XCTestCase {
                 stream[1].device.memoryAddressing == .discreet)
             
             // create a tensor and validate migration
-            let values = (0..<24).map { Float($0) }
-            var view = Volume<Float>(extents: [2, 3, 4], scalars: values)
+            var view = Volume<Float>(extents: [2, 3, 4], sequence: 0..<24)
             
             _ = try view.readOnly()
             XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
@@ -176,7 +175,7 @@ class test_DataMigration: XCTestCase {
             // memory is only allocated on device 1. This also shows how a
             // temporary can be used in a scope. No memory is copied.
             var matrix = using(stream[0]) {
-                Matrix<Float>(extents: [3, 2]).filledWithIndex()
+                Matrix<Float>(3, 2).filledWithIndex()
             }
 
             // retreive value on app thread

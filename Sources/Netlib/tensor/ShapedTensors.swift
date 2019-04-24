@@ -122,6 +122,10 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension ScalarValue: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 // VectorView
 public protocol VectorView: TensorView
@@ -130,11 +134,10 @@ where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
 public extension VectorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    /// create empty space
-    init(count: Int,
-         padding: [Padding]? = nil,
-         padValue: Scalar? = nil,
-         name: String? = nil) {
+
+    /// with Array
+    init(count: Int, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
         
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -143,10 +146,22 @@ public extension VectorView {
                   isShared: false, scalars: nil)
     }
     
+    /// with Sequence
+    init<Seq>(count: Int, name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+
+    //--------------------------------------------------------------------------
     /// initialize with scalar array
     init(name: String? = nil,
-         padding: [Padding]? = nil,
-         padValue: Scalar? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]) {
         let shape = DataShape(extents: [scalars.count])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -191,10 +206,14 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 // MatrixView
-public protocol MatrixView: TensorView where
-BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
+public protocol MatrixView: TensorView
+where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
 public extension MatrixView {
     var rowCount: Int { return shape.extents[0] }
@@ -202,9 +221,10 @@ public extension MatrixView {
     
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int],
+
+    /// with Array
+    init(extents: [Int], name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil,
          isColMajor: Bool = false, scalars: [Scalar]? = nil) {
         
         let shape = !isColMajor ? DataShape(extents: extents) :
@@ -216,14 +236,40 @@ public extension MatrixView {
                   isShared: false, scalars: scalars)
     }
     
-    /// initialize with explicit labels
-    init(_ rows: Int, _ cols: Int, isColMajor: Bool = false,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil,
-         scalars: [Scalar]? = nil) {
-        self.init(extents: [rows, cols],
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: extents, name: name,
                   padding: padding, padValue: padValue,
-                  name: name, isColMajor: isColMajor, scalars: scalars)
+                  isColMajor: isColMajor,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+    
+    //--------------------------------------------------------------------------
+    /// initialize with explicit labels
+    init(_ rows: Int, _ cols: Int, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
+         isColMajor: Bool = false, scalars: [Scalar]? = nil) {
+        
+        self.init(extents: [rows, cols], name: name,
+                  padding: padding, padValue: padValue,
+                  isColMajor: isColMajor, scalars: scalars)
+    }
+
+    init<Seq>(_ rows: Int, _ cols: Int, name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: [rows, cols], name: name,
+                  padding: padding, padValue: padValue,
+                  isColMajor: isColMajor,
+                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -231,13 +277,6 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Scalar>: MatrixView
 where Scalar: ScalarConformance {
-    
-    public func create<S>(scalar type: S.Type, with extents: [Int]) -> Matrix<S>
-        where S: DefaultInitializer
-    {
-        return Matrix<S>(extents: extents)
-    }
-    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -269,6 +308,10 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 // VolumeView
 public protocol VolumeView: TensorView
@@ -277,9 +320,11 @@ where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 public extension VolumeView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int],
+    
+    /// with Array
+    init(extents: [Int], name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, scalars: [Scalar]? = nil) {
+         scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
@@ -288,14 +333,38 @@ public extension VolumeView {
                   isShared: false, scalars: scalars)
     }
     
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: extents, name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+    
+    //--------------------------------------------------------------------------
     /// initialize with explicit labels
     init(_ depths: Int, _ rows: Int, _ cols: Int,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, scalars: [Scalar]? = nil) {
         
-        self.init(extents: [depths, rows, cols],
+        self.init(extents: [depths, rows, cols], name: name,
                   padding: padding, padValue: padValue,
-                  name: name, scalars: scalars)
+                  scalars: scalars)
+    }
+    
+    init<Seq>(_ depths: Int, _ rows: Int, _ cols: Int, name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: [depths, rows, cols], name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -334,10 +403,31 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 // NDTensorView
 public protocol NDTensorView: TensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
+
+public extension NDTensorView {
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: padding, padValue: padValue,
+                  tensorData: nil, viewDataOffset: 0,
+                  isShared: false,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+}
 
 //------------------------------------------------------------------------------
 // NDTensor
@@ -375,6 +465,10 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 /// NCHWTensorView
 /// An NCHW tensor is a standard layout for use with cuDNN.
@@ -389,9 +483,11 @@ where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 public extension NCHWTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int],
+    
+    /// with Array
+    init(extents: [Int], name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, scalars: [Scalar]? = nil) {
+         scalars: [Scalar]? = nil) {
 
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
@@ -399,15 +495,39 @@ public extension NCHWTensorView {
                   tensorData: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
+    
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: extents, name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
 
+    //--------------------------------------------------------------------------
     /// initialize with explicit labels
     init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          name: String? = nil, scalars: [Scalar]? = nil) {
 
-        self.init(extents: [items, channels, rows, cols],
+        self.init(extents: [items, channels, rows, cols], name: name,
                   padding: padding, padValue: padValue,
-                  name: name, scalars: scalars)
+                  scalars: scalars)
+    }
+
+    init<Seq>(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: [items, channels, rows, cols], name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -446,6 +566,10 @@ where Scalar: ScalarConformance {
     }
 }
 
+extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
 //==============================================================================
 /// NHWCTensorView
 /// An NHWC tensor is a standard layout for use with cuDNN.
@@ -460,10 +584,10 @@ where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 public extension NHWCTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(extents: [Int],
-         padding: [Padding]? = nil,
-         padValue: Scalar? = nil,
-         name: String? = nil,
+    
+    /// with Array
+    init(extents: [Int], name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]? = nil) {
         
         let shape = DataShape(extents: extents)
@@ -473,16 +597,39 @@ public extension NHWCTensorView {
                   isShared: false, scalars: scalars)
     }
 
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              isColMajor: Bool = false, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents: extents, name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+
+    //--------------------------------------------------------------------------
     /// initialize with explicit labels
     init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
-         padding: [Padding]? = nil,
-         padValue: Scalar? = nil,
          name: String? = nil,
+         padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]? = nil) {
 
-        self.init(extents: [items, rows, cols, channels],
+        self.init(extents: [items, rows, cols, channels], name: name,
                   padding: padding, padValue: padValue,
-                  name: name, scalars: scalars)
+                  scalars: scalars)
+    }
+
+    init<Seq>(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
+              padding: [Padding]? = nil, padValue: Scalar? = nil,
+              name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        self.init(extents:  [items, rows, cols, channels], name: name,
+                  padding: padding, padValue: padValue,
+                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -519,6 +666,10 @@ where Scalar: ScalarConformance {
         self.tensorData = TensorData()
         initTensorData(tensorData, name, scalars)
     }
+}
+
+extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
 }
 
 //------------------------------------------------------------------------------

@@ -151,6 +151,15 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
+    /// sequence2ScalarArray
+    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Scalar] where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Scalar: AnyConvertable
+    {
+        return sequence.map { Scalar(any: $0) }
+    }
+
+    //--------------------------------------------------------------------------
     /// initTensorData
     /// a helper to correctly initialize the tensorData object
     mutating func initTensorData(_ data: TensorData?,

@@ -12,7 +12,7 @@ public extension TensorView where Scalar: AnyConvertable {
     func formatted(
         maxCols: Int = 10,
         maxItems: [Int]? = nil,
-        numberFormat: (width: Int, precision: Int)? = nil) -> String {
+        scalarFormat: (width: Int, precision: Int)? = nil) -> String {
         
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""
@@ -33,13 +33,8 @@ public extension TensorView where Scalar: AnyConvertable {
         " paddedExtents: \(extents.description)\n"
 
         func appendFormatted(value: Scalar) {
-            if let fmt = numberFormat {
-                let str = String(format: Scalar.formatString(fmt),
-                                 value.asCVarArg)
-                string += "\(str) "
-            } else {
-                string += "\(value.asString) "
-            }
+            let str = String(format: Scalar.formatString(scalarFormat), value)
+            string += "\(str) "
         }
 
         // recursive rank > 1 formatting

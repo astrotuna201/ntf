@@ -28,7 +28,8 @@ The code will compile inside the S4TF environment, but currently there are no de
 
 ## Proposed Execution Model
 The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, OpenCL, and other proprietary models such as Google TPUs.
-I propose adopting an asynchronous stream based driver model to meet this goal for both local and remote devices.
+
+The idea of a stream of commands going to a local or remote device across the network seems easy for users to understand and it fits well with encapsulating frameworks like Cuda or OpenCL.
 
 ***
 # Tensor Representation
@@ -321,7 +322,7 @@ let subViewSum = using(stream2) {
 }
 assert(subViewSum == 312)
 ```
-The logging output shows detailed output of exactly what is happening in the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
+Logging shows detailed output of exactly what is happening for the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
 ```sh
 status    : default device: [cpu] cpu:0
 diagnostic: [CREATE ] Volume<Int32>(14) elements[60]

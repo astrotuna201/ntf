@@ -7,10 +7,13 @@ The design currently addresses:
 * Tensor representation
 * Device abstraction
 * Asynchronous execution
+* Logging
 
 The code is in early stages and needs signficant testing along with performance and usuability refinement.
 
-## Core Design Goals
+The code will compile inside the S4TF environment, but currently there are no dependencies on TensorFlow. Some names are not the desired name, for example TensorShape is called DataShape and Tensor is called NDTensor to avoid naming conflicts.
+
+## Design Goals
 * Optimal defaults for all configuration parameters so the user can have a good experience with no upfront training or special effort
 * Simplified local and remote compute device management for more sophisticated applications
 * A single uniform data representation that is used on both the application thread in “Swift space”, and transparently used on local and remote accelerators.
@@ -20,12 +23,31 @@ The code is in early stages and needs signficant testing along with performance 
 * An execution model that can leverage existing standard driver models such as Cuda and OpenCL.
 * Integrated fine grain logging that enables selection of both message level (error, warning, diagnostic) and message category.
 * Enable clear closure opportunities for compiler vectorization
-* Extensible driver model without requiring a rebuild
-* Reusable Function repository for rapid model development using “expert” designed functional components.
+* Extensible driver model without requiring a rebuild <TBD>
+* Reusable Function repository for rapid model development using “expert” designed functional components.<TBD>
 
 ## Proposed Execution Model
 The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, OpenCL, and other proprietary models such as Google TPUs.
 I propose adopting an asynchronous stream based driver model to meet this goal for both local and remote devices.
+
+# Tensor Representation
+A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers and helper functions. The types currently defined are:
+* ScalarValue
+* Vector
+* Matrix
+* Volume
+* Tensor (NDTensor)
+* NHWC
+* NCHW
+
+All of these types are just constrained variations of a `Tensor` which conforms to the `TensorView` protocol. All underlying operators and driver functions require conformance to `TensorView` and not to shaped types. Operator arguments are handled as n-dimensional data sets.
+
+## Tensor Structure
+### TensorData
+The `TensorData` class object is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else. The 
+### TensorView
+A `TensorView` is a struct that presents a shaped view of an associated `TensorData` object, along with a variety of access functions. Creation of a `TensorView` will automatically create a `TensorData` object if one is not specified.
+
 
 ## Simple Examples of the Experience
 The following is a complete program. It initializes a matrix with a sequence then takes the sum. It uses shortcut syntax to specify the matrix extents (3, 5)

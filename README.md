@@ -306,11 +306,8 @@ The CPU device uses UMA memory addressing, so a cpuUnitTest service is included 
 Platform.log.level = .diagnostic
 Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
-let stream1 = Platform.local
-    .createStream(serviceName: "cpuUnitTest", deviceId: 1)
-
-let stream2 = Platform.local
-    .createStream(serviceName: "cpuUnitTest", deviceId: 2)
+let stream1 = Platform.local.createStream(serviceName: "cpuUnitTest", deviceId: 1)
+let stream2 = Platform.local.createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
 let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()

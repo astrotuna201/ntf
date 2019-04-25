@@ -30,6 +30,7 @@ The code will compile inside the S4TF environment, but currently there are no de
 The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, OpenCL, and other proprietary models such as Google TPUs.
 I propose adopting an asynchronous stream based driver model to meet this goal for both local and remote devices.
 
+***
 # Tensor Representation
 A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers and helper functions. The types currently defined are:
 * ScalarValue
@@ -56,7 +57,7 @@ A _TensorView_ is a struct that presents a shaped view of an associated _TensorA
 ### Sub Views and App Space Multi-threading
 _TensorView_ has methods to create sub views of a _TensorArray_. An important use of this is to divide a _TensorArray_ into multiple sub-regions and operate on them in parallel. 
 
-For example: if a batch of 64 image items is loaded, they can all be decoded and written to the tensor on independent threads making full use of all cores on the host CPU. Using sub-views in parallel on the GPU works the same way. Synchronization between writable sub views is managed by the caller.
+For example: if a batch of 64 image items is loaded, they can all be decoded and written to a tensor using independent threads making full use of all cores on the host CPU. Using sub-views in parallel on the GPU works the same way. Synchronization between writable sub views is managed by the caller.
 
 __<I need to redo this diagram to change the names!>__
 
@@ -66,7 +67,7 @@ Tensor views manage both shared and copy-on-write semantics. Multiple concurrent
 
 
 ## Simple Use Examples
-The following is a complete program. It initializes a matrix with a sequence then takes the sum. It doesn't require the user to setup or configure anything.
+The following is a complete program. It initializes a matrix with a sequence then takes the sum using the current default device. It doesn't require the user to setup or configure anything.
 ```swift
 let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
 let sum = matrix.sum().scalarValue()
@@ -202,4 +203,34 @@ let expectedValues: [Int32] = [
 let values = [Int32](matrix.values())
 assert(values == expectedValues, "indices do not match")
 ```
+***
+# Device Abstraction
+NetlibTF defines a set of class protocols for platform abstraction. They encapsulate functionality to allow run time selection of a compute service (cpu, cuda, metal, etc.) and hardware device, to enable application portability without recoding. 
 
+ComputePlatform
+      services[]
+       ComputeService (cpu, cuda, amd, tpu, ...)
+         devices[]
+           ComputeDevice (gpu:0, gpu:1, ...)
+             DeviceArray
+             DeviceStream
+           StreamEvent
+
+Concrete implementations are provided. The _Platform_ class is the root for local resource selection and allocation. A _RemotePlatform_ class and marshalling objects are planned.
+
+### ComputePlatform protocol
+The _ComputePlatform_ is used to select a compute service (cpu, cuda, metal, etc.), hardware device, and to specify a default device. The _ComputePlatform_ is also used to detect and load compute service plugins that are implemented in separate bundles. This permits dynamic download and use of compute drivers without recompiling the application. 
+__<The Linux Foundation library didn't have loadable bundles when I last checked. Recheck!>__
+
+### ComputePlatform
+A compute platform represents the root for managing all services, devices, and streams on a platform. There is one local instance per process, and possibly many remote instances.
+### ComputeService
+A compute service implements the _ComputeService_ protocol and is used to enumerate available devices.
+### ComputeDevice
+A compute device implements the _ComputeDevice_ protocol and is used to query device attributes, and create resources such as device arrays and streams.
+### DeviceStream
+A device stream is an abstraction for an asynchronous command queue that implements the _DeviceStream_ protocol. It is used to schedule and synchronize computations. The protocol function implementations are service API specific and optimized.
+### DeviceArray
+A device array implements the _DeviceArray_ protocol and is an abstraction for a contiguous array of bytes on a device. 
+### StreamEvent
+A stream event implements the _StreamEvent_ protocol and is used to synchronize device streams.

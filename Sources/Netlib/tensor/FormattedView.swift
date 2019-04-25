@@ -10,7 +10,7 @@ public extension TensorView where Scalar: AnyConvertable {
     //--------------------------------------------------------------------------
     // formatted
     func formatted(
-        scalarFormat: (width: Int, precision: Int)? = nil,
+        _ scalarFormat: (width: Int, precision: Int)? = nil,
         maxCols: Int = 10,
         maxItems: [Int]? = nil) -> String {
         

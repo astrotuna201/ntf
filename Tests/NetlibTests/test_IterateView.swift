@@ -32,7 +32,7 @@ class test_IterateView: XCTestCase {
         let count: Int32 = 10
         let expected = [Int32](0..<count)
         let vector = Vector<Int32>(scalars: expected)
-//        print(vector.formatted(scalarFormat: (2,0)))
+//        print(vector.formatted((2,0)))
         
         let values = [Int32](vector.values())
         XCTAssert(values == expected, "values do not match")
@@ -43,7 +43,7 @@ class test_IterateView: XCTestCase {
     func test_Matrix() {
             let expected = [Int32](0..<4)
             let matrix = Matrix<Int32>((2, 2), scalars: expected)
-//            print(matrix.formatted(scalarFormat: (2,0)))
+//            print(matrix.formatted((2,0)))
         
             let values = [Int32](matrix.values())
             XCTAssert(values == expected, "values do not match")
@@ -54,7 +54,7 @@ class test_IterateView: XCTestCase {
     func test_Volume() {
         let expected = [Int32](0..<24)
         let volume = Volume<Int32>((2, 3, 4), scalars: expected)
-        //            print(volume.formatted(scalarFormat: (2,0)))
+        //            print(volume.formatted((2,0)))
         
         let values = [Int32](volume.values())
         XCTAssert(values == expected, "values do not match")
@@ -65,7 +65,7 @@ class test_IterateView: XCTestCase {
     func test_VectorSubView() {
         let vector = Vector<Int32>(scalars: [Int32](0..<10))
         let subView = vector.view(at: [2], extents: [3])
-        //            print(subView.formatted(scalarFormat: (2,0)))
+        //            print(subView.formatted((2,0)))
         
         let expected: [Int32] = [2, 3, 4]
         let values = [Int32](subView.values())
@@ -77,7 +77,7 @@ class test_IterateView: XCTestCase {
     func test_MatrixSubView() {
         let matrix = Matrix<Int32>((3, 4), sequence: 0..<12)
         let subView = matrix.view(at: [1, 1], extents: [2, 2])
-//        print(subView.formatted(scalarFormat: (2,0)))
+//        print(subView.formatted((2,0)))
         
         let expected: [Int32] = [
             5, 6,
@@ -92,7 +92,7 @@ class test_IterateView: XCTestCase {
     func test_VolumeSubView() {
         let volume = Volume<Int32>((3, 3, 4), sequence: 0..<36)
         let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
-        //            print(subView.formatted(scalarFormat: (2,0)))
+        //            print(subView.formatted((2,0)))
         
         let expected: [Int32] = [
             17, 18, 19,
@@ -111,7 +111,7 @@ class test_IterateView: XCTestCase {
         #if RELEASE
         let count = 512 * 512
         let vector = Vector<Int32>(sequence: 0..<count)
-        //            print(vector.formatted(scalarFormat: (2,0)))
+        //            print(vector.formatted((2,0)))
         
         let values = vector.values()
         self.measure {
@@ -126,7 +126,7 @@ class test_IterateView: XCTestCase {
         // try repeating a scalar
         let value = Matrix<Int32>((1, 1), scalars: [42])
         let matrix = Matrix<Int32>((2, 3), repeating: value)
-        //            print(vector.formatted(scalarFormat: (2,0)))
+        //            print(vector.formatted((2,0)))
         
         let expected: [Int32] = [
             42, 42, 42,
@@ -143,7 +143,7 @@ class test_IterateView: XCTestCase {
         // try repeating a row vector
         let row = Matrix<Int32>((1, 3), sequence: 0..<3)
         let matrix = Matrix<Int32>((2, 3), repeating: row)
-        //            print(matrix.formatted(scalarFormat: (2,0)))
+        //            print(matrix.formatted((2,0)))
         
         let expected: [Int32] = [
             0, 1, 2,
@@ -160,7 +160,7 @@ class test_IterateView: XCTestCase {
         // try repeating a row vector
         let col = Matrix<Int32>((3, 1), sequence: 0..<3)
         let matrix = Matrix<Int32>((3, 2), repeating: col)
-        //            print(matrix.formatted(scalarFormat: (2,0)))
+        //            print(matrix.formatted((2,0)))
         
         let expected: [Int32] = [
             0, 0,
@@ -224,7 +224,7 @@ class test_IterateView: XCTestCase {
 
         let vector = Vector<Int32>(padding: padding, padValue: -1,
                                    sequence: 0..<3)
-        //            print(vector.formatted(scalarFormat: (2,0)))
+        //            print(vector.formatted((2,0)))
         
         let expected: [Int32] = [-1, -1, 0, 1, 2, -1, -1, -1]
         XCTAssert(vector.array == expected, "values do not match")
@@ -243,7 +243,7 @@ class test_IterateView: XCTestCase {
                                    padding: padding,
                                    padValue: -1,
                                    sequence: 0..<6)
-        print(matrix.formatted(scalarFormat: (2,0)))
+        print(matrix.formatted((2,0)))
         
         let expected: [Int32] = [
             -1, -1, -1, -1, -1, -1, -1, -1,

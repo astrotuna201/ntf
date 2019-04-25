@@ -52,7 +52,7 @@ A `TensorView` is a struct that presents a shaped view of an associated `TensorA
 ## Simple Use Examples
 The following is a complete program. It initializes a matrix with a sequence then takes the sum. It doesn't require the user to setup or configure anything.
 ```swift
-let matrix = Matrix<Float>(3, 5, sequence: 0..<15)
+let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
 let sum = matrix.sum().scalarValue()
 assert(sum == 105.0)
 ```
@@ -63,7 +63,7 @@ This selects and sums a 3D sub region
 - on the device create a sub view and take the sum 
 - return the scalar value back to the app thread
 ```swift
-let volume = Volume<Int32>(extents: [3, 4, 5]).filledWithIndex()
+let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
 let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 let subViewSum = sum(subView).scalarValue()
 assert(subViewSum == 312)
@@ -123,18 +123,18 @@ at index: [1, 0, 0]
 All tensor views are able to repeat data through indexing. No matter the extents, `volume` only uses storage
 for a single value.
 ```swift
-let volume = Volume<Int32>(extents: [2, 3, 10], repeating: Volume(42))
+let volume = Volume<Int32>((2, 3, 10), repeating: Volume(42))
 print(volume.formatted(scalarFormat: (2,0)))
 ```        
 Repeating any pattern whether it matches any dimensions is allowed. These repeat a row and column vectors.
 No matter the extents, `matrix` only uses the shared storage from `rowVector` and repeats it through indexing.
 ```swift
-let rowVector = Matrix<Int32>(1, 10, sequence: 0..<10)
-let rmatrix = Matrix(extents: [10, 10], repeating: rowVector)
+let rowVector = Matrix<Int32>((1, 10), sequence: 0..<10)
+let rmatrix = Matrix((10, 10), repeating: rowVector)
 print(rmatrix.formatted(scalarFormat: (2,0)))
 
-let colVector = Matrix<Int32>(10, 1, sequence: 0..<10)
-let cmatrix = Matrix(extents: [10, 10], repeating: colVector)
+let colVector = Matrix<Int32>((10, 1), sequence: 0..<10)
+let cmatrix = Matrix((10, 10), repeating: colVector)
 print(cmatrix.formatted(scalarFormat: (2,0)))
 ```
 ```sh
@@ -172,7 +172,7 @@ let padding = [
     Padding(1),                   // row pad
     Padding(before: 2, after: 3)  // col pad
 ]
-let matrix = Matrix<Int32>(extents: [2,3],
+let matrix = Matrix<Int32>((2, 3),
                            padding: padding,
                            padValue: -1,
                            sequence: 0..<6)

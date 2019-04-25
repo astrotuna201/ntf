@@ -49,8 +49,7 @@ class test_Syntax: XCTestCase {
         // No matter the extents, `volume` only uses the shared storage
         // from `value` and repeats it through indexing
         do {
-            let volume = Volume<Int32>(extents: [2, 3, 10],
-                                       repeating: Volume(42))
+            let volume = Volume<Int32>((2, 3, 10), repeating: Volume(42))
             print(volume.formatted(scalarFormat: (2,0)))
         }
         

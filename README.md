@@ -144,7 +144,9 @@ for a single value.
 let volume = Volume<Int32>((2, 3, 10), repeating: Volume(42))
 print(volume.formatted((2,0)))
 ```        
-Repeating any pattern whether it matches any dimensions is allowed. These repeat a row and column vectors.
+The extents of repeated data are not required to match any extent of the Tensor being created. 
+
+These examples repeat row and column vectors.
 No matter the extents, `matrix` only uses the shared storage from `rowVector` and repeats it through indexing.
 ```swift
 let rowVector = Matrix<Int32>((1, 10), sequence: 0..<10)

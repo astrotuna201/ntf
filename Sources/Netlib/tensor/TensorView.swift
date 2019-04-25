@@ -63,7 +63,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
     /// class reference to the underlying byte buffer
-    var tensorArray: TensorArray! { get set }
+    var tensorArray: TensorArray { get set }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 
@@ -160,27 +160,31 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// initTensorData
+    /// initTensorArray
     /// a helper to correctly initialize the tensorArray object
-    mutating func initTensorData(_ name: String?,
-                                 _ scalars: [Scalar]?) -> TensorArray {
-        // allocate backing tensorArray
-        assert(shape.isContiguous, "new views should have a dense shape")
-        let data: TensorArray
-        let tensorName = name ?? String(describing: Self.self)
-        if let scalars = scalars {
-            data = scalars.withUnsafeBytes {
-                TensorArray(buffer: $0, name: tensorName)
-            }
+    mutating func initTensorArray(_ tensorData: TensorArray?,
+                                  _ name: String?, _ scalars: [Scalar]?) {
+        if let tensorData = tensorData {
+            tensorArray = tensorData
         } else {
-            data = TensorArray(type: Scalar.self,
-                              count: dataShape.elementSpanCount,
-                              name: tensorName)
+            assert(shape.isContiguous, "new views should have a dense shape")
+            // allocate backing tensorArray
+            if let scalars = scalars {
+                tensorArray = scalars.withUnsafeBytes { TensorArray(buffer: $0)}
+            } else {
+                tensorArray = TensorArray(type: Scalar.self,
+                                          count: dataShape.elementCount)
+            }
         }
-        assert(viewByteOffset + viewSpanByteCount <= data.byteCount)
-        return data
+        assert(viewByteOffset + viewSpanByteCount <= tensorArray.byteCount)
+
+        if let name = name {
+            tensorArray.name = name
+        } else if tensorArray.name.isEmpty {
+            tensorArray.name = String(describing: Self.self)
+        }
     }
-    
+
     // TODO: investigate need for this check
 //    //--------------------------------------------------------------------------
 //    /// shared memory

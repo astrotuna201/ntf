@@ -98,7 +98,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -117,7 +117,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -174,9 +175,8 @@ public extension VectorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
         
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
@@ -225,7 +225,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -244,7 +244,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -324,9 +325,8 @@ public extension MatrixView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
         
         // create shape considering column major
         let extents = [extents.rows, extents.cols]
@@ -372,7 +372,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -391,7 +391,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -464,10 +465,9 @@ public extension VolumeView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
-        
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
+
         let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
@@ -491,7 +491,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -510,7 +510,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -532,10 +533,9 @@ public extension NDTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
-        
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
+
         // create shape considering column major
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
@@ -576,7 +576,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -595,7 +595,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -676,10 +677,9 @@ public extension NCHWTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
-        
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
+
         let extents = [extents.items, extents.channels,
                        extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
@@ -704,7 +704,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -723,7 +723,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 
@@ -804,10 +805,9 @@ public extension NHWCTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray =
-            TensorArray(readOnlyReferenceTo: buffer,
-                        name: name ?? String(describing: Self.self))
-        
+        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        tensorArray.name = name ?? String(describing: Self.self)
+
         let extents = [extents.items, extents.rows,
                        extents.cols, extents.channels]
         let shape = DataShape(extents: extents)
@@ -832,7 +832,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorArray: TensorArray!
+    public var tensorArray: TensorArray
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -851,7 +851,8 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
     }
 }
 

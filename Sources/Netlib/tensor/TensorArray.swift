@@ -26,7 +26,7 @@ final public class TensorArray: ObjectTracking, Logging {
     /// the object tracking id
     public private(set) var trackingId = 0
     /// name label used for logging
-    public let name: String
+    public var name: String = ""
     
     // local
     private let streamRequired = "stream is required for device data transfers"
@@ -90,22 +90,20 @@ final public class TensorArray: ObjectTracking, Logging {
 
     // Empty
     public convenience init() {
-        self.init(type: UInt8.self, count: 0, name: "")
+        self.init(type: UInt8.self, count: 0)
     }
 
     //----------------------------------------
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer,
-                name: String) {
+    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         // store
         isReadOnlyReference = true
         elementCount = buffer.count
         byteCount = buffer.count
         masterVersion = 0
         hostVersion = 0
-        self.name = name
 
         // we won't ever actually mutate in this case
         hostBuffer = UnsafeMutableRawBufferPointer(
@@ -116,11 +114,10 @@ final public class TensorArray: ObjectTracking, Logging {
 
     //----------------------------------------
     // copy from buffer
-    public init(buffer: UnsafeRawBufferPointer, name: String) {
+    public init(buffer: UnsafeRawBufferPointer) {
         isReadOnlyReference = false
         elementCount = buffer.count
         byteCount = buffer.count
-        self.name = name
 
         do {
             _ = try readWriteHostBuffer()
@@ -134,11 +131,10 @@ final public class TensorArray: ObjectTracking, Logging {
 
     //----------------------------------------
     // create new array based on scalar size
-    public init<Scalar>(type: Scalar.Type, count: Int, name: String) {
+    public init<Scalar>(type: Scalar.Type, count: Int) {
         isReadOnlyReference = false
         self.elementCount = count
         self.byteCount = count * MemoryLayout<Scalar>.size
-        self.name = name
         register()
     }
     

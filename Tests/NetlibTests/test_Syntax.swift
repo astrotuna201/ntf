@@ -19,12 +19,21 @@ class test_Syntax: XCTestCase {
     func test_simple() {
         //--------------------------------
         // initialize a matrix with a sequence and take the sum
-        // use shortcut syntax for extents
         do {
             let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
             print(matrix.formatted((2,0)))
             let sum = matrix.sum().scalarValue()
             XCTAssert(sum == 105.0)
+        }
+        
+        //--------------------------------
+        // zero copy transpose
+        do {
+            let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+            print(matrix.formatted((2,0)))
+            
+            let tmatrix = matrix.t
+            print(tmatrix.formatted((2,0)))
         }
         
         //--------------------------------

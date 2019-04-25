@@ -219,6 +219,32 @@ let cmMatrix = Matrix<Int32>((3, 2),
 let expected = [Int32](0..<6)
 assert(cmMatrix.array == expected, "values don't match")
 ```
+### Matrix Zero Copy Transpose
+Accessing the MatrixView _t_ member variable returns a transposed view of Self with zero copy by manipulating strides.
+```swift
+let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+print(matrix.formatted((2,0)))
+
+let tmatrix = matrix.t
+print(tmatrix.formatted((2,0)))
+```
+```sh
+TensorView extents: [3, 5] paddedExtents: [3, 5]
+at index: [0, 0]
+----------------
+0  1  2  3  4 
+5  6  7  8  9 
+10 11 12 13 14 
+
+TensorView extents: [5, 3] paddedExtents: [5, 3]
+at index: [0, 0]
+----------------
+0  5 10 
+1  6 11 
+2  7 12 
+3  8 13 
+4  9 14 
+```
 
 ***
 # Device Abstraction

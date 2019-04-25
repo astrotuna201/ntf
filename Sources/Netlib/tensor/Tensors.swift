@@ -262,9 +262,6 @@ public enum MatrixLayout { case rowMajor, columnMajor }
 public extension MatrixView {
     typealias MatrixExtents = (rows: Int, cols: Int)
 
-    var rowCount: Int { return shape.extents[0] }
-    var colCount: Int { return shape.extents[1] }
-    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -343,6 +340,24 @@ public extension MatrixView {
                   padding: padding, padValue: padValue,
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    var rowCount: Int { return shape.extents[0] }
+    var colCount: Int { return shape.extents[1] }
+    
+    //--------------------------------------------------------------------------
+    // transpose
+    var t: Self {
+        return Self.init(shape: shape.transposed(),
+                         dataShape: dataShape.transposed(),
+                         name: name,
+                         padding: padding,
+                         padValue: padValue,
+                         tensorArray: tensorArray,
+                         viewDataOffset: viewDataOffset,
+                         isShared: isShared,
+                         scalars: nil)
     }
 }
 

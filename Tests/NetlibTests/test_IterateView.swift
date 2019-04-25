@@ -168,8 +168,7 @@ class test_IterateView: XCTestCase {
             2, 2,
         ]
         
-        let values = [Int32](matrix.values())
-        XCTAssert(values == expected, "values do not match")
+        XCTAssert(matrix.array == expected, "values do not match")
     }
     
 
@@ -188,8 +187,7 @@ class test_IterateView: XCTestCase {
             1, 0, 1, 0,
         ]
         
-        let values = [Int32](matrix.values())
-        XCTAssert(values == expected, "values do not match")
+        XCTAssert(matrix.array == expected, "values do not match")
     }
     
     //==========================================================================
@@ -215,8 +213,7 @@ class test_IterateView: XCTestCase {
             2, 3, 2, 3,
         ]
         
-        let values = [Int32](volume.values())
-        XCTAssert(values == expected, "indices do not match")
+        XCTAssert(volume.array == expected, "values do not match")
     }
 
     //==========================================================================
@@ -229,12 +226,8 @@ class test_IterateView: XCTestCase {
                                    sequence: 0..<3)
         //            print(vector.formatted(scalarFormat: (2,0)))
         
-        let expectedValues: [Int32] = [
-            -1, -1, 0, 1, 2, -1, -1, -1,
-        ]
-        
-        let values = [Int32](vector.values())
-        XCTAssert(values == expectedValues, "indices do not match")
+        let expected: [Int32] = [-1, -1, 0, 1, 2, -1, -1, -1]
+        XCTAssert(vector.array == expected, "values do not match")
     }
 
     //==========================================================================
@@ -252,15 +245,14 @@ class test_IterateView: XCTestCase {
                                    sequence: 0..<6)
         print(matrix.formatted(scalarFormat: (2,0)))
         
-        let expectedValues: [Int32] = [
+        let expected: [Int32] = [
             -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1,  0,  1,  2, -1, -1, -1,
             -1, -1,  3,  4,  5, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1,
         ]
         
-        let values = [Int32](matrix.values())
-        XCTAssert(values == expectedValues, "indices do not match")
+        XCTAssert(matrix.array == expected, "values do not match")
 
         // edge case of 0 padding specified
         let matrix2 = Matrix<Int32>((2, 3),
@@ -268,12 +260,11 @@ class test_IterateView: XCTestCase {
                                     padValue: -1,
                                     sequence: 0..<6)
 
-        let expectedValues2: [Int32] = [
+        let expected2: [Int32] = [
             0,  1,  2,
             3,  4,  5,
         ]
         
-        let values2 = [Int32](matrix2.values())
-        XCTAssert(values2 == expectedValues2, "indices do not match")
+        XCTAssert(matrix2.array == expected2, "values do not match")
     }
 }

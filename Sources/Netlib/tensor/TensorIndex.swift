@@ -11,6 +11,10 @@ import Foundation
 //==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {
+    var array: [Scalar] {
+        return [Scalar](self.values())
+    }
+    
     func values() -> TensorViewCollection<Self> {
         do {
             guard _Streams.current.lastError == nil else {

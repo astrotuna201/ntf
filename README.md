@@ -189,20 +189,37 @@ let padding = [
     Padding(1),                   // row pad
     Padding(before: 2, after: 3)  // col pad
 ]
+
 let matrix = Matrix<Int32>((2, 3),
                            padding: padding,
                            padValue: -1,
                            sequence: 0..<6)
 
-let expectedValues: [Int32] = [
+let expected: [Int32] = [
     -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1,  0,  1,  2, -1, -1, -1,
     -1, -1,  3,  4,  5, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1,
 ]
-let values = [Int32](matrix.values())
-assert(values == expectedValues, "indices do not match")
+
+assert(matrix.array == expected, "values do not match")
 ```
+### Matrix Layout
+Packages such as Matlab, Octave, and CBLAS have column major memory layout. TensorViews by default are row major, but can work with column major data with zero copy.
+
+This example loads data arranged in column major order.
+```swift
+//   0, 1,
+//   2, 3,
+//   4, 5
+let cmMatrix = Matrix<Int32>((3, 2),
+                             layout: .columnMajor,
+                             scalars: [0, 2, 4, 1, 3, 5])
+
+let expected = [Int32](0..<6)
+assert(cmMatrix.array == expected, "values don't match")
+```
+
 ***
 # Device Abstraction
 NetlibTF defines a set of class protocols for platform abstraction. They encapsulate functionality to allow run time selection of a compute service (cpu, cuda, metal, etc.) and hardware device, to enable application portability without recoding. 
@@ -219,7 +236,8 @@ ComputePlatform
 Concrete implementations are provided. The _Platform_ class is the root for local resource selection and allocation. A _RemotePlatform_ class and marshalling objects are planned.
 
 ### ComputePlatform protocol
-The _ComputePlatform_ is used to select a compute service (cpu, cuda, metal, etc.), hardware device, and to specify a default device. The _ComputePlatform_ is also used to detect and load compute service plugins that are implemented in separate bundles. This permits dynamic download and use of compute drivers without recompiling the application. 
+The _ComputePlatform_ is used to select a compute service (cpu, cuda, metal, etc.), hardware device, and to specify a default device. The _ComputePlatform_ is also used to detect and load compute service plugins that are implemented in separate bundles. This permits dynamic download and use of compute drivers without recompiling the application.
+
 __<The Linux Foundation library didn't have loadable bundles when I last checked. Recheck!>__
 
 ### ComputePlatform

@@ -366,19 +366,11 @@ class test_DataMigration: XCTestCase {
     //   2, 3,
     //   4, 5
     func test_columnMajorDataView() {
-        let cmArray: [Int32] = [0, 2, 4, 1, 3, 5]
-        let expected = (0..<cmArray.count).map { Int32($0) }
-
         let cmMatrix = Matrix<Int32>((3, 2),
                                      layout: .columnMajor,
-                                     scalars: cmArray)
+                                     scalars: [0, 2, 4, 1, 3, 5])
         
-        let cmMatrixValues = [Int32](cmMatrix.values())
-        XCTAssert(cmMatrixValues == expected, "values don't match")
-        
-        // create row major view from cmData, this will copy and reorder
-        let rmMatrix = Matrix<Int32>((3, 2), scalars: cmMatrixValues)
-        let rowMajorValues = [Int32](rmMatrix.values())
-        XCTAssert(rowMajorValues == expected, "values don't match")
+        let expected = [Int32](0..<6)
+        XCTAssert(cmMatrix.array == expected, "values don't match")
     }
 }

@@ -248,9 +248,10 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     public func readOnlyDevicePointer(using stream: DeviceStream) throws
-        -> UnsafeRawPointer {
+        -> UnsafeRawBufferPointer {
         try migrate(readOnly: true, using: stream)
-        return UnsafeRawPointer(deviceDataPointer)
+            return UnsafeRawBufferPointer(start: deviceDataPointer,
+                                          count: byteCount)
     }
 
     //--------------------------------------------------------------------------
@@ -263,10 +264,11 @@ final public class TensorArray: ObjectTracking, Logging {
     }
 
     public func readWriteDevicePointer(using stream: DeviceStream) throws ->
-        UnsafeMutableRawPointer {
+        UnsafeMutableRawBufferPointer {
         assert(!isReadOnlyReference)
         try migrate(readOnly: false, using: stream)
-        return deviceDataPointer
+            return UnsafeMutableRawBufferPointer(start: deviceDataPointer,
+                                                 count: byteCount)
     }
 
     //--------------------------------------------------------------------------

@@ -43,13 +43,13 @@ public extension TensorView {
     func deviceValues(using stream: DeviceStream) throws
         -> TensorViewCollection<Self> {
         return try TensorViewCollection(
-            view: self, buffer: readOnlyDeviceBuffer(using: stream))
+            view: self, buffer: readOnly(using: stream))
     }
     
     mutating func mutableDeviceValues(using stream: DeviceStream) throws
         -> TensorViewMutableCollection<Self> {
         return try TensorViewMutableCollection(
-            view: &self, buffer: readWriteDeviceBuffer(using: stream))
+            view: &self, buffer: readWrite(using: stream))
     }
     
     func value(at index: [Int]) -> Scalar {

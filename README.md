@@ -320,7 +320,7 @@ let subViewSum = using(stream2) {
 assert(subViewSum == 312)
 ```
 Logging shows detailed output of exactly what is happening for the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
-```swift
+```
 status    : default device: [cpu] cpu:0
 diagnostic: [CREATE ] Volume<Int32>(14) elements[60]
 diagnostic: [CREATE ] Volume<Int32>(15) elements[60]

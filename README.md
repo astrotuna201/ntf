@@ -40,13 +40,17 @@ A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) 
 * NHWC
 * NCHW
 
-All of these types are just constrained variations of a `Tensor` which conforms to the `TensorView` protocol. All underlying operators and driver functions require conformance to `TensorView` and not to shaped types. Operator arguments are handled as n-dimensional data sets.
+All of these types are just constrained variations of a _Tensor_ which conforms to the _TensorView_ protocol. All underlying operators and driver functions require conformance to _TensorView_ and not to shaped types. Operator arguments are handled as n-dimensional data sets.
 
 ## Tensor Structure
 ### TensorArray
-A `TensorArray` is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.
+A _TensorArray_ is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.
+_<I need to redo this diagram to change the names!>_
+
+![TensorArray Diagram](https://github.com/ewconnell/Netlib/blob/master/documents/DataArrayDiagram.png)
+
 ### TensorView
-A `TensorView` is a struct that presents a shaped view of an associated `TensorArray` object, along with a variety of access functions. Creation of a `TensorView` will automatically create a `TensorArray` object if one is not specified.
+A _TensorView_ is a struct that presents a shaped view of an associated _TensorArray_ object, along with a variety of access functions. Creation of a _TensorView_ will automatically create a _TensorArray_ object if one is not specified.
 
 
 ## Simple Use Examples

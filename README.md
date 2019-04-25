@@ -139,7 +139,7 @@ at index: [0, 0]
  8  8  8  8  8  8  8  8  8  8 
  9  9  9  9  9  9  9  9  9  9 
 ```
-Virtual padding can be specified for a view. Here one padding row is added before and after, and columns are padded 2 before and 3 after. A padding value of -1 is used here to make boundaries obvious. The default padding value is 0.
+Virtual padding can be specified for a view. Here one padding row is added before and after, and columns are padded 2 before and 3 after. A padding value of -1 is used here to make boundaries obvious. The default padding value is 0. Padding can also be added to sub views to aid windowed operations such as convolutions.
 ```swift
 let padding = [
     Padding(1),                   // row pad

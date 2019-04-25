@@ -93,8 +93,8 @@ at index: [1, 0, 0]
   46 47 
   51 52 
 ```
-All tensor views are able to repeat data through indexing. No matter the extents, `volume` only uses the shared storage
-from `value`.
+All tensor views are able to repeat data through indexing. No matter the extents, `volume` only uses storage
+for a single value.
 ```swift
 let volume = Volume<Int32>(extents: [2, 3, 10], repeating: Volume(42))
 print(volume.formatted(scalarFormat: (2,0)))
@@ -139,6 +139,24 @@ at index: [0, 0]
  8  8  8  8  8  8  8  8  8  8 
  9  9  9  9  9  9  9  9  9  9 
 ```
+Virtual padding can be specified for a view. Here one padding row is added before and after, and columns are padded 2 before and 3 after. A padding value of -1 is used here to make boundaries obvious. The default padding value is 0.
+```swift
+let padding = [
+    Padding(1),                   // row pad
+    Padding(before: 2, after: 3)  // col pad
+]
+let matrix = Matrix<Int32>(extents: [2,3],
+                           padding: padding,
+                           padValue: -1,
+                           sequence: 0..<6)
 
-
+let expectedValues: [Int32] = [
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1,  0,  1,  2, -1, -1, -1,
+    -1, -1,  3,  4,  5, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+]
+let values = [Int32](matrix.values())
+assert(values == expectedValues, "indices do not match")
+```
 

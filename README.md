@@ -278,3 +278,62 @@ A device stream is an abstraction for an asynchronous command queue that impleme
 A device array implements the _DeviceArray_ protocol and is an abstraction for a contiguous array of bytes on a device. 
 ### StreamEvent
 A stream event implements the _StreamEvent_ protocol and is used to synchronize device streams.
+
+# Using Multiple Streams and Devices
+By default a stream is created for the user on the current thread in the global scope. Operations are implicitly performed on this stream. However more sophisticated users will want to create multiple streams on multiple devices on multiple platforms. The syntax for using streams is straitforward.
+```swift
+let device1Stream = Platform.local.createStream(deviceId: 1)
+let device2Stream = Platform.local.createStream(deviceId: 2)
+
+let volume = using(device1Stream) {
+    Volume<Int32>((3, 4, 5)).filledWithIndex()
+}
+let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+
+let subViewSum = using(device2Stream) {
+    sum(subView).scalarValue()
+}
+assert(subViewSum == 312)
+```
+
+# Logging
+Error and diagnostic logging is supported. A log message specifies the _LogLevel_ and diagnostic messages specify _LogCategories_. Each point in the compute platform hierarchy can set a _Log_ object for finer grained reporting. Compute platform objects inherit their parents log. By default the global _Platform_ object defines a log that prints to the console.
+
+Specifying diagnostic categories allows fine grained interest in what is happening, to avoid output overload. Below is an example of how to set logging preferences and related output.
+The CPU device uses UMA memory addressing, so a cpuUnitTest service is included that creates discrete memory devices for testing, which is used in the example below.
+```swift
+Platform.log.level = .diagnostic
+Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+
+let device1Stream = Platform.local
+    .createStream(serviceName: "cpuUnitTest", deviceId: 1)
+
+let device2Stream = Platform.local
+    .createStream(serviceName: "cpuUnitTest", deviceId: 2)
+
+let volume = using(device1Stream) {
+    Volume<Int32>((3, 4, 5)).filledWithIndex()
+}
+let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+
+let subViewSum = using(device2Stream) {
+    sum(subView).scalarValue()
+}
+assert(subViewSum == 312)
+```
+The logging output shows detailed output of exactly what is happening in the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
+```sh
+status    : default device: [cpu] cpu:0
+diagnostic: [CREATE ] Volume<Int32>(14) elements[60]
+diagnostic: [CREATE ] Volume<Int32>(15) elements[60]
+diagnostic: [ALLOC  ] Volume<Int32>(15) device array on cpu:1 elements[60]
+diagnostic: [RELEASE] Volume<Int32>(14) elements[60]
+diagnostic: [CREATE ] Volume<Int32>(17) elements[1]
+diagnostic: [ALLOC  ] Volume<Int32>(17) device array on cpu:2 elements[1]
+diagnostic: [ALLOC  ] Volume<Int32>(15) device array on cpu:2 elements[60]
+diagnostic: [COPY   ] Volume<Int32>(15) cpu:1 --> cpu:2_s0 elements[60]
+diagnostic: [ALLOC  ] Volume<Int32>(17) host array elements[1]
+diagnostic: [COPY   ] Volume<Int32>(17) cpu:2_s0 --> host elements[1]
+diagnostic: [RELEASE] Volume<Int32>(17) elements[1]
+diagnostic: [RELEASE] Volume<Int32>(15) elements[60]
+```

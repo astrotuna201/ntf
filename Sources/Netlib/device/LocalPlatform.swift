@@ -193,6 +193,18 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
+    /// createStream
+    /// creates a stream on the default service and default device
+    /// based on service and device priorities
+    func createStream(name: String = "stream",
+                      serviceName: String? = nil,
+                      deviceId: Int? = nil) -> DeviceStream {
+        let ids = deviceId == nil ? nil : [deviceId!]
+        return createStreams(name: name, serviceName: serviceName,
+                             deviceIds: ids)[0]
+    }
+    
+    //--------------------------------------------------------------------------
     /// requestDevices
     /// This will try to return the requested devices from the requested service
     /// substituting if needed based on `servicePriority` and `deviceIdPriority`

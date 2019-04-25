@@ -85,13 +85,11 @@ class test_DataMigration: XCTestCase {
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
             let device1Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
-            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
-
-            let device2Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
-            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
+                .createStream(serviceName: "cpuUnitTest", deviceId: 1)
             
+            let device2Stream = Platform.local
+                .createStream(serviceName: "cpuUnitTest", deviceId: 2)
+
             // create a tensor and validate migration
             var view = Volume<Float>((2, 3, 4), sequence: 0..<24)
             
@@ -167,12 +165,10 @@ class test_DataMigration: XCTestCase {
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
             let device1Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
-            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+                .createStream(serviceName: "cpuUnitTest", deviceId: 1)
             
             let device2Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
-            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
+                .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
             // create a Matrix on device 1 and fill with indexes
             // memory is only allocated on device 1. This also shows how a
@@ -261,13 +257,8 @@ class test_DataMigration: XCTestCase {
         // create a named stream on two different discreet devices
         // cpu devices 1 and 2 are discreet memory versions for testing
         let device1Stream = Platform.local
-            .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
-        XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+            .createStream(serviceName: "cpuUnitTest", deviceId: 1)
         
-        let device2Stream = Platform.local
-            .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
-        XCTAssert(device2Stream.device.memoryAddressing == .discreet)
-
         // fill with index on device 1
         let index = [1, 1]
         var matrix1 = Matrix<Float>((3, 2))
@@ -298,12 +289,10 @@ class test_DataMigration: XCTestCase {
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
             let device1Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [1])[0]
-            XCTAssert(device1Stream.device.memoryAddressing == .discreet)
+                .createStream(serviceName: "cpuUnitTest", deviceId: 1)
             
             let device2Stream = Platform.local
-                .createStreams(serviceName: "cpuUnitTest", deviceIds: [2])[0]
-            XCTAssert(device2Stream.device.memoryAddressing == .discreet)
+                .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
             let index = [1, 1]
             var matrix1 = Matrix<Float>((3, 2))

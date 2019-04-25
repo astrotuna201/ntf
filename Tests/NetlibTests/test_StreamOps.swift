@@ -33,25 +33,29 @@ class test_StreamOps: XCTestCase {
         //---------------------------------
         // other scoped
         // create a streams on each specified devices from the preferred service
-        let stream = Platform.local.createStreams(deviceIds: [0, 1])
+        let device1Stream = Platform.local
+            .createStream(serviceName: "cpuUnitTest", deviceId: 1)
+        
+        let device2Stream = Platform.local
+            .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
         //---------------------------------
         // unscoped, uses _Streams.current which is the default
         let c1 = a + b
         XCTAssert(c1 == expected)
         
-        let c3 = using(stream[0]) {
+        let c3 = using(device1Stream) {
             a + b
         }
         XCTAssert(c3 == expected)
         
         //---------------------------------
         // sequential multi scoped
-        let aPlusB = using(stream[0]) {
+        let aPlusB = using(device1Stream) {
             a + b
         }
         
-        let aMinusB = using(stream[1]) {
+        let aMinusB = using(device2Stream) {
             a - b
         }
         
@@ -74,11 +78,11 @@ class test_StreamOps: XCTestCase {
         
         //---------------------------------
         // nested multi scoped
-        let x: Vector<Float> = using(stream[0]) {
-            let aMinusB = using(stream[1]) {
+        let x: Vector<Float> = using(device1Stream) {
+            let aMinusB = using(device2Stream) {
                 a - b
             }
-            // here stream[1] is synced with stream[0]
+            // here device2Stream is synced with device1Stream
             return pow(a + b + aMinusB, y)
         }
         
@@ -88,7 +92,7 @@ class test_StreamOps: XCTestCase {
         // temporary results are okay, they won't cause data movement
         let logx = log(x)
         
-        // here stream[0] is synced with the currentStream
+        // here device1Stream is synced with the currentStream
         let c5 = logx / (logx + 1)
         
         // currentStream, stream0, and stream1 all sync at this point

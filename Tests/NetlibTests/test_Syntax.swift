@@ -22,7 +22,7 @@ class test_Syntax: XCTestCase {
         // use shortcut syntax for extents
         do {
             let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
-            print(matrix.formatted(scalarFormat: (2,0)))
+            print(matrix.formatted((2,0)))
             let sum = matrix.sum().scalarValue()
             XCTAssert(sum == 105.0)
         }
@@ -35,10 +35,10 @@ class test_Syntax: XCTestCase {
         // - return the scalar value back to the app thread
         do {
             let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
-            print(volume.formatted(scalarFormat: (2,0)))
+            print(volume.formatted((2,0)))
             
             let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-            print(subView.formatted(scalarFormat: (2,0)))
+            print(subView.formatted((2,0)))
             
             let subViewSum = sum(subView).scalarValue()
             XCTAssert(subViewSum == 312)
@@ -50,7 +50,7 @@ class test_Syntax: XCTestCase {
         // from `value` and repeats it through indexing
         do {
             let volume = Volume<Int32>((2, 3, 10), repeating: Volume(42))
-            print(volume.formatted(scalarFormat: (2,0)))
+            print(volume.formatted((2,0)))
         }
         
         //--------------------------------
@@ -60,11 +60,11 @@ class test_Syntax: XCTestCase {
         do {
             let rowVector = Matrix<Int32>((1, 10), sequence: 0..<10)
             let rmatrix = Matrix((10, 10), repeating: rowVector)
-            print(rmatrix.formatted(scalarFormat: (2,0)))
+            print(rmatrix.formatted((2,0)))
 
             let colVector = Matrix<Int32>((10, 1), sequence: 0..<10)
             let cmatrix = Matrix((10, 10), repeating: colVector)
-            print(cmatrix.formatted(scalarFormat: (2,0)))
+            print(cmatrix.formatted((2,0)))
         }
     }
 }

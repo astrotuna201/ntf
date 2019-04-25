@@ -53,8 +53,10 @@ __<I need to redo this diagram to change the names!>__
 ### TensorView
 A _TensorView_ is a struct that presents a shaped view of an associated _TensorArray_ object, along with a variety of access functions. Creation of a _TensorView_ will automatically create a _TensorArray_ object if one is not specified.
 
-### Sub Views and Multi-threading
-_TensorView_ has methods to create sub views of a _TensorArray_. An important use of this is to divide a _TensorArray_ into multiple sub-regions and operate on them in parallel. For example: when a batch of 64 image items is loaded, they are all decoded on independent threads making full use of all cores on the host CPU. Operating on sub-regions in parallel on the GPU works the same way. Synchronization between sub views is managed by the caller.
+### Sub Views and App Space Multi-threading
+_TensorView_ has methods to create sub views of a _TensorArray_. An important use of this is to divide a _TensorArray_ into multiple sub-regions and operate on them in parallel. 
+
+For example: if a batch of 64 image items is loaded, they can all be decoded and written to the tensor on independent threads making full use of all cores on the host CPU. Using sub-views in parallel on the GPU works the same way. Synchronization between writable sub views is managed by the caller.
 
 __<I need to redo this diagram to change the names!>__
 

@@ -45,12 +45,22 @@ All of these types are just constrained variations of a _Tensor_ which conforms 
 ## Tensor Structure
 ### TensorArray
 A _TensorArray_ is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.
-_<I need to redo this diagram to change the names!>_
+
+__<I need to redo this diagram to change the names!>__
 
 ![TensorArray Diagram](https://github.com/ewconnell/Netlib/blob/master/documents/DataArrayDiagram.png)
 
 ### TensorView
 A _TensorView_ is a struct that presents a shaped view of an associated _TensorArray_ object, along with a variety of access functions. Creation of a _TensorView_ will automatically create a _TensorArray_ object if one is not specified.
+
+### Sub Views and Multi-threading
+_TensorView_ has methods to create sub views of a _TensorArray_. An important use of this is to divide a _TensorArray_ into multiple sub-regions and operate on them in parallel. For example: when a batch of 64 image items is loaded, they are all decoded on independent threads making full use of all cores on the host CPU. Operating on sub-regions in parallel on the GPU works the same way. Synchronization between sub views is managed by the caller.
+
+__<I need to redo this diagram to change the names!>__
+
+![TensorArray Diagram](https://github.com/ewconnell/Netlib/blob/master/documents/DataSubViewDiagram.png)
+
+Tensor views manage both shared and copy-on-write semantics. Multiple concurrent views can be created to support multi-threaded access. The caller manages synchronization between writable views.
 
 
 ## Simple Use Examples

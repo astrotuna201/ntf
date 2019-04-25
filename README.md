@@ -90,7 +90,7 @@ If we print with formatting
 ```swift
 print(volume.formatted((2,0)))
 ```
-```sh
+```
 TensorView extents: [3, 4, 5] paddedExtents: [3, 4, 5]
 at index: [0, 0, 0]
 ===================
@@ -122,7 +122,7 @@ at index: [2, 0, 0]
 ```swift
 print(subView.formatted((2,0)))
 ```
-```sh
+```
 TensorView extents: [2, 2, 2] paddedExtents: [2, 2, 2]
 at index: [0, 0, 0]
 ===================
@@ -155,7 +155,7 @@ let colVector = Matrix<Int32>((10, 1), sequence: 0..<10)
 let cmatrix = Matrix((10, 10), repeating: colVector)
 print(cmatrix.formatted((2,0)))
 ```
-```sh
+```
 TensorView extents: [10, 10] paddedExtents: [10, 10]
 at index: [0, 0]
 ----------------
@@ -229,7 +229,7 @@ print(matrix.formatted((2,0)))
 let tmatrix = matrix.t
 print(tmatrix.formatted((2,0)))
 ```
-```sh
+```
 TensorView extents: [3, 5] paddedExtents: [3, 5]
 at index: [0, 0]
 ----------------

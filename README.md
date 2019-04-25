@@ -335,3 +335,7 @@ diagnostic: [COPY   ] Volume<Int32>(17) cpu:2_s0 --> host elements[1]
 diagnostic: [RELEASE] Volume<Int32>(17) elements[1]
 diagnostic: [RELEASE] Volume<Int32>(15) elements[60]
 ```
+# Object Tracking
+Class objects receive a unique __id__ when registered with the _ObjectTracker_ class. These ids are used in diagnostic messages to know which object is which. 
+
+The _ObjectTracker_ is also used to report unreleased objects to identify retain cycles, and to break the debugger when a specific object instance is created or released. It's much easier and faster to track down problems than using Swift leak detection. During RELEASE builds the tracker does nothing but return an id from a simple counter.

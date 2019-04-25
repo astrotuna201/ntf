@@ -12,6 +12,9 @@ class test_Syntax: XCTestCase {
     // support terminal test run
     static var allTests = [
         ("test_simple", test_simple),
+        ("test_streams", test_streams),
+        ("test_withResultPlacement", test_withResultPlacement),
+        ("test_logging", test_logging),
     ]
     
     //==========================================================================
@@ -78,13 +81,13 @@ class test_Syntax: XCTestCase {
     }
 
     //==========================================================================
-    // test_logging
+    // test_streams
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_streams() {
         let stream1 = Platform.local.createStream(deviceId: 1)
         let stream2 = Platform.local.createStream(deviceId: 2)
-
+        
         let volume = using(stream1) {
             Volume<Int32>((3, 4, 5)).filledWithIndex()
         }
@@ -94,6 +97,17 @@ class test_Syntax: XCTestCase {
             sum(subView).scalarValue()
         }
         XCTAssert(subViewSum == 312)
+    }
+
+    //==========================================================================
+    // test_withResultPlacement
+    func test_withResultPlacement() {
+        let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
+        let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+
+        var subViewSum = Volume<Int32>((1, 1, 1))
+        sum(subView, result: &subViewSum)
+        XCTAssert(subViewSum.scalarValue() == 312)
     }
 
     //==========================================================================

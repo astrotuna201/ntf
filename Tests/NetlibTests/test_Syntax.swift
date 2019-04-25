@@ -31,17 +31,17 @@ class test_Syntax: XCTestCase {
         // Select and sum a 3D sub region
         // - initialize a volume using explicit extents
         // - fill with indexes on the default device
-        // - take the sum of the sub view on the device
+        // - create a sub view and take the sum on the device
         // - return the scalar value back to the app thread
         do {
             let volume = Volume<Int32>(extents: [3, 4, 5]).filledWithIndex()
             print(volume.formatted(scalarFormat: (2,0)))
             
-            let sample = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-            print(sample.formatted(scalarFormat: (2,0)))
+            let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+            print(subView.formatted(scalarFormat: (2,0)))
             
-            let sampleSum = sum(sample).scalarValue()
-            XCTAssert(sampleSum == 312)
+            let subViewSum = sum(subView).scalarValue()
+            XCTAssert(subViewSum == 312)
         }
         
         //--------------------------------

@@ -6,14 +6,14 @@ import Foundation
 import Dispatch
 
 //==============================================================================
-/// TensorData
-/// The TensorData object is a flat array of scalars used by the TensorView.
+/// TensorArray
+/// The TensorArray object is a flat array of scalars used by the TensorView.
 /// It is responsible for replication and syncing between devices.
 /// It is not created or directly used by end users.
-final public class TensorData: ObjectTracking, Logging {
+final public class TensorArray: ObjectTracking, Logging {
     // properties
     /// used by TensorViews to synchronize access to this object
-    public let accessQueue = DispatchQueue(label: "TensorData.accessQueue")
+    public let accessQueue = DispatchQueue(label: "TensorArray.accessQueue")
     ///
     public var autoReleaseUmaBuffer = false
     /// testing: `true` if the last access caused the contents of the
@@ -179,8 +179,8 @@ final public class TensorData: ObjectTracking, Logging {
     }
 
     //----------------------------------------
-    // init from other TensorData
-    public init(withContentsOf other: TensorData,
+    // init from other TensorArray
+    public init(withContentsOf other: TensorArray,
                 using stream: DeviceStream?) throws {
         // init
         isReadOnlyReference = other.isReadOnlyReference
@@ -194,7 +194,7 @@ final public class TensorData: ObjectTracking, Logging {
         diagnostic(
             "\(createString) \(name)(\(trackingId)) init" +
             "\(setText(" copying ", color: .blue))" +
-            "TensorData(\(other.trackingId)) elements[\(elementCount)]",
+            "TensorArray(\(other.trackingId)) elements[\(elementCount)]",
             categories: [.dataAlloc, .dataCopy])
         
         if isReadOnlyReference {
@@ -364,7 +364,7 @@ final public class TensorData: ObjectTracking, Logging {
     // releaseHostArray
     private func releaseHostArray() {
         assert(!isReadOnlyReference)
-        diagnostic("\(releaseString) \(name) TensorData(\(trackingId)) " +
+        diagnostic("\(releaseString) \(name) TensorArray(\(trackingId)) " +
             "host array elements[\(elementCount)]", categories: .dataAlloc)
         hostBuffer.deallocate()
         hostBuffer = nil

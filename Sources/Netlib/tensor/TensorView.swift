@@ -63,7 +63,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
     /// class reference to the underlying byte buffer
-    var tensorData: TensorData! { get set }
+    var tensorData: TensorArray! { get set }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 
@@ -81,13 +81,13 @@ public protocol TensorView: Logging, DefaultInitializer {
          name: String?,
          padding: [Padding]?,
          padValue: Scalar?,
-         tensorData: TensorData?,
+         tensorData: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
     
     /// determines if the view holds a unique reference to the underlying
-    /// TensorData array
+    /// TensorArray array
     mutating func isUniqueReference() -> Bool
 
     /// performs a dynamic rank reduction by removing extents of 1
@@ -126,7 +126,7 @@ public extension TensorView {
                   name: nil,
                   padding: nil,
                   padValue: nil,
-                  tensorData: TensorData(),
+                  tensorData: TensorArray(),
                   viewDataOffset: 0,
                   isShared: false,
                   scalars: nil)
@@ -163,17 +163,17 @@ public extension TensorView {
     /// initTensorData
     /// a helper to correctly initialize the tensorData object
     mutating func initTensorData(_ name: String?,
-                                 _ scalars: [Scalar]?) -> TensorData {
+                                 _ scalars: [Scalar]?) -> TensorArray {
         // allocate backing tensorData
         assert(shape.isContiguous, "new views should have a dense shape")
-        let data: TensorData
+        let data: TensorArray
         let tensorName = name ?? String(describing: Self.self)
         if let scalars = scalars {
             data = scalars.withUnsafeBytes {
-                TensorData(buffer: $0, name: tensorName)
+                TensorArray(buffer: $0, name: tensorName)
             }
         } else {
-            data = TensorData(type: Scalar.self,
+            data = TensorArray(type: Scalar.self,
                               count: dataShape.elementSpanCount,
                               name: tensorName)
         }
@@ -298,7 +298,7 @@ public extension TensorView {
             "elements[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorData = try TensorData(withContentsOf: tensorData, using: stream)
+        tensorData = try TensorArray(withContentsOf: tensorData, using: stream)
         tensorData.lastAccessMutatedView = true
     }
     

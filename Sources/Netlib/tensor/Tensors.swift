@@ -98,7 +98,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -106,7 +106,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -174,7 +174,7 @@ public extension VectorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -224,7 +224,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -232,7 +232,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -310,7 +310,7 @@ public extension MatrixView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -361,7 +361,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -369,7 +369,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -440,7 +440,7 @@ public extension VolumeView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -489,7 +489,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -497,7 +497,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -530,7 +530,7 @@ public extension NDTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -573,7 +573,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -581,7 +581,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -658,7 +658,7 @@ public extension NCHWTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -707,7 +707,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -715,7 +715,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -792,7 +792,7 @@ public extension NHWCTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorData(readOnlyReferenceTo: buffer,
+        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
                                     name: name ?? String(describing: Self.self))
         
         // create shape considering column major
@@ -842,7 +842,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorData!
+    public var tensorData: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -850,7 +850,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorData?,
+                tensorData: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {

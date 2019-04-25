@@ -16,7 +16,7 @@ The code will compile inside the S4TF environment, but currently there are no de
 ## Design Goals
 * Optimal defaults for all configuration parameters so the user can have a good experience with no upfront training or special effort
 * Simplified local and remote compute device management for more sophisticated applications
-* A single uniform data representation that is used on both the application thread in “Swift space”, and transparently used on local and remote accelerators.
+* A single uniform data representation that is used on both the application thread, and transparently used on local and remote accelerators.
 * Minimal memory consumption and zero copy capability API variants for “careful” designs
 * Convenient expression composition for “casual” prototype designs
 * Transparent asynchronous execution model to minimize device stalling and efficiently use collections of devices with continuously variable latencies, both local and remote.
@@ -26,7 +26,7 @@ The code will compile inside the S4TF environment, but currently there are no de
 * Extensible driver model without requiring a rebuild <TBD>
 * Reusable Function repository for rapid model development using “expert” designed functional components.<TBD>
 
-## Proposed Execution Model
+## Execution Model
 The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, OpenCL, and other proprietary models such as Google TPUs.
 
 The idea of a stream of commands going to a local or remote device across the network seems easy for users to understand and it fits well with encapsulating frameworks like Cuda or OpenCL.

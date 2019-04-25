@@ -33,10 +33,10 @@ class test_StreamOps: XCTestCase {
         //---------------------------------
         // other scoped
         // create a streams on each specified devices from the preferred service
-        let device1Stream = Platform.local
+        let stream1 = Platform.local
             .createStream(serviceName: "cpuUnitTest", deviceId: 1)
         
-        let device2Stream = Platform.local
+        let stream2 = Platform.local
             .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
         //---------------------------------
@@ -44,18 +44,18 @@ class test_StreamOps: XCTestCase {
         let c1 = a + b
         XCTAssert(c1 == expected)
         
-        let c3 = using(device1Stream) {
+        let c3 = using(stream1) {
             a + b
         }
         XCTAssert(c3 == expected)
         
         //---------------------------------
         // sequential multi scoped
-        let aPlusB = using(device1Stream) {
+        let aPlusB = using(stream1) {
             a + b
         }
         
-        let aMinusB = using(device2Stream) {
+        let aMinusB = using(stream2) {
             a - b
         }
         
@@ -78,11 +78,11 @@ class test_StreamOps: XCTestCase {
         
         //---------------------------------
         // nested multi scoped
-        let x: Vector<Float> = using(device1Stream) {
-            let aMinusB = using(device2Stream) {
+        let x: Vector<Float> = using(stream1) {
+            let aMinusB = using(stream2) {
                 a - b
             }
-            // here device2Stream is synced with device1Stream
+            // here stream2 is synced with stream1
             return pow(a + b + aMinusB, y)
         }
         
@@ -92,7 +92,7 @@ class test_StreamOps: XCTestCase {
         // temporary results are okay, they won't cause data movement
         let logx = log(x)
         
-        // here device1Stream is synced with the currentStream
+        // here stream1 is synced with the currentStream
         let c5 = logx / (logx + 1)
         
         // currentStream, stream0, and stream1 all sync at this point

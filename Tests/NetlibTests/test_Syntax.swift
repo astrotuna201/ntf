@@ -82,15 +82,15 @@ class test_Syntax: XCTestCase {
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_streams() {
-        let device1Stream = Platform.local.createStream(deviceId: 1)
-        let device2Stream = Platform.local.createStream(deviceId: 2)
+        let stream1 = Platform.local.createStream(deviceId: 1)
+        let stream2 = Platform.local.createStream(deviceId: 2)
 
-        let volume = using(device1Stream) {
+        let volume = using(stream1) {
             Volume<Int32>((3, 4, 5)).filledWithIndex()
         }
         let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
         
-        let subViewSum = using(device2Stream) {
+        let subViewSum = using(stream2) {
             sum(subView).scalarValue()
         }
         XCTAssert(subViewSum == 312)
@@ -104,18 +104,18 @@ class test_Syntax: XCTestCase {
         Platform.log.level = .diagnostic
         Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
-        let device1Stream = Platform.local
+        let stream1 = Platform.local
             .createStream(serviceName: "cpuUnitTest", deviceId: 1)
 
-        let device2Stream = Platform.local
+        let stream2 = Platform.local
             .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
-        let volume = using(device1Stream) {
+        let volume = using(stream1) {
             Volume<Int32>((3, 4, 5)).filledWithIndex()
         }
         let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
         
-        let subViewSum = using(device2Stream) {
+        let subViewSum = using(stream2) {
             sum(subView).scalarValue()
         }
         XCTAssert(subViewSum == 312)

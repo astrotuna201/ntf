@@ -282,15 +282,15 @@ A stream event implements the _StreamEvent_ protocol and is used to synchronize 
 # Using Multiple Streams and Devices
 By default a stream is created for the user on the current thread in the global scope. Operations are implicitly performed on this stream. However more sophisticated users will want to create multiple streams on multiple devices on multiple platforms. The syntax for using streams is straitforward.
 ```swift
-let device1Stream = Platform.local.createStream(deviceId: 1)
-let device2Stream = Platform.local.createStream(deviceId: 2)
+let stream1 = Platform.local.createStream(deviceId: 1)
+let stream2 = Platform.local.createStream(deviceId: 2)
 
-let volume = using(device1Stream) {
+let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()
 }
 let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-let subViewSum = using(device2Stream) {
+let subViewSum = using(stream2) {
     sum(subView).scalarValue()
 }
 assert(subViewSum == 312)
@@ -305,18 +305,18 @@ The CPU device uses UMA memory addressing, so a cpuUnitTest service is included 
 Platform.log.level = .diagnostic
 Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
-let device1Stream = Platform.local
+let stream1 = Platform.local
     .createStream(serviceName: "cpuUnitTest", deviceId: 1)
 
-let device2Stream = Platform.local
+let stream2 = Platform.local
     .createStream(serviceName: "cpuUnitTest", deviceId: 2)
 
-let volume = using(device1Stream) {
+let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()
 }
 let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-let subViewSum = using(device2Stream) {
+let subViewSum = using(stream2) {
     sum(subView).scalarValue()
 }
 assert(subViewSum == 312)

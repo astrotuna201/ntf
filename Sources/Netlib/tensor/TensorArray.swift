@@ -20,7 +20,7 @@ final public class TensorArray: ObjectTracking, Logging {
     /// buffer to be copied
     public private(set) var lastAccessCopiedBuffer = false
     /// testing: is `true` if the last data access caused the view's underlying
-    /// tensorData object to be copied. It's stored here instead of on the
+    /// tensorArray object to be copied. It's stored here instead of on the
     /// view, because the view is immutable when taking a read only pointer
     public var lastAccessMutatedView: Bool = false
     /// the object tracking id

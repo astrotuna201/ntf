@@ -28,9 +28,7 @@ class test_DataMigration: XCTestCase {
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
             // create a Matrix and give it an optional name for logging
-            var m0 = Matrix<Float>(extents: [3, 4],
-                                   name: "weights",
-                                   sequence: 0..<12)
+            var m0 = Matrix<Float>((3, 4), name: "weights", sequence: 0..<12)
             
             let _ = try m0.readWrite()
             XCTAssert(!m0.lastAccessMutatedView)
@@ -95,64 +93,64 @@ class test_DataMigration: XCTestCase {
             XCTAssert(device2Stream.device.memoryAddressing == .discreet)
             
             // create a tensor and validate migration
-            var view = Volume<Float>(extents: [2, 3, 4], sequence: 0..<24)
+            var view = Volume<Float>((2, 3, 4), sequence: 0..<24)
             
             _ = try view.readOnly()
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             _ = try view.readOnly()
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             // this device is not UMA so it
             // ALLOC device array on cpu:1
             // COPY  host --> cpu:1_s0
             _ = try view.readOnly(using: device1Stream)
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
 
             // write access hasn't been taken, so this is still up to date
             _ = try view.readOnly()
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             // an up to date copy is already there, so won't copy
             _ = try view.readWrite(using: device1Stream)
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             // ALLOC device array on cpu:1
             // COPY  cpu:1 --> cpu:2_s0
             _ = try view.readOnly(using: device2Stream)
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
             
             _ = try view.readOnly(using: device1Stream)
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             _ = try view.readOnly(using: device2Stream)
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             _ = try view.readWrite(using: device1Stream)
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
             _ = try view.readOnly(using: device2Stream)
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
             
             _ = try view.readWrite(using: device2Stream)
-            XCTAssert(!view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(!view.tensorArray.lastAccessCopiedBuffer)
 
             // the master is on cpu:2 so we need to update cpu:1's version
             // COPY cpu:2 --> cpu:1_s0
             _ = try view.readWrite(using: device1Stream)
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
             
             // the master is on cpu:1 so we need to update cpu:2's version
             // COPY cpu:1 --> cpu:2_s0
             _ = try view.readWrite(using: device2Stream)
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
             
             // accessing data without a stream causes transfer to the host
             // COPY cpu:2_s0 --> host
             _ = try view.readOnly()
-            XCTAssert(view.tensorData.lastAccessCopiedBuffer)
+            XCTAssert(view.tensorArray.lastAccessCopiedBuffer)
 
         } catch {
             XCTFail(String(describing: error))
@@ -180,7 +178,7 @@ class test_DataMigration: XCTestCase {
             // memory is only allocated on device 1. This also shows how a
             // temporary can be used in a scope. No memory is copied.
             var matrix = using(device1Stream) {
-                Matrix<Float>(3, 2).filledWithIndex()
+                Matrix<Float>((3, 2)).filledWithIndex()
             }
 
             // retreive value on app thread
@@ -272,7 +270,7 @@ class test_DataMigration: XCTestCase {
 
         // fill with index on device 1
         let index = [1, 1]
-        var matrix1 = Matrix<Float>(extents: [3, 2])
+        var matrix1 = Matrix<Float>((3, 2))
         using(device1Stream) {
             fillWithIndex(&matrix1)
         }
@@ -308,7 +306,7 @@ class test_DataMigration: XCTestCase {
             XCTAssert(device2Stream.device.memoryAddressing == .discreet)
 
             let index = [1, 1]
-            var matrix1 = Matrix<Float>(extents: [3, 2])
+            var matrix1 = Matrix<Float>((3, 2))
             using(device1Stream) {
                 fillWithIndex(&matrix1)
             }
@@ -350,7 +348,7 @@ class test_DataMigration: XCTestCase {
         Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
         
         let index = [1, 1]
-        var matrix1 = Matrix<Float>(extents: [3, 2])
+        var matrix1 = Matrix<Float>((3, 2))
         fillWithIndex(&matrix1)
         XCTAssert(matrix1.value(at: index) == 3.0)
         
@@ -371,15 +369,15 @@ class test_DataMigration: XCTestCase {
         let cmArray: [Int32] = [0, 2, 4, 1, 3, 5]
         let expected = (0..<cmArray.count).map { Int32($0) }
 
-        let cmMatrix = Matrix<Int32>(extents: [3, 2],
-                                     isColMajor: true,
+        let cmMatrix = Matrix<Int32>((3, 2),
+                                     layout: .columnMajor,
                                      scalars: cmArray)
         
         let cmMatrixValues = [Int32](cmMatrix.values())
         XCTAssert(cmMatrixValues == expected, "values don't match")
         
         // create row major view from cmData, this will copy and reorder
-        let rmMatrix = Matrix<Int32>(extents: [3, 2], scalars: cmMatrixValues)
+        let rmMatrix = Matrix<Int32>((3, 2), scalars: cmMatrixValues)
         let rowMajorValues = [Int32](rmMatrix.values())
         XCTAssert(rowMajorValues == expected, "values don't match")
     }

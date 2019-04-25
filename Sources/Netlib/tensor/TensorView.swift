@@ -48,7 +48,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// If `dataShape` is nil, then it equals `shape`
     var dataShape: DataShape { get }
     /// used internally when obtaining write access to manage
-    /// multi-threaded writes without causing `tensorData` copy on write.
+    /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
     /// `true` if the view projects padded or repeated data
     var isVirtual: Bool { get }
@@ -63,7 +63,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
     /// class reference to the underlying byte buffer
-    var tensorData: TensorArray! { get set }
+    var tensorArray: TensorArray! { get set }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 
@@ -81,7 +81,7 @@ public protocol TensorView: Logging, DefaultInitializer {
          name: String?,
          padding: [Padding]?,
          padValue: Scalar?,
-         tensorData: TensorArray?,
+         tensorArray: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
@@ -110,11 +110,11 @@ public extension TensorView {
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
     /// is `true` if the last data access caused the view's underlying
-    /// tensorData object to be copied.
+    /// tensorArray object to be copied.
     /// Used primarily for debugging and unit testing
-    var lastAccessMutatedView: Bool { return tensorData.lastAccessMutatedView }
+    var lastAccessMutatedView: Bool { return tensorArray.lastAccessMutatedView }
     /// the name of the view, which can optionally be set to aid in debugging
-    var name: String { return tensorData.name }
+    var name: String { return tensorArray.name }
     /// the number of dimensions in the view
     var rank: Int { return dataShape.rank }
     
@@ -126,7 +126,7 @@ public extension TensorView {
                   name: nil,
                   padding: nil,
                   padValue: nil,
-                  tensorData: TensorArray(),
+                  tensorArray: TensorArray(),
                   viewDataOffset: 0,
                   isShared: false,
                   scalars: nil)
@@ -144,7 +144,7 @@ public extension TensorView {
                   name: other.name,
                   padding: padding,
                   padValue: padValue,
-                  tensorData: other.tensorData,
+                  tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
                   isShared: other.isShared,
                   scalars: nil)
@@ -161,10 +161,10 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// initTensorData
-    /// a helper to correctly initialize the tensorData object
+    /// a helper to correctly initialize the tensorArray object
     mutating func initTensorData(_ name: String?,
                                  _ scalars: [Scalar]?) -> TensorArray {
-        // allocate backing tensorData
+        // allocate backing tensorArray
         assert(shape.isContiguous, "new views should have a dense shape")
         let data: TensorArray
         let tensorName = name ?? String(describing: Self.self)
@@ -184,7 +184,7 @@ public extension TensorView {
     // TODO: investigate need for this check
 //    //--------------------------------------------------------------------------
 //    /// shared memory
-//    /// `true` if the underlying `tensorData` is being referenced by
+//    /// `true` if the underlying `tensorArray` is being referenced by
 //    /// `reference` views.
 //    var isShared: Bool {
 //        get { return _isShared }
@@ -215,7 +215,7 @@ public extension TensorView {
                   dataShape: newShape,
                   name: nil,
                   padding: nil, padValue: nil,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
     
@@ -228,7 +228,7 @@ public extension TensorView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: nil,
                   padding: nil, padValue: nil,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 
@@ -259,7 +259,7 @@ public extension TensorView {
                                 name: name,
                                 padding: padding,
                                 padValue: padValue,
-                                tensorData: tensorData,
+                                tensorArray: tensorArray,
                                 viewDataOffset: viewDataOffset,
                                 isShared: isShared,
                                 scalars: nil)
@@ -267,53 +267,53 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// isUniqueReference
-    /// `true` if this view is the only view holding a reference to tensorData
+    /// `true` if this view is the only view holding a reference to tensorArray
     mutating func isUniqueReference() -> Bool {
-        return isKnownUniquelyReferenced(&tensorData)
+        return isKnownUniquelyReferenced(&tensorArray)
     }
     
     //--------------------------------------------------------------------------
     /// viewByteOffset
-    /// the byte offset into the `tensorData` buffer where this view begins
+    /// the byte offset into the `tensorArray` buffer where this view begins
     var viewByteOffset: Int { return viewDataOffset * MemoryLayout<Scalar>.size}
     
     //--------------------------------------------------------------------------
     /// viewSpanByteCount
-    /// the number of bytes in the `tensorData` spanned by this view
+    /// the number of bytes in the `tensorArray` spanned by this view
     var viewSpanByteCount: Int {
         return dataShape.elementSpanCount * MemoryLayout<Scalar>.size
     }
 
     //--------------------------------------------------------------------------
     /// copyIfMutates
-    /// Creates a copy of the tensorData if read-write access will cause mutation
+    /// Creates a copy of the tensorArray if read-write access will cause mutation
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
     private mutating func copyIfMutates(using stream: DeviceStream?) throws {
         // for unit tests
-        tensorData.lastAccessMutatedView = false
+        tensorArray.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
         
-        diagnostic("\(mutationString) \(name)(\(tensorData.trackingId)) " +
+        diagnostic("\(mutationString) \(name)(\(tensorArray.trackingId)) " +
             "elements[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorData = try TensorArray(withContentsOf: tensorData, using: stream)
-        tensorData.lastAccessMutatedView = true
+        tensorArray = try TensorArray(withContentsOf: tensorArray, using: stream)
+        tensorArray.lastAccessMutatedView = true
     }
     
     //--------------------------------------------------------------------------
     /// readOnly
-    /// Returns a read only tensorData buffer pointer synced with the
+    /// Returns a read only tensorArray buffer pointer synced with the
     /// applicaiton thread. It's purpose is to be used by shaped subscript
     /// functions
     func readOnly() throws -> UnsafeBufferPointer<Scalar> {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         return try queue.sync {
-            tensorData.lastAccessMutatedView = false
-            let pointer = try tensorData.readOnlyHostBuffer()
+            tensorArray.lastAccessMutatedView = false
+            let pointer = try tensorArray.readOnlyHostBuffer()
                 .baseAddress!.advanced(by: viewByteOffset)
                 .bindMemory(to: Scalar.self,
                             capacity: dataShape.elementSpanCount)
@@ -329,11 +329,11 @@ public extension TensorView {
     func readOnly(using stream: DeviceStream) throws -> UnsafeRawPointer {
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            tensorData.lastAccessMutatedView = false
-            let buffer = try tensorData.readOnlyDevicePointer(using: stream)
+            tensorArray.lastAccessMutatedView = false
+            let buffer = try tensorArray.readOnlyDevicePointer(using: stream)
             return buffer.advanced(by: viewByteOffset)
         }
     }
@@ -353,17 +353,17 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// readWrite
-    /// Returns a read write tensorData buffer pointer synced with the
+    /// Returns a read write tensorArray buffer pointer synced with the
     /// applicaiton thread. It's purpose is to be used by shaped subscript
     /// functions
     mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         return try queue.sync {
             try copyIfMutates(using: nil)
             
-            let pointer = try tensorData.readWriteHostBuffer()
+            let pointer = try tensorArray.readWriteHostBuffer()
                 .baseAddress!.advanced(by: viewByteOffset)
                 .bindMemory(to: Scalar.self,
                             capacity: dataShape.elementSpanCount)
@@ -380,11 +380,11 @@ public extension TensorView {
         -> UnsafeMutableRawPointer {
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            let buffer = try tensorData.readWriteDevicePointer(using: stream)
+            let buffer = try tensorArray.readWriteDevicePointer(using: stream)
             return buffer.advanced(by: viewByteOffset)
         }
     }
@@ -404,7 +404,7 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// createSubView
-    /// Returns a view of the tensorData relative to this view
+    /// Returns a view of the tensorArray relative to this view
     private func createSubView(at offset: [Int], with extents: [Int],
                                padding: [Padding]?, padValue: Scalar?,
                                isReference: Bool) -> Self {
@@ -422,7 +422,7 @@ public extension TensorView {
             name: "\(name).subview",
             padding: padding,
             padValue: padValue,
-            tensorData: tensorData,
+            tensorArray: tensorArray,
             viewDataOffset: subViewOffset,
             isShared: isReference,
             scalars: nil)
@@ -430,7 +430,7 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// view
-    /// Create a sub view of the tensorData relative to this view
+    /// Create a sub view of the tensorArray relative to this view
     func view(at offset: [Int],
               extents: [Int],
               padding: [Padding]? = nil,
@@ -504,7 +504,7 @@ public extension TensorView {
                          name: name,
                          padding: padding,
                          padValue: padValue,
-                         tensorData: tensorData,
+                         tensorArray: tensorArray,
                          viewDataOffset: viewDataOffset,
                          isShared: isShared,
                          scalars: nil)
@@ -517,9 +517,9 @@ public extension TensorView {
     /// reference view creation if not uniquely held. References will not
     /// be checked on the resulting view when a write pointer is taken
     mutating func reference(using stream: DeviceStream? = nil) throws -> Self {
-        // get the queue, if we reference it as a tensorData member it
+        // get the queue, if we reference it as a tensorArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
@@ -528,7 +528,7 @@ public extension TensorView {
                              name: name,
                              padding: padding,
                              padValue: padValue,
-                             tensorData: tensorData,
+                             tensorArray: tensorArray,
                              viewDataOffset: viewDataOffset,
                              isShared: true,
                              scalars: nil)
@@ -538,7 +538,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// referenceView
     /// Creates a reference view relative to this view. Write operations will
-    /// not cause mutation of tensorData. It's purpose is to support
+    /// not cause mutation of tensorArray. It's purpose is to support
     /// multi-threaded write operations
     
     // TODO: maybe remove this if a subview view can correctly be taken
@@ -550,7 +550,7 @@ public extension TensorView {
         
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
@@ -563,7 +563,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// referenceFlattened
     /// Creates a flattened reference view relative to this view.
-    /// Write operations will not cause mutation of tensorData.
+    /// Write operations will not cause mutation of tensorArray.
     /// It's purpose is to support multi-threaded write operations
 
     // TODO: maybe remove this if a subview view can correctly be taken
@@ -575,7 +575,7 @@ public extension TensorView {
         
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
-        let queue = tensorData.accessQueue
+        let queue = tensorArray.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
@@ -595,8 +595,8 @@ public extension TensorView where
     /// Equal values
     /// performs an element wise value comparison
     static func == (lhs: Self, rhs: Self) -> Bool {
-        if lhs.tensorData === rhs.tensorData {
-            // If they both reference the same tensorData then compare the views
+        if lhs.tensorArray === rhs.tensorArray {
+            // If they both reference the same tensorArray then compare the views
             return lhs.viewDataOffset == rhs.viewDataOffset &&
                 lhs.shape == rhs.shape
             
@@ -614,7 +614,7 @@ public extension TensorView where
     /// Equal references
     /// `true` if the views reference the same elements
     static func === (lhs: Self, rhs: Self) -> Bool {
-        return lhs.tensorData === rhs.tensorData && lhs == rhs
+        return lhs.tensorArray === rhs.tensorArray && lhs == rhs
     }
 }
 

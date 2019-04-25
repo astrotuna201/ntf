@@ -42,7 +42,7 @@ class test_IterateView: XCTestCase {
     // test_Matrix
     func test_Matrix() {
             let expected = [Int32](0..<4)
-            let matrix = Matrix<Int32>(extents: [2, 2], scalars: expected)
+            let matrix = Matrix<Int32>((2, 2), scalars: expected)
 //            print(matrix.formatted(scalarFormat: (2,0)))
         
             let values = [Int32](matrix.values())
@@ -53,7 +53,7 @@ class test_IterateView: XCTestCase {
     // test_Volume
     func test_Volume() {
         let expected = [Int32](0..<24)
-        let volume = Volume<Int32>(extents: [2, 3, 4], scalars: expected)
+        let volume = Volume<Int32>((2, 3, 4), scalars: expected)
         //            print(volume.formatted(scalarFormat: (2,0)))
         
         let values = [Int32](volume.values())
@@ -75,7 +75,7 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_MatrixSubView
     func test_MatrixSubView() {
-        let matrix = Matrix<Int32>(extents: [3, 4], sequence: 0..<12)
+        let matrix = Matrix<Int32>((3, 4), sequence: 0..<12)
         let subView = matrix.view(at: [1, 1], extents: [2, 2])
 //        print(subView.formatted(scalarFormat: (2,0)))
         
@@ -90,7 +90,7 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_VolumeSubView
     func test_VolumeSubView() {
-        let volume = Volume<Int32>(extents: [3, 3, 4], sequence: 0..<36)
+        let volume = Volume<Int32>((3, 3, 4), sequence: 0..<36)
         let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
         //            print(subView.formatted(scalarFormat: (2,0)))
         
@@ -124,8 +124,8 @@ class test_IterateView: XCTestCase {
     // test_repeatingValue
     func test_repeatingValue() {
         // try repeating a scalar
-        let value = Matrix<Int32>(extents: [1, 1], scalars: [42])
-        let matrix = Matrix<Int32>(extents: [2, 3], repeating: value)
+        let value = Matrix<Int32>((1, 1), scalars: [42])
+        let matrix = Matrix<Int32>((2, 3), repeating: value)
         //            print(vector.formatted(scalarFormat: (2,0)))
         
         let expected: [Int32] = [
@@ -141,8 +141,8 @@ class test_IterateView: XCTestCase {
     // test_repeatingRow
     func test_repeatingRow() {
         // try repeating a row vector
-        let row = Matrix<Int32>(extents: [1, 3], sequence: 0..<3)
-        let matrix = Matrix<Int32>(extents: [2, 3], repeating: row)
+        let row = Matrix<Int32>((1, 3), sequence: 0..<3)
+        let matrix = Matrix<Int32>((2, 3), repeating: row)
         //            print(matrix.formatted(scalarFormat: (2,0)))
         
         let expected: [Int32] = [
@@ -158,8 +158,8 @@ class test_IterateView: XCTestCase {
     // test_repeatingCol
     func test_repeatingCol() {
         // try repeating a row vector
-        let col = Matrix<Int32>(extents: [3, 1], sequence: 0..<3)
-        let matrix = Matrix<Int32>(extents: [3, 2], repeating: col)
+        let col = Matrix<Int32>((3, 1), sequence: 0..<3)
+        let matrix = Matrix<Int32>((3, 2), repeating: col)
         //            print(matrix.formatted(scalarFormat: (2,0)))
         
         let expected: [Int32] = [
@@ -176,12 +176,12 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_repeatingMatrix
     func test_repeatingMatrix() {
-        let pattern = Matrix<Int32>(extents: [2,2], scalars: [
+        let pattern = Matrix<Int32>((2, 2), scalars: [
             1, 0,
             0, 1,
         ])
         
-        let matrix = Matrix<Int32>(extents: [3, 4], repeating: pattern)
+        let matrix = Matrix<Int32>((3, 4), repeating: pattern)
         let expected: [Int32] = [
             1, 0, 1, 0,
             0, 1, 0, 1,
@@ -195,7 +195,7 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_repeatingVolume
     func test_repeatingVolume() {
-        let pattern = Volume<Int32>(extents: [2,2,2], scalars:[
+        let pattern = Volume<Int32>((2,2,2), scalars:[
             1, 0,
             0, 1,
             
@@ -204,7 +204,7 @@ class test_IterateView: XCTestCase {
         ])
         
         // create a virtual view and get it's values
-        let volume = Volume<Int32>(extents: [2, 3, 4], repeating: pattern)
+        let volume = Volume<Int32>((2, 3, 4), repeating: pattern)
         let expected: [Int32] = [
             1, 0, 1, 0,
             0, 1, 0, 1,
@@ -246,7 +246,7 @@ class test_IterateView: XCTestCase {
             Padding(before: 2, after: 3)  // col pad
         ]
         
-        let matrix = Matrix<Int32>(extents: [2,3],
+        let matrix = Matrix<Int32>((2, 3),
                                    padding: padding,
                                    padValue: -1,
                                    sequence: 0..<6)
@@ -263,7 +263,7 @@ class test_IterateView: XCTestCase {
         XCTAssert(values == expectedValues, "indices do not match")
 
         // edge case of 0 padding specified
-        let matrix2 = Matrix<Int32>(extents: [2,3],
+        let matrix2 = Matrix<Int32>((2, 3),
                                     padding: [Padding(0)],
                                     padValue: -1,
                                     sequence: 0..<6)

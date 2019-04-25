@@ -21,10 +21,10 @@ class test_StreamOps: XCTestCase {
         }
         
         // create some tensors
-        _ = Matrix<RGBASample<UInt8>>(4, 3)
+        _ = Matrix<RGBASample<UInt8>>((4, 3))
         _ = Vector<StereoSample<Int16>>(count: 1024)
 
-        let m = Matrix<UInt8>(4, 3)
+        let m = Matrix<UInt8>((4, 3))
         let a = Vector<Float>(scalars: [1, 2, 3, 4])
         let b = Vector<Float>(scalars: [4, 3, 2, 1])
         let y = Vector<Float>(scalars: [0, 1, 2, 3])

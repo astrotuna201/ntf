@@ -74,7 +74,7 @@ public extension TensorView {
 
 //==============================================================================
 /// TensorViewCollection
-/// returns a readonly collection view of the underlying tensorData.
+/// returns a readonly collection view of the underlying tensorArray.
 public struct TensorViewCollection<View>:
     RandomAccessCollection, DefaultInitializer where View: TensorView {
     // types
@@ -121,7 +121,7 @@ public struct TensorViewCollection<View>:
 
 //==============================================================================
 /// TensorViewMutableCollection
-/// returns a readonly collection view of the underlying tensorData.
+/// returns a readonly collection view of the underlying tensorArray.
 public struct TensorViewMutableCollection<View>:
     RandomAccessCollection, DefaultInitializer, MutableCollection
     where View: TensorView

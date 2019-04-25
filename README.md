@@ -43,14 +43,14 @@ A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) 
 All of these types are just constrained variations of a `Tensor` which conforms to the `TensorView` protocol. All underlying operators and driver functions require conformance to `TensorView` and not to shaped types. Operator arguments are handled as n-dimensional data sets.
 
 ## Tensor Structure
-### TensorData
-The `TensorData` class object is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else. The 
+### TensorArray
+A `TensorArray` is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.
 ### TensorView
-A `TensorView` is a struct that presents a shaped view of an associated `TensorData` object, along with a variety of access functions. Creation of a `TensorView` will automatically create a `TensorData` object if one is not specified.
+A `TensorView` is a struct that presents a shaped view of an associated `TensorArray` object, along with a variety of access functions. Creation of a `TensorView` will automatically create a `TensorArray` object if one is not specified.
 
 
-## Simple Examples of the Experience
-The following is a complete program. It initializes a matrix with a sequence then takes the sum. It uses shortcut syntax to specify the matrix extents (3, 5)
+## Simple Use Examples
+The following is a complete program. It initializes a matrix with a sequence then takes the sum. It doesn't require the user to setup or configure anything.
 ```swift
 let matrix = Matrix<Float>(3, 5, sequence: 0..<15)
 let sum = matrix.sum().scalarValue()

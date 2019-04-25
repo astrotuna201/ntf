@@ -82,7 +82,7 @@ public extension ScalarView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 }
@@ -98,7 +98,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -106,7 +106,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -117,7 +117,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -139,7 +139,7 @@ public extension VectorView {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
     
@@ -150,14 +150,14 @@ public extension VectorView {
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
     
     /// with Sequence
     init<Seq>(count: Int, name: String? = nil,
               padding: [Padding]? = nil, padValue: Scalar? = nil,
-              isColMajor: Bool = false, sequence: Seq) where
+              sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Scalar: AnyConvertable
     {
@@ -174,14 +174,15 @@ public extension VectorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
 
@@ -193,7 +194,7 @@ public extension VectorView {
         let shape = DataShape(extents: [scalars.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
 
@@ -208,7 +209,7 @@ public extension VectorView {
         let shape = DataShape(extents: [scalars.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
 }
@@ -224,7 +225,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -232,7 +233,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -243,7 +244,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -256,7 +257,11 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 public protocol MatrixView: TensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
+public enum MatrixLayout { case rowMajor, columnMajor }
+
 public extension MatrixView {
+    typealias MatrixExtents = (rows: Int, cols: Int)
+
     var rowCount: Int { return shape.extents[0] }
     var colCount: Int { return shape.extents[1] }
     
@@ -268,85 +273,76 @@ public extension MatrixView {
         let shape = DataShape(extents: [1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
     
     //-------------------------------------
     /// with Array
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: MatrixExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         isColMajor: Bool = false, scalars: [Scalar]? = nil) {
+         layout: MatrixLayout = .rowMajor, scalars: [Scalar]? = nil) {
         
-        let shape = !isColMajor ? DataShape(extents: extents) :
+        let extents = [extents.rows, extents.cols]
+        let shape = layout == .rowMajor ?
+            DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
     
     //-------------------------------------
+    /// repeating
+    init(_ extents: MatrixExtents, repeating other: Self,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let extents = [extents.rows, extents.cols]
+        self.init(extents: extents, repeating: other,
+                  padding: padding, padValue: padValue)
+    }
+    
+    //-------------------------------------
     /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil,
+    init<Seq>(_ extents: MatrixExtents, name: String? = nil,
               padding: [Padding]? = nil, padValue: Scalar? = nil,
-              isColMajor: Bool = false, sequence: Seq) where
+              layout: MatrixLayout = .rowMajor, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Scalar: AnyConvertable
     {
-        self.init(extents: extents, name: name,
+        self.init(extents, name: name,
                   padding: padding, padValue: padValue,
-                  isColMajor: isColMajor,
+                  layout: layout,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
 
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: MatrixExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         isColMajor: Bool = false,
+         layout: MatrixLayout = .rowMajor,
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
         // create shape considering column major
-        let shape = !isColMajor ? DataShape(extents: extents) :
+        let extents = [extents.rows, extents.cols]
+        let shape = layout == .rowMajor ?
+            DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// initialize with explicit labels
-    init(_ rows: Int, _ cols: Int, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         isColMajor: Bool = false, scalars: [Scalar]? = nil) {
-        
-        self.init(extents: [rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  isColMajor: isColMajor, scalars: scalars)
-    }
-
-    //-------------------------------------
-    init<Seq>(_ rows: Int, _ cols: Int, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Scalar? = nil,
-              isColMajor: Bool = false, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Scalar: AnyConvertable
-    {
-        self.init(extents: [rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  isColMajor: isColMajor,
-                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -361,7 +357,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -369,7 +365,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -380,7 +376,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -394,6 +390,8 @@ public protocol VolumeView: TensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
 public extension VolumeView {
+    typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -402,32 +400,43 @@ public extension VolumeView {
         let shape = DataShape(extents: [1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 
     //-------------------------------------
     /// with Array
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: VolumeExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]? = nil) {
         
+        let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
     
     //-------------------------------------
+    /// repeating
+    init(_ extents: VolumeExtents, repeating other: Self,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let extents = [extents.depths, extents.rows, extents.cols]
+        self.init(extents: extents, repeating: other,
+                  padding: padding, padValue: padValue)
+    }
+    
+    //-------------------------------------
     /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil,
+    init<Seq>(_ extents: VolumeExtents, name: String? = nil,
               padding: [Padding]? = nil, padValue: Scalar? = nil,
               sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Scalar: AnyConvertable
     {
-        self.init(extents: extents, name: name,
+        self.init(extents, name: name,
                   padding: padding, padValue: padValue,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
@@ -435,46 +444,24 @@ public extension VolumeView {
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: VolumeExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
-        // create shape considering column major
+        let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// initialize with explicit labels
-    init(_ depths: Int, _ rows: Int, _ cols: Int,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, scalars: [Scalar]? = nil) {
-        
-        self.init(extents: [depths, rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: scalars)
-    }
-    
-    //-------------------------------------
-    init<Seq>(_ depths: Int, _ rows: Int, _ cols: Int, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Scalar? = nil,
-              isColMajor: Bool = false, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Scalar: AnyConvertable
-    {
-        self.init(extents: [depths, rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -489,7 +476,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -497,7 +484,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -508,7 +495,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -530,8 +517,9 @@ public extension NDTensorView {
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
         // create shape considering column major
         let shape = DataShape(extents: extents)
@@ -540,7 +528,7 @@ public extension NDTensorView {
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
     
@@ -555,7 +543,7 @@ public extension NDTensorView {
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
@@ -573,7 +561,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -581,7 +569,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -592,7 +580,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -612,6 +600,8 @@ public protocol NCHWTensorView: TensorView
 where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 
 public extension NCHWTensorView {
+    typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -620,32 +610,45 @@ public extension NCHWTensorView {
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 
     //-------------------------------------
     /// with Array
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: NCHWExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]? = nil) {
 
-        let shape = DataShape(extents: extents)
+        let extent = [extents.items, extents.channels,
+                      extents.rows, extents.cols]
+        let shape = DataShape(extents: extent)
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
     
     //-------------------------------------
+    /// repeating
+    init(_ extents: NCHWExtents, repeating other: Self,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let extent = [extents.items, extents.channels,
+                      extents.rows, extents.cols]
+        self.init(extents: extent, repeating: other,
+                  padding: padding, padValue: padValue)
+    }
+    
+    //-------------------------------------
     /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil,
+    init<Seq>(_ extents: NCHWExtents, name: String? = nil,
               padding: [Padding]? = nil, padValue: Scalar? = nil,
               isColMajor: Bool = false, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Scalar: AnyConvertable
     {
-        self.init(extents: extents, name: name,
+        self.init(extents, name: name,
                   padding: padding, padValue: padValue,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
@@ -653,46 +656,25 @@ public extension NCHWTensorView {
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: NCHWExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
-        // create shape considering column major
+        let extents = [extents.items, extents.channels,
+                       extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// initialize with explicit labels
-    init(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil, scalars: [Scalar]? = nil) {
-
-        self.init(extents: [items, channels, rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: scalars)
-    }
-
-    //-------------------------------------
-    init<Seq>(_ items: Int, _ channels: Int, _ rows: Int, _ cols: Int,
-              padding: [Padding]? = nil, padValue: Scalar? = nil,
-              name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Scalar: AnyConvertable
-    {
-        self.init(extents: [items, channels, rows, cols], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -707,7 +689,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -715,7 +697,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -726,7 +708,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -746,6 +728,8 @@ public protocol NHWCTensorView: TensorView
 where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 
 public extension NHWCTensorView {
+    typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -754,32 +738,45 @@ public extension NHWCTensorView {
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
 
     //-------------------------------------
     /// with Array
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: NHWCExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          scalars: [Scalar]? = nil) {
         
+        let extents = [extents.items, extents.rows,
+                       extents.cols, extents.channels]
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: nil, viewDataOffset: 0,
+                  tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
 
     //-------------------------------------
+    /// repeating
+    init(_ extents: NHWCExtents, repeating other: Self,
+         padding: [Padding]? = nil, padValue: Scalar? = nil) {
+        
+        let extents = [extents.items, extents.rows,
+                       extents.cols, extents.channels]
+        self.init(extents: extents, repeating: other,
+                  padding: padding, padValue: padValue)
+    }
+    
+    //-------------------------------------
     /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil,
+    init<Seq>(_ extents: NHWCExtents, name: String? = nil,
               padding: [Padding]? = nil, padValue: Scalar? = nil,
               isColMajor: Bool = false, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Scalar: AnyConvertable
     {
-        self.init(extents: extents, name: name,
+        self.init(extents, name: name,
                   padding: padding, padValue: padValue,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
@@ -787,47 +784,25 @@ public extension NHWCTensorView {
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
-    init(extents: [Int], name: String? = nil,
+    init(_ extents: NHWCExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorData = TensorArray(readOnlyReferenceTo: buffer,
-                                    name: name ?? String(describing: Self.self))
+        let tensorArray =
+            TensorArray(readOnlyReferenceTo: buffer,
+                        name: name ?? String(describing: Self.self))
         
-        // create shape considering column major
+        let extents = [extents.items, extents.rows,
+                       extents.cols, extents.channels]
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
-                  tensorData: tensorData, viewDataOffset: 0,
+                  tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// initialize with explicit labels
-    init(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
-         name: String? = nil,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         scalars: [Scalar]? = nil) {
-
-        self.init(extents: [items, rows, cols, channels], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: scalars)
-    }
-
-    //-------------------------------------
-    init<Seq>(_ items: Int, _ rows: Int, _ cols: Int, _ channels: Int,
-              padding: [Padding]? = nil, padValue: Scalar? = nil,
-              name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Scalar: AnyConvertable
-    {
-        self.init(extents:  [items, rows, cols, channels], name: name,
-                  padding: padding, padValue: padValue,
-                  scalars: Self.sequence2ScalarArray(sequence))
     }
 }
 
@@ -842,7 +817,7 @@ where Scalar: ScalarConformance {
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
-    public var tensorData: TensorArray!
+    public var tensorArray: TensorArray!
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -850,7 +825,7 @@ where Scalar: ScalarConformance {
                 name: String?,
                 padding: [Padding]?,
                 padValue: Scalar?,
-                tensorData: TensorArray?,
+                tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
@@ -861,7 +836,7 @@ where Scalar: ScalarConformance {
         self.isShared = isShared
         self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
-        self.tensorData = tensorData ?? initTensorData(name, scalars)
+        self.tensorArray = tensorArray ?? initTensorData(name, scalars)
     }
 }
 
@@ -887,7 +862,7 @@ public extension NHWCTensor {
                       name: name,
                       padding: nil,
                       padValue: nil,
-                      tensorData: matrix.tensorData,
+                      tensorArray: matrix.tensorArray,
                       viewDataOffset: matrix.viewDataOffset,
                       isShared: matrix.isShared,
                       scalars: nil)

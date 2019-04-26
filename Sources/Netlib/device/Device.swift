@@ -164,9 +164,7 @@ public protocol DeviceArray: ObjectTracking, Logger {
     /// the device where this array is allocated
     var device: ComputeDevice { get }
     /// a pointer to the memory on the device
-    var data: UnsafeMutableRawPointer { get }
-    /// the size of the device memory in bytes
-    var count: Int { get }
+    var buffer: UnsafeMutableRawBufferPointer { get }
     /// the array edit version number used for replication and synchronization
     var version: Int { get set }
 

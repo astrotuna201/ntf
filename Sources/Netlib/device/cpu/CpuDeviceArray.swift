@@ -6,8 +6,7 @@ public class CpuDeviceArray : DeviceArray {
     //--------------------------------------------------------------------------
     // properties
     public private(set) var trackingId = 0
-    public var count: Int
-    public var data: UnsafeMutableRawPointer
+    public var buffer: UnsafeMutableRawBufferPointer
     public var device: ComputeDevice
     public var logInfo: LogInfo
     public var version = 0
@@ -15,9 +14,8 @@ public class CpuDeviceArray : DeviceArray {
     //--------------------------------------------------------------------------
 	// initializers
 	public init(logInfo: LogInfo, device: ComputeDevice, count: Int) {
-        self.count = count
         self.device = device
-        self.data = UnsafeMutableRawPointer.allocate(
+        buffer = UnsafeMutableRawBufferPointer.allocate(
             byteCount: count, alignment: MemoryLayout<Double>.alignment)
         self.logInfo = logInfo
         self.trackingId = ObjectTracker.global.register(self)
@@ -29,19 +27,17 @@ public class CpuDeviceArray : DeviceArray {
 	public func zero(using stream: DeviceStream) throws {
         let stream = stream as! CpuStream
         stream.queue {
-            self.data.initializeMemory(as: UInt8.self,
-                                       repeating: 0,
-                                       count: self.count)
+            self.buffer.initializeMemory(as: UInt8.self, repeating: 0)
         }
 	}
 
 	// copyAsync(from deviceArray
 	public func copyAsync(from other: DeviceArray,
                           using stream: DeviceStream) throws {
-        assert(count == other.count, "buffer sizes don't match")
+        assert(buffer.count == other.buffer.count, "buffer sizes don't match")
         let stream = stream as! CpuStream
         stream.queue {
-            self.data.copyMemory(from: other.data, byteCount: other.count)
+            self.buffer.copyMemory(from: UnsafeRawBufferPointer(other.buffer))
         }
 	}
 
@@ -49,11 +45,10 @@ public class CpuDeviceArray : DeviceArray {
 	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
         assert(buffer.baseAddress != nil)
-        assert(count == buffer.count, "buffer sizes don't match")
+        assert(self.buffer.count == buffer.count, "buffer sizes don't match")
         let stream = stream as! CpuStream
         stream.queue {
-            self.data.copyMemory(from: buffer.baseAddress!,
-                                 byteCount: buffer.count)
+            self.buffer.copyMemory(from: buffer)
         }
 	}
 
@@ -63,13 +58,10 @@ public class CpuDeviceArray : DeviceArray {
 	public func copy(to buffer: UnsafeMutableRawBufferPointer,
                      using stream: DeviceStream) throws {
         assert(buffer.baseAddress != nil)
-        assert(count == buffer.count, "buffer sizes don't match")
-
-        let dataBuffer = UnsafeRawBufferPointer(start: self.data,
-                                                count: self.count)
+        assert(self.buffer.count == buffer.count, "buffer sizes don't match")
         // wait until the stream is complete then copy
         try stream.blockCallerUntilComplete()
-        buffer.copyMemory(from: dataBuffer)
+        buffer.copyMemory(from: UnsafeRawBufferPointer(self.buffer))
 	}
 
 	// copyAsync(to buffer
@@ -78,12 +70,10 @@ public class CpuDeviceArray : DeviceArray {
 	public func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                           using stream: DeviceStream) throws {
         assert(buffer.baseAddress != nil)
-        assert(count == buffer.count, "buffer sizes don't match")
+        assert(self.buffer.count == buffer.count, "buffer sizes don't match")
         let stream = stream as! CpuStream
         stream.queue {
-            let dataBuffer = UnsafeRawBufferPointer(start: self.data,
-                                                    count: self.count)
-            buffer.copyMemory(from: dataBuffer)
+            buffer.copyMemory(from: UnsafeRawBufferPointer(self.buffer))
         }
 	}
 }

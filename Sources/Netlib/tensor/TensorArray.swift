@@ -385,7 +385,7 @@ final public class TensorArray: ObjectTracking, Logging {
                              using stream: DeviceStream) throws {
         let arrayInfo = try getArray(for: stream)
         let array     = arrayInfo.array
-        deviceDataPointer = array.data
+        deviceDataPointer = array.buffer.baseAddress!
 
         if hostBuffer == nil {
             // clear the device buffer and set it to be the new master
@@ -456,7 +456,7 @@ final public class TensorArray: ObjectTracking, Logging {
         // get array for stream's device and set deviceBuffer pointer
         let arrayInfo = try getArray(for: stream)
         let array = arrayInfo.array
-        deviceDataPointer = array.data
+        deviceDataPointer = array.buffer.baseAddress!
 
         // synchronize output stream with master stream
         try stream.sync(with: master.stream, event: getSyncEvent(using: stream))

@@ -100,6 +100,18 @@ class test_Syntax: XCTestCase {
     }
 
     //==========================================================================
+    // test_streams
+    // create a named stream on two different discreet devices
+    // <cpu devices 1 and 2 are discreet memory versions for testing>
+    func test_structuredScalar() {
+        let sample = RGBASample<UInt8>(r: 0, g: 1, b: 2, a: 3)
+        let matrix = Matrix<RGBASample<UInt8>>((2, 3),
+                                               repeating: Matrix(sample))
+        let nhwc = NHWCTensor<UInt8>(matrix)
+        print(nhwc.formatted((2, 0)))
+    }
+    
+    //==========================================================================
     // test_withResultPlacement
     func test_withResultPlacement() {
         let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()

@@ -222,6 +222,38 @@ let cmMatrix = Matrix<Int32>((3, 2),
 let expected = [Int32](0..<6)
 assert(cmMatrix.array == expected, "values don't match")
 ```
+### Zero Copy Structural Casting of Uniform Dense Scalars
+A tensor can store and manipulate structured scalars. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
+
+__<the formatted function needs to be rewritten to perform better type specific output!>__
+```swift
+let sample = RGBASample<UInt8>(r: 0, g: 1, b: 2, a: 3)
+let matrix = Matrix<RGBASample<UInt8>>((2, 3), repeating: Matrix(sample))
+let nhwc = NHWCTensor<UInt8>(matrix)
+print(nhwc.formatted((2, 0)))
+```
+```
+TensorView extents: [1, 2, 3, 4] paddedExtents: [1, 2, 3, 4]
+at index: [0, 0, 0, 0]
+======================
+at index: [0, 0, 0, 0]
+========================
+at index: [0, 0, 0, 0]
+----------------------
+0  1  2  3 
+0  1  2  3 
+0  1  2  3 
+
+
+at index: [0, 1, 0, 0]
+========================
+at index: [0, 1, 0, 0]
+----------------------
+0  1  2  3 
+0  1  2  3 
+0  1  2  3 
+```
+
 ### Matrix Zero Copy Transpose
 Accessing the MatrixView _t_ member variable returns a transposed view of Self with zero copy by manipulating strides.
 ```swift

@@ -10,7 +10,7 @@ import Foundation
 /// non numeric scalar types.
 /// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol UniformDenseScalar: Equatable {
+public protocol UniformDenseScalar: ScalarConformance {
     associatedtype Component: AnyFixedSizeScalar
     static var componentCount: Int { get }
 }
@@ -23,7 +23,7 @@ public extension UniformDenseScalar {
 
 //==============================================================================
 // Image Scalar types
-public protocol RGBImageSample: UniformDenseScalar, DefaultInitializer {
+public protocol RGBImageSample: UniformDenseScalar {
     var r: Component { get set }
     var g: Component { get set }
     var b: Component { get set }
@@ -33,9 +33,15 @@ public struct RGBSample<Component>: RGBImageSample
 where Component: AnyNumeric & AnyFixedSizeScalar {
     public var r, g, b: Component
     public init() { r = Component.zero; g = Component.zero; b = Component.zero }
+
+    public init(r: Component, g: Component, b: Component) {
+        self.r = r
+        self.g = g
+        self.b = b
+    }
 }
 
-public protocol RGBAImageSample: UniformDenseScalar, DefaultInitializer {
+public protocol RGBAImageSample: UniformDenseScalar {
     var r: Component { get set }
     var g: Component { get set }
     var b: Component { get set }
@@ -51,11 +57,18 @@ where Component: AnyNumeric & AnyFixedSizeScalar {
         b = Component.zero
         a = Component.zero
     }
+
+    public init(r: Component, g: Component, b: Component, a: Component) {
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+    }
 }
 
 //==============================================================================
 // Audio sample types
-public protocol StereoAudioSample: UniformDenseScalar, DefaultInitializer {
+public protocol StereoAudioSample: UniformDenseScalar {
     var left: Component { get set }
     var right: Component { get set }
 }
@@ -748,7 +761,7 @@ public extension NHWCTensorView {
     
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Scalar, name: String? = nil,
+    init(value: Scalar, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
         
         let shape = DataShape(extents: [1, 1, 1, 1])
@@ -866,15 +879,21 @@ public extension NHWCTensor {
     //       regarding padding. Test this
     //
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
-    init<M: MatrixView>(_ matrix: M, name: String? = nil) where
+    init<M>(_ matrix: M, name: String? = nil) where
+        M: MatrixView,
         M.Scalar: UniformDenseScalar,
         M.Scalar.Component == Scalar {
-            let extents = [1, matrix.shape.extents[0],
-                           matrix.shape.extents[1], M.Scalar.componentCount]
-            
-            let shape = DataShape(extents: extents)
-            self.init(shape: shape,
-                      dataShape: shape,
+            let viewExtents = [1,
+                               matrix.shape.extents[0],
+                               matrix.shape.extents[1],
+                               M.Scalar.componentCount]
+            let dataExtents = [1,
+                               matrix.dataShape.extents[0],
+                               matrix.dataShape.extents[1],
+                               M.Scalar.componentCount]
+
+            self.init(shape: DataShape(extents: viewExtents),
+                      dataShape: DataShape(extents: dataExtents),
                       name: name,
                       padding: nil,
                       padValue: nil,
@@ -883,4 +902,6 @@ public extension NHWCTensor {
                       isShared: matrix.isShared,
                       scalars: nil)
     }
+    
+    //*** TODO add other tensor casts
 }

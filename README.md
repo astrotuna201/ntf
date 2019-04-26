@@ -295,14 +295,14 @@ at index: [0, 0]
 4  9 14 
 ```
 ### Result Placement
-The biggest peformance problem with all of the major frameworks is copying and constant creation and destruction of tensors. All operator functions and stream functions will take a `result` argument, specifying where the result should be placed, so that temporary variables are not created and destroyed unnecessarily.
+The biggest peformance problem with all of the major frameworks is copying and constant creation and destruction of tensors. All operator functions and stream functions can take a `result` argument, specifying where the result should be placed, so that temporary variables don't need to be created and destroyed.
 ```swift
 let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
-let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-var subViewSum = Volume<Int32>((1, 1, 1))
-sum(subView, result: &subViewSum)
-assert(subViewSum.scalarValue() == 312)
+var viewSum = Volume<Int32>((1, 1, 1))
+sum(view, result: &viewSum)
+assert(viewSum.scalarValue() == 312)
 ```
 
 ***

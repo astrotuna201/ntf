@@ -252,11 +252,11 @@ public extension CpuStream {
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where T : TensorView, T.Scalar : Numeric {
         
     }
-    
+
     //--------------------------------------------------------------------------
     /// log(x:result:
     func log<T>(x: T, result: inout T) where
-        T : TensorView, T.Scalar : AnyFloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     {
         guard lastError == nil else { return }
         do {
@@ -265,7 +265,7 @@ public extension CpuStream {
             let x = try x.deviceValues(using: self)
             queue {
                 x.map(to: &results) {
-                    T.Scalar(any: Foundation.log($0.asDouble))
+                    T.Scalar(any: Foundation.log($0.asFloat))
                 }
             }
         } catch {

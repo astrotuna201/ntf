@@ -96,9 +96,9 @@ This selects and sums a 3D sub region on the default device
 - the `scalarValue` function returns the value back to the app thread
 ```swift
 let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
-let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-let subViewSum = sum(subView).scalarValue()
-assert(subViewSum == 312)
+let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+let viewSum = sum(view).scalarValue()
+assert(viewSum == 312)
 ```
 If we print with formatting
 ```swift

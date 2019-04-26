@@ -229,12 +229,12 @@ This example loads data arranged in column major order.
 //   0, 1,
 //   2, 3,
 //   4, 5
-let cmMatrix = Matrix<Int32>((3, 2),
-                             layout: .columnMajor,
-                             scalars: [0, 2, 4, 1, 3, 5])
+let matrix = Matrix<Int32>((3, 2),
+                           layout: .columnMajor,
+                           scalars: [0, 2, 4, 1, 3, 5])
 
 let expected = [Int32](0..<6)
-assert(cmMatrix.array == expected, "values don't match")
+assert(matrix.array == expected, "values don't match")
 ```
 ### Zero Copy Structural Casting of Uniform Dense Scalars
 A tensor can store and manipulate structured scalars. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
@@ -248,9 +248,6 @@ print(nhwc.formatted((2, 0)))
 ```
 ```
 TensorView extents: [1, 2, 3, 4] paddedExtents: [1, 2, 3, 4]
-at index: [0, 0, 0, 0]
-======================
-at index: [0, 0, 0, 0]
 ========================
 at index: [0, 0, 0, 0]
 ----------------------
@@ -258,8 +255,6 @@ at index: [0, 0, 0, 0]
 0  1  2  3 
 0  1  2  3 
 
-
-at index: [0, 1, 0, 0]
 ========================
 at index: [0, 1, 0, 0]
 ----------------------

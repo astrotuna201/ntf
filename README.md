@@ -89,11 +89,11 @@ let dot = zip(a, b).map(*).reduce(0, +)
 
 assert(dot == 145.0)
 ```
-This selects and sums a 3D sub region
-- initialize a volume using explicit extents
-- fill with indexes on the default device
+This selects and sums a 3D sub region on the default device
+- initialize a volume with extents (3, 4, 5)
+- fill with indexes on device
 - on the device create a sub view and take the sum 
-- return the scalar value back to the app thread
+- the `scalarValue` function returns the value back to the app thread
 ```swift
 let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
 let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])

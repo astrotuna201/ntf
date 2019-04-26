@@ -106,8 +106,6 @@ print(volume.formatted((2,0)))
 ```
 ```
 TensorView extents: [3, 4, 5] paddedExtents: [3, 4, 5]
-at index: [0, 0, 0]
-===================
   at index: [0, 0, 0]
   -------------------
    0  1  2  3  4 
@@ -115,8 +113,6 @@ at index: [0, 0, 0]
   10 11 12 13 14 
   15 16 17 18 19 
 
-at index: [1, 0, 0]
-===================
   at index: [1, 0, 0]
   -------------------
   20 21 22 23 24 
@@ -124,8 +120,6 @@ at index: [1, 0, 0]
   30 31 32 33 34 
   35 36 37 38 39 
 
-at index: [2, 0, 0]
-===================
   at index: [2, 0, 0]
   -------------------
   40 41 42 43 44 
@@ -138,15 +132,11 @@ print(subView.formatted((2,0)))
 ```
 ```
 TensorView extents: [2, 2, 2] paddedExtents: [2, 2, 2]
-at index: [0, 0, 0]
-===================
   at index: [0, 0, 0]
   -------------------
   26 27 
   31 32 
 
-at index: [1, 0, 0]
-===================
   at index: [1, 0, 0]
   -------------------
   46 47 
@@ -248,14 +238,12 @@ print(nhwc.formatted((2, 0)))
 ```
 ```
 TensorView extents: [1, 2, 3, 4] paddedExtents: [1, 2, 3, 4]
-========================
 at index: [0, 0, 0, 0]
 ----------------------
 0  1  2  3 
 0  1  2  3 
 0  1  2  3 
 
-========================
 at index: [0, 1, 0, 0]
 ----------------------
 0  1  2  3 
@@ -299,7 +287,13 @@ var viewSum = Volume<Int32>((1, 1, 1))
 sum(view, result: &viewSum)
 assert(viewSum.scalarValue() == 312)
 ```
+### ReadOnly References
+A tensor constructor is provided to create a read only reference to a memory buffer. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeRawBufferPointer_ to the data.
 
+Examples:
+* a record from a memory mapped database or file
+* a network data buffer
+* a hardware frame buffer
 ***
 # Device Abstraction
 NetlibTF defines a set of class protocols for platform abstraction. They encapsulate functionality to allow run time selection of a compute service (cpu, cuda, metal, etc.) and hardware device, to enable application portability without recoding. 

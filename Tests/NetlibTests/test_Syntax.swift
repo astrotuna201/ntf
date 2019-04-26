@@ -11,11 +11,29 @@ class test_Syntax: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
+        ("test_appThreadZipMapReduce", test_appThreadZipMapReduce),
         ("test_simple", test_simple),
         ("test_streams", test_streams),
+        ("test_structuredScalar", test_structuredScalar),
         ("test_withResultPlacement", test_withResultPlacement),
         ("test_logging", test_logging),
     ]
+
+    //==========================================================================
+    // test_appThreadZipMapReduce
+    func test_appThreadZipMapReduce() {
+        // create two tensors and fill with indexes
+        let a = Matrix<Float>((2, 3), sequence: 0..<6)
+        let b = Matrix<Float>((2, 3), sequence: 6..<12)
+        
+        let absum = zip(a, b).map { $0 + $1 }
+        
+        let absumExpected: [Float] = [6, 8, 10, 12, 14, 16]
+        XCTAssert(absum == absumExpected)
+        
+        let dot = zip(a, b).map(*).reduce(0, +)
+        XCTAssert(dot == 145.0)
+    }
     
     //==========================================================================
     // test_simple
@@ -100,7 +118,7 @@ class test_Syntax: XCTestCase {
     }
 
     //==========================================================================
-    // test_streams
+    // test_structuredScalar
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_structuredScalar() {

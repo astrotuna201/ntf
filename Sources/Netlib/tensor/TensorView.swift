@@ -170,6 +170,8 @@ public extension TensorView {
             assert(shape.isContiguous, "new views should have a dense shape")
             // allocate backing tensorArray
             if let scalars = scalars {
+                assert(scalars.count == dataShape.elementCount,
+                       "number of scalars does not match tensor extents")
                 tensorArray = scalars.withUnsafeBytes { TensorArray(buffer: $0)}
             } else {
                 tensorArray = TensorArray(type: Scalar.self,

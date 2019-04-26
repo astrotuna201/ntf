@@ -74,7 +74,21 @@ let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
 let sum = matrix.sum().scalarValue()
 assert(sum == 105.0)
 ```
+This is a simple example of using tensors on the app thread doing normal zip, map, reduce operations.
+```swift
+// create two tensors and fill with indexes
+let a = Matrix<Float>((2, 3), sequence: 0..<6)
+let b = Matrix<Float>((2, 3), sequence: 6..<12)
 
+let absum = zip(a, b).map { $0 + $1 }
+
+let absumExpected: [Float] = [6, 8, 10, 12, 14, 16]
+assert(absum == absumExpected)
+
+let dot = zip(a, b).map(*).reduce(0, +)
+
+assert(dot == 145.0)
+```
 This selects and sums a 3D sub region
 - initialize a volume using explicit extents
 - fill with indexes on the default device

@@ -269,7 +269,7 @@ at index: [0, 1, 0, 0]
 ```
 
 ### Matrix Zero Copy Transpose
-Accessing the MatrixView _t_ member variable returns a transposed view of Self with zero copy by manipulating strides.
+Accessing the MatrixView `t` member variable returns a transposed view of Self with zero copy by manipulating strides.
 ```swift
 let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
 print(matrix.formatted((2,0)))

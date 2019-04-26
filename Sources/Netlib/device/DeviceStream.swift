@@ -68,8 +68,8 @@ public extension LocalDeviceStream {
 ///
 public protocol StreamIntrinsicsProtocol {
     /// Computes the absolute value of the specified TensorView element-wise.
-    func abs<T>(x: T, result: inout T)
-        where T: TensorView, T.Scalar: SignedNumeric
+    func abs<T>(x: T, result: inout T) where
+        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
     /// Adds two tensors and produces their sum.
     func add<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Scalar: Numeric
@@ -111,7 +111,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: AnyNumeric
+        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output

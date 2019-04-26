@@ -9,7 +9,9 @@ import Foundation
 ///       work is in flux
 
 public extension CpuStream {
-    func abs<T>(x: T, result: inout T) where T : TensorView, T.Scalar : SignedNumeric {
+    func abs<T>(x: T, result: inout T) where
+        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
+    {
         
     }
     
@@ -108,8 +110,8 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// asum
-    func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T)
-        where T : TensorView, T.Scalar : AnyNumeric
+    func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
     {
         guard lastError == nil else { return }
         do {
@@ -117,9 +119,8 @@ public extension CpuStream {
             var results = try resultRef.mutableDeviceValues(using: self)
             let x = try x.deviceValues(using: self)
             queue {
-                // TODO: can't seem to call Foundation.abs($1)
                 x.reduce(to: &results, T.Scalar.zero) {
-                    $0 + $1
+                    $0 + $1.magnitude
                 }
             }
         } catch {

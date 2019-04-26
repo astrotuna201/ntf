@@ -89,11 +89,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// blockCallerUntilComplete
     /// blocks the calling thread until the command queue is empty
     public func blockCallerUntilComplete() throws {
-        let event = completionEvent
-        queue {
-            event.signal()
-        }
-        try event.wait(until: timeout)
+        try record(event: completionEvent).wait(until: timeout)
     }
 	
     //--------------------------------------------------------------------------

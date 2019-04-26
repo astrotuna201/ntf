@@ -160,7 +160,7 @@ class test_DataMigration: XCTestCase {
     func test_mutateOnDevice() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
@@ -334,12 +334,13 @@ class test_DataMigration: XCTestCase {
     // NOTE: uses the default stream
     func test_copyOnWrite() {
         Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
         
         let index = [1, 1]
         var matrix1 = Matrix<Float>((3, 2))
         fillWithIndex(&matrix1)
-        XCTAssert(matrix1.value(at: index) == 3.0)
+        let m1value = matrix1.value(at: index)
+        XCTAssert(m1value == 3.0)
         
         var matrix2 = matrix1
         XCTAssert(matrix2.value(at: index) == 3.0)

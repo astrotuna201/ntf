@@ -347,12 +347,12 @@ let stream2 = Platform.local.createStream(deviceId: 2)
 let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()
 }
-let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-let subViewSum = using(stream2) {
-    sum(subView).scalarValue()
+let viewSum = using(stream2) {
+    sum(view).scalarValue()
 }
-assert(subViewSum == 312)
+assert(viewSum == 312)
 ```
 
 # Logging
@@ -370,12 +370,12 @@ let stream2 = Platform.local.createStream(serviceName: "cpuUnitTest", deviceId: 
 let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()
 }
-let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-let subViewSum = using(stream2) {
-    sum(subView).scalarValue()
+let viewSum = using(stream2) {
+    sum(view).scalarValue()
 }
-assert(subViewSum == 312)
+assert(viewSum == 312)
 ```
 Logging shows detailed output of exactly what is happening for the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
 ```

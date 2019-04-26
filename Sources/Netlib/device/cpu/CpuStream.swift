@@ -45,15 +45,6 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
     //--------------------------------------------------------------------------
-    /// throwTestError
-    /// used for unit testing
-    public func throwTestError() {
-        queue {
-            throw DeviceError.streamError(idPath: [], message: "testError")
-        }
-    }
-
-    //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     ///
     /// This will catch and propagate the last asynchronous error thrown.
@@ -89,7 +80,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// introduces a delay into command queue processing to simulate workloads
     /// to aid in debugging
 	public func debugDelay(seconds: Double) throws {
-        commandQueue.async {
+        queue {
             Thread.sleep(forTimeInterval: TimeInterval(seconds))
         }
 	}
@@ -99,7 +90,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// blocks the calling thread until the command queue is empty
     public func blockCallerUntilComplete() throws {
         let event = completionEvent
-        commandQueue.async {
+        queue {
             event.signal()
         }
         try event.wait(until: timeout)
@@ -107,7 +98,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	
     //--------------------------------------------------------------------------
     /// wait(for event:
-    /// waits for 
+    /// waits until the event is signaled
 	public func wait(for event: StreamEvent) throws {
         try event.wait(until: timeout)
 	}
@@ -122,12 +113,21 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	}
 
     //--------------------------------------------------------------------------
+    /// throwTestError
+    /// used for unit testing
+    public func throwTestError() {
+        queue {
+            throw DeviceError.streamError(idPath: [], message: "testError")
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// record(event:
-	public func record(event: StreamEvent) throws  -> StreamEvent {
+	public func record(event: StreamEvent) throws -> StreamEvent {
         event.occurred = false
-        commandQueue.async {
+        queue {
             event.signal()
         }
-		return event
+        return event
 	}
 }

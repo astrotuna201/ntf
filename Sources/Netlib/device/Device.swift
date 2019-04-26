@@ -206,6 +206,7 @@ public protocol StreamEvent: ObjectTracking, Logger {
 }
 
 public struct StreamEventOptions: OptionSet {
+    public init() { self.rawValue = 0 }
     public init(rawValue: Int) { self.rawValue = rawValue }
     public let rawValue: Int
     public static let hostSync     = StreamEventOptions(rawValue: 1 << 0)

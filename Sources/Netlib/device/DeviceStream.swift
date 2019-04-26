@@ -29,10 +29,6 @@ public protocol DeviceStream:
     /// the internval of time to wait for an operation to complete
     var timeout: TimeInterval? { get set }
     
-    /// for unit testing. It's part of the class protocol so that remote
-    /// streams throw the error remotely.
-    func throwTestError()
-    
     //--------------------------------------------------------------------------
     // synchronization functions
     /// blocks the calling thread until the stream queue is empty
@@ -46,6 +42,9 @@ public protocol DeviceStream:
     /// blocks caller until the event has occurred on this stream,
     /// then recorded and occurred on the other stream
     func sync(with other: DeviceStream, event: StreamEvent) throws
+    /// for unit testing. It's part of the class protocol so that remote
+    /// streams throw the error remotely.
+    func throwTestError()
     /// blocks caller until the event has occurred
     func wait(for event: StreamEvent) throws
 }

@@ -15,11 +15,13 @@ final public class CpuStreamEvent : StreamEvent {
     private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
     private var _occurred: Bool = true
+    private let name: String
 
     //--------------------------------------------------------------------------
     // initializers
     public required init(logInfo: LogInfo, options: StreamEventOptions) {
         self.logInfo = logInfo
+        name = String(describing: CpuStreamEvent.self)
         trackingId = ObjectTracker.global
             .register(self, namePath: logNamePath)
     }
@@ -40,18 +42,24 @@ final public class CpuStreamEvent : StreamEvent {
     
     public func wait(until timeout: TimeInterval?) throws {
         try occurredMutex.sync {
-            if !_occurred {
-                if let timeout = timeout {
-                    let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
-                    if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
-                        throw StreamEventError.timedOut
-                    }
-                } else {
-                    semaphore.wait()
+            guard !_occurred else { return }
+            diagnostic("\(name)(\(trackingId)) waiting...",
+                categories: .streamSync)
+
+            if let timeout = timeout {
+                let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
+                if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
+                    diagnostic("\(name)(\(trackingId)) timed out",
+                        categories: .streamSync)
+                    throw StreamEventError.timedOut
                 }
-                // TODO add diagnostic message
-                _occurred = true
+            } else {
+                semaphore.wait()
             }
+
+            diagnostic("\(name)(\(trackingId)) occured",
+                categories: .streamSync)
+            _occurred = true
         }
     }
 }

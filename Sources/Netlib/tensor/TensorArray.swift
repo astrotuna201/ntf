@@ -120,25 +120,21 @@ final public class TensorArray: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     deinit {
-//        do {
-//            // synchronize with all streams that have accessed these arrays
-//            // before freeing them
-//            for sid in 0..<deviceArrays.count {
-//                for devId in 0..<deviceArrays[sid].count {
-//                    if let info = deviceArrays[sid][devId] {
-//                        try info.stream.blockCallerUntilComplete()
-//                    }
-//                }
-//            }
-//        } catch {
-//            writeLog(String(describing: error))
-//        }
-//        ObjectTracker.global.remove(trackingId: trackingId)
-//
-//        if byteCount > 0 {
-//            diagnostic("\(releaseString) \(name)(\(trackingId)) " +
-//                "elements[\(elementCount)]", categories: .dataAlloc)
-//        }
+        // synchronize with all streams that have accessed these arrays
+        // before freeing them
+        do {
+            for replica in replicas.values {
+                try replica.lastStream.blockCallerUntilComplete()
+            }
+        } catch {
+            writeLog(String(describing: error))
+        }
+        ObjectTracker.global.remove(trackingId: trackingId)
+
+        if count > 0 {
+            diagnostic("\(releaseString) \(name)(\(trackingId)) " +
+                "bytes[\(count)]", categories: .dataAlloc)
+        }
     }
     
     //--------------------------------------------------------------------------

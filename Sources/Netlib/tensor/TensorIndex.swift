@@ -20,7 +20,8 @@ public extension TensorView {
             guard _Streams.current.lastError == nil else {
                 return TensorViewCollection<Self>()
             }
-            return try TensorViewCollection(view: self, buffer: readOnly())
+            let buffer = try readOnly(using: _Streams.local.appThreadStream)
+            return try TensorViewCollection(view: self, buffer: buffer)
         } catch {
             _Streams.current.reportDevice(error: error)
             return TensorViewCollection<Self>()
@@ -32,8 +33,8 @@ public extension TensorView {
             guard _Streams.current.lastError == nil else {
                 return TensorViewMutableCollection<Self>()
             }
-            return try TensorViewMutableCollection(view: &self,
-                                                   buffer: readWrite())
+            let buffer = try readWrite(using: _Streams.local.appThreadStream)
+            return try TensorViewMutableCollection(view: &self, buffer: buffer)
         } catch {
             _Streams.current.reportDevice(error: error)
             return TensorViewMutableCollection<Self>()
@@ -54,7 +55,7 @@ public extension TensorView {
     
     func value(at index: [Int]) -> Scalar {
         do {
-            let buffer = try readOnly()
+            let buffer = try readOnly(using: _Streams.local.appThreadStream)
             let padded = shape.padded(with: padding)
             let tensorIndex = TensorIndex<Self>(self, padded, at: index)
             return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
@@ -66,7 +67,7 @@ public extension TensorView {
 
     mutating func set(value: Scalar, at index: [Int]) {
         do {
-            let buffer = try readWrite()
+            let buffer = try readWrite(using: _Streams.local.appThreadStream)
             let padded = shape.padded(with: padding)
             let tensorIndex = TensorIndex<Self>(self, padded, at: index)
             buffer[tensorIndex.dataIndex] = value

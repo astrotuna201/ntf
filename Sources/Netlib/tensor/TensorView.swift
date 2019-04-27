@@ -178,7 +178,7 @@ public extension TensorView {
                                           count: dataShape.elementCount)
             }
         }
-        assert(viewByteOffset + viewSpanByteCount <= tensorArray.byteCount)
+        assert(viewByteOffset + viewSpanByteCount <= tensorArray.count)
 
         if let name = name {
             tensorArray.name = name
@@ -245,7 +245,8 @@ public extension TensorView {
         assert(shape.elementCount == 1)
         do {
             guard _Streams.current.lastError == nil else { return Scalar() }
-            return try readOnly()[0]
+            return try readOnly(using: _Streams.local.appThreadStream)[0]
+
         } catch {
             _Streams.current.reportDevice(error: error)
             return Scalar()
@@ -309,25 +310,6 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// readOnly
-    /// Returns a read only tensorArray buffer pointer synced with the
-    /// applicaiton thread. It's purpose is to be used by shaped subscript
-    /// functions
-    func readOnly() throws -> UnsafeBufferPointer<Scalar> {
-        // get the queue, if we reference it directly as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        return try queue.sync {
-            tensorArray.lastAccessMutatedView = false
-            let buffer = try tensorArray.readOnlyHostBuffer()
-                .bindMemory(to: Scalar.self)
-            
-            return UnsafeBufferPointer(
-                start: buffer.baseAddress?.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
-        }
-    }
-    
     /// readOnly(using stream:
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
@@ -339,7 +321,7 @@ public extension TensorView {
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
-            let buffer = try tensorArray.readOnlyDevicePointer(using: stream)
+            let buffer = try tensorArray.readOnly(using: stream)
                 .bindMemory(to: Scalar.self)
             
             return UnsafeBufferPointer(
@@ -349,26 +331,6 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// readWrite
-    /// Returns a read write tensorArray buffer pointer synced with the
-    /// applicaiton thread. It's purpose is to be used by shaped subscript
-    /// functions
-    mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
-        // get the queue, if we reference it as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        return try queue.sync {
-            try copyIfMutates(using: nil)
-            
-            let buffer = try tensorArray.readWriteHostBuffer()
-                .bindMemory(to: Scalar.self)
-            
-            return UnsafeMutableBufferPointer(
-                start: buffer.baseAddress?.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
-        }
-    }
-    
     /// readWrite(using stream:
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
@@ -380,7 +342,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            let buffer = try tensorArray.readWriteDevicePointer(using: stream)
+            let buffer = try tensorArray.readWrite(using: stream)
                 .bindMemory(to: Scalar.self)
             
             return UnsafeMutableBufferPointer(
@@ -612,7 +574,8 @@ public extension TensorView where Scalar: FloatingPoint {
     /// isFinite
     /// `true` if all elements are finite values. Primarily used for debugging
     func isFinite() throws -> Bool {
-        for value in try readOnly() {
+        let values = try readOnly(using: _Streams.local.appThreadStream)
+        for value in values {
             if !value.isFinite {
                 return false
             }

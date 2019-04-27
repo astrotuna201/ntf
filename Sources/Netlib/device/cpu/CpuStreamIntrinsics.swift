@@ -42,7 +42,7 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            let result = try resultRef.readWrite()
+            let result = try resultRef.readWrite(using: self)
             let x = try x.deviceValues(using: self)
             queue {
                 for value in x where !value {
@@ -64,7 +64,7 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            let result = try resultRef.readWrite()
+            let result = try resultRef.readWrite(using: self)
             let x = try x.deviceValues(using: self)
             queue {
                 for value in x where value {

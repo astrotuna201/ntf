@@ -31,10 +31,10 @@ public func using<R>(_ stream: DeviceStream,
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
-    /// applicationThreadStream
+    /// appThreadStream
     /// a unified memory stream used to synchronize access for the
     /// application thread
-    public let applicationThreadStream: DeviceStream
+    public let appThreadStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
     var streamScope: [DeviceStream] = []
 
@@ -94,11 +94,11 @@ class _Streams {
         // use the default stream as the app stream if it uses
         // unified memory addressing
         if stream.device.memoryAddressing == .unified {
-            applicationThreadStream = stream
+            appThreadStream = stream
             
         } else {
             // create a uma stream for app thread synchronization
-            applicationThreadStream =
+            appThreadStream =
                 Platform.local.createStream(deviceId: 0,
                                             serviceName: "cpu",
                                             name: "applicationThreadStream")

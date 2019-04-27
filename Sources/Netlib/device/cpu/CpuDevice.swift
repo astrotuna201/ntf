@@ -10,7 +10,7 @@ public class CpuDevice: LocalComputeDevice {
     // properties
     public private(set) var trackingId = 0
     public let attributes = [String : String]()
-    public var deviceArrayKey: DeviceArrayKey
+    public var deviceArrayReplicaKey: DeviceArrayReplicaKey
     public let id: Int
     public var logInfo: LogInfo
     public var maxThreadsPerBlock: Int { return 1 }
@@ -42,7 +42,7 @@ public class CpuDevice: LocalComputeDevice {
 		self.service = service
         self.timeout = timeout
         self.memoryAddressing = memoryAddressing
-        deviceArrayKey = DeviceArrayKey(platformId: service.platform!.id,
+        deviceArrayReplicaKey = DeviceArrayReplicaKey(platformId: service.platform!.id,
                                         serviceId: service.id, deviceId: id)
 
 		// devices are statically held by the Platform.service

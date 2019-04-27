@@ -142,8 +142,38 @@ final public class TensorArray: ObjectTracking, Logging {
     //----------------------------------------
     // init from other TensorArray
     public init(copying other: TensorArray,
-                using stream: DeviceStream?) throws {
-        fatalError()
+                using stream: DeviceStream) throws {
+        // initialize members
+        isReadOnlyReference = other.isReadOnlyReference
+        count = other.count
+        name = other.name
+        masterVersion = 0
+        register()
+        
+        // report
+        diagnostic(
+            "\(createString) \(name)(\(trackingId)) init" +
+                "\(setText(" copying ", color: .blue))" +
+            "TensorArray(\(other.trackingId)) bytes[\(count)]",
+            categories: [.dataAlloc, .dataCopy])
+
+        // make sure there is something to copy
+        guard let otherMaster = other.master else { return }
+        
+        // get the array replica for `stream`
+        let replica = try getArray(for: stream)
+        replica.array.version = masterVersion
+        
+        // sync streams and copy
+        try stream.sync(with: otherMaster.lastStream,
+                        event: getSyncEvent(using: stream))
+        try replica.array.copyAsync(from: otherMaster.array, using: stream)
+        
+        diagnostic("\(copyString) \(name)(\(trackingId)) " +
+            "\(otherMaster.lastStream.device.name)" +
+            "\(setText(" --> ", color: .blue))" +
+            "\(stream.device.name)_s\(stream.id) bytes[\(count)]",
+            categories: .dataCopy)
     }
     
     //----------------------------------------

@@ -298,7 +298,7 @@ public extension TensorView {
     /// Creates a copy of the tensorArray if read-write access will cause mutation
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
-    private mutating func copyIfMutates(using stream: DeviceStream?) throws {
+    private mutating func copyIfMutates(using stream: DeviceStream) throws {
         // for unit tests
         tensorArray.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
@@ -475,7 +475,7 @@ public extension TensorView {
     /// operations. Therefore the data will be copied before
     /// reference view creation if not uniquely held. References will not
     /// be checked on the resulting view when a write pointer is taken
-    mutating func reference(using stream: DeviceStream? = nil) throws -> Self {
+    mutating func reference(using stream: DeviceStream) throws -> Self {
         // get the queue, if we reference it as a tensorArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
@@ -505,7 +505,7 @@ public extension TensorView {
     mutating func referenceView(
         offset: [Int], extents: [Int],
         padding: [Padding]? = nil, padValue: Scalar? = nil,
-        using stream: DeviceStream? = nil) throws -> Self {
+        using stream: DeviceStream) throws -> Self {
         
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
@@ -530,7 +530,7 @@ public extension TensorView {
     mutating func referenceFlattened(
         axis: Int = 0,
         padding: [Padding]? = nil, padValue: Scalar? = nil,
-        using stream: DeviceStream? = nil) throws -> Self {
+        using stream: DeviceStream) throws -> Self {
         
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up

@@ -112,6 +112,8 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     var attributes: [String: String] { get }
     /// the amount of free memory currently available on the device
     var availableMemory: UInt64 { get }
+    /// a key to lookup device array replicas
+    var deviceArrayKey: DeviceArrayKey { get }
     /// the id of the device for example gpu:0
     var id: Int { get }
     /// the maximum number of threads supported per block
@@ -136,6 +138,19 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
 }
 
 public enum MemoryAddressing { case unified, discreet }
+
+//==============================================================================
+/// DeviceArrayKey
+public struct DeviceArrayKey: Hashable {
+    let platformId: UInt8
+    let serviceId: UInt8
+    let deviceId: UInt8
+    public init(platformId: Int, serviceId: Int, deviceId: Int) {
+        self.platformId = UInt8(platformId)
+        self.serviceId = UInt8(serviceId)
+        self.deviceId = UInt8(deviceId)
+    }
+}
 
 //==============================================================================
 /// LocalComputeDevice

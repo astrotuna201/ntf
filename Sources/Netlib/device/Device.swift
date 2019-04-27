@@ -133,6 +133,10 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     // device resource functions
     /// creates an array on this device
     func createArray(count: Int) throws -> DeviceArray
+    /// creates a device array from a uma buffer.
+    func createReferenceArray(buffer: UnsafeRawBufferPointer) -> DeviceArray
+    /// creates a device array from a uma buffer.
+    func createMutableReferenceArray(buffer: UnsafeMutableRawBufferPointer) -> DeviceArray
     /// creates a named command stream for this device
     func createStream(name: String) -> DeviceStream
 }

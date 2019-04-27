@@ -13,12 +13,17 @@ final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     /// Replica
     /// A data replica is maintained for each stream device
-    struct Replica {
+    class Replica {
         /// the array in the device address space
         let array: DeviceArray
         /// the last stream used to access the array. Used for synchronization
         /// and `deinit` of the array
-        public var lastStream: DeviceStream
+        var lastStream: DeviceStream
+        
+        public init(array: DeviceArray, lastStream: DeviceStream) {
+            self.array = array
+            self.lastStream = lastStream
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -70,19 +75,55 @@ final public class TensorArray: ObjectTracking, Logging {
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init(readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+    public init(referenceTo buffer: UnsafeRawBufferPointer) {
         // store
         masterVersion = 0
         isReadOnlyReference = true
         count = buffer.count
-//        let stream = _Streams.local.applicationThreadStream
+        let stream = _Streams.local.appThreadStream
 
+        // create the replica device array
+        diagnostic("\(referenceString) \(name)(\(trackingId)) " +
+            "device array readOnly reference on \(stream.device.name) " +
+            "bytes[\(count)]", categories: .dataAlloc)
+
+        let key = stream.device.deviceArrayReplicaKey
+        let array = stream.device.createReferenceArray(buffer: buffer)
+        array.version = -1
+        replicas[key] = Replica(array: array, lastStream: stream)
+
+        // register self with object tracker
+        register()
+    }
+    
+    //----------------------------------------
+    // All initializers retain the data except this one
+    // which creates a read only reference to avoid unnecessary copying from
+    // a read only data object
+    public init(referenceTo buffer: UnsafeMutableRawBufferPointer) {
+        // store
+        masterVersion = 0
+        isReadOnlyReference = false
+        count = buffer.count
+        let stream = _Streams.local.appThreadStream
+        
+        // create the replica device array
+        diagnostic("\(referenceString) \(name)(\(trackingId)) " +
+            "device array readWrite reference on \(stream.device.name) " +
+            "bytes[\(count)]", categories: .dataAlloc)
+        
+        let key = stream.device.deviceArrayReplicaKey
+        let array = stream.device.createMutableReferenceArray(buffer: buffer)
+        array.version = -1
+        replicas[key] = Replica(array: array, lastStream: stream)
+        
+        // register self with object tracker
         register()
     }
     
     //----------------------------------------
     // copy from buffer
-    public init(buffer: UnsafeRawBufferPointer) {
+    public init(copying buffer: UnsafeRawBufferPointer) {
         masterVersion = 0
         isReadOnlyReference = false
         count = buffer.count
@@ -100,7 +141,7 @@ final public class TensorArray: ObjectTracking, Logging {
     
     //----------------------------------------
     // init from other TensorArray
-    public init(withContentsOf other: TensorArray,
+    public init(copying other: TensorArray,
                 using stream: DeviceStream?) throws {
         fatalError()
     }
@@ -138,6 +179,18 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
+    // getSyncEvent
+    /// returns a reusable StreamEvent for stream synchronization
+    private var _streamSyncEvent: StreamEvent!
+    private func getSyncEvent(using stream: DeviceStream) throws -> StreamEvent{
+        // lazy create when we have a stream to work with
+        if _streamSyncEvent == nil {
+            _streamSyncEvent = try stream.createEvent(options: [])
+        }
+        return _streamSyncEvent
+    }
+
+    //--------------------------------------------------------------------------
     // readOnly
     public func readOnly(using stream: DeviceStream) throws
         -> UnsafeRawBufferPointer {
@@ -160,29 +213,123 @@ final public class TensorArray: ObjectTracking, Logging {
     private func migrate(readOnly: Bool, using stream: DeviceStream) throws
         -> UnsafeMutableRawBufferPointer
     {
-        // determine addressing combination
-        fatalError()
-//        let srcUsesUMA = master?.stream.device.memoryAddressing != .discreet
-//        let dstUsesUMA = stream?.device.memoryAddressing != .discreet
-//
-//        // reset, this is to support automated tests
-//        lastAccessCopiedBuffer = false
-//
-//        if srcUsesUMA {
-//            if dstUsesUMA {
-//                try setDeviceDataPointerToHostBuffer(readOnly: readOnly)
-//            } else {
-//                assert(stream != nil, streamRequired)
-//                try host2device(readOnly: readOnly, using: stream!)
-//            }
-//        } else {
-//            if dstUsesUMA {
-//                try device2host(readOnly: readOnly)
-//            } else {
-//                assert(stream != nil, streamRequired)
-//                try device2device(readOnly: readOnly, using: stream!)
-//            }
-//        }
+        // get the array replica for `stream`
+        let replica = try getArray(for: stream)
+        
+        // compare with master and copy if needed
+        if let master = master, replica.array.version != master.array.version {
+            // cross service?
+            if replica.array.device.service.id != master.array.device.service.id {
+                try copyCrossService(from: master, to: replica, using: stream)
+                
+            } else if replica.array.device.id != master.array.device.id {
+                try copyCrossDevice(from: master, to: replica, using: stream)
+            }
+            lastAccessCopiedBuffer = true
+        }
+        
+        // set version
+        if !readOnly { master = replica; masterVersion += 1 }
+        replica.array.version = masterVersion
+        return replica.array.buffer
     }
 
+    //--------------------------------------------------------------------------
+    // copyCrossService
+    // copies from an array in one service to another
+    private func copyCrossService(from master: Replica, to other: Replica,
+                                  using stream: DeviceStream) throws {
+        let masterDevice = master.array.device
+        let otherDevice = other.array.device
+        
+        if masterDevice.memoryAddressing == .unified {
+            // copy host to discreet memory device
+            if otherDevice.memoryAddressing == .discreet {
+                let buffer = UnsafeRawBufferPointer(master.array.buffer)
+                try other.array.copyAsync(from: buffer, using: stream)
+
+                diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                    "\(otherDevice.name)" +
+                    "\(setText(" --> ", color: .blue))" +
+                    "\(masterDevice.name)_s\(stream.id) bytes[\(count)]",
+                    categories: .dataCopy)
+            }
+            // otherwise they are both unified, so do nothing
+        } else if otherDevice.memoryAddressing == .unified {
+            // device to host
+            try master.array.copyAsync(to: other.array.buffer, using: stream)
+            
+            diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                "\(masterDevice.name)_s\(master.lastStream.id)" +
+                "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
+                " bytes[\(count)]", categories: .dataCopy)
+
+        } else {
+            // both are discreet and not in the same service, so
+            // transfer to host memory as an intermediate step
+            let host = try getArray(for: _Streams.local.appThreadStream)
+            try master.array.copyAsync(to: host.array.buffer, using: stream)
+            
+            diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                "\(masterDevice.name)_s\(master.lastStream.id)" +
+                "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
+                " bytes[\(count)]", categories: .dataCopy)
+
+            
+            let hostBuffer = UnsafeRawBufferPointer(host.array.buffer)
+            try other.array.copyAsync(from: hostBuffer, using: stream)
+            
+            diagnostic("\(copyString) \(name)(\(trackingId)) " +
+                "\(otherDevice.name)" +
+                "\(setText(" --> ", color: .blue))" +
+                "\(masterDevice.name)_s\(stream.id) bytes[\(count)]",
+                categories: .dataCopy)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    // copyCrossDevice
+    // copies from one discreet memory device to the other
+    private func copyCrossDevice(from master: Replica, to other: Replica,
+                                 using stream: DeviceStream) throws {
+        // only copy if the devices have discreet memory
+        guard master.array.device.memoryAddressing == .discreet else { return }
+        try other.array.copyAsync(from: master.array, using: stream)
+        
+        diagnostic("\(copyString) \(name)(\(trackingId)) " +
+            "\(master.lastStream.device.name)" +
+            "\(setText(" --> ", color: .blue))" +
+            "\(stream.device.name)_s\(stream.id) " +
+            "bytes[\(count)]",
+            categories: .dataCopy)
+    }
+    
+    //--------------------------------------------------------------------------
+    // getArray(stream:
+    // This manages a dictionary of replicated device arrays indexed
+    // by serviceId and id. It will lazily create a device array if needed
+    private func getArray(for stream: DeviceStream) throws -> Replica {
+        // lookup array associated with this stream
+        let key = stream.device.deviceArrayReplicaKey
+        if let replica = replicas[key] {
+            // sync the requesting stream with the last stream that accessed it
+            try stream.sync(with: replica.lastStream,
+                            event: getSyncEvent(using: stream))
+            // update the last stream used to access this array for sync
+            replica.lastStream = stream
+            return replica
+            
+        } else {
+            // create the replica device array
+            diagnostic("\(allocString) \(name)(\(trackingId)) " +
+                "device array on \(stream.device.name) bytes[\(count)]",
+                categories: .dataAlloc)
+            
+            let array = try stream.device.createArray(count: count)
+            array.version = -1
+            let replica = Replica(array: array, lastStream: stream)
+            replicas[key] = replica
+            return replica
+        }
+    }
 }

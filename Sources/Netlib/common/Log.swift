@@ -323,15 +323,15 @@ public struct LogCategories: OptionSet {
 }
 
 // strings
-let allocString    = "[\(setText("ALLOC  ", color: .cyan))]"
-let createString   = "[\(setText("CREATE ", color: .cyan))]"
-let copyString     = "[\(setText("COPY   ", color: .blue))]"
-let releaseString  = "[\(setText("RELEASE", color: .cyan))]"
-let blockString    = "[\(setText("BLOCK  ", color: .red))]"
-let waitString     = "[\(setText("WAIT   ", color: .yellow))]"
-let syncString     = "[\(setText("SYNC   ", color: .yellow))]"
-let recordString   = "[\(setText("RECORD ", color: .yellow))]"
-let mutationString = "[\(setText("MUTATE ", color: .blue))]"
+let allocString     = "[\(setText("ALLOC    ", color: .cyan))]"
+let createString    = "[\(setText("CREATE   ", color: .cyan))]"
+let copyString      = "[\(setText("COPY     ", color: .blue))]"
+let releaseString   = "[\(setText("RELEASE  ", color: .cyan))]"
+let blockString     = "[\(setText("BLOCK    ", color: .red))]"
+let waitString      = "[\(setText("WAIT     ", color: .yellow))]"
+let syncString      = "[\(setText("SYNC     ", color: .yellow))]"
+let referenceString = "[\(setText("REFERENCE", color: .cyan))]"
+let mutationString  = "[\(setText("MUTATE   ", color: .blue))]"
 
 //------------------------------------------------------------------------------
 // LogLevel

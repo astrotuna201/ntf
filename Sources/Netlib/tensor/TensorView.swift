@@ -172,7 +172,9 @@ public extension TensorView {
             if let scalars = scalars {
                 assert(scalars.count == dataShape.elementCount,
                        "number of scalars does not match tensor extents")
-                tensorArray = scalars.withUnsafeBytes { TensorArray(buffer: $0)}
+                tensorArray = scalars.withUnsafeBytes {
+                    TensorArray(copying: $0)
+                }
             } else {
                 tensorArray = TensorArray(type: Scalar.self,
                                           count: dataShape.elementCount)
@@ -305,7 +307,7 @@ public extension TensorView {
             "elements[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorArray = try TensorArray(withContentsOf: tensorArray, using: stream)
+        tensorArray = try TensorArray(copying: tensorArray, using: stream)
         tensorArray.lastAccessMutatedView = true
     }
     

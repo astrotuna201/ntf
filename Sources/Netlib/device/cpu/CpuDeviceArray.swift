@@ -10,6 +10,7 @@ public class CpuDeviceArray : DeviceArray {
     public var device: ComputeDevice
     public var logInfo: LogInfo
     public var version = 0
+    private let isReadOnly: Bool
     
     //--------------------------------------------------------------------------
 	// initializers
@@ -18,13 +19,39 @@ public class CpuDeviceArray : DeviceArray {
         buffer = UnsafeMutableRawBufferPointer.allocate(
             byteCount: count, alignment: MemoryLayout<Double>.alignment)
         self.logInfo = logInfo
+        self.isReadOnly = false
         self.trackingId = ObjectTracker.global.register(self)
 	}
-	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
+
+    /// read only uma buffer
+    public init(logInfo: LogInfo, device: ComputeDevice,
+                buffer: UnsafeRawBufferPointer) {
+        assert(buffer.baseAddress != nil)
+        self.isReadOnly = true
+        self.device = device
+        self.logInfo = logInfo
+        let pointer = UnsafeMutableRawPointer(mutating: buffer.baseAddress!)
+        self.buffer = UnsafeMutableRawBufferPointer(start: pointer,
+                                                    count: buffer.count)
+        self.trackingId = ObjectTracker.global.register(self)
+    }
+
+    /// read write uma buffer
+    public init(logInfo: LogInfo, device: ComputeDevice,
+                buffer: UnsafeMutableRawBufferPointer) {
+        self.isReadOnly = false
+        self.device = device
+        self.logInfo = logInfo
+        self.buffer = buffer
+        self.trackingId = ObjectTracker.global.register(self)
+    }
+
+    deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
 	//--------------------------------------------------------------------------
 	// zero
 	public func zero(using stream: DeviceStream) throws {
+        assert(!isReadOnly, "cannot mutate read only reference buffer")
         let stream = stream as! CpuStream
         stream.queue {
             self.buffer.initializeMemory(as: UInt8.self, repeating: 0)
@@ -34,6 +61,7 @@ public class CpuDeviceArray : DeviceArray {
 	// copyAsync(from deviceArray
 	public func copyAsync(from other: DeviceArray,
                           using stream: DeviceStream) throws {
+        assert(!isReadOnly, "cannot mutate read only reference buffer")
         assert(buffer.count == other.buffer.count, "buffer sizes don't match")
         let stream = stream as! CpuStream
         stream.queue {
@@ -44,6 +72,7 @@ public class CpuDeviceArray : DeviceArray {
 	// copyAsync(from buffer
 	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
+        assert(!isReadOnly, "cannot mutate read only reference buffer")
         assert(buffer.baseAddress != nil)
         assert(self.buffer.count == buffer.count, "buffer sizes don't match")
         let stream = stream as! CpuStream

@@ -185,10 +185,10 @@ public extension VectorView {
     /// useful for memory mapped databases, or hardware device buffers
     init(name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo: buffer)
         tensorArray.name = name ?? String(describing: Self.self)
         
         // create shape considering column major
@@ -335,10 +335,10 @@ public extension MatrixView {
     init(_ extents: MatrixExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
          layout: MatrixLayout = .rowMajor,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo : buffer)
         tensorArray.name = name ?? String(describing: Self.self)
         
         // create shape considering column major
@@ -475,10 +475,10 @@ public extension VolumeView {
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: VolumeExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo : buffer)
         tensorArray.name = name ?? String(describing: Self.self)
 
         let extents = [extents.depths, extents.rows, extents.cols]
@@ -543,10 +543,10 @@ public extension NDTensorView {
     /// useful for memory mapped databases, or hardware device buffers
     init(extents: [Int], name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo : buffer)
         tensorArray.name = name ?? String(describing: Self.self)
 
         // create shape considering column major
@@ -687,10 +687,10 @@ public extension NCHWTensorView {
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: NCHWExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo : buffer)
         tensorArray.name = name ?? String(describing: Self.self)
 
         let extents = [extents.items, extents.channels,
@@ -815,10 +815,10 @@ public extension NHWCTensorView {
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: NHWCExtents, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil,
-         readOnlyReferenceTo buffer: UnsafeRawBufferPointer) {
+         referenceTo  buffer: UnsafeRawBufferPointer) {
         
         // create tensor data reference to buffer
-        let tensorArray = TensorArray(readOnlyReferenceTo: buffer)
+        let tensorArray = TensorArray(referenceTo : buffer)
         tensorArray.name = name ?? String(describing: Self.self)
 
         let extents = [extents.items, extents.rows,

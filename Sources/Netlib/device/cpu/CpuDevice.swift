@@ -62,7 +62,24 @@ public class CpuDevice: LocalComputeDevice {
         return CpuDeviceArray(logInfo: logInfo, device: self, count: count)
 	}
 
-	//-------------------------------------
+    //-------------------------------------
+    // createReferenceArray
+    /// creates a device array from a uma buffer.
+    public func createReferenceArray(buffer: UnsafeRawBufferPointer)
+        -> DeviceArray
+    {
+        return CpuDeviceArray(logInfo: logInfo, device: self, buffer: buffer)
+    }
+
+    //-------------------------------------
+    // createMutableReferenceArray
+    /// creates a device array from a uma buffer.
+    public func createMutableReferenceArray(
+        buffer: UnsafeMutableRawBufferPointer) -> DeviceArray {
+        return CpuDeviceArray(logInfo: logInfo, device: self, buffer: buffer)
+    }
+
+    //-------------------------------------
 	// createStream
 	public func createStream(name streamName: String) -> DeviceStream {
         let id = streamId.increment()

@@ -245,7 +245,7 @@ public extension TensorView {
         assert(shape.elementCount == 1)
         do {
             guard _Streams.current.lastError == nil else { return Scalar() }
-            return try readOnly(using: _Streams.local.appThreadStream)[0]
+            return try readOnly()[0]
 
         } catch {
             _Streams.current.reportDevice(error: error)
@@ -330,6 +330,10 @@ public extension TensorView {
         }
     }
 
+    func readOnly() throws -> UnsafeBufferPointer<Scalar> {
+        return try readOnly(using: _Streams.local.appThreadStream)
+    }
+    
     //--------------------------------------------------------------------------
     /// readWrite(using stream:
     /// Returns a read write device memory pointer synced with the specified
@@ -349,6 +353,10 @@ public extension TensorView {
                 start: buffer.baseAddress?.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
         }
+    }
+
+    mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
+            return try readWrite(using: _Streams.local.appThreadStream)
     }
     
     //--------------------------------------------------------------------------
@@ -574,7 +582,7 @@ public extension TensorView where Scalar: FloatingPoint {
     /// isFinite
     /// `true` if all elements are finite values. Primarily used for debugging
     func isFinite() throws -> Bool {
-        let values = try readOnly(using: _Streams.local.appThreadStream)
+        let values = try readOnly()
         for value in values {
             if !value.isFinite {
                 return false

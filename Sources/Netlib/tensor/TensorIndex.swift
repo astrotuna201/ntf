@@ -15,47 +15,43 @@ public extension TensorView {
         return [Scalar](self.values())
     }
     
-    func values() -> TensorViewCollection<Self> {
+    /// get a Sequence of values
+    func values(using stream: DeviceStream? = nil) -> TensorViewCollection<Self> {
+        guard _Streams.current.lastError == nil else {
+            return TensorViewCollection<Self>()
+        }
+        let stream = stream ?? _Streams.local.appThreadStream
+
         do {
-            guard _Streams.current.lastError == nil else {
-                return TensorViewCollection<Self>()
-            }
-            let buffer = try readOnly(using: _Streams.local.appThreadStream)
-            return try TensorViewCollection(view: self, buffer: buffer)
+            return try TensorViewCollection(
+                view: self, buffer: readOnly(using: stream))
         } catch {
             _Streams.current.reportDevice(error: error)
             return TensorViewCollection<Self>()
         }
     }
     
-    mutating func mutableValues() -> TensorViewMutableCollection<Self> {
+    /// get a Sequence of mutable values
+    mutating func mutableValues(using stream: DeviceStream? = nil)
+        -> TensorViewMutableCollection<Self>
+    {
+        guard _Streams.current.lastError == nil else {
+            return TensorViewMutableCollection<Self>()
+        }
+        let stream = stream ?? _Streams.local.appThreadStream
+
         do {
-            guard _Streams.current.lastError == nil else {
-                return TensorViewMutableCollection<Self>()
-            }
-            let buffer = try readWrite(using: _Streams.local.appThreadStream)
-            return try TensorViewMutableCollection(view: &self, buffer: buffer)
+            return try TensorViewMutableCollection(
+                view: &self, buffer: readWrite(using: stream))
         } catch {
             _Streams.current.reportDevice(error: error)
             return TensorViewMutableCollection<Self>()
         }
     }
-
-    func deviceValues(using stream: DeviceStream) throws
-        -> TensorViewCollection<Self> {
-        return try TensorViewCollection(
-            view: self, buffer: readOnly(using: stream))
-    }
-    
-    mutating func mutableDeviceValues(using stream: DeviceStream) throws
-        -> TensorViewMutableCollection<Self> {
-        return try TensorViewMutableCollection(
-            view: &self, buffer: readWrite(using: stream))
-    }
     
     func value(at index: [Int]) -> Scalar {
         do {
-            let buffer = try readOnly(using: _Streams.local.appThreadStream)
+            let buffer = try readOnly()
             let padded = shape.padded(with: padding)
             let tensorIndex = TensorIndex<Self>(self, padded, at: index)
             return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
@@ -67,7 +63,7 @@ public extension TensorView {
 
     mutating func set(value: Scalar, at index: [Int]) {
         do {
-            let buffer = try readWrite(using: _Streams.local.appThreadStream)
+            let buffer = try readWrite()
             let padded = shape.padded(with: padding)
             let tensorIndex = TensorIndex<Self>(self, padded, at: index)
             buffer[tensorIndex.dataIndex] = value

@@ -23,9 +23,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0 + $1 }
             }
@@ -43,7 +43,7 @@ public extension CpuStream {
         do {
             var resultRef = try result.reference(using: self)
             let result = try resultRef.readWrite(using: self)
-            let x = try x.deviceValues(using: self)
+            let x = x.values(using: self)
             queue {
                 for value in x where !value {
                     result[0] = false
@@ -65,7 +65,7 @@ public extension CpuStream {
         do {
             var resultRef = try result.reference(using: self)
             let result = try resultRef.readWrite(using: self)
-            let x = try x.deviceValues(using: self)
+            let x = x.values(using: self)
             queue {
                 for value in x where value {
                     result[0] = true
@@ -89,9 +89,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0.0 - $0.1 <= tolerance }
             }
@@ -116,8 +116,8 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let x = try x.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let x = x.values(using: self)
             queue {
                 x.reduce(to: &results, T.Scalar.zero) {
                     $0 + $1.magnitude
@@ -156,9 +156,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0 / $1 }
             }
@@ -176,9 +176,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0 == $1 }
             }
@@ -201,7 +201,7 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var values = try resultRef.mutableDeviceValues(using: self)
+            var values = resultRef.mutableValues(using: self)
             queue {
                 for index in values.indices {
                     values[index] = value
@@ -220,7 +220,7 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var values = try resultRef.mutableDeviceValues(using: self)
+            var values = resultRef.mutableValues(using: self)
             queue {
                 var value = startAt
                 for index in values.indices {
@@ -261,8 +261,8 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let x = try x.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let x = x.values(using: self)
             queue {
                 x.map(to: &results) {
                     T.Scalar(any: Foundation.log($0.asFloat))
@@ -321,9 +321,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0 * $1 }
             }
@@ -350,9 +350,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let x = try x.deviceValues(using: self)
-            let y = try y.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let x = x.values(using: self)
+            let y = y.values(using: self)
             queue {
                 zip(x, y).map(to: &results) {
                     T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
@@ -371,8 +371,8 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let x = try x.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let x = x.values(using: self)
             queue {
                 x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
             }
@@ -417,9 +417,9 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let lhs = try lhs.deviceValues(using: self)
-            let rhs = try rhs.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let lhs = lhs.values(using: self)
+            let rhs = rhs.values(using: self)
             queue {
                 zip(lhs, rhs).map(to: &results) { $0 - $1 }
             }
@@ -436,8 +436,8 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
-            var results = try resultRef.mutableDeviceValues(using: self)
-            let xseq = try x.deviceValues(using: self)
+            var results = resultRef.mutableValues(using: self)
+            let xseq = x.values(using: self)
             queue {
                 xseq.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
             }

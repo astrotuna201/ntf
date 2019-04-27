@@ -180,7 +180,7 @@ public extension TensorView {
                                           count: dataShape.elementCount)
             }
         }
-        assert(viewByteOffset + viewSpanByteCount <= tensorArray.count)
+        assert(viewByteOffset + viewSpanByteCount <= tensorArray.byteCount)
 
         if let name = name {
             tensorArray.name = name

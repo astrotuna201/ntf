@@ -109,8 +109,8 @@ class test_IterateView: XCTestCase {
     // test_perfVector
     func test_perfVector() {
         #if RELEASE
-        let count = 512 * 512
-        let vector = Vector<Int32>(sequence: 0..<count)
+        let byteCount = 512 * 512
+        let vector = Vector<Int32>(sequence: 0..<byteCount)
         //            print(vector.formatted((2,0)))
         
         let values = vector.values()

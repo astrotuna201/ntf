@@ -30,7 +30,7 @@ final public class TensorArray: ObjectTracking, Logging {
     /// used by TensorViews to synchronize access to this object
     public let accessQueue = DispatchQueue(label: "TensorArray.accessQueue")
     /// the size of the data array in bytes
-    public let count: Int
+    public let byteCount: Int
     /// `true` if the data array points to an existing read only buffer
     public let isReadOnlyReference: Bool
     /// testing: `true` if the last access caused the contents of the
@@ -59,7 +59,7 @@ final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // initializers
     public init() {
-        count = 0
+        byteCount = 0
         isReadOnlyReference = false
     }
     
@@ -67,7 +67,7 @@ final public class TensorArray: ObjectTracking, Logging {
     // create new array based on scalar size
     public init<Scalar>(type: Scalar.Type, count: Int) {
         isReadOnlyReference = false
-        self.count = count * MemoryLayout<Scalar>.size
+        byteCount = count * MemoryLayout<Scalar>.size
         register()
     }
 
@@ -79,13 +79,13 @@ final public class TensorArray: ObjectTracking, Logging {
         // store
         masterVersion = 0
         isReadOnlyReference = true
-        count = buffer.count
+        byteCount = buffer.count
         let stream = _Streams.local.appThreadStream
 
         // create the replica device array
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
             "device array readOnly reference on \(stream.device.name) " +
-            "bytes[\(count)]", categories: .dataAlloc)
+            "bytes[\(byteCount)]", categories: .dataAlloc)
 
         let key = stream.device.deviceArrayReplicaKey
         let array = stream.device.createReferenceArray(buffer: buffer)
@@ -104,13 +104,13 @@ final public class TensorArray: ObjectTracking, Logging {
         // store
         masterVersion = 0
         isReadOnlyReference = false
-        count = buffer.count
+        byteCount = buffer.count
         let stream = _Streams.local.appThreadStream
         
         // create the replica device array
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
             "device array readWrite reference on \(stream.device.name) " +
-            "bytes[\(count)]", categories: .dataAlloc)
+            "bytes[\(byteCount)]", categories: .dataAlloc)
         
         let key = stream.device.deviceArrayReplicaKey
         let array = stream.device.createMutableReferenceArray(buffer: buffer)
@@ -126,7 +126,7 @@ final public class TensorArray: ObjectTracking, Logging {
     public init(copying buffer: UnsafeRawBufferPointer) {
         masterVersion = 0
         isReadOnlyReference = false
-        count = buffer.count
+        byteCount = buffer.count
         
         // copy the data
         let stream = _Streams.local.appThreadStream
@@ -145,7 +145,7 @@ final public class TensorArray: ObjectTracking, Logging {
                 using stream: DeviceStream) throws {
         // initialize members
         isReadOnlyReference = other.isReadOnlyReference
-        count = other.count
+        byteCount = other.byteCount
         name = other.name
         masterVersion = 0
         register()
@@ -154,7 +154,7 @@ final public class TensorArray: ObjectTracking, Logging {
         diagnostic(
             "\(createString) \(name)(\(trackingId)) init" +
                 "\(setText(" copying ", color: .blue))" +
-            "TensorArray(\(other.trackingId)) bytes[\(count)]",
+            "TensorArray(\(other.trackingId)) bytes[\(byteCount)]",
             categories: [.dataAlloc, .dataCopy])
 
         // make sure there is something to copy
@@ -172,7 +172,7 @@ final public class TensorArray: ObjectTracking, Logging {
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.lastStream.device.name)" +
             "\(setText(" --> ", color: .blue))" +
-            "\(stream.device.name)_s\(stream.id) bytes[\(count)]",
+            "\(stream.device.name)_s\(stream.id) bytes[\(byteCount)]",
             categories: .dataCopy)
     }
     
@@ -181,11 +181,11 @@ final public class TensorArray: ObjectTracking, Logging {
     private func register() {
         trackingId = ObjectTracker.global
             .register(self, namePath: logNamePath,
-                      supplementalInfo: "bytes[\(count)]")
+                      supplementalInfo: "bytes[\(byteCount)]")
         
-        if count > 0 {
+        if byteCount > 0 {
             diagnostic("\(createString) \(name)(\(trackingId)) " +
-                "bytes[\(count)]", categories: .dataAlloc)
+                "bytes[\(byteCount)]", categories: .dataAlloc)
         }
     }
     
@@ -202,9 +202,9 @@ final public class TensorArray: ObjectTracking, Logging {
         }
         ObjectTracker.global.remove(trackingId: trackingId)
 
-        if count > 0 {
+        if byteCount > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) " +
-                "bytes[\(count)]", categories: .dataAlloc)
+                "bytes[\(byteCount)]", categories: .dataAlloc)
         }
     }
     
@@ -281,7 +281,7 @@ final public class TensorArray: ObjectTracking, Logging {
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "\(otherDevice.name)" +
                     "\(setText(" --> ", color: .blue))" +
-                    "\(masterDevice.name)_s\(stream.id) bytes[\(count)]",
+                    "\(masterDevice.name)_s\(stream.id) bytes[\(byteCount)]",
                     categories: .dataCopy)
             }
             // otherwise they are both unified, so do nothing
@@ -292,7 +292,7 @@ final public class TensorArray: ObjectTracking, Logging {
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(masterDevice.name)_s\(master.lastStream.id)" +
                 "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
-                " bytes[\(count)]", categories: .dataCopy)
+                " bytes[\(byteCount)]", categories: .dataCopy)
 
         } else {
             // both are discreet and not in the same service, so
@@ -303,7 +303,7 @@ final public class TensorArray: ObjectTracking, Logging {
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(masterDevice.name)_s\(master.lastStream.id)" +
                 "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
-                " bytes[\(count)]", categories: .dataCopy)
+                " bytes[\(byteCount)]", categories: .dataCopy)
 
             
             let hostBuffer = UnsafeRawBufferPointer(host.array.buffer)
@@ -312,7 +312,7 @@ final public class TensorArray: ObjectTracking, Logging {
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(otherDevice.name)" +
                 "\(setText(" --> ", color: .blue))" +
-                "\(masterDevice.name)_s\(stream.id) bytes[\(count)]",
+                "\(masterDevice.name)_s\(stream.id) bytes[\(byteCount)]",
                 categories: .dataCopy)
         }
     }
@@ -330,7 +330,7 @@ final public class TensorArray: ObjectTracking, Logging {
             "\(master.lastStream.device.name)" +
             "\(setText(" --> ", color: .blue))" +
             "\(stream.device.name)_s\(stream.id) " +
-            "bytes[\(count)]",
+            "bytes[\(byteCount)]",
             categories: .dataCopy)
     }
     
@@ -352,10 +352,10 @@ final public class TensorArray: ObjectTracking, Logging {
         } else {
             // create the replica device array
             diagnostic("\(allocString) \(name)(\(trackingId)) " +
-                "device array on \(stream.device.name) bytes[\(count)]",
+                "device array on \(stream.device.name) bytes[\(byteCount)]",
                 categories: .dataAlloc)
             
-            let array = try stream.device.createArray(count: count)
+            let array = try stream.device.createArray(count: byteCount)
             array.version = -1
             let replica = Replica(array: array, lastStream: stream)
             replicas[key] = replica

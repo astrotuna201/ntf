@@ -129,22 +129,14 @@ public extension LocalPlatform {
         let requestedDevice = deviceIdPriority[0]
         for serviceName in servicePriority where _defaultDevice == nil {
             _defaultDevice = requestDevice(serviceName: serviceName,
-                                           deviceId: requestedDevice,
-                                           allowSubstitute: false)
+                                           deviceId: requestedDevice)
         }
         
-        // if the search failed, then allow substitutes
-        if _defaultDevice == nil {
-            let priority = servicePriority + ["cpu"]
-            for serviceName in priority where _defaultDevice == nil {
-                _defaultDevice = requestDevice(serviceName: serviceName,
-                                               deviceId: 0,
-                                               allowSubstitute: true)
-            }
-        }
-        
+        // if the search failed, then use the cpu
+        _defaultDevice = _defaultDevice ?? requestDevice(serviceName: "cpu")
         // we had to find at least one device like the cpu
         assert(_defaultDevice != nil, "There must be at least one device")
+
         let device = _defaultDevice!
         writeLog("default device: [\(device.service.name)] \(device.name)",
             level: .status)
@@ -152,95 +144,37 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
-    /// createStreams
-    //
-    /// This will try to match the requested service and device ids returning
-    /// substitutes if needed.
+    /// createStream will try to match the requested service name and
+    /// device id returning substitutions if needed to fulfill the request
     ///
     /// Parameters
-    /// - Parameter label: The text label applied to the stream
-    /// - Parameter serviceName: (cpu, gpu, tpu, ...)
+    /// - Parameter deviceId: (0, 1, 2, ...)
+    ///   If the specified id is greater than the number of available devices,
+    ///   then id % available will be used.
+    /// - Parameter serviceName: (cpu, cuda, tpu, ...)
     ///   If no service name is specified, then the default is used.
-    /// - Parameter deviceIds: (0, 1, 2, ...)
-    ///   If no ids are specified, then one stream per defaultDeviceCount
-    ///   is returned.
-    func createStreams(name: String = "stream",
-                       serviceName: String? = nil,
-                       deviceIds: [Int]? = nil) -> [DeviceStream]{
-        
-        // choose the service to select the device from
-        let serviceName = serviceName ?? defaultDevice.service.name
-        
-        // choose how many devices to spread the streams across
-        let maxDeviceCount = defaultDevicesToAllocate == -1 ?
-            defaultDevice.service.devices.count :
-            min(defaultDevicesToAllocate, defaultDevice.service.devices.count)
-        
-        // get the device ids
-        let ids = deviceIds ?? [Int](0..<maxDeviceCount)
-        
-        // create the streams
-        do {
-            return try ids.map {
-                let device = requestDevice(serviceName: serviceName,
-                                           deviceId: $0, allowSubstitute: true)!
-                return try device.createStream(name: name)
-            }
-        } catch {
-            reportDevice(error: error)
-            return []
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    /// createStream
-    /// creates a stream on the default service and default device
-    /// based on service and device priorities
-    func createStream(name: String = "stream",
+    /// - Parameter name: a text label assigned to the stream for logging
+    func createStream(deviceId id: Int = 0,
                       serviceName: String? = nil,
-                      deviceId: Int? = nil) -> DeviceStream {
-        let ids = deviceId == nil ? nil : [deviceId!]
-        return createStreams(name: name, serviceName: serviceName,
-                             deviceIds: ids)[0]
+                      name: String = "stream") -> DeviceStream {
+        
+        let serviceName = serviceName ?? defaultDevice.service.name
+        let device = requestDevice(serviceName: serviceName, deviceId: id)!
+        return device.createStream(name: name)
     }
     
     //--------------------------------------------------------------------------
     /// requestDevices
-    /// This will try to return the requested devices from the requested service
-    /// substituting if needed based on `servicePriority` and `deviceIdPriority`
-    ///
-    func requestDevices(deviceIds: [Int],
-                        serviceName: String?) -> [ComputeDevice] {
-        // if no serviceName is specified then return the default
-        let serviceName = serviceName ?? defaultDevice.service.name
-        return deviceIds.map {
-            requestDevice(serviceName: serviceName,
-                          deviceId: $0, allowSubstitute: true)!
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    // requestDevice
-    /// This tries to satisfy the device requested, but if not available will
-    /// return a suitable alternative. In the case of an invalid string, an
-    /// error will be reported, but no exception will be thrown
-    private func requestDevice(serviceName: String, deviceId: Int,
-                               allowSubstitute: Bool) -> ComputeDevice? {
-        
-        if let service = services[serviceName] {
-            if deviceId < service.devices.count {
-                return service.devices[deviceId]
-            } else if allowSubstitute {
-                return service.devices[deviceId % service.devices.count]
-            } else {
-                return nil
-            }
-        } else if allowSubstitute {
-            let service = services[defaultDevice.service.name]!
-            return service.devices[deviceId % service.devices.count]
-        } else {
-            return nil
-        }
+    /// - Parameter deviceId: selected device id
+    /// - Parameter serviceName: an optional service name to allocate
+    ///   the device from.
+    /// - Returns: the requested device from the requested service
+    ///   substituting if needed based on `servicePriority`
+    ///   and `deviceIdPriority`
+    func requestDevice(serviceName: String,
+                       deviceId: Int = 0) -> ComputeDevice? {
+        guard let service = services[serviceName] else { return nil }
+        return service.devices[deviceId % service.devices.count]
     }
     
     //--------------------------------------------------------------------------
@@ -263,7 +197,6 @@ public extension LocalPlatform {
 final public class Platform: LocalPlatform {
     // properties
     public var _defaultDevice: ComputeDevice?
-    public var defaultDevicesToAllocate = -1
     public var _deviceErrorHandler: DeviceErrorHandler! = nil
     public var _lastError: Error? = nil
     public var errorMutex: Mutex = Mutex()

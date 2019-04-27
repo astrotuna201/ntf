@@ -33,9 +33,6 @@ public protocol ComputePlatform:
     // instance members
     /// a device automatically selected based on service priority
     var defaultDevice: ComputeDevice { get }
-    /// the default number of devices to spread a set of streams across
-    /// a value of -1 specifies all available devices within the service
-    var defaultDevicesToAllocate: Int { get set }
     /// ordered list of device ids specifying the order for auto selection
     var deviceIdPriority: [Int] { get set }
     /// the platform id. Usually zero, but can be assigned in case a higher
@@ -50,31 +47,28 @@ public protocol ComputePlatform:
     var services: [String : ComputeService] { get }
     
     //--------------------------------------------------------------------------
-    /// createStreams will try to match the requested service name and
-    /// device ids returning substitutions if needed to fulfill the request
+    /// createStream will try to match the requested service name and
+    /// device id returning substitutions if needed to fulfill the request
     ///
     /// Parameters
-    /// - Parameter name: a text label assigned to the stream for logging
+    /// - Parameter deviceId: (0, 1, 2, ...)
+    ///   If the specified id is greater than the number of available devices,
+    ///   then id % available will be used.
     /// - Parameter serviceName: (cpu, cuda, tpu, ...)
     ///   If no service name is specified, then the default is used.
-    /// - Parameter deviceIds: (0, 1, 2, ...)
-    ///   If no ids are specified, then one stream per defaultDeviceCount
-    ///   is returned. If device ids are specified that are greater than
-    ///   the number of available devices, then id % available will be used.
-    func createStreams(name: String,
-                       serviceName: String?,
-                       deviceIds: [Int]?) -> [DeviceStream]
+    /// - Parameter name: a text label assigned to the stream for logging
+    func createStream(deviceId: Int,
+                      serviceName: String?,
+                      name: String) -> DeviceStream
     
     //--------------------------------------------------------------------------
     /// requestDevices
-    /// - Parameter deviceIds: an array of selected device ids
-    /// - Parameter serviceName: an optional service name to allocate
-    ///   the devices from.
-    /// - Returns: the requested devices from the requested service
+    /// - Parameter serviceName: the service to allocate the device from.
+    /// - Parameter deviceId: selected device id
+    /// - Returns: the requested device from the requested service
     ///   substituting if needed based on `servicePriority`
     ///   and `deviceIdPriority`
-    func requestDevices(deviceIds: [Int],
-                        serviceName: String?) -> [ComputeDevice]
+    func requestDevice(serviceName: String, deviceId: Int) -> ComputeDevice?
 }
 
 //==============================================================================
@@ -90,7 +84,7 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     var name: String { get }
     /// the platform this service belongs to
     var platform: ComputePlatform! { get }
-    /// required initializer to support dynamiclly loaded services
+    /// required initializer to support dynamically loaded services
     init(platform: ComputePlatform, id: Int,
          logInfo: LogInfo, name: String?) throws
 }
@@ -138,7 +132,7 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// creates an array on this device
     func createArray(count: Int) throws -> DeviceArray
     /// creates a named command stream for this device
-    func createStream(name: String) throws -> DeviceStream
+    func createStream(name: String) -> DeviceStream
 }
 
 public enum MemoryAddressing { case unified, discreet }

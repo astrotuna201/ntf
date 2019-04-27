@@ -17,7 +17,6 @@ import Glibc
 /// - Parameter stream: the stream to set as the `currentStream`
 /// - Parameter body: A closure whose operations are to be executed on the
 ///             specified stream
-@inline(never)
 public func using<R>(_ stream: DeviceStream,
                      perform body: () throws -> R) rethrows -> R {
     // sets the default stream and logging info for the current scope
@@ -32,6 +31,10 @@ public func using<R>(_ stream: DeviceStream,
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
+    /// applicationThreadStream
+    /// a unified memory stream used to synchronize access for the
+    /// application thread
+    public let applicationThreadStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
     var streamScope: [DeviceStream] = []
 
@@ -70,6 +73,8 @@ class _Streams {
         return _Streams.local.streamScope.last!
     }
     
+    //--------------------------------------------------------------------------
+    /// logInfo
     // there will always be the platform default stream and logInfo
     public var logInfo: LogInfo { return streamScope.last!.logInfo }
 
@@ -82,12 +87,21 @@ class _Streams {
     //--------------------------------------------------------------------------
     // initializers
     private init() {
-        do {
-            let stream = try
-                Platform.local.defaultDevice.createStream(name: "default")
-            streamScope = [stream]
-        } catch {
-            Platform.local.reportDevice(error: error)
+        // create the default stream based on service and device priority.
+        let stream = Platform.local.defaultDevice.createStream(name: "default")
+        streamScope = [stream]
+        
+        // use the default stream as the app stream if it uses
+        // unified memory addressing
+        if stream.device.memoryAddressing == .unified {
+            applicationThreadStream = stream
+            
+        } else {
+            // create a uma stream for app thread synchronization
+            applicationThreadStream =
+                Platform.local.createStream(deviceId: 0,
+                                            serviceName: "cpu",
+                                            name: "applicationThreadStream")
         }
     }
     

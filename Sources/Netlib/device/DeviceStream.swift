@@ -22,6 +22,9 @@ public protocol DeviceStream:
     var completionEvent: StreamEvent { get }
     /// the device the stream is associated with
     var device: ComputeDevice { get }
+    /// if `true` the stream will execute functions synchronous with the app
+    /// it is `false` by default and used for debugging
+    var executeSynchronously: Bool { get set }
     /// a unique id used to identify the stream
     var id: Int { get }
     /// a name used to identify the stream
@@ -35,18 +38,21 @@ public protocol DeviceStream:
     func blockCallerUntilComplete() throws
     /// creates a StreamEvent
     func createEvent(options: StreamEventOptions) throws -> StreamEvent
-    /// creates an artificial delay used to simulate work for debugging
-    func debugDelay(seconds: Double) throws
     /// queues a stream event
     func record(event: StreamEvent) throws -> StreamEvent
     /// blocks caller until the event has occurred on this stream,
     /// then recorded and occurred on the other stream
     func sync(with other: DeviceStream, event: StreamEvent) throws
+    /// blocks caller until the event has occurred
+    func wait(for event: StreamEvent) throws
+    
+    //--------------------------------------------------------------------------
+    // debugging functions
+    /// creates an artificial delay used to simulate work for debugging
+    func debugDelay(seconds: Double) throws
     /// for unit testing. It's part of the class protocol so that remote
     /// streams throw the error remotely.
     func throwTestError()
-    /// blocks caller until the event has occurred
-    func wait(for event: StreamEvent) throws
 }
 
 //==============================================================================

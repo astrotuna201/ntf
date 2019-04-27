@@ -149,6 +149,7 @@ public struct DeviceArrayReplicaKey: Hashable {
     let platformId: UInt8
     let serviceId: UInt8
     let deviceId: UInt8
+    
     public init(platformId: Int, serviceId: Int, deviceId: Int) {
         self.platformId = UInt8(platformId)
         self.serviceId = UInt8(serviceId)

@@ -330,8 +330,14 @@ public extension TensorView {
         }
     }
 
+    //--------------------------------------------------------------------------
+    /// readOnly
+    /// this is an app thread blocking version of the call. It will synchronize
+    /// with the appThreadStream
     func readOnly() throws -> UnsafeBufferPointer<Scalar> {
-        return try readOnly(using: _Streams.local.appThreadStream)
+        let buffer = try readOnly(using: _Streams.local.appThreadStream)
+        try _Streams.local.appThreadStream.blockCallerUntilComplete()
+        return buffer
     }
     
     //--------------------------------------------------------------------------
@@ -357,7 +363,9 @@ public extension TensorView {
     }
 
     mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
-            return try readWrite(using: _Streams.local.appThreadStream)
+        let buffer = try readWrite(using: _Streams.local.appThreadStream)
+        try _Streams.local.appThreadStream.blockCallerUntilComplete()
+        return buffer
     }
     
     //--------------------------------------------------------------------------

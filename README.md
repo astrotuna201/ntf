@@ -287,10 +287,10 @@ var viewSum = Volume<Int32>((1, 1, 1))
 sum(view, result: &viewSum)
 assert(viewSum.scalarValue() == 312)
 ```
-### ReadOnly References
-A tensor constructor is provided to create a read only reference to a memory buffer. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeRawBufferPointer_ to the data.
+### Synchronized Tensor References to Application Buffers 
+Tensor constructors are provided to create synchronized references to memory buffers. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeBufferPointer<Scalar>_ or _UnsafeMutableBufferPointer<Scalar>_ to the data.
 
-Examples:
+Use Examples:
 * a record from a memory mapped database or file
 * a network data buffer
 * a hardware frame buffer

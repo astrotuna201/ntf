@@ -103,8 +103,13 @@ class test_Syntax: XCTestCase {
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_streams() {
-        let stream1 = Platform.local.createStream(deviceId: 1)
-        let stream2 = Platform.local.createStream(deviceId: 2)
+        Platform.log.level = .diagnostic
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+        
+        let stream1 = Platform.local.createStream(deviceId: 1,
+                                                  serviceName: "cpuUnitTest")
+        let stream2 = Platform.local.createStream(deviceId: 2,
+                                                  serviceName: "cpuUnitTest")
         
         let volume = using(stream1) {
             Volume<Int32>((3, 4, 5)).filledWithIndex()

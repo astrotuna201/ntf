@@ -353,34 +353,34 @@ The CPU device uses UMA memory addressing, so a cpuUnitTest service is included 
 Platform.log.level = .diagnostic
 Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
 
-let stream1 = Platform.local.createStream(serviceName: "cpuUnitTest", deviceId: 1)
-let stream2 = Platform.local.createStream(serviceName: "cpuUnitTest", deviceId: 2)
+let stream1 = Platform.local.createStream(deviceId: 1, serviceName: "cpuUnitTest")
+let stream2 = Platform.local.createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
 let volume = using(stream1) {
     Volume<Int32>((3, 4, 5)).filledWithIndex()
 }
-let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
-let viewSum = using(stream2) {
-    sum(view).scalarValue()
+let subViewSum = using(stream2) {
+    sum(subView).scalarValue()
 }
-assert(viewSum == 312)
+assert(subViewSum == 312)
 ```
 Logging shows detailed output of exactly what is happening for the categories specified by the user. If no categories are specified, then diagnostic output is displayed for all categories.
 ```
 status    : default device: [cpu] cpu:0
-diagnostic: [CREATE ] Volume<Int32>(14) elements[60]
-diagnostic: [CREATE ] Volume<Int32>(15) elements[60]
-diagnostic: [ALLOC  ] Volume<Int32>(15) device array on cpu:1 elements[60]
-diagnostic: [RELEASE] Volume<Int32>(14) elements[60]
-diagnostic: [CREATE ] Volume<Int32>(17) elements[1]
-diagnostic: [ALLOC  ] Volume<Int32>(17) device array on cpu:2 elements[1]
-diagnostic: [ALLOC  ] Volume<Int32>(15) device array on cpu:2 elements[60]
-diagnostic: [COPY   ] Volume<Int32>(15) cpu:1 --> cpu:2_s0 elements[60]
-diagnostic: [ALLOC  ] Volume<Int32>(17) host array elements[1]
-diagnostic: [COPY   ] Volume<Int32>(17) cpu:2_s0 --> host elements[1]
-diagnostic: [RELEASE] Volume<Int32>(17) elements[1]
-diagnostic: [RELEASE] Volume<Int32>(15) elements[60]
+diagnostic: [CREATE   ] Volume<Int32>(14) Int32[60]
+diagnostic: [CREATE   ] Volume<Int32>(15) Int32[60]
+diagnostic: [ALLOC    ] Volume<Int32>(15) device array on cpu:1 Int32[60]
+diagnostic: [RELEASE  ] Volume<Int32>(14) 
+diagnostic: [CREATE   ] Volume<Int32>(17) Int32[1]
+diagnostic: [ALLOC    ] Volume<Int32>(17) device array on cpu:2 Int32[1]
+diagnostic: [ALLOC    ] Volume<Int32>(15) device array on cpu:2 Int32[60]
+diagnostic: [COPY     ] Volume<Int32>(15) cpu:1 --> cpu:2_s0 Int32[60]
+diagnostic: [ALLOC    ] Volume<Int32>(17) device array on cpu:0 Int32[1]
+diagnostic: [COPY     ] Volume<Int32>(17) cpu:2_s0 --> uma:cpu:0 Int32[1]
+diagnostic: [RELEASE  ] Volume<Int32>(17) 
+diagnostic: [RELEASE  ] Volume<Int32>(15) 
 ```
 # Object Tracking
 Class objects receive a unique __id__ when registered with the _ObjectTracker_ class. These ids are used in diagnostic messages to know which object is which. 

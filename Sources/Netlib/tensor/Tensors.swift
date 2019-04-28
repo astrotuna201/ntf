@@ -250,6 +250,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
@@ -397,6 +400,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
@@ -516,6 +522,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
@@ -601,6 +610,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
@@ -729,6 +741,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
@@ -857,6 +872,9 @@ where Scalar: ScalarConformance {
                 viewDataOffset: Int,
                 isShared: Bool,
                 scalars: [Scalar]?) {
+
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]

@@ -262,7 +262,8 @@ final public class TensorArray: ObjectTracking, Logging {
     {
         // get the array replica for `stream`
         let replica = try getArray(type: Scalar.self, for: stream)
-        
+        lastAccessCopiedBuffer = false
+
         // compare with master and copy if needed
         if let master = master, replica.array.version != master.array.version {
             // cross service?
@@ -274,7 +275,6 @@ final public class TensorArray: ObjectTracking, Logging {
                 try copyCrossDevice(type: type, from: master, to: replica,
                                     using: stream)
             }
-            lastAccessCopiedBuffer = true
         }
         
         // set version
@@ -292,6 +292,7 @@ final public class TensorArray: ObjectTracking, Logging {
         to other: Replica,
         using stream: DeviceStream) throws
     {
+        lastAccessCopiedBuffer = true
         let masterDevice = master.array.device
         let otherDevice = other.array.device
         
@@ -302,9 +303,9 @@ final public class TensorArray: ObjectTracking, Logging {
                 try other.array.copyAsync(from: buffer, using: stream)
 
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                    "\(otherDevice.name)" +
+                    "uma:\(masterDevice.name)" +
                     "\(setText(" --> ", color: .blue))" +
-                    "\(masterDevice.name)_s\(stream.id) " +
+                    "\(otherDevice.name)_s\(stream.id) " +
                     "\(String(describing: Scalar.self))" +
                     "[\(master.array.buffer.bindMemory(to: Scalar.self).count)]",
                     categories: .dataCopy)
@@ -316,7 +317,7 @@ final public class TensorArray: ObjectTracking, Logging {
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(masterDevice.name)_s\(master.lastStream.id)" +
-                "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
+                "\(setText(" --> ", color: .blue))uma:\(otherDevice.name) " +
                 "\(String(describing: Scalar.self))" +
                 "[\(master.array.buffer.bindMemory(to: Scalar.self).count)]",
                 categories: .dataCopy)
@@ -358,6 +359,7 @@ final public class TensorArray: ObjectTracking, Logging {
     {
         // only copy if the devices have discreet memory
         guard master.array.device.memoryAddressing == .discreet else { return }
+        lastAccessCopiedBuffer = true
         try other.array.copyAsync(from: master.array, using: stream)
         
         diagnostic("\(copyString) \(name)(\(trackingId)) " +

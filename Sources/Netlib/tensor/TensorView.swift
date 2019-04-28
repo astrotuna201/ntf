@@ -168,25 +168,22 @@ public extension TensorView {
             tensorArray = tensorData
         } else {
             assert(shape.isContiguous, "new views should have a dense shape")
+            let name = name ?? String(describing: Self.self)
+
             // allocate backing tensorArray
             if let scalars = scalars {
                 assert(scalars.count == dataShape.elementCount,
                        "number of scalars does not match tensor extents")
-                tensorArray = scalars.withUnsafeBytes {
-                    TensorArray(copying: $0)
+                tensorArray = scalars.withUnsafeBufferPointer {
+                    TensorArray(copying: $0, name: name)
                 }
             } else {
                 tensorArray = TensorArray(type: Scalar.self,
-                                          count: dataShape.elementCount)
+                                          count: dataShape.elementCount,
+                                          name: name)
             }
         }
         assert(viewByteOffset + viewSpanByteCount <= tensorArray.byteCount)
-
-        if let name = name {
-            tensorArray.name = name
-        } else if tensorArray.name.isEmpty {
-            tensorArray.name = String(describing: Self.self)
-        }
     }
 
     // TODO: investigate need for this check
@@ -304,10 +301,12 @@ public extension TensorView {
         guard !isShared && !isUniqueReference() else { return }
         
         diagnostic("\(mutationString) \(name)(\(tensorArray.trackingId)) " +
-            "elements[\(dataShape.elementCount)]",
+            "\(String(describing: Scalar.self))[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorArray = try TensorArray(copying: tensorArray, using: stream)
+        tensorArray = try TensorArray(type: Scalar.self,
+                                      copying: tensorArray,
+                                      using: stream)
         tensorArray.lastAccessMutatedView = true
     }
     
@@ -323,11 +322,10 @@ public extension TensorView {
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
-            let buffer = try tensorArray.readOnly(using: stream)
-                .bindMemory(to: Scalar.self)
-            
+            let buffer = try tensorArray.readOnly(type: Scalar.self,
+                                                  using: stream)
             return UnsafeBufferPointer(
-                start: buffer.baseAddress?.advanced(by: viewDataOffset),
+                start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
         }
     }
@@ -341,18 +339,19 @@ public extension TensorView {
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     mutating func readWrite(using stream: DeviceStream) throws
-        -> UnsafeMutableBufferPointer<Scalar> {
+        -> UnsafeMutableBufferPointer<Scalar>
+    {
+        precondition(!tensorArray.isReadOnly, "the tensor is read only")
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            let buffer = try tensorArray.readWrite(using: stream)
-                .bindMemory(to: Scalar.self)
-            
+            let buffer = try tensorArray.readWrite(type: Scalar.self,
+                                                   using: stream)
             return UnsafeMutableBufferPointer(
-                start: buffer.baseAddress?.advanced(by: viewDataOffset),
+                start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
         }
     }

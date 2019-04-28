@@ -77,12 +77,12 @@ final public class ObjectTracker {
 	// register(object:
     public func register(_ object: ObjectTracking,
                          namePath: String? = nil,
-                         supplementalInfo: String? = nil,
+                         supplementalInfo: @autoclosure () -> String? = nil,
                          isStatic: Bool = false) -> Int {
         #if ENABLE_TRACKING
         let info = ItemInfo(isStatic: isStatic,
                             namePath: namePath,
-                            supplementalInfo: supplementalInfo,
+                            supplementalInfo: supplementalInfo(),
                             typeName: String(describing: object.self))
         let trackingId = counter.increment()
 

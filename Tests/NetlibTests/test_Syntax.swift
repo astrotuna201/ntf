@@ -88,11 +88,11 @@ class test_Syntax: XCTestCase {
         // No matter the extents, `matrix` only uses the shared storage
         // from `rowVector` and repeats it through indexing
         do {
-            let rowVector = Matrix<Int32>((1, 5), sequence: 0..<10)
+            let rowVector = Matrix<Int32>((1, 5), sequence: 0..<5)
             let rmatrix = Matrix((5, 5), repeating: rowVector)
             print(rmatrix.formatted((2,0)))
 
-            let colVector = Matrix<Int32>((5, 1), sequence: 0..<10)
+            let colVector = Matrix<Int32>((5, 1), sequence: 0..<5)
             let cmatrix = Matrix((5, 5), repeating: colVector)
             print(cmatrix.formatted((2,0)))
         }

@@ -21,7 +21,7 @@ class test_Async: XCTestCase {
             Platform.log.level = .diagnostic
             Platform.local.log.categories = [.streamSync]
             
-            let stream = Platform.local.createStream(serviceName: "cupUnitTest")
+            let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
             let event = try stream.createEvent(options: StreamEventOptions())
             try stream.debugDelay(seconds: 0.001)
             try stream.wait(for: stream.record(event: event))

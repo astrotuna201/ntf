@@ -159,8 +159,13 @@ public extension LocalPlatform {
                       name: String = "stream") -> DeviceStream {
         
         let serviceName = serviceName ?? defaultDevice.service.name
-        let device = requestDevice(serviceName: serviceName, deviceId: id)!
-        return device.createStream(name: name)
+        if let device = requestDevice(serviceName: serviceName, deviceId: id) {
+            return device.createStream(name: name)
+        } else {
+            writeLog("CPU substituted. Service `\(serviceName)` not found.",
+                level: .warning)
+            return requestDevice(serviceName: "cpu")!.createStream(name: name)
+        }
     }
     
     //--------------------------------------------------------------------------

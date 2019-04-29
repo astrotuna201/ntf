@@ -293,7 +293,7 @@ class test_DataMigration: XCTestCase {
     func test_copyOnWriteCrossDevice() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
@@ -352,7 +352,7 @@ class test_DataMigration: XCTestCase {
     func test_copyOnWrite() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             let index = [1, 1]
             var matrix1 = Matrix<Float>((3, 2))

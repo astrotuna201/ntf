@@ -220,8 +220,8 @@ public extension CpuStream {
         guard lastError == nil else { return }
         do {
             var resultRef = try result.reference(using: self)
+            var values = try resultRef.mutableValues(using: self)
             queue {
-                var values = try resultRef.mutableValues(using: self)
                 var value = startAt
                 for index in values.indices {
                     values[index] = T.Scalar(any: value)

@@ -23,7 +23,9 @@ public extension TensorView {
         -> TensorViewCollection<Self>
     {
         if let lastError = _Streams.current.lastError { throw lastError }
-        return try TensorViewCollection(view: self, buffer: readOnly())
+        let stream = stream ?? _Streams.local.appThreadStream
+        return try TensorViewCollection(view: self,
+                                        buffer: readOnly(using: stream))
     }
     
     //--------------------------------------------------------------------------
@@ -32,7 +34,9 @@ public extension TensorView {
         -> TensorViewMutableCollection<Self>
     {
         if let lastError = _Streams.current.lastError { throw lastError }
-        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
+        let stream = stream ?? _Streams.local.appThreadStream
+        return try TensorViewMutableCollection(view: &self,
+                                               buffer: readWrite(using: stream))
     }
     
     //--------------------------------------------------------------------------

@@ -174,8 +174,13 @@ public extension TensorView {
             if let scalars = scalars {
                 assert(scalars.count == dataShape.elementCount,
                        "number of scalars does not match tensor extents")
-                tensorArray = scalars.withUnsafeBufferPointer {
-                    TensorArray(copying: $0, name: name)
+                do {
+                    tensorArray = try scalars.withUnsafeBufferPointer {
+                        try TensorArray(copying: $0, name: name)
+                    }
+                } catch {
+                    tensorArray = TensorArray()
+                    _Streams.current.reportDevice(error: error)
                 }
             } else {
                 tensorArray = TensorArray(type: Scalar.self,

@@ -82,8 +82,8 @@ let b = Matrix<Float>((2, 3), sequence: 6..<12)
 
 let absum = zip(a, b).map { $0 + $1 }
 
-let absumExpected: [Float] = [6, 8, 10, 12, 14, 16]
-assert(absum == absumExpected)
+let expected: [Float] = [6, 8, 10, 12, 14, 16]
+assert(absum == expected)
 
 let dot = zip(a, b).map(*).reduce(0, +)
 
@@ -153,42 +153,32 @@ The extents of repeated data are not required to match any extent of the Tensor 
 These examples repeat row and column vectors.
 No matter the extents, `matrix` only uses the shared storage from `rowVector` and repeats it through indexing.
 ```swift
-let rowVector = Matrix<Int32>((1, 10), sequence: 0..<10)
-let rmatrix = Matrix((10, 10), repeating: rowVector)
+let rowVector = Matrix<Int32>((1, 5), sequence: 0..<5)
+let rmatrix = Matrix((5, 5), repeating: rowVector)
 print(rmatrix.formatted((2,0)))
 
-let colVector = Matrix<Int32>((10, 1), sequence: 0..<10)
-let cmatrix = Matrix((10, 10), repeating: colVector)
+let colVector = Matrix<Int32>((5, 1), sequence: 0..<5)
+let cmatrix = Matrix((5, 5), repeating: colVector)
 print(cmatrix.formatted((2,0)))
 ```
 ```
-TensorView extents: [10, 10] paddedExtents: [10, 10]
+TensorView extents: [5, 5] paddedExtents: [5, 5]
 at index: [0, 0]
 ----------------
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
- 0  1  2  3  4  5  6  7  8  9 
+0  1  2  3  4 
+0  1  2  3  4 
+0  1  2  3  4 
+0  1  2  3  4 
+0  1  2  3  4 
 
-TensorView extents: [10, 10] paddedExtents: [10, 10]
+TensorView extents: [5, 5] paddedExtents: [5, 5]
 at index: [0, 0]
 ----------------
- 0  0  0  0  0  0  0  0  0  0 
- 1  1  1  1  1  1  1  1  1  1 
- 2  2  2  2  2  2  2  2  2  2 
- 3  3  3  3  3  3  3  3  3  3 
- 4  4  4  4  4  4  4  4  4  4 
- 5  5  5  5  5  5  5  5  5  5 
- 6  6  6  6  6  6  6  6  6  6 
- 7  7  7  7  7  7  7  7  7  7 
- 8  8  8  8  8  8  8  8  8  8 
- 9  9  9  9  9  9  9  9  9  9 
+0  0  0  0  0 
+1  1  1  1  1 
+2  2  2  2  2 
+3  3  3  3  3 
+4  4  4  4  4 
 ```
 Virtual padding can be specified for a view. Here one padding row is added before and after, and columns are padded 2 before and 3 after. A padding value of -1 is used here to make boundaries obvious. The default padding value is 0. Padding can also be added to sub views to aid windowed operations such as convolutions.
 ```swift
@@ -271,11 +261,11 @@ at index: [0, 0]
 TensorView extents: [5, 3] paddedExtents: [5, 3]
 at index: [0, 0]
 ----------------
-0  5 10 
-1  6 11 
-2  7 12 
-3  8 13 
-4  9 14 
+0  5  10 
+1  6  11 
+2  7  12 
+3  8  13 
+4  9  14 
 ```
 ### Result Placement
 The biggest peformance problem with all of the major frameworks is copying and constant creation and destruction of tensors. All operator functions and stream functions can take a `result` argument, specifying where the result should be placed, so that temporary variables don't need to be created and destroyed.

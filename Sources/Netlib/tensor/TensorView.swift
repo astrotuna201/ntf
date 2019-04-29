@@ -174,8 +174,13 @@ public extension TensorView {
             if let scalars = scalars {
                 assert(scalars.count == dataShape.elementCount,
                        "number of scalars does not match tensor extents")
-                tensorArray = scalars.withUnsafeBufferPointer {
-                    TensorArray(copying: $0, name: name)
+                do {
+                    tensorArray = try scalars.withUnsafeBufferPointer {
+                        try TensorArray(copying: $0, name: name)
+                    }
+                } catch {
+                    tensorArray = TensorArray()
+                    _Streams.current.reportDevice(error: error)
                 }
             } else {
                 tensorArray = TensorArray(type: Scalar.self,
@@ -309,7 +314,10 @@ public extension TensorView {
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     func readOnly(using stream: DeviceStream) throws
-        -> UnsafeBufferPointer<Scalar> {
+        -> UnsafeBufferPointer<Scalar>
+    {
+        if let lastError = stream.lastError { throw lastError }
+        
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
@@ -342,6 +350,8 @@ public extension TensorView {
         -> UnsafeMutableBufferPointer<Scalar>
     {
         precondition(!tensorArray.isReadOnly, "the tensor is read only")
+        if let lastError = stream.lastError { throw lastError }
+
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue

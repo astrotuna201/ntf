@@ -305,14 +305,21 @@ class test_DataMigration: XCTestCase {
 
             let index = [1, 1]
             var matrix1 = Matrix<Float>((3, 2))
+
+            // allocate array on device 1 and fill with indexes
             using(stream1) {
                 fillWithIndex(&matrix1)
             }
-            // testing a value causes the data to be copied to the host
+            
+            // getting a value causes the data to be copied to an
+            // array associated with the app thread
+            // The master version is stil on device 1
             let value = try matrix1.value(at: index)
+            print(value)
             XCTAssert(value == 3.0)
 
             // simulate read only access on device 1 and 2
+            // data will be copied to device 2 for the first time
             _ = try matrix1.readOnly(using: stream1)
             _ = try matrix1.readOnly(using: stream2)
 
@@ -345,7 +352,7 @@ class test_DataMigration: XCTestCase {
     func test_copyOnWrite() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             let index = [1, 1]
             var matrix1 = Matrix<Float>((3, 2))

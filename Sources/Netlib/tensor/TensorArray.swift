@@ -11,22 +11,6 @@ import Foundation
 /// It is not created or directly used by end users.
 final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
-    /// Replica
-    /// A data replica is maintained for each stream device
-    class Replica {
-        /// the array in the device address space
-        let array: DeviceArray
-        /// the last stream used to access the array. Used for synchronization
-        /// and `deinit` of the array
-        var lastStream: DeviceStream
-        
-        public init(array: DeviceArray, lastStream: DeviceStream) {
-            self.array = array
-            self.lastStream = lastStream
-        }
-    }
-    
-    //--------------------------------------------------------------------------
     /// used by TensorViews to synchronize access to this object
     public let accessQueue = DispatchQueue(label: "TensorArray.accessQueue")
     /// the size of the data array in bytes
@@ -40,19 +24,21 @@ final public class TensorArray: ObjectTracking, Logging {
     /// tensorArray object to be copied. It's stored here instead of on the
     /// view, because the view is immutable when taking a read only pointer
     public var lastAccessMutatedView: Bool = false
-    // whenever a buffer write pointer is taken, the associated DeviceArray
-    // becomes the master copy for replication. Synchronization across threads
-    // is still required for taking multiple write pointers, however
-    // this does automatically synchronize data migrations.
-    // The value will be `nil` if no access has been taken yet
-    private var master: Replica?
-    // this is incremented each time a write pointer is taken
-    // all replicated buffers will stay in sync with this version
+    /// the last stream that had readWrite access
+    public var lastReadWriteStream: DeviceStream?
+    /// whenever a buffer write pointer is taken, the associated DeviceArray
+    /// becomes the master copy for replication. Synchronization across threads
+    /// is still required for taking multiple write pointers, however
+    /// this does automatically synchronize data migrations.
+    /// The value will be `nil` if no access has been taken yet
+    private var master: DeviceArray?
+    /// this is incremented each time a write pointer is taken
+    /// all replicated buffers will stay in sync with this version
     private var masterVersion = -1
     /// name label used for logging
     public let name: String
     /// replication collection
-    private var replicas = [DeviceArrayReplicaKey : Replica]()
+    private var replicas = [DeviceArrayReplicaKey : DeviceArray]()
     /// the object tracking id
     public private(set) var trackingId = 0
 
@@ -94,7 +80,7 @@ final public class TensorArray: ObjectTracking, Logging {
         let bytes = UnsafeRawBufferPointer(buffer)
         let array = stream.device.createReferenceArray(buffer: bytes)
         array.version = -1
-        replicas[key] = Replica(array: array, lastStream: stream)
+        replicas[key] = array
         register(type: Scalar.self, count: buffer.count)
 
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
@@ -114,13 +100,13 @@ final public class TensorArray: ObjectTracking, Logging {
         isReadOnly = false
         byteCount = buffer.count
         let stream = _Streams.local.appThreadStream
-        
+
         // create the replica device array
         let key = stream.device.deviceArrayReplicaKey
         let bytes = UnsafeMutableRawBufferPointer(buffer)
         let array = stream.device.createMutableReferenceArray(buffer: bytes)
         array.version = -1
-        replicas[key] = Replica(array: array, lastStream: stream)
+        replicas[key] = array
         register(type: Scalar.self, count: buffer.count)
 
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
@@ -132,7 +118,7 @@ final public class TensorArray: ObjectTracking, Logging {
     //----------------------------------------
     // copy from buffer
     public init<Scalar>(copying buffer: UnsafeBufferPointer<Scalar>,
-                        name: String) {
+                        name: String) throws {
         self.name = name
         masterVersion = 0
         isReadOnly = false
@@ -142,10 +128,11 @@ final public class TensorArray: ObjectTracking, Logging {
         diagnostic("\(createString) \(name)(\(trackingId)) " +
             "\(String(describing: Scalar.self))[\(buffer.count)]",
             categories: .dataAlloc)
-
+        
         // copy the data
         let stream = _Streams.local.appThreadStream
         do {
+            try syncLastMutatingStream(with: stream, isReadOnly: false)
             _ = try readWrite(type: Scalar.self, using: stream)
                 .initialize(from: buffer)
         } catch {
@@ -163,6 +150,7 @@ final public class TensorArray: ObjectTracking, Logging {
         byteCount = other.byteCount
         name = other.name
         masterVersion = 0
+        lastReadWriteStream = other.lastReadWriteStream
         register(type: UInt8.self, count: byteCount)
         
         // report
@@ -178,20 +166,35 @@ final public class TensorArray: ObjectTracking, Logging {
         
         // get the array replica for `stream`
         let replica = try getArray(type: Scalar.self, for: stream)
-        replica.array.version = masterVersion
+        replica.version = masterVersion
         
-        // sync streams and copy
-        try stream.sync(with: otherMaster.lastStream,
-                        event: getSyncEvent(using: stream))
-        try replica.array.copyAsync(from: otherMaster.array, using: stream)
-        
+        // copy the other master array
+        try syncLastMutatingStream(with: stream, isReadOnly: false)
+        try replica.copyAsync(from: otherMaster, using: stream)
+        lastReadWriteStream = stream
+
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
-            "\(otherMaster.lastStream.device.name)" +
+            "\(otherMaster.device.name)" +
             "\(setText(" --> ", color: .blue))" +
             "\(stream.device.name)_s\(stream.id) " +
             "\(String(describing: Scalar.self))" +
             "[\(byteCount / MemoryLayout<Scalar>.size)]",
             categories: .dataCopy)
+    }
+
+    //----------------------------------------
+    // syncLastMutatingStream
+    // synchronizes the incoming stream with the last mutating stream
+    private func syncLastMutatingStream(with stream: DeviceStream,
+                                        isReadOnly: Bool) throws {
+        // save if this stream mutates
+        if !isReadOnly { lastReadWriteStream = stream }
+        
+        // if the streams are equal then they are already in order
+        guard let last = lastReadWriteStream, last !== stream else { return }
+        
+        // if the streams are different, then sync
+        try stream.sync(with: last, event: getSyncEvent(using: stream))
     }
     
     //----------------------------------------
@@ -207,9 +210,7 @@ final public class TensorArray: ObjectTracking, Logging {
         // synchronize with all streams that have accessed these arrays
         // before freeing them
         do {
-            for replica in replicas.values {
-                try replica.lastStream.blockCallerUntilComplete()
-            }
+            try lastReadWriteStream?.blockCallerUntilComplete()
         } catch {
             writeLog(String(describing: error))
         }
@@ -237,18 +238,20 @@ final public class TensorArray: ObjectTracking, Logging {
     // readOnly
     public func readOnly<Scalar>(type: Scalar.Type,
                                  using stream: DeviceStream) throws
-        -> UnsafeBufferPointer<Scalar> {
-            let buffer = try migrate(type: type, readOnly: true, using: stream)
-            return UnsafeBufferPointer(buffer)
+        -> UnsafeBufferPointer<Scalar>
+    {
+        let buffer = try migrate(type: type, readOnly: true, using: stream)
+        return UnsafeBufferPointer(buffer)
     }
     
     //--------------------------------------------------------------------------
     // readWrite
     public func readWrite<Scalar>(type: Scalar.Type,
                                   using stream: DeviceStream) throws ->
-        UnsafeMutableBufferPointer<Scalar> {
-            assert(!isReadOnly, "the TensorArray is read only")
-            return try migrate(type: type, readOnly: false, using: stream)
+        UnsafeMutableBufferPointer<Scalar>
+    {
+        assert(!isReadOnly, "the TensorArray is read only")
+        return try migrate(type: type, readOnly: false, using: stream)
     }
 
     //--------------------------------------------------------------------------
@@ -260,18 +263,22 @@ final public class TensorArray: ObjectTracking, Logging {
                                  using stream: DeviceStream) throws
         -> UnsafeMutableBufferPointer<Scalar>
     {
+        // make sure the last operation is finished if it's on a
+        // different stream
+        try syncLastMutatingStream(with: stream, isReadOnly: readOnly)
+        
         // get the array replica for `stream`
         let replica = try getArray(type: Scalar.self, for: stream)
         lastAccessCopiedBuffer = false
 
         // compare with master and copy if needed
-        if let master = master, replica.array.version != master.array.version {
+        if let master = master, replica.version != master.version {
             // cross service?
-            if replica.array.device.service.id != master.array.device.service.id {
+            if replica.device.service.id != master.device.service.id {
                 try copyCrossService(type: type, from: master, to: replica,
                                      using: stream)
                 
-            } else if replica.array.device.id != master.array.device.id {
+            } else if replica.device.id != master.device.id {
                 try copyCrossDevice(type: type, from: master, to: replica,
                                     using: stream)
             }
@@ -279,47 +286,44 @@ final public class TensorArray: ObjectTracking, Logging {
         
         // set version
         if !readOnly { master = replica; masterVersion += 1 }
-        replica.array.version = masterVersion
-        return replica.array.buffer.bindMemory(to: Scalar.self)
+        replica.version = masterVersion
+        return replica.buffer.bindMemory(to: Scalar.self)
     }
 
     //--------------------------------------------------------------------------
     // copyCrossService
     // copies from an array in one service to another
-    private func copyCrossService<Scalar>(
-        type: Scalar.Type,
-        from master: Replica,
-        to other: Replica,
-        using stream: DeviceStream) throws
+    private func copyCrossService<Scalar>(type: Scalar.Type,
+                                          from master: DeviceArray,
+                                          to other: DeviceArray,
+                                          using stream: DeviceStream) throws
     {
         lastAccessCopiedBuffer = true
-        let masterDevice = master.array.device
-        let otherDevice = other.array.device
         
-        if masterDevice.memoryAddressing == .unified {
+        if master.device.memoryAddressing == .unified {
             // copy host to discreet memory device
-            if otherDevice.memoryAddressing == .discreet {
-                let buffer = UnsafeRawBufferPointer(master.array.buffer)
-                try other.array.copyAsync(from: buffer, using: stream)
+            if other.device.memoryAddressing == .discreet {
+                let buffer = UnsafeRawBufferPointer(master.buffer)
+                try other.copyAsync(from: buffer, using: stream)
 
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                    "uma:\(masterDevice.name)" +
+                    "uma:\(master.device.name)" +
                     "\(setText(" --> ", color: .blue))" +
-                    "\(otherDevice.name)_s\(stream.id) " +
+                    "\(other.device.name)_s\(stream.id) " +
                     "\(String(describing: Scalar.self))" +
-                    "[\(master.array.buffer.bindMemory(to: Scalar.self).count)]",
+                    "[\(master.buffer.bindMemory(to: Scalar.self).count)]",
                     categories: .dataCopy)
             }
             // otherwise they are both unified, so do nothing
-        } else if otherDevice.memoryAddressing == .unified {
+        } else if other.device.memoryAddressing == .unified {
             // device to host
-            try master.array.copyAsync(to: other.array.buffer, using: stream)
+            try master.copyAsync(to: other.buffer, using: stream)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                "\(masterDevice.name)_s\(master.lastStream.id)" +
-                "\(setText(" --> ", color: .blue))uma:\(otherDevice.name) " +
+                "\(master.device.name)_s\(stream.id)" +
+                "\(setText(" --> ", color: .blue))uma:\(other.device.name) " +
                 "\(String(describing: Scalar.self))" +
-                "[\(master.array.buffer.bindMemory(to: Scalar.self).count)]",
+                "[\(master.buffer.bindMemory(to: Scalar.self).count)]",
                 categories: .dataCopy)
 
         } else {
@@ -327,23 +331,23 @@ final public class TensorArray: ObjectTracking, Logging {
             // transfer to host memory as an intermediate step
             let host = try getArray(type: Scalar.self,
                                     for: _Streams.local.appThreadStream)
-            try master.array.copyAsync(to: host.array.buffer, using: stream)
+            try master.copyAsync(to: host.buffer, using: stream)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                "\(masterDevice.name)_s\(master.lastStream.id)" +
-                "\(setText(" --> ", color: .blue))\(otherDevice.name)" +
+                "\(master.device.name)_s\(stream.id)" +
+                "\(setText(" --> ", color: .blue))\(other.device.name)" +
                 " bytes[\(byteCount)]", categories: .dataCopy)
 
             
-            let hostBuffer = UnsafeRawBufferPointer(host.array.buffer)
-            try other.array.copyAsync(from: hostBuffer, using: stream)
+            let hostBuffer = UnsafeRawBufferPointer(host.buffer)
+            try other.copyAsync(from: hostBuffer, using: stream)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
-                "\(otherDevice.name)" +
+                "\(other.device.name)" +
                 "\(setText(" --> ", color: .blue))" +
-                "\(masterDevice.name)_s\(stream.id) " +
+                "\(master.device.name)_s\(stream.id) " +
                 "\(String(describing: Scalar.self))" +
-                "[\(other.array.buffer.bindMemory(to: Scalar.self).count)]",
+                "[\(other.buffer.bindMemory(to: Scalar.self).count)]",
                 categories: .dataCopy)
         }
     }
@@ -351,23 +355,22 @@ final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // copyCrossDevice
     // copies from one discreet memory device to the other
-    private func copyCrossDevice<Scalar>(
-        type: Scalar.Type,
-        from master: Replica,
-        to other: Replica,
-        using stream: DeviceStream) throws
+    private func copyCrossDevice<Scalar>(type: Scalar.Type,
+                                         from master: DeviceArray,
+                                         to other: DeviceArray,
+                                         using stream: DeviceStream) throws
     {
         // only copy if the devices have discreet memory
-        guard master.array.device.memoryAddressing == .discreet else { return }
+        guard master.device.memoryAddressing == .discreet else { return }
         lastAccessCopiedBuffer = true
-        try other.array.copyAsync(from: master.array, using: stream)
+        try other.copyAsync(from: master, using: stream)
         
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
-            "\(master.lastStream.device.name)" +
+            "\(master.device.name)" +
             "\(setText(" --> ", color: .blue))" +
             "\(stream.device.name)_s\(stream.id) " +
             "\(String(describing: Scalar.self))" +
-            "[\(master.array.buffer.bindMemory(to: Scalar.self).count)]",
+            "[\(master.buffer.bindMemory(to: Scalar.self).count)]",
             categories: .dataCopy)
     }
     
@@ -375,18 +378,14 @@ final public class TensorArray: ObjectTracking, Logging {
     // getArray(stream:
     // This manages a dictionary of replicated device arrays indexed
     // by serviceId and id. It will lazily create a device array if needed
-    private func getArray<Scalar>(type: Scalar.Type,
-                                  for stream: DeviceStream) throws -> Replica {
+    private func getArray<Scalar>(
+        type: Scalar.Type,
+        for stream: DeviceStream) throws -> DeviceArray
+    {
         // lookup array associated with this stream
         let key = stream.device.deviceArrayReplicaKey
         if let replica = replicas[key] {
-            // sync the requesting stream with the last stream that accessed it
-            try stream.sync(with: replica.lastStream,
-                            event: getSyncEvent(using: stream))
-            // update the last stream used to access this array for sync
-            replica.lastStream = stream
             return replica
-            
         } else {
             // create the replica device array
             let array = try stream.device.createArray(count: byteCount)
@@ -397,9 +396,8 @@ final public class TensorArray: ObjectTracking, Logging {
                 categories: .dataAlloc)
             
             array.version = -1
-            let replica = Replica(array: array, lastStream: stream)
-            replicas[key] = replica
-            return replica
+            replicas[key] = array
+            return array
         }
     }
 }

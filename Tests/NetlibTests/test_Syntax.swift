@@ -162,7 +162,7 @@ class test_Syntax: XCTestCase {
     func test_streams() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             let stream1 = Platform.local.createStream(deviceId: 1,
                                                       serviceName: "cpuUnitTest")

@@ -14,22 +14,23 @@ public enum DeviceError : Error {
 public typealias DeviceErrorHandler = (Error) -> Void
 
 public protocol DeviceErrorHandling: class, _Logging {
-    var _deviceErrorHandler: DeviceErrorHandler! { get set }
+    /// user defined handler to override the default
+    var deviceErrorHandler: DeviceErrorHandler? { get set }
+    /// safe access mutex
+    var _errorMutex: Mutex { get }
+    /// last error recorded
     var _lastError: Error? { get set }
-    var errorMutex: Mutex { get }
+    
+    /// handler that will either call a user handler if defined or propagate
+    /// up the device tree
+    func handleDevice(error: Error)
 }
 
 public extension DeviceErrorHandling {
-    /// use access get/set to prevent setting `nil`
-    var deviceErrorHandler: DeviceErrorHandler {
-        get { return _deviceErrorHandler }
-        set { _deviceErrorHandler = newValue }
-    }
-    
     /// safe access
     var lastError: Error? {
-        get { return errorMutex.sync { _lastError } }
-        set { errorMutex.sync { _lastError = newValue } }
+        get { return _errorMutex.sync { _lastError } }
+        set { _errorMutex.sync { _lastError = newValue } }
     }
     
     //--------------------------------------------------------------------------
@@ -47,7 +48,7 @@ public extension DeviceErrorHandling {
         
         // propagate on app thread
         DispatchQueue.main.async {
-            self.deviceErrorHandler(error)
+            self.handleDevice(error: error)
         }
         
         // signal the completion event in case the app thread is waiting

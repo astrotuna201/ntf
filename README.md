@@ -375,4 +375,30 @@ diagnostic: [RELEASE  ] Volume<Int32>(15)
 # Object Tracking
 Class objects receive a unique __id__ when registered with the _ObjectTracker_ class. These ids are used in diagnostic messages to know which object is which. 
 
-The _ObjectTracker_ is also used to report unreleased objects to identify retain cycles, and to break the debugger when a specific object instance is created or released. It's much easier and faster to track down problems than using Swift leak detection. During RELEASE builds the tracker does nothing but return an id from a simple counter.
+The _ObjectTracker_ is also used to report unreleased objects to identify retain cycles, and to break the debugger when a specific object instance is created or released. It's much easier and faster to track down problems than using Swift leak detection. During RELEASE builds the tracker does nothing but return id = 0.
+
+The example below creates resources withing a scope. After the scope exits, all resources should be released. The _hasUnreleasedObjects_ property can be used to check for retain cycles in a DEBUG build.
+```swift
+do {
+    Platform.log.level = .diagnostic
+    Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+
+    let stream1 = Platform.local.createStream(deviceId: 1, serviceName: "cpuUnitTest")
+    let stream2 = Platform.local.createStream(deviceId: 2, serviceName: "cpuUnitTest")            
+
+    let volume = using(stream1) {
+        Volume<Int32>((3, 4, 5)).filledWithIndex()
+    }
+    let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+
+    let viewSum = using(stream2) {
+        sum(view).scalarValue()
+    }
+    assert(viewSum == 312)
+}
+
+if ObjectTracker.global.hasUnreleasedObjects {
+    print(ObjectTracker.global.getActiveObjectReport())
+    print("Retain cycle detected")
+}
+```

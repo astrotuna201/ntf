@@ -95,9 +95,13 @@ public protocol LocalComputeService: ComputeService { }
 
 public extension LocalComputeService {
     //--------------------------------------------------------------------------
-    /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: Error) {
-        platform.deviceErrorHandler(error)
+    /// handleDevice(error:
+    func handleDevice(error: Error) {
+        if let handler = deviceErrorHandler {
+            handler(error)
+        } else {
+            platform.handleDevice(error: error)
+        }
     }
 }
 
@@ -163,9 +167,13 @@ public protocol LocalComputeDevice: ComputeDevice { }
 
 public extension LocalComputeDevice {
     //--------------------------------------------------------------------------
-    /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: Error) {
-        service.deviceErrorHandler(error)
+    /// handleDevice(error:
+    func handleDevice(error: Error) {
+        if let handler = deviceErrorHandler {
+            handler(error)
+        } else {
+            service.handleDevice(error: error)
+        }
     }
 }
 

@@ -25,10 +25,10 @@ public extension LocalPlatform {
     }
     
     //--------------------------------------------------------------------------
-    /// defaultDeviceErrorHandler
+    /// handleDevice(error:
     /// The default platform error handler has nowhere else to go, so
     /// print the message, break to the debugger if possible, and exit.
-    func defaultDeviceErrorHandler(error: Error) {
+    func handleDevice(error: Error) {
         print(String(describing: error))
         raise(SIGINT)
         exit(1)
@@ -202,9 +202,9 @@ public extension LocalPlatform {
 final public class Platform: LocalPlatform {
     // properties
     public var _defaultDevice: ComputeDevice?
-    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var deviceErrorHandler: DeviceErrorHandler?
+    public var _errorMutex: Mutex = Mutex()
     public var _lastError: Error? = nil
-    public var errorMutex: Mutex = Mutex()
     public var deviceIdPriority: [Int] = [0]
     public var id: Int = 0
     public static let local = Platform()
@@ -223,12 +223,12 @@ final public class Platform: LocalPlatform {
     /// `init` is private because this is a singleton. Use the `local` static
     /// member to access the shared instance.
     private init() {
-        // log
+        // create the log
         logInfo = LogInfo(log: Log(), logLevel: .error,
                           namePath: String(describing: Platform.self),
                           nestingLevel: 0)
-        
-        // pointer to instance error handler function
-        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
+
+        // mark because it is going to be statically held
+        ObjectTracker.global.markStatic(trackingId: logInfo.log.trackingId)
     }
 }

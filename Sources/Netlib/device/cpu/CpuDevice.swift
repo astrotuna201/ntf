@@ -20,9 +20,9 @@ public class CpuDevice: LocalComputeDevice {
     public var timeout: TimeInterval?
     public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
-    public var _deviceErrorHandler: DeviceErrorHandler! = nil
+    public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error? = nil
-    public var errorMutex: Mutex = Mutex()
+    public var _errorMutex: Mutex = Mutex()
 
     // TODO this should be currently available and not physicalMemory
     public lazy var availableMemory: UInt64 = {
@@ -49,9 +49,6 @@ public class CpuDevice: LocalComputeDevice {
         trackingId = ObjectTracker.global.register(self,
                                                    namePath: logNamePath,
                                                    isStatic: true)
-        
-        // pointer to instance error handler function
-        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 

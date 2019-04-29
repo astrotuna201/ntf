@@ -126,24 +126,33 @@ class test_Syntax: XCTestCase {
     // test_streams
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
+    //
+    // This also shows how the object tracker can be checked to see if
+    // there are any retain cycles.
     func test_streams() {
-        Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-        
-        let stream1 = Platform.local.createStream(deviceId: 1,
-                                                  serviceName: "cpuUnitTest")
-        let stream2 = Platform.local.createStream(deviceId: 2,
-                                                  serviceName: "cpuUnitTest")
-        
-        let volume = using(stream1) {
-            Volume<Int32>((3, 4, 5)).filledWithIndex()
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            
+            let stream1 = Platform.local.createStream(deviceId: 1,
+                                                      serviceName: "cpuUnitTest")
+            let stream2 = Platform.local.createStream(deviceId: 2,
+                                                      serviceName: "cpuUnitTest")            
+            let volume = using(stream1) {
+                Volume<Int32>((3, 4, 5)).filledWithIndex()
+            }
+            let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+            
+            let viewSum = using(stream2) {
+                sum(view).scalarValue()
+            }
+            XCTAssert(viewSum == 312)
         }
-        let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
         
-        let subViewSum = using(stream2) {
-            sum(subView).scalarValue()
+        if ObjectTracker.global.hasUnreleasedObjects {
+            print(ObjectTracker.global.getActiveObjectReport())
+            XCTFail("Retain cycle detected")
         }
-        XCTAssert(subViewSum == 312)
     }
 
     //==========================================================================

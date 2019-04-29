@@ -44,12 +44,17 @@ final public class ObjectTracker {
 	public var debuggerRemoveBreakId = -1
     // the list of currently registered objects
 	public private(set) var activeObjects = [Int: ItemInfo]()
-    /// true if there are currently unreleased objects
-	public var hasActiveObjects: Bool { return !activeObjects.isEmpty }
+    /// true if there are currently unreleased non static objects
+	public var hasUnreleasedObjects: Bool {
+        for object in activeObjects where !object.value.isStatic {
+            return true
+        }
+        return false
+    }
 
 	//--------------------------------------------------------------------------
-	// activeObjectsInfo
-	public func getActiveObjectInfo(includeStatics: Bool = false) -> String {
+	// getActiveObjectReport
+	public func getActiveObjectReport(includeStatics: Bool = false) -> String {
 		var result = "\n"
 		var activeCount = 0
 		for objectId in (activeObjects.keys.sorted { $0 < $1 }) {
@@ -66,6 +71,7 @@ final public class ObjectTracker {
 		return result
 	}
 
+    //--------------------------------------------------------------------------
 	// getObjectDescription
 	private func getObjectDescription(trackingId: Int, info: ItemInfo) -> String {
         return "[\(info.typeName)(\(trackingId))" +
@@ -122,14 +128,15 @@ final public class ObjectTracker {
 //        #endif
 //    }
 
-    // TODO: maybe remove this if unused?
-//    //--------------------------------------------------------------------------
-//    // markStatic
-//    public func markStatic(trackingId: Int) {
-//        #if ENABLE_TRACKING
-//            _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
-//        #endif
-//    }
+    //--------------------------------------------------------------------------
+    /// markStatic
+    /// used to note that the object is being held by a static owner, and
+    /// should not show up in a normal leak report
+    public func markStatic(trackingId: Int) {
+        #if ENABLE_TRACKING
+        _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
+        #endif
+    }
 
 	//--------------------------------------------------------------------------
 	// remove

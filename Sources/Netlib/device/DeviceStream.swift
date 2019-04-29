@@ -61,9 +61,13 @@ public protocol LocalDeviceStream: DeviceStream { }
 
 public extension LocalDeviceStream {
     //--------------------------------------------------------------------------
-    /// defaultDeviceErrorHandler
-    func defaultDeviceErrorHandler(error: Error) {
-        device.deviceErrorHandler(error)
+    /// handleDevice(error:
+    func handleDevice(error: Error) {
+        if let handler = deviceErrorHandler {
+            handler(error)
+        } else {
+            device.handleDevice(error: error)
+        }
     }
 }
 

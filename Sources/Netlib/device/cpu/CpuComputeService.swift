@@ -11,9 +11,9 @@ public class CpuComputeService : LocalComputeService {
     public private(set) weak var platform: ComputePlatform!
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
-    public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastError: Error? = nil
-    public var errorMutex: Mutex = Mutex()
+    public var deviceErrorHandler: DeviceErrorHandler?
+    public var _lastError: Error?
+    public var _errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
@@ -36,9 +36,6 @@ public class CpuComputeService : LocalComputeService {
         devices.append(CpuDevice(service: self, deviceId: 0,
                                  logInfo: logInfo.flat("cpu:0"),
                                  memoryAddressing: .unified))
-        
-        // pointer to instance error handler function
-        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }
@@ -51,9 +48,9 @@ public class CpuUnitTestComputeService : LocalComputeService {
     public private(set) weak var platform: ComputePlatform!
     public private(set) var trackingId = 0
     public private(set) var devices = [ComputeDevice]()
-    public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastError: Error? = nil
-    public var errorMutex: Mutex = Mutex()
+    public var deviceErrorHandler: DeviceErrorHandler?
+    public var _lastError: Error?
+    public var _errorMutex: Mutex = Mutex()
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
@@ -86,9 +83,6 @@ public class CpuUnitTestComputeService : LocalComputeService {
         devices.append(CpuDevice(service: self, deviceId: 2,
                                  logInfo: logInfo.flat("cpu:2"),
                                  memoryAddressing: .discreet))
-        
-        // pointer to instance error handler function
-        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

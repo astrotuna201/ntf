@@ -14,9 +14,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     public var logInfo: LogInfo
     public var timeout: TimeInterval?
     public var executeSynchronously: Bool = true
-    public var _deviceErrorHandler: DeviceErrorHandler! = nil
-    public var _lastError: Error? = nil
-    public var errorMutex: Mutex = Mutex()
+    public var deviceErrorHandler: DeviceErrorHandler?
+    public var _lastError: Error?
+    public var _errorMutex: Mutex = Mutex()
 
     // serial queue
     private let commandQueue: DispatchQueue
@@ -28,8 +28,10 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                 name: String,
                 id: Int) {
         
-        // create serial queue
+        // create serial command queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
+        
+        // create a completion event
         completionEvent = CpuStreamEvent(logInfo: logInfo,
                                          options: StreamEventOptions())
         self.logInfo = logInfo
@@ -38,21 +40,16 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         self.name = name
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)
-        
-        // pointer to instance error handler function
-        _deviceErrorHandler = defaultDeviceErrorHandler(error:)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
-    ///
     /// This will catch and propagate the last asynchronous error thrown.
-    /// I wish there was a better way to do this!
     public func queue(_ body: @escaping () throws -> Void) {
         // if the stream is in an error state, no additional work
         // will be queued
-        guard (errorMutex.sync { self._lastError == nil }) else { return }
+        guard lastError == nil else { return }
 
         func performBody() {
             do {

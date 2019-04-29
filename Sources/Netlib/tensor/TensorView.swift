@@ -240,16 +240,10 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
-    func scalarValue() -> Scalar {
+    func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
-        do {
-            guard _Streams.current.lastError == nil else { return Scalar() }
-            return try readOnly()[0]
-
-        } catch {
-            _Streams.current.reportDevice(error: error)
-            return Scalar()
-        }
+        if let lastError = _Streams.current.lastError { throw lastError }
+        return try readOnly()[0]
     }
 
     //--------------------------------------------------------------------------
@@ -552,39 +546,6 @@ public extension TensorView {
 }
 
 //==============================================================================
-/// Equal
-public extension TensorView where
-    Scalar: Equatable,
-    BoolView.Scalar == Bool
-{
-    //--------------------------------------------------------------------------
-    /// Equal values
-    /// performs an element wise value comparison
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        if lhs.tensorArray === rhs.tensorArray {
-            // If they both reference the same tensorArray then compare the views
-            return lhs.viewDataOffset == rhs.viewDataOffset &&
-                lhs.shape == rhs.shape
-            
-        } else if lhs.shape.extents == rhs.shape.extents {
-            // if the extents are equal then compare values
-            var result = BoolView(shapedLike: lhs)
-            equal(lhs: lhs, rhs: rhs, result: &result)
-            return result.all().scalarValue()
-        } else {
-            return false
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    /// Equal references
-    /// `true` if the views reference the same elements
-    static func === (lhs: Self, rhs: Self) -> Bool {
-        return lhs.tensorArray === rhs.tensorArray && lhs == rhs
-    }
-}
-
-//==============================================================================
 //
 public extension TensorView where Scalar: FloatingPoint {
     //--------------------------------------------------------------------------
@@ -604,14 +565,15 @@ public extension TensorView where Scalar: FloatingPoint {
 //==============================================================================
 // map
 public extension Zip2Sequence {
+    typealias Pair = (Sequence1.Element, Sequence2.Element)
+    
     /// map tensors
     @inlinable
-    func map<T: TensorView>(
-        to result: inout T,
-        _ transform: ((Sequence1.Element, Sequence2.Element)) -> T.Scalar)
+    func map<T: TensorView>(to result: inout T,
+                            _ transform: (Pair) -> T.Scalar) throws
     {
         var iterator = self.makeIterator()
-        var results = result.mutableValues()
+        var results = try result.mutableValues()
         
         for i in results.indices {
             if let pair = iterator.next() {
@@ -622,10 +584,8 @@ public extension Zip2Sequence {
 
     /// map to a mutable collection
     @inlinable
-    func map<Result: MutableCollection>(
-        to result: inout Result,
-        _ transform: ((Sequence1.Element, Sequence2.Element)) -> Result.Element)
-    {
+    func map<Result: MutableCollection>(to result: inout Result,
+                                        _ transform: (Pair) -> Result.Element) {
         var iterator = self.makeIterator()
         for i in result.indices {
             if let pair = iterator.next() {
@@ -638,11 +598,11 @@ public extension Zip2Sequence {
 public extension Sequence {
     /// map a sequence to a tensor
     @inlinable
-    func map<T: TensorView>(
-        to result: inout T, _ transform: (Element) -> T.Scalar)
+    func map<T: TensorView>(to result: inout T,
+                            _ transform: (Element) -> T.Scalar) throws
     {
         var iterator = self.makeIterator()
-        var results = result.mutableValues()
+        var results = try result.mutableValues()
         
         for i in results.indices {
             if let value = iterator.next() {
@@ -667,11 +627,11 @@ public extension Sequence {
 
 //==============================================================================
 // zip
-public func zip<T1, T2>(_ t1: T1, _ t2: T2) ->
+public func zip<T1, T2>(_ t1: T1, _ t2: T2) throws ->
     Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
     where T1: TensorView, T2: TensorView
 {
-    return zip(t1.values(), t2.values())
+    return try zip(t1.values(), t2.values())
 }
 
 //==============================================================================
@@ -681,10 +641,10 @@ public extension Sequence {
     func reduce<T>(
         to result: inout T,
         _ initialResult: T.Scalar,
-        _ nextPartialResult: (T.Scalar, T.Scalar) throws -> T.Scalar) rethrows
+        _ nextPartialResult: (T.Scalar, T.Scalar) throws -> T.Scalar) throws
         where T: TensorView, T.Scalar == Self.Element
     {
-        var results = result.mutableValues()
+        var results = try result.mutableValues()
         var partial = initialResult
         for value in self {
             partial = try nextPartialResult(partial, value)

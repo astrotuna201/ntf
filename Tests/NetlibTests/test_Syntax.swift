@@ -18,63 +18,78 @@ class test_Syntax: XCTestCase {
         ("test_withResultPlacement", test_withResultPlacement),
         ("test_logging", test_logging),
     ]
-
+    
     //==========================================================================
     // test_appThreadZipMapReduce
     func test_appThreadZipMapReduce() {
-        // create two tensors and fill with indexes
-        let a = Matrix<Float>((2, 3), sequence: 0..<6)
-        let b = Matrix<Float>((2, 3), sequence: 6..<12)
-        
-        let absum = zip(a, b).map { $0 + $1 }
-        
-        let expected: [Float] = [6, 8, 10, 12, 14, 16]
-        XCTAssert(absum == expected)
-        
-        let dot = zip(a, b).map(*).reduce(0, +)
-        XCTAssert(dot == 145.0)
+        do {
+            // create two tensors and fill with indexes
+            let a = Matrix<Float>((2, 3), sequence: 0..<6)
+            let b = Matrix<Float>((2, 3), sequence: 6..<12)
+            
+            let absum = try zip(a, b).map { $0 + $1 }
+            
+            let expected: [Float] = [6, 8, 10, 12, 14, 16]
+            XCTAssert(absum == expected)
+            
+            let dot = try zip(a, b).map(*).reduce(0, +)
+            XCTAssert(dot == 145.0)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_simple
     // initialize a matrix with a sequence and take the sum
     func test_simple() {
-        let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
-        print(matrix.formatted((2,0)))
-        let sum = matrix.sum().scalarValue()
-        XCTAssert(sum == 105.0)
+        do {
+            let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+            print(matrix.formatted((2,0)))
+            let sum = try matrix.sum().scalarValue()
+            XCTAssert(sum == 105.0)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_repeatVector
     // No matter the extents, `matrix` only uses the shared storage
     // from `rowVector` and repeats it through indexing
     func test_repeatVector() {
-        let rowVector = Matrix<Int32>((1, 5), sequence: 0..<5)
-        let rmatrix = Matrix((5, 5), repeating: rowVector)
-        
-        print(rmatrix.formatted((2,0)))
-        let rmatrixExp: [Int32] = [
-            0, 1, 2, 3, 4,
-            0, 1, 2, 3, 4,
-            0, 1, 2, 3, 4,
-            0, 1, 2, 3, 4,
-            0, 1, 2, 3, 4,
-        ]
-        XCTAssert(rmatrix.array == rmatrixExp)
-        
-        let colVector = Matrix<Int32>((5, 1), sequence: 0..<5)
-        let cmatrix = Matrix((5, 5), repeating: colVector)
-        
-        print(cmatrix.formatted((2,0)))
-        let cmatrixExp: [Int32] = [
-            0, 0, 0, 0, 0,
-            1, 1, 1, 1, 1,
-            2, 2, 2, 2, 2,
-            3, 3, 3, 3, 3,
-            4, 4, 4, 4, 4,
-        ]
-        XCTAssert(cmatrix.array == cmatrixExp)
+        do {
+            let rowVector = Matrix<Int32>((1, 5), sequence: 0..<5)
+            let rmatrix = Matrix((5, 5), repeating: rowVector)
+            
+            print(rmatrix.formatted((2,0)))
+            let rmatrixExp: [Int32] = [
+                0, 1, 2, 3, 4,
+                0, 1, 2, 3, 4,
+                0, 1, 2, 3, 4,
+                0, 1, 2, 3, 4,
+                0, 1, 2, 3, 4,
+            ]
+            var values = try rmatrix.array()
+            XCTAssert(values == rmatrixExp)
+            
+            let colVector = Matrix<Int32>((5, 1), sequence: 0..<5)
+            let cmatrix = Matrix((5, 5), repeating: colVector)
+            
+            print(cmatrix.formatted((2,0)))
+            let cmatrixExp: [Int32] = [
+                0, 0, 0, 0, 0,
+                1, 1, 1, 1, 1,
+                2, 2, 2, 2, 2,
+                3, 3, 3, 3, 3,
+                4, 4, 4, 4, 4,
+            ]
+            values = try cmatrix.array()
+            XCTAssert(values == cmatrixExp)
+            
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
@@ -82,13 +97,18 @@ class test_Syntax: XCTestCase {
     // No matter the extents, `volume` only uses the shared storage
     // from `value` and repeats it through indexing
     func test_repeatValue() {
-        let value: Int32 = 42
-        let volume = Volume<Int32>((2, 3, 10), repeating: Volume(value))
-        print(volume.formatted((2,0)))
-        
-        let expected = [Int32](repeating: value,
-                               count: volume.shape.elementCount)
-        XCTAssert(volume.array == expected)
+        do {
+            let value: Int32 = 42
+            let volume = Volume<Int32>((2, 3, 10), repeating: Volume(value))
+            print(volume.formatted((2,0)))
+            
+            let expected = [Int32](repeating: value,
+                                   count: volume.shape.elementCount)
+            let values = try volume.array()
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
@@ -99,27 +119,37 @@ class test_Syntax: XCTestCase {
     // - create a sub view and take the sum on the device
     // - return the scalar value back to the app thread
     func sumView() {
-        let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
-        print(volume.formatted((2,0)))
-        
-        let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-        print(view.formatted((2,0)))
-        
-        let viewSum = sum(view).scalarValue()
-        XCTAssert(viewSum == 312)
+        do {
+            let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
+            print(volume.formatted((2,0)))
+            
+            let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+            print(view.formatted((2,0)))
+            
+            let viewSum = try sum(view).scalarValue()
+            XCTAssert(viewSum == 312)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     /// zero copy transpose
     func test_transpose() {
-        let matrix = Matrix<Float>((2, 3), sequence: 0..<6)
-        print(matrix.formatted((2,0)))
-        
-        let tmatrix = matrix.t
-        print(tmatrix.formatted((2,0)))
-
-        let expected: [Float] = [0, 3, 1, 4, 2, 5]
-        XCTAssert(tmatrix.array == expected)
+        do {
+            let matrix = Matrix<Float>((2, 3), sequence: 0..<6)
+            print(matrix.formatted((2,0)))
+            
+            let tmatrix = matrix.t
+            print(tmatrix.formatted((2,0)))
+            
+            let expected: [Float] = [0, 3, 1, 4, 2, 5]
+            
+            let values = try tmatrix.array()
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
@@ -132,7 +162,7 @@ class test_Syntax: XCTestCase {
     func test_streams() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
             
             let stream1 = Platform.local.createStream(deviceId: 1,
                                                       serviceName: "cpuUnitTest")
@@ -143,10 +173,13 @@ class test_Syntax: XCTestCase {
             }
             let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
             
-            let viewSum = using(stream2) {
-                sum(view).scalarValue()
+            let viewSum = try using(stream2) {
+                try sum(view).scalarValue()
             }
             XCTAssert(viewSum == 312)
+            
+        } catch {
+            XCTFail(String(describing: error))
         }
         
         if ObjectTracker.global.hasUnreleasedObjects {
@@ -154,7 +187,7 @@ class test_Syntax: XCTestCase {
             XCTFail("Retain cycle detected")
         }
     }
-
+    
     //==========================================================================
     // test_structuredScalar
     // create a named stream on two different discreet devices
@@ -170,36 +203,48 @@ class test_Syntax: XCTestCase {
     //==========================================================================
     // test_withResultPlacement
     func test_withResultPlacement() {
-        let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
-        let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-
-        var subViewSum = Volume<Int32>((1, 1, 1))
-        sum(subView, result: &subViewSum)
-        XCTAssert(subViewSum.scalarValue() == 312)
+        do {
+            let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
+            let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+            
+            var viewSum = Volume<Int32>((1, 1, 1))
+            sum(view, result: &viewSum)
+            
+            let value = try viewSum.scalarValue()
+            XCTAssert(value == 312)
+            
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_logging
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_logging() {
-        Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-
-        let stream1 = Platform.local
-            .createStream(deviceId: 1, serviceName: "cpuUnitTest")
-        
-        let stream2 = Platform.local
-            .createStream(deviceId: 2, serviceName: "cpuUnitTest")
-
-        let volume = using(stream1) {
-            Volume<Int32>((3, 4, 5)).filledWithIndex()
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            
+            let stream1 = Platform.local
+                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            
+            let stream2 = Platform.local
+                .createStream(deviceId: 2, serviceName: "cpuUnitTest")
+            
+            let volume = using(stream1) {
+                Volume<Int32>((3, 4, 5)).filledWithIndex()
+            }
+            let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+            
+            let subViewSum = try using(stream2) {
+                try sum(subView).scalarValue()
+            }
+            XCTAssert(subViewSum == 312)
+            
+        } catch {
+            XCTFail(String(describing: error))
         }
-        let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-        
-        let subViewSum = using(stream2) {
-            sum(subView).scalarValue()
-        }
-        XCTAssert(subViewSum == 312)
     }
 }

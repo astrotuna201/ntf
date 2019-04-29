@@ -29,242 +29,304 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_Vector
     func test_Vector() {
-        let count: Int32 = 10
-        let expected = [Int32](0..<count)
-        let vector = Vector<Int32>(scalars: expected)
-//        print(vector.formatted((2,0)))
-        
-        let values = [Int32](vector.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            let count: Int32 = 10
+            let expected = [Int32](0..<count)
+            let vector = Vector<Int32>(scalars: expected)
+            //        print(vector.formatted((2,0)))
+            
+            let values = try vector.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_Matrix
     func test_Matrix() {
+        do {
             let expected = [Int32](0..<4)
             let matrix = Matrix<Int32>((2, 2), scalars: expected)
-//            print(matrix.formatted((2,0)))
-        
-            let values = [Int32](matrix.values())
+            //            print(matrix.formatted((2,0)))
+            
+            let values = try matrix.array()
             XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_Volume
     func test_Volume() {
-        let expected = [Int32](0..<24)
-        let volume = Volume<Int32>((2, 3, 4), scalars: expected)
-        //            print(volume.formatted((2,0)))
-        
-        let values = [Int32](volume.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            let expected = [Int32](0..<24)
+            let volume = Volume<Int32>((2, 3, 4), scalars: expected)
+            //            print(volume.formatted((2,0)))
+            
+            let values = try volume.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_VectorSubView
     func test_VectorSubView() {
-        let vector = Vector<Int32>(scalars: [Int32](0..<10))
-        let subView = vector.view(at: [2], extents: [3])
-        //            print(subView.formatted((2,0)))
-        
-        let expected: [Int32] = [2, 3, 4]
-        let values = [Int32](subView.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            let vector = Vector<Int32>(scalars: [Int32](0..<10))
+            let view = vector.view(at: [2], extents: [3])
+            //            print(subView.formatted((2,0)))
+            
+            let expected: [Int32] = [2, 3, 4]
+            let values = try view.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_MatrixSubView
     func test_MatrixSubView() {
-        let matrix = Matrix<Int32>((3, 4), sequence: 0..<12)
-        let subView = matrix.view(at: [1, 1], extents: [2, 2])
-//        print(subView.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            5, 6,
-            9, 10
-        ]
-        let values = [Int32](subView.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            let matrix = Matrix<Int32>((3, 4), sequence: 0..<12)
+            let view = matrix.view(at: [1, 1], extents: [2, 2])
+            //        print(subView.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                5, 6,
+                9, 10
+            ]
+            let values = try view.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_VolumeSubView
     func test_VolumeSubView() {
-        let volume = Volume<Int32>((3, 3, 4), sequence: 0..<36)
-        let subView = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
-        //            print(subView.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            17, 18, 19,
-            21, 22, 23,
+        do {
+            let volume = Volume<Int32>((3, 3, 4), sequence: 0..<36)
+            let view = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
+            //            print(subView.formatted((2,0)))
             
-            29, 30, 31,
-            33, 34, 35,
-        ]
-        let values = [Int32](subView.values())
-        XCTAssert(values == expected, "values do not match")
+            let expected: [Int32] = [
+                17, 18, 19,
+                21, 22, 23,
+                
+                29, 30, 31,
+                33, 34, 35,
+            ]
+            let values = try view.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_perfVector
     func test_perfVector() {
-        #if RELEASE
-        let byteCount = 512 * 512
-        let vector = Vector<Int32>(sequence: 0..<byteCount)
-        //            print(vector.formatted((2,0)))
-        
-        let values = vector.values()
-        self.measure {
-            for _ in values {}
+        do {
+            #if RELEASE
+            let byteCount = 512 * 512
+            let vector = Vector<Int32>(sequence: 0..<byteCount)
+            //            print(vector.formatted((2,0)))
+            
+            let values = try vector.values()
+            self.measure {
+                for _ in values {}
+            }
+            #endif
+        } catch {
+            XCTFail(String(describing: error))
         }
-        #endif
     }
-
+    
     //==========================================================================
     // test_repeatingValue
     func test_repeatingValue() {
-        // try repeating a scalar
-        let value = Matrix<Int32>((1, 1), scalars: [42])
-        let matrix = Matrix<Int32>((2, 3), repeating: value)
-        //            print(vector.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            42, 42, 42,
-            42, 42, 42,
-        ]
-        
-        let values = [Int32](matrix.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            // try repeating a scalar
+            let value = Matrix<Int32>((1, 1), scalars: [42])
+            let matrix = Matrix<Int32>((2, 3), repeating: value)
+            //            print(vector.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                42, 42, 42,
+                42, 42, 42,
+            ]
+            
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_repeatingRow
     func test_repeatingRow() {
-        // try repeating a row vector
-        let row = Matrix<Int32>((1, 3), sequence: 0..<3)
-        let matrix = Matrix<Int32>((2, 3), repeating: row)
-        //            print(matrix.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            0, 1, 2,
-            0, 1, 2,
-        ]
-        
-        let values = [Int32](matrix.values())
-        XCTAssert(values == expected, "values do not match")
+        do {
+            // try repeating a row vector
+            let row = Matrix<Int32>((1, 3), sequence: 0..<3)
+            let matrix = Matrix<Int32>((2, 3), repeating: row)
+            //            print(matrix.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                0, 1, 2,
+                0, 1, 2,
+            ]
+            
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_repeatingCol
     func test_repeatingCol() {
-        // try repeating a row vector
-        let col = Matrix<Int32>((3, 1), sequence: 0..<3)
-        let matrix = Matrix<Int32>((3, 2), repeating: col)
-        //            print(matrix.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            0, 0,
-            1, 1,
-            2, 2,
-        ]
-        
-        XCTAssert(matrix.array == expected, "values do not match")
+        do {
+            // try repeating a row vector
+            let col = Matrix<Int32>((3, 1), sequence: 0..<3)
+            let matrix = Matrix<Int32>((3, 2), repeating: col)
+            //            print(matrix.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                0, 0,
+                1, 1,
+                2, 2,
+            ]
+            
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
-
+    
     //==========================================================================
     // test_repeatingMatrix
     func test_repeatingMatrix() {
-        let pattern = Matrix<Int32>((2, 2), scalars: [
-            1, 0,
-            0, 1,
-        ])
-        
-        let matrix = Matrix<Int32>((3, 4), repeating: pattern)
-        let expected: [Int32] = [
-            1, 0, 1, 0,
-            0, 1, 0, 1,
-            1, 0, 1, 0,
-        ]
-        
-        XCTAssert(matrix.array == expected, "values do not match")
+        do {
+            let pattern = Matrix<Int32>((2, 2), scalars: [
+                1, 0,
+                0, 1,
+                ])
+            
+            let matrix = Matrix<Int32>((3, 4), repeating: pattern)
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+            ]
+
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
     //==========================================================================
     // test_repeatingVolume
     func test_repeatingVolume() {
-        let pattern = Volume<Int32>((2,2,2), scalars:[
-            1, 0,
-            0, 1,
+        do {
+            let pattern = Volume<Int32>((2,2,2), scalars:[
+                1, 0,
+                0, 1,
+                
+                2, 3,
+                3, 2
+                ])
             
-            2, 3,
-            3, 2
-        ])
-        
-        // create a virtual view and get it's values
-        let volume = Volume<Int32>((2, 3, 4), repeating: pattern)
-        let expected: [Int32] = [
-            1, 0, 1, 0,
-            0, 1, 0, 1,
-            1, 0, 1, 0,
+            // create a virtual view and get it's values
+            let volume = Volume<Int32>((2, 3, 4), repeating: pattern)
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+                
+                2, 3, 2, 3,
+                3, 2, 3, 2,
+                2, 3, 2, 3,
+            ]
             
-            2, 3, 2, 3,
-            3, 2, 3, 2,
-            2, 3, 2, 3,
-        ]
-        
-        XCTAssert(volume.array == expected, "values do not match")
+            let values = try volume.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_paddedVector
     func test_paddedVector() {
-        // col pad
-        let padding = [Padding(before: 2, after: 3)]
-
-        let vector = Vector<Int32>(padding: padding, padValue: -1,
-                                   sequence: 0..<3)
-        //            print(vector.formatted((2,0)))
-        
-        let expected: [Int32] = [-1, -1, 0, 1, 2, -1, -1, -1]
-        XCTAssert(vector.array == expected, "values do not match")
+        do {
+            // col pad
+            let padding = [Padding(before: 2, after: 3)]
+            
+            let vector = Vector<Int32>(padding: padding, padValue: -1,
+                                       sequence: 0..<3)
+            //            print(vector.formatted((2,0)))
+            
+            let expected: [Int32] = [-1, -1, 0, 1, 2, -1, -1, -1]
+            let values = try vector.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
-
+    
     //==========================================================================
     // test_paddedMatrix
     func test_paddedMatrix() {
-        // create matrix with padding
-        let padding = [
-            Padding(1),                   // row pad
-            Padding(before: 2, after: 3)  // col pad
-        ]
-        
-        let matrix = Matrix<Int32>((2, 3),
-                                   padding: padding,
-                                   padValue: -1,
-                                   sequence: 0..<6)
-        print(matrix.formatted((2,0)))
-        
-        let expected: [Int32] = [
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1,  0,  1,  2, -1, -1, -1,
-            -1, -1,  3,  4,  5, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1,
-        ]
-        
-        XCTAssert(matrix.array == expected, "values do not match")
+        do {
+            // create matrix with padding
+            let padding = [
+                Padding(1),                   // row pad
+                Padding(before: 2, after: 3)  // col pad
+            ]
+            
+            let matrix = Matrix<Int32>((2, 3),
+                                       padding: padding,
+                                       padValue: -1,
+                                       sequence: 0..<6)
+            print(matrix.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1,  0,  1,  2, -1, -1, -1,
+                -1, -1,  3,  4,  5, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1,
+            ]
+            
+            let values1 = try matrix.array()
+            XCTAssert(values1 == expected, "values do not match")
 
-        // edge case of 0 padding specified
-        let matrix2 = Matrix<Int32>((2, 3),
-                                    padding: [Padding(0)],
-                                    padValue: -1,
-                                    sequence: 0..<6)
-
-        let expected2: [Int32] = [
-            0,  1,  2,
-            3,  4,  5,
-        ]
-        
-        XCTAssert(matrix2.array == expected2, "values do not match")
+            // edge case of 0 padding specified
+            let matrix2 = Matrix<Int32>((2, 3),
+                                        padding: [Padding(0)],
+                                        padValue: -1,
+                                        sequence: 0..<6)
+            
+            let expected2: [Int32] = [
+                0,  1,  2,
+                3,  4,  5,
+            ]
+            
+            let values2 = try matrix2.array()
+            XCTAssert(values2 == expected2, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
 }

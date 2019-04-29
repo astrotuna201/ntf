@@ -17,12 +17,17 @@ public extension TensorView where Scalar: AnyConvertable {
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""
         var index = [Int](repeating: 0, count: shape.rank)
-        var iterator = self.values().makeIterator()
         var itemCount = 0
         let indentSize = "  "
         let extents = shape.padded(with: padding).extents
         let lastDimension = shape.lastDimension
-
+        var iterator: IndexingIterator<TensorViewCollection<Self>>
+        do {
+            iterator = try values().makeIterator()
+        } catch {
+            return "Failed to retrieve values. " + String(describing: error)
+        }
+        
         // clamp ranges
         let maxItems = maxItems?.enumerated().map {
             min($1, extents[$0])

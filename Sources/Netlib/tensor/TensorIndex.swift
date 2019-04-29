@@ -11,65 +11,54 @@ import Foundation
 //==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {
-    var array: [Scalar] {
-        return [Scalar](self.values())
+    //--------------------------------------------------------------------------
+    /// get a Sequence of read only values in spatial order as an array
+    func array() throws -> [Scalar] {
+        return try [Scalar](values())
     }
-    
-    /// get a Sequence of values
-    func values(using stream: DeviceStream? = nil) -> TensorViewCollection<Self> {
-        guard _Streams.current.lastError == nil else {
-            return TensorViewCollection<Self>()
-        }
-        let stream = stream ?? _Streams.local.appThreadStream
 
-        do {
-            return try TensorViewCollection(
-                view: self, buffer: readOnly(using: stream))
-        } catch {
-            _Streams.current.reportDevice(error: error)
-            return TensorViewCollection<Self>()
-        }
+    //--------------------------------------------------------------------------
+    /// get a Sequence of read only values in spatial order
+    func values(using stream: DeviceStream? = nil) throws
+        -> TensorViewCollection<Self>
+    {
+        if let lastError = _Streams.current.lastError { throw lastError }
+        let stream = stream ?? _Streams.local.appThreadStream
+        return try TensorViewCollection(view: self,
+                                        buffer: readOnly(using: stream))
     }
     
-    /// get a Sequence of mutable values
-    mutating func mutableValues(using stream: DeviceStream? = nil)
+    //--------------------------------------------------------------------------
+    /// get a Sequence of mutable values in spatial order
+    mutating func mutableValues(using stream: DeviceStream? = nil) throws
         -> TensorViewMutableCollection<Self>
     {
-        guard _Streams.current.lastError == nil else {
-            return TensorViewMutableCollection<Self>()
-        }
+        if let lastError = _Streams.current.lastError { throw lastError }
         let stream = stream ?? _Streams.local.appThreadStream
-
-        do {
-            return try TensorViewMutableCollection(
-                view: &self, buffer: readWrite(using: stream))
-        } catch {
-            _Streams.current.reportDevice(error: error)
-            return TensorViewMutableCollection<Self>()
-        }
+        return try TensorViewMutableCollection(view: &self,
+                                               buffer: readWrite(using: stream))
     }
     
-    func value(at index: [Int]) -> Scalar {
-        do {
-            let buffer = try readOnly()
-            let padded = shape.padded(with: padding)
-            let tensorIndex = TensorIndex<Self>(self, padded, at: index)
-            return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
-        } catch {
-            _Streams.current.reportDevice(error: error)
-            return Scalar()
-        }
+    //--------------------------------------------------------------------------
+    /// get a single value at the specified index
+    /// This is not an efficient way to get values
+    func value(at index: [Int]) throws -> Scalar {
+        if let lastError = _Streams.current.lastError { throw lastError }
+        let buffer = try readOnly()
+        let padded = shape.padded(with: padding)
+        let tensorIndex = TensorIndex<Self>(self, padded, at: index)
+        return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
     }
 
-    mutating func set(value: Scalar, at index: [Int]) {
-        do {
-            let buffer = try readWrite()
-            let padded = shape.padded(with: padding)
-            let tensorIndex = TensorIndex<Self>(self, padded, at: index)
-            buffer[tensorIndex.dataIndex] = value
-        } catch {
-            _Streams.current.reportDevice(error: error)
-        }
+    //--------------------------------------------------------------------------
+    /// set a single value at the specified index
+    /// This is not an efficient way to set values
+    mutating func set(value: Scalar, at index: [Int]) throws {
+        if let lastError = _Streams.current.lastError { throw lastError }
+        let buffer = try readWrite()
+        let padded = shape.padded(with: padding)
+        let tensorIndex = TensorIndex<Self>(self, padded, at: index)
+        buffer[tensorIndex.dataIndex] = value
     }
 }
 

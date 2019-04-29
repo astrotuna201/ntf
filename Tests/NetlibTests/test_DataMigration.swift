@@ -180,7 +180,7 @@ class test_DataMigration: XCTestCase {
             // retreive value on app thread
             // memory is allocated in the host app space and the data is copied
             // from device 1 to the host using stream 0.
-            let value1 = matrix.value(at: [1, 1])
+            let value1 = try matrix.value(at: [1, 1])
             XCTAssert(value1 == 3.0)
 
             // simulate a readonly kernel access on device 1.
@@ -194,8 +194,8 @@ class test_DataMigration: XCTestCase {
             // the host, the value is retrieved, and the temp is released.
             // This syntax is good for experiments, but should not be used
             // for repetitive actions
-            var sum = using(stream1) {
-                matrix.sum().scalarValue()
+            var sum = try using(stream1) {
+                try matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -219,8 +219,8 @@ class test_DataMigration: XCTestCase {
             // Then `scalarValue` causes a host array to be allocated, and the
             // the data is copied from device 2 to host, the value is returned
             // and the temporary tensor is released.
-            sum = using(stream2) {
-                matrix.sum().scalarValue()
+            sum = try using(stream2) {
+                try matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -236,8 +236,8 @@ class test_DataMigration: XCTestCase {
             // then `scalarValue` creates a host array and the result is
             // copied from device 2 to the host array, and then the tensor
             // is released.
-            sum = using(stream2) {
-                matrix.sum().scalarValue()
+            sum = try using(stream2) {
+                try matrix.sum().scalarValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -251,32 +251,41 @@ class test_DataMigration: XCTestCase {
     //--------------------------------------------------------------------------
     // test_copyOnWriteDevice
     func test_copyOnWriteDevice() {
-        Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-        
-        // create a named stream on two different discreet devices
-        // cpu devices 1 and 2 are discreet memory versions for testing
-        let stream1 = Platform.local
-            .createStream(deviceId: 1, serviceName: "cpuUnitTest")
-
-        // fill with index on device 1
-        let index = [1, 1]
-        var matrix1 = Matrix<Float>((3, 2))
-        using(stream1) {
-            fillWithIndex(&matrix1)
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            
+            // create a named stream on two different discreet devices
+            // cpu devices 1 and 2 are discreet memory versions for testing
+            let stream1 = Platform.local
+                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            
+            // fill with index on device 1
+            let index = [1, 1]
+            var matrix1 = Matrix<Float>((3, 2))
+            using(stream1) {
+                fillWithIndex(&matrix1)
+            }
+            // testing a value causes the data to be copied to the host
+            var value = try matrix1.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            // copy and mutate data
+            // the data will be duplicated wherever the source is
+            var matrix2 = matrix1
+            value = try matrix2.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            // writing to matrix2 causes view mutation and copy on write
+            try matrix2.set(value: 7, at: index)
+            value = try matrix1.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            value = try matrix2.value(at: index)
+            XCTAssert(value == 7.0)
+        } catch {
+            XCTFail(String(describing: error))
         }
-        // testing a value causes the data to be copied to the host
-        XCTAssert(matrix1.value(at: index) == 3.0)
-        
-        // copy and mutate data
-        // the data will be duplicated wherever the source is
-        var matrix2 = matrix1
-        XCTAssert(matrix2.value(at: index) == 3.0)
-        
-        // writing to matrix2 causes view mutation and copy on write
-        matrix2.set(value: 7, at: index)
-        XCTAssert(matrix1.value(at: index) == 3.0)
-        XCTAssert(matrix2.value(at: index) == 7.0)
     }
 
     //--------------------------------------------------------------------------
@@ -300,15 +309,16 @@ class test_DataMigration: XCTestCase {
                 fillWithIndex(&matrix1)
             }
             // testing a value causes the data to be copied to the host
-            XCTAssert(matrix1.value(at: index) == 3.0)
+            let value = try matrix1.value(at: index)
+            XCTAssert(value == 3.0)
 
             // simulate read only access on device 1 and 2
             _ = try matrix1.readOnly(using: stream1)
             _ = try matrix1.readOnly(using: stream2)
 
             // sum device 1 copy should be 15
-            let sum1 = using(stream1) {
-                matrix1.sum().scalarValue()
+            let sum1 = try using(stream1) {
+                try matrix1.sum().scalarValue()
             }
             XCTAssert(sum1 == 15.0)
 
@@ -319,8 +329,8 @@ class test_DataMigration: XCTestCase {
 
             // sum device 1 copy should now also be 0
             // sum device 1 copy should be 15
-            let sum2 = using(stream2) {
-                matrix1.sum().scalarValue()
+            let sum2 = try using(stream2) {
+                try matrix1.sum().scalarValue()
             }
             XCTAssert(sum2 == 0)
             
@@ -333,20 +343,29 @@ class test_DataMigration: XCTestCase {
     // test_copyOnWrite
     // NOTE: uses the default stream
     func test_copyOnWrite() {
-        Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
-        
-        let index = [1, 1]
-        var matrix1 = Matrix<Float>((3, 2))
-        fillWithIndex(&matrix1)
-        let m1value = matrix1.value(at: index)
-        XCTAssert(m1value == 3.0)
-        
-        var matrix2 = matrix1
-        XCTAssert(matrix2.value(at: index) == 3.0)
-        matrix2.set(value: 7, at: index)
-        XCTAssert(matrix1.value(at: index) == 3.0)
-        XCTAssert(matrix2.value(at: index) == 7.0)
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+            
+            let index = [1, 1]
+            var matrix1 = Matrix<Float>((3, 2))
+            fillWithIndex(&matrix1)
+            var value = try matrix1.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            var matrix2 = matrix1
+            value = try matrix2.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            try matrix2.set(value: 7, at: index)
+            value = try matrix1.value(at: index)
+            XCTAssert(value == 3.0)
+            
+            value = try matrix2.value(at: index)
+            XCTAssert(value == 7.0)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -356,11 +375,16 @@ class test_DataMigration: XCTestCase {
     //   2, 3,
     //   4, 5
     func test_columnMajorDataView() {
-        let cmMatrix = Matrix<Int32>((3, 2),
-                                     layout: .columnMajor,
-                                     scalars: [0, 2, 4, 1, 3, 5])
-        
-        let expected = [Int32](0..<6)
-        XCTAssert(cmMatrix.array == expected, "values don't match")
+        do {
+            let cmMatrix = Matrix<Int32>((3, 2),
+                                         layout: .columnMajor,
+                                         scalars: [0, 2, 4, 1, 3, 5])
+            
+            let expected = [Int32](0..<6)
+            let values = try cmMatrix.array()
+            XCTAssert(values == expected, "values don't match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
 }

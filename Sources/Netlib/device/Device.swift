@@ -138,7 +138,8 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// creates a device array from a uma buffer.
     func createReferenceArray(buffer: UnsafeRawBufferPointer) -> DeviceArray
     /// creates a device array from a uma buffer.
-    func createMutableReferenceArray(buffer: UnsafeMutableRawBufferPointer) -> DeviceArray
+    func createMutableReferenceArray(buffer: UnsafeMutableRawBufferPointer)
+        -> DeviceArray
     /// creates a named command stream for this device
     func createStream(name: String) -> DeviceStream
 }
@@ -212,8 +213,9 @@ public protocol StreamEvent: ObjectTracking, Logger {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get set }
     
-    // TODO: consider adding time outs for failed remote events
+    /// initializer
     init(logInfo: LogInfo, options: StreamEventOptions) throws
+
     /// signals that the event has occurred
     func signal()
     /// will block the caller until the timeout has elapsed, or

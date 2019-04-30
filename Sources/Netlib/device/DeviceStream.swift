@@ -39,6 +39,7 @@ public protocol DeviceStream:
     /// creates a StreamEvent
     func createEvent(options: StreamEventOptions) throws -> StreamEvent
     /// queues a stream event
+    @discardableResult
     func record(event: StreamEvent) throws -> StreamEvent
     /// blocks caller until the event has occurred on this stream,
     /// then recorded and occurred on the other stream

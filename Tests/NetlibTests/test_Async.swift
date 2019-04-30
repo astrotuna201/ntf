@@ -39,7 +39,7 @@ class test_Async: XCTestCase {
         #if !DEBUG
         self.measure {
             do {
-                for _ in 0..<1000 {
+                for _ in 0..<10000 {
                     _ = try stream.createEvent(options: StreamEventOptions())
                 }
             } catch {
@@ -57,8 +57,7 @@ class test_Async: XCTestCase {
         var events = [StreamEvent]()
         do {
             for _ in 0..<10000 {
-                try events.append(
-                    stream.createEvent(options: StreamEventOptions()))
+                try events.append(stream.createEvent())
             }
         } catch {
             XCTFail(String(describing: error))

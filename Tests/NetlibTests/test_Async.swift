@@ -12,6 +12,7 @@ class test_Async: XCTestCase {
     // support terminal test run
     static var allTests = [
         ("test_StreamEventWait", test_StreamEventWait),
+        ("test_perfCreateStreamEvent", test_perfCreateStreamEvent),
     ]
     
     //==========================================================================
@@ -29,5 +30,50 @@ class test_Async: XCTestCase {
         } catch {
             XCTFail(String(describing: error))
         }
+    }
+    
+    //==========================================================================
+    // test_perfCreateStreamEvent
+    func test_perfCreateStreamEvent() {
+        let stream = Platform.local.createStream()
+        #if !DEBUG
+        self.measure {
+            do {
+                for _ in 0..<1000 {
+                    _ = try stream.createEvent(options: StreamEventOptions())
+                }
+            } catch {
+                XCTFail(String(describing: error))
+            }
+        }
+        #endif
+    }
+
+    //==========================================================================
+    // test_perfRecordStreamEvent
+    func test_perfRecordStreamEvent() {
+        #if !DEBUG
+        let stream = Platform.local.createStream()
+        var events = [StreamEvent]()
+        do {
+            for _ in 0..<10000 {
+                try events.append(
+                    stream.createEvent(options: StreamEventOptions()))
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+
+        self.measure {
+            do {
+                for event in events {
+                    _ = try stream.record(event: event)
+                }
+                try stream.blockCallerUntilComplete()
+            } catch {
+                XCTFail(String(describing: error))
+            }
+        }
+        #endif
     }
 }

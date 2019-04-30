@@ -34,6 +34,7 @@ class test_Async: XCTestCase {
     
     //==========================================================================
     // test_perfCreateStreamEvent
+    // measures the event overhead of creating 10,000 events
     func test_perfCreateStreamEvent() {
         let stream = Platform.local.createStream()
         #if !DEBUG
@@ -51,22 +52,15 @@ class test_Async: XCTestCase {
 
     //==========================================================================
     // test_perfRecordStreamEvent
+    // measures the event overhead of processing 10,000 tensors
     func test_perfRecordStreamEvent() {
         #if !DEBUG
         let stream = Platform.local.createStream()
-        var events = [StreamEvent]()
-        do {
-            for _ in 0..<10000 {
-                try events.append(stream.createEvent())
-            }
-        } catch {
-            XCTFail(String(describing: error))
-        }
 
         self.measure {
             do {
-                for event in events {
-                    _ = try stream.record(event: event)
+                for _ in 0..<10000 {
+                    _ = try stream.record(event: stream.createEvent())
                 }
                 try stream.waitUntilStreamIsComplete()
             } catch {

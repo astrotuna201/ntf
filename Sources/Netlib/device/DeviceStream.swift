@@ -26,7 +26,7 @@ public protocol DeviceStream:
     var id: Int { get }
     /// a name used to identify the stream
     var name: String { get }
-    /// the internval of time to wait for an operation to complete
+    /// the maximum time to wait for an operation to complete
     /// a value of 0 (default) will wait forever
     var timeout: TimeInterval { get set }
     
@@ -34,12 +34,13 @@ public protocol DeviceStream:
     // synchronization functions
     /// creates a StreamEvent
     func createEvent(options: StreamEventOptions) throws -> StreamEvent
-    /// queues a stream event
+    /// queues a stream event op. When executed the event is signaled
     @discardableResult
     func record(event: StreamEvent) throws -> StreamEvent
-    /// blocks caller until the event has occurred
-    func wait(for event: StreamEvent) throws
-    /// blocks the calling thread until the stream queue is empty
+    /// records an op on the stream that will perform a stream blocking wait
+    /// when it is encountered in the future
+    func futureWait(for event: StreamEvent) throws
+    /// blocks the calling thread until the stream queue has completed all work
     func waitUntilStreamIsComplete() throws
 
     //--------------------------------------------------------------------------

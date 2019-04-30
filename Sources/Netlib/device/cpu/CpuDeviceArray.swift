@@ -8,40 +8,34 @@ public class CpuDeviceArray : DeviceArray {
     public private(set) var trackingId = 0
     public var buffer: UnsafeMutableRawBufferPointer
     public var device: ComputeDevice
-    public var logInfo: LogInfo
     public var version = 0
     private let isReadOnly: Bool
     
     //--------------------------------------------------------------------------
 	// initializers
-	public init(logInfo: LogInfo, device: ComputeDevice, count: Int) {
+	public init(device: ComputeDevice, count: Int) {
         self.device = device
         buffer = UnsafeMutableRawBufferPointer.allocate(
             byteCount: count, alignment: MemoryLayout<Double>.alignment)
-        self.logInfo = logInfo
         self.isReadOnly = false
         self.trackingId = ObjectTracker.global.register(self)
 	}
 
-    /// read only uma buffer
-    public init(logInfo: LogInfo, device: ComputeDevice,
-                buffer: UnsafeRawBufferPointer) {
+    /// readOnly uma buffer
+    public init(device: ComputeDevice, buffer: UnsafeRawBufferPointer) {
         assert(buffer.baseAddress != nil)
         self.isReadOnly = true
         self.device = device
-        self.logInfo = logInfo
         let pointer = UnsafeMutableRawPointer(mutating: buffer.baseAddress!)
         self.buffer = UnsafeMutableRawBufferPointer(start: pointer,
                                                     count: buffer.count)
         self.trackingId = ObjectTracker.global.register(self)
     }
 
-    /// read write uma buffer
-    public init(logInfo: LogInfo, device: ComputeDevice,
-                buffer: UnsafeMutableRawBufferPointer) {
+    /// readWrite uma buffer
+    public init(device: ComputeDevice, buffer: UnsafeMutableRawBufferPointer) {
         self.isReadOnly = false
         self.device = device
-        self.logInfo = logInfo
         self.buffer = buffer
         self.trackingId = ObjectTracker.global.register(self)
     }
@@ -79,18 +73,6 @@ public class CpuDeviceArray : DeviceArray {
         stream.queue {
             self.buffer.copyMemory(from: buffer)
         }
-	}
-
-    /// copy(to buffer:
-    /// copies the contents of the device array to the host buffer
-    /// synchronously with the app thread
-	public func copy(to buffer: UnsafeMutableRawBufferPointer,
-                     using stream: DeviceStream) throws {
-        assert(buffer.baseAddress != nil)
-        assert(self.buffer.count == buffer.count, "buffer sizes don't match")
-        // wait until the stream is complete then copy
-        try stream.waitUntilStreamIsComplete()
-        buffer.copyMemory(from: UnsafeRawBufferPointer(self.buffer))
 	}
 
 	// copyAsync(to buffer

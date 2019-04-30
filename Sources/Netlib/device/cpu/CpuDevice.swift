@@ -42,13 +42,13 @@ public class CpuDevice: LocalComputeDevice {
 		self.service = service
         self.timeout = timeout
         self.memoryAddressing = memoryAddressing
-        deviceArrayReplicaKey = DeviceArrayReplicaKey(platformId: service.platform!.id,
-                                        serviceId: service.id, deviceId: id)
+        deviceArrayReplicaKey =
+            DeviceArrayReplicaKey(platformId: service.platform!.id,
+                                  serviceId: service.id, deviceId: id)
 
 		// devices are statically held by the Platform.service
-        trackingId = ObjectTracker.global.register(self,
-                                                   namePath: logNamePath,
-                                                   isStatic: true)
+        trackingId = ObjectTracker.global
+            .register(self, namePath: logNamePath, isStatic: true)
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
@@ -56,7 +56,7 @@ public class CpuDevice: LocalComputeDevice {
 	// createArray
 	//	This creates memory on the device
 	public func createArray(count: Int) throws -> DeviceArray {
-        return CpuDeviceArray(logInfo: logInfo, device: self, count: count)
+        return CpuDeviceArray(device: self, count: count)
 	}
 
     //-------------------------------------
@@ -65,7 +65,7 @@ public class CpuDevice: LocalComputeDevice {
     public func createReferenceArray(buffer: UnsafeRawBufferPointer)
         -> DeviceArray
     {
-        return CpuDeviceArray(logInfo: logInfo, device: self, buffer: buffer)
+        return CpuDeviceArray(device: self, buffer: buffer)
     }
 
     //-------------------------------------
@@ -73,7 +73,7 @@ public class CpuDevice: LocalComputeDevice {
     /// creates a device array from a uma buffer.
     public func createMutableReferenceArray(
         buffer: UnsafeMutableRawBufferPointer) -> DeviceArray {
-        return CpuDeviceArray(logInfo: logInfo, device: self, buffer: buffer)
+        return CpuDeviceArray(device: self, buffer: buffer)
     }
 
     //-------------------------------------

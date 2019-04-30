@@ -25,7 +25,7 @@ class test_Async: XCTestCase {
             let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
             let event = try stream.createEvent(options: StreamEventOptions())
             try stream.debugDelay(seconds: 0.001)
-            try stream.wait(for: stream.record(event: event))
+            try stream.record(event: event).blockingWait()
             XCTAssert(event.occurred, "wait failed to block")
         } catch {
             XCTFail(String(describing: error))

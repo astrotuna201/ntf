@@ -200,7 +200,7 @@ final public class TensorArray: ObjectTracking, Logging {
     deinit {
         do {
             // make sure any pending write operations are complete
-            try writeCompletionEvent?.wait(for: 0)
+            try writeCompletionEvent?.blockingWait()
         } catch {
             _Streams.current.reportDevice(error: error)
         }
@@ -238,7 +238,7 @@ final public class TensorArray: ObjectTracking, Logging {
     /// to ensure it is complete before future use
     public func queueWaitForWriteToComplete(using stream: DeviceStream) throws {
         if let completionEvent = writeCompletionEvent {
-            try stream.wait(for: completionEvent)
+            try stream.futureWait(for: completionEvent)
         }
     }
     

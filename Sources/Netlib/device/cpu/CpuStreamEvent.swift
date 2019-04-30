@@ -45,7 +45,7 @@ final public class CpuStreamEvent : StreamEvent {
         set { accessMutex.sync { _occurred = newValue } }
     }
     
-    public func wait(for timeout: TimeInterval) throws {
+    public func blockingWait(for timeout: TimeInterval) throws {
         try accessMutex.sync {
             guard !_occurred else { return }
             #if DEBUG

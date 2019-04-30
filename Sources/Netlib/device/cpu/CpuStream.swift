@@ -110,12 +110,12 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     }
 
     //--------------------------------------------------------------------------
-    /// wait(for event:
+    /// futureWait(for event:
     /// waits until the event is signaled
-	public func wait(for event: StreamEvent) throws {
+	public func futureWait(for event: StreamEvent) throws {
         let timeout = self.timeout
         queue {
-            try event.wait(for: timeout)
+            try event.blockingWait(for: timeout)
         }
 	}
 
@@ -123,7 +123,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// waitUntilStreamIsComplete
     /// blocks the calling thread until the command queue is empty
     public func waitUntilStreamIsComplete() throws {
-        try record(event: createEvent()).wait(for: timeout)
+        try record(event: createEvent()).blockingWait(for: timeout)
     }
     
     //--------------------------------------------------------------------------

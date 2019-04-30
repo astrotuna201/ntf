@@ -177,7 +177,7 @@ public extension LocalComputeDevice {
 //==============================================================================
 // DeviceArray
 //    This represents a device data array
-public protocol DeviceArray: ObjectTracking, Logger {
+public protocol DeviceArray: ObjectTracking {
     //-------------------------------------
     // properties
     /// the device where this array is allocated
@@ -195,9 +195,6 @@ public protocol DeviceArray: ObjectTracking, Logger {
     /// asynchronously copies the contents of an app memory buffer
     func copyAsync(from buffer: UnsafeRawBufferPointer,
                    using stream: DeviceStream) throws
-    /// copies the contents to an app memory buffer synchronously
-    func copy(to buffer: UnsafeMutableRawBufferPointer,
-              using stream: DeviceStream) throws
     /// copies the contents to an app memory buffer asynchronously
     func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                    using stream: DeviceStream) throws
@@ -219,7 +216,13 @@ public protocol StreamEvent: ObjectTracking {
     func signal()
     /// will block the caller until the timeout has elapsed, or
     /// if `timeout` is 0 it will wait forever
-    func wait(for timeout: TimeInterval) throws
+    func blockingWait(for timeout: TimeInterval) throws
+}
+
+public extension StreamEvent {
+    func blockingWait() throws {
+        return try blockingWait(for: 0)
+    }
 }
 
 public struct StreamEventOptions: OptionSet {

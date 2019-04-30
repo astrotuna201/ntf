@@ -96,7 +96,7 @@ final public class ObjectTracker {
         return trackingId
         
         #else
-        return 0
+        return counter.increment()
         #endif
     }
 

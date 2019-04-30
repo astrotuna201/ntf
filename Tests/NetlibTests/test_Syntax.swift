@@ -20,6 +20,23 @@ class test_Syntax: XCTestCase {
     ]
     
     //==========================================================================
+    // test_simple
+    // initialize a matrix with a sequence and take the sum
+    func test_simple() {
+        Platform.log.level = .diagnostic
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+        
+        do {
+            let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+            print(matrix.formatted((2,0)))
+            let sum = try matrix.sum().scalarValue()
+            XCTAssert(sum == 105.0)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
     // test_appThreadZipMapReduce
     func test_appThreadZipMapReduce() {
         do {
@@ -34,20 +51,6 @@ class test_Syntax: XCTestCase {
             
             let dot = try zip(a, b).map(*).reduce(0, +)
             XCTAssert(dot == 145.0)
-        } catch {
-            XCTFail(String(describing: error))
-        }
-    }
-    
-    //==========================================================================
-    // test_simple
-    // initialize a matrix with a sequence and take the sum
-    func test_simple() {
-        do {
-            let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
-            print(matrix.formatted((2,0)))
-            let sum = try matrix.sum().scalarValue()
-            XCTAssert(sum == 105.0)
         } catch {
             XCTFail(String(describing: error))
         }

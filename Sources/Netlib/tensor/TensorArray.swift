@@ -139,21 +139,14 @@ final public class TensorArray: ObjectTracking, Logging {
         diagnostic("\(createString) \(name)(\(trackingId)) " +
             "\(String(describing: Scalar.self))[\(buffer.count)]",
             categories: .dataAlloc)
-        
-        // queue a completion event just in case to make sure any writing
-        // by the app thread is complete before we copy
+
+        // copying an app buffer is synchronous, so wait for the appThread
         let stream = _Streams.local.appThreadStream
-        writeCompletionEvent = try! stream.record(event: stream.createEvent())
+        try stream.waitUntilStreamIsComplete()
 
-        do {
-            // initialize synchronously and signal completion
-            _ = try readWrite(type: Scalar.self,
-                              using: stream).initialize(from: buffer)
-
-            writeCompletionEvent!.signal()
-        } catch {
-            stream.reportDevice(error: error)
-        }
+        // initialize
+        _ = try readWrite(type: Scalar.self,
+                          using: stream).initialize(from: buffer)
     }
     
     //----------------------------------------

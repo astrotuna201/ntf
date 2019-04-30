@@ -43,11 +43,39 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
+    public func queue<T>(_ result: inout T,
+                         _ body: @escaping (inout T) throws -> Void)
+        where T: TensorView
+    {
+        // if the stream is in an error state, no additional work
+        // will be queued
+        guard lastError == nil else { return }
+        do {
+            var ref = try result.reference(using: self)
+            if executeSynchronously {
+                try body(&ref)
+            } else {
+                commandQueue.async {
+                    do {
+                        try body(&ref)
+                    } catch {
+                        self.reportDevice(error: error)
+                    }
+                }
+            }
+        } catch {
+            self.reportDevice(error: error)
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    /// queues a closure on the stream for execution
+    /// This will catch and propagate the last asynchronous error thrown.
     public func queue(_ body: @escaping () throws -> Void) {
         // if the stream is in an error state, no additional work
         // will be queued
         guard lastError == nil else { return }
-
+        
         func performBody() {
             do {
                 try body()
@@ -64,7 +92,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         }
     }
 
-	//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 	/// createEvent
     /// creates an event object used for stream synchronization
 	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {

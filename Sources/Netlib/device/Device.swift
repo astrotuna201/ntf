@@ -97,9 +97,7 @@ public extension LocalComputeService {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if let handler = deviceErrorHandler {
-            handler(error)
-        } else {
+        if deviceErrorHandler?(error) == .propagate {
             platform.handleDevice(error: error)
         }
     }
@@ -169,9 +167,7 @@ public extension LocalComputeDevice {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if let handler = deviceErrorHandler {
-            handler(error)
-        } else {
+        if deviceErrorHandler?(error) == .propagate {
             service.handleDevice(error: error)
         }
     }

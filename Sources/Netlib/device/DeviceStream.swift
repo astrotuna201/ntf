@@ -63,9 +63,7 @@ public extension LocalDeviceStream {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if let handler = deviceErrorHandler {
-            handler(error)
-        } else {
+        if deviceErrorHandler?(error) == .propagate {
             device.handleDevice(error: error)
         }
     }

@@ -11,8 +11,16 @@ public enum DeviceError : Error {
     case timeout(idPath: [Int], message: String)
 }
 
-public typealias DeviceErrorHandler = (Error) -> Void
+//==============================================================================
+/// DeviceErrorHandlerAction
+public enum DeviceErrorHandlerAction {
+    case doNotPropagate, propagate
+}
 
+public typealias DeviceErrorHandler = (Error) -> DeviceErrorHandlerAction
+
+//==============================================================================
+/// DeviceErrorHandling
 public protocol DeviceErrorHandling: class, _Logging {
     /// user defined handler to override the default
     var deviceErrorHandler: DeviceErrorHandler? { get set }

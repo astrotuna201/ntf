@@ -320,10 +320,11 @@ public struct LogCategories: OptionSet {
     public static let initialize   = LogCategories(rawValue: 1 << 3)
 	public static let streamAlloc  = LogCategories(rawValue: 1 << 4)
 	public static let streamSync   = LogCategories(rawValue: 1 << 5)
+    public static let scheduling   = LogCategories(rawValue: 1 << 6)
 }
 
 // strings
-let allocString     = "[\(setText("ALLOC    ", color: .cyan))]"
+let allocString     = "[\(setText("ALLOCATE ", color: .cyan))]"
 let createString    = "[\(setText("CREATE   ", color: .cyan))]"
 let copyString      = "[\(setText("COPY     ", color: .blue))]"
 let releaseString   = "[\(setText("RELEASE  ", color: .cyan))]"

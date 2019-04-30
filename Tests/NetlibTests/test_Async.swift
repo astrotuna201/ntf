@@ -14,6 +14,16 @@ class test_Async: XCTestCase {
         ("test_StreamEventWait", test_StreamEventWait),
         ("test_perfCreateStreamEvent", test_perfCreateStreamEvent),
     ]
+
+    //==========================================================================
+    // test_tensorReferenceBufferSync
+    func test_tensorReferenceBufferSync() {
+    }
+
+    //==========================================================================
+    // test_orphanedStream
+    func test_orphanedStreamShutdown() {
+    }
     
     //==========================================================================
     // test_StreamEventWait

@@ -132,20 +132,20 @@ class test_IterateView: XCTestCase {
     //==========================================================================
     // test_perfVector
     func test_perfVector() {
+        #if !DEBUG
         do {
-            #if RELEASE
-            let byteCount = 512 * 512
-            let vector = Vector<Int32>(sequence: 0..<byteCount)
+            let count = 512 * 512
+            let vector = Vector<Int32>(sequence: 0..<count)
             //            print(vector.formatted((2,0)))
             
             let values = try vector.values()
             self.measure {
                 for _ in values {}
             }
-            #endif
         } catch {
             XCTFail(String(describing: error))
         }
+        #endif
     }
     
     //==========================================================================

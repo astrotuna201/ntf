@@ -36,8 +36,8 @@ class test_Async: XCTestCase {
     // test_perfCreateStreamEvent
     // measures the event overhead of creating 10,000 events
     func test_perfCreateStreamEvent() {
-        let stream = Platform.local.createStream()
         #if !DEBUG
+        let stream = Platform.local.createStream()
         self.measure {
             do {
                 for _ in 0..<10000 {
@@ -56,7 +56,6 @@ class test_Async: XCTestCase {
     func test_perfRecordStreamEvent() {
         #if !DEBUG
         let stream = Platform.local.createStream()
-
         self.measure {
             do {
                 for _ in 0..<10000 {

@@ -94,7 +94,6 @@ class _Streams {
         // _Streams is a static object, so mark the default stream as static
         // so it won't show up in leak reports
         ObjectTracker.global.markStatic(trackingId: stream.trackingId)
-        ObjectTracker.global.markStatic(trackingId: stream.completionEvent.trackingId)
 
         // use the default stream as the app stream if it uses
         // unified memory addressing

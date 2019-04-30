@@ -10,22 +10,27 @@ import Foundation
 /// the wait semaphore
 final public class CpuStreamEvent : StreamEvent {
     // properties
-    public var logInfo: LogInfo
-    private let occurredMutex = Mutex()
-    private let semaphore = DispatchSemaphore(value: 0)
     public private (set) var trackingId = 0
+    private let accessMutex = Mutex()
+    private let semaphore = DispatchSemaphore(value: 0)
+    public  let stream: DeviceStream
     private var _occurred: Bool = true
-    private let name: String
+    private static let name = String(describing: CpuStreamEvent.self)
 
     //--------------------------------------------------------------------------
     // initializers
-    public required init(logInfo: LogInfo, options: StreamEventOptions) {
-        self.logInfo = logInfo
-        name = String(describing: CpuStreamEvent.self)
-        trackingId = ObjectTracker.global
-            .register(self, namePath: logNamePath)
+    public init(stream: DeviceStream,
+                options: StreamEventOptions = StreamEventOptions()) {
+        self.stream = stream
+        #if DEBUG
+        trackingId = ObjectTracker.global.register(self)
+        #endif
     }
-    deinit { ObjectTracker.global.remove(trackingId: trackingId) }
+    deinit {
+        #if DEBUG
+        ObjectTracker.global.remove(trackingId: trackingId)
+        #endif
+    }
     
     //--------------------------------------------------------------------------
     // functions
@@ -36,29 +41,37 @@ final public class CpuStreamEvent : StreamEvent {
     }
     
     public var occurred: Bool {
-        get { return occurredMutex.sync { _occurred } }
-        set { occurredMutex.sync { _occurred = newValue } }
+        get { return accessMutex.sync { _occurred } }
+        set { accessMutex.sync { _occurred = newValue } }
     }
     
-    public func wait(until timeout: TimeInterval?) throws {
-        try occurredMutex.sync {
+    public func wait(for timeout: TimeInterval) throws {
+        try accessMutex.sync {
             guard !_occurred else { return }
-            diagnostic("\(name)(\(trackingId)) waiting...",
+            #if DEBUG
+            stream.diagnostic(
+                "\(CpuStreamEvent.name)(\(trackingId)) waiting...",
                 categories: .streamSync)
-
-            if let timeout = timeout {
+            #endif
+            
+            if timeout > 0 {
                 let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
                 if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
-                    diagnostic("\(name)(\(trackingId)) timed out",
+                    #if DEBUG
+                    stream.diagnostic(
+                        "\(CpuStreamEvent.name)(\(trackingId)) timed out",
                         categories: .streamSync)
+                    #endif
                     throw StreamEventError.timedOut
                 }
             } else {
                 semaphore.wait()
             }
-
-            diagnostic("\(name)(\(trackingId)) occured",
+            
+            #if DEBUG
+            stream.diagnostic("\(CpuStreamEvent.name)(\(trackingId)) occured",
                 categories: .streamSync)
+            #endif
             _occurred = true
         }
     }

@@ -17,9 +17,6 @@ public protocol DeviceStream:
     StreamGradientsProtocol
 {
     //--------------------------------------------------------------------------
-    // properties
-    /// an event used to signal when all queued commands have completed
-    var completionEvent: StreamEvent { get }
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// if `true` the stream will execute functions synchronous with the app
@@ -30,23 +27,21 @@ public protocol DeviceStream:
     /// a name used to identify the stream
     var name: String { get }
     /// the internval of time to wait for an operation to complete
-    var timeout: TimeInterval? { get set }
+    /// a value of 0 (default) will wait forever
+    var timeout: TimeInterval { get set }
     
     //--------------------------------------------------------------------------
     // synchronization functions
-    /// blocks the calling thread until the stream queue is empty
-    func blockCallerUntilComplete() throws
     /// creates a StreamEvent
     func createEvent(options: StreamEventOptions) throws -> StreamEvent
     /// queues a stream event
     @discardableResult
     func record(event: StreamEvent) throws -> StreamEvent
-    /// blocks caller until the event has occurred on this stream,
-    /// then recorded and occurred on the other stream
-    func sync(with other: DeviceStream, event: StreamEvent) throws
     /// blocks caller until the event has occurred
     func wait(for event: StreamEvent) throws
-    
+    /// blocks the calling thread until the stream queue is empty
+    func waitUntilStreamIsComplete() throws
+
     //--------------------------------------------------------------------------
     // debugging functions
     /// creates an artificial delay used to simulate work for debugging
@@ -54,6 +49,12 @@ public protocol DeviceStream:
     /// for unit testing. It's part of the class protocol so that remote
     /// streams throw the error remotely.
     func throwTestError()
+}
+
+public extension DeviceStream {
+    func createEvent() throws -> StreamEvent {
+        return try createEvent(options: StreamEventOptions())
+    }
 }
 
 //==============================================================================
@@ -64,7 +65,7 @@ public extension LocalDeviceStream {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if deviceErrorHandler?(error) == .propagate {
+        if (deviceErrorHandler?(error) ?? .propagate) == .propagate {
             device.handleDevice(error: error)
         }
     }

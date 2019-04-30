@@ -97,7 +97,7 @@ public extension LocalComputeService {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if deviceErrorHandler?(error) == .propagate {
+        if (deviceErrorHandler?(error) ?? .propagate) == .propagate {
             platform.handleDevice(error: error)
         }
     }
@@ -168,7 +168,7 @@ public extension LocalComputeDevice {
     //--------------------------------------------------------------------------
     /// handleDevice(error:
     func handleDevice(error: Error) {
-        if deviceErrorHandler?(error) == .propagate {
+        if (deviceErrorHandler?(error) ?? .propagate) == .propagate {
             service.handleDevice(error: error)
         }
     }
@@ -209,18 +209,17 @@ public protocol DeviceArray: ObjectTracking, Logger {
 /// - created by a `DeviceStream`
 /// - recorded on the stream to create a barrier
 /// - waited on by one or more threads for group synchronization
-public protocol StreamEvent: ObjectTracking, Logger {
+public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get set }
-    
-    /// initializer
-    init(logInfo: LogInfo, options: StreamEventOptions) throws
+    /// the stream that created this event
+    var stream: DeviceStream { get }
 
     /// signals that the event has occurred
     func signal()
     /// will block the caller until the timeout has elapsed, or
-    /// if `nil` it will wait forever
-    func wait(until timeout: TimeInterval?) throws
+    /// if `timeout` is 0 it will wait forever
+    func wait(for timeout: TimeInterval) throws
 }
 
 public struct StreamEventOptions: OptionSet {

@@ -29,9 +29,11 @@ public extension LocalPlatform {
     /// The default platform error handler has nowhere else to go, so
     /// print the message, break to the debugger if possible, and exit.
     func handleDevice(error: Error) {
-        print(String(describing: error))
-        raise(SIGINT)
-        exit(1)
+        if (deviceErrorHandler?(error) ?? .propagate) == .propagate {
+            print(String(describing: error))
+            raise(SIGINT)
+            exit(1)
+        }
     }
 
     //--------------------------------------------------------------------------

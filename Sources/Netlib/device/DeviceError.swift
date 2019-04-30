@@ -45,9 +45,7 @@ public extension DeviceErrorHandling {
     /// reportDevice(error:event:
     /// sets and propagates a stream error
     /// - Parameter error: the error to report
-    /// - Parameter event: an optional event to signal, used to
-    ///   unblock waiting threads of a stream fails
-    func reportDevice(error: Error, event: StreamEvent? = nil) {
+    func reportDevice(error: Error) {
         // set the error state
         lastError = error
         
@@ -58,9 +56,6 @@ public extension DeviceErrorHandling {
         DispatchQueue.main.async {
             self.handleDevice(error: error)
         }
-        
-        // signal the completion event in case the app thread is waiting
-        event?.signal()
     }
 }
 

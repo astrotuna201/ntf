@@ -7,12 +7,11 @@ import Foundation
 public final class CpuStream: LocalDeviceStream, StreamGradients {
 	// protocol properties
 	public private(set) var trackingId = 0
-    public let completionEvent: StreamEvent
 	public let device: ComputeDevice
     public let id: Int
 	public let name: String
     public var logInfo: LogInfo
-    public var timeout: TimeInterval?
+    public var timeout: TimeInterval = 0
     public var executeSynchronously: Bool = true
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
@@ -32,8 +31,6 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         
         // create a completion event
-        completionEvent = CpuStreamEvent(logInfo: logInfo,
-                                         options: StreamEventOptions())
         self.logInfo = logInfo
         self.device = device
         self.id = id
@@ -55,7 +52,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             do {
                 try body()
             } catch {
-                self.reportDevice(error: error, event: completionEvent)
+                self.reportDevice(error: error)
             }
         }
         
@@ -71,40 +68,45 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	/// createEvent
     /// creates an event object used for stream synchronization
 	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
-        return CpuStreamEvent(logInfo: logInfo, options: options)
-	}
-
-    /// introduces a delay into command queue processing to simulate workloads
-    /// to aid in debugging
-	public func debugDelay(seconds: Double) throws {
-        queue {
-            Thread.sleep(forTimeInterval: TimeInterval(seconds))
-        }
+        return CpuStreamEvent(stream: self, options: options)
 	}
 
     //--------------------------------------------------------------------------
-    /// blockCallerUntilComplete
-    /// blocks the calling thread until the command queue is empty
-    public func blockCallerUntilComplete() throws {
-        try record(event: completionEvent).wait(until: timeout)
+    /// record(event:
+    public func record(event: StreamEvent) throws -> StreamEvent {
+        event.occurred = false
+        queue {
+            event.signal()
+        }
+        return event
     }
-	
+
     //--------------------------------------------------------------------------
     /// wait(for event:
     /// waits until the event is signaled
 	public func wait(for event: StreamEvent) throws {
-        try event.wait(until: timeout)
+        let timeout = self.timeout
+        queue {
+            try event.wait(for: timeout)
+        }
 	}
 
     //--------------------------------------------------------------------------
-	/// sync(with other
-	public func sync(with otherStream: DeviceStream, event: StreamEvent) throws{
-        // wait on event to make sure it is clear
-        try wait(for: event)
-        // record on other stream and wait on event to make sure it is clear
-        try wait(for: otherStream.record(event: event))
-	}
-
+    /// waitUntilStreamIsComplete
+    /// blocks the calling thread until the command queue is empty
+    public func waitUntilStreamIsComplete() throws {
+        try record(event: createEvent()).wait(for: timeout)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// introduces a delay into command queue processing to simulate workloads
+    /// to aid in debugging
+    public func debugDelay(seconds: Double) throws {
+        queue {
+            Thread.sleep(forTimeInterval: TimeInterval(seconds))
+        }
+    }
+    
     //--------------------------------------------------------------------------
     /// throwTestError
     /// used for unit testing
@@ -113,14 +115,4 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             throw DeviceError.streamError(idPath: [], message: "testError")
         }
     }
-    
-    //--------------------------------------------------------------------------
-    /// record(event:
-	public func record(event: StreamEvent) throws -> StreamEvent {
-        event.occurred = false
-        queue {
-            event.signal()
-        }
-        return event
-	}
 }

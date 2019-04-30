@@ -89,7 +89,7 @@ public class CpuDeviceArray : DeviceArray {
         assert(buffer.baseAddress != nil)
         assert(self.buffer.count == buffer.count, "buffer sizes don't match")
         // wait until the stream is complete then copy
-        try stream.blockCallerUntilComplete()
+        try stream.waitUntilStreamIsComplete()
         buffer.copyMemory(from: UnsafeRawBufferPointer(self.buffer))
 	}
 

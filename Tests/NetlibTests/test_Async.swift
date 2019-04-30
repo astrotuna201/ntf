@@ -69,7 +69,7 @@ class test_Async: XCTestCase {
                 for event in events {
                     _ = try stream.record(event: event)
                 }
-                try stream.blockCallerUntilComplete()
+                try stream.waitUntilStreamIsComplete()
             } catch {
                 XCTFail(String(describing: error))
             }

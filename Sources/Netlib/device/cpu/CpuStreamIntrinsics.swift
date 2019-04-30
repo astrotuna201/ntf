@@ -30,7 +30,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0 + $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -52,7 +52,7 @@ public extension CpuStream {
                 result[0] = true
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -74,7 +74,7 @@ public extension CpuStream {
                 result[0] = false
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -96,7 +96,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0.0 - $0.1 <= tolerance }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -124,7 +124,7 @@ public extension CpuStream {
                 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -163,7 +163,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0 / $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -183,7 +183,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0 == $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -208,7 +208,7 @@ public extension CpuStream {
                 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -229,7 +229,7 @@ public extension CpuStream {
                 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
 
@@ -269,7 +269,7 @@ public extension CpuStream {
                 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -328,7 +328,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0 * $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -359,7 +359,7 @@ public extension CpuStream {
                 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
 
@@ -377,7 +377,7 @@ public extension CpuStream {
                 x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -424,7 +424,7 @@ public extension CpuStream {
                 zip(lhs, rhs).map(to: &results) { $0 - $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     
@@ -442,7 +442,7 @@ public extension CpuStream {
                 xseq.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
             }
         } catch {
-            reportDevice(error: error, event: completionEvent)
+            reportDevice(error: error)
         }
     }
     

@@ -81,8 +81,11 @@ public class CpuDevice: LocalComputeDevice {
 	public func createStream(name streamName: String) -> DeviceStream {
         let id = streamId.increment()
         let streamName = "\(streamName):\(id)"
-        return CpuStream(logInfo: logInfo.flat(streamName),
+        let stream = CpuStream(logInfo: logInfo.flat(streamName),
                          device: self, name: streamName, id: id)
+        diagnostic("\(allocString) DeviceStream(\(trackingId)) " +
+            "name: `\(streamName)` on \(name)", categories: [.streamAlloc])
+        return stream
 	}
 } // CpuDevice
 

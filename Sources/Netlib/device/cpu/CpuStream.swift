@@ -12,7 +12,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	public let name: String
     public var logInfo: LogInfo
     public var timeout: TimeInterval = 0
-    public var executeSynchronously: Bool = true
+    public var executeSynchronously: Bool = false
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
     public var _errorMutex: Mutex = Mutex()
@@ -55,6 +55,11 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             if executeSynchronously {
                 try body(&ref)
             } else {
+                // safely set a new completion event on the result
+                let completionEvent =
+                    try ref.createAndSetCompletionEvent(using: self)
+                
+                // queue the work
                 commandQueue.async {
                     do {
                         try body(&ref)
@@ -62,6 +67,12 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                         self.reportDevice(error: error)
                     }
                 }
+                diagnostic(">>> function queued",
+                           categories: .scheduling, indent: 1)
+                
+                // queue signaling of the completion event after the work
+                // is complete
+                try record(event: completionEvent)
             }
         } catch {
             self.reportDevice(error: error)
@@ -101,6 +112,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 
     //--------------------------------------------------------------------------
     /// record(event:
+    @discardableResult
     public func record(event: StreamEvent) throws -> StreamEvent {
         event.occurred = false
         queue {

@@ -140,9 +140,8 @@ final public class TensorArray: ObjectTracking, Logging {
             "\(String(describing: Scalar.self))[\(buffer.count)]",
             categories: .dataAlloc)
 
-        // copying an app buffer is synchronous, so wait for the appThread
+        // copying an app buffer is synchronous
         let stream = _Streams.local.appThreadStream
-        try stream.waitUntilStreamIsComplete()
 
         // initialize
         _ = try readWrite(type: Scalar.self,
@@ -213,7 +212,7 @@ final public class TensorArray: ObjectTracking, Logging {
     }
 
     //--------------------------------------------------------------------------
-    // readOnly
+    /// readOnly
     public func readOnly<Scalar>(type: Scalar.Type,
                                  using stream: DeviceStream) throws
         -> UnsafeBufferPointer<Scalar>
@@ -223,23 +222,13 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
-    // readWrite
+    /// readWrite
     public func readWrite<Scalar>(type: Scalar.Type,
                                   using stream: DeviceStream) throws ->
         UnsafeMutableBufferPointer<Scalar>
     {
         assert(!isReadOnly, "the TensorArray is read only")
         return try migrate(type: type, readOnly: false, using: stream)
-    }
-
-    //--------------------------------------------------------------------------
-    /// queueWaitForWriteToComplete
-    /// if there is a pending write operation, then queue it on the stream
-    /// to ensure it is complete before future use
-    public func queueWaitForWriteToComplete(using stream: DeviceStream) throws {
-        if let completionEvent = writeCompletionEvent {
-            try stream.futureWait(for: completionEvent)
-        }
     }
     
     //--------------------------------------------------------------------------
@@ -251,9 +240,6 @@ final public class TensorArray: ObjectTracking, Logging {
                                  using stream: DeviceStream) throws
         -> UnsafeMutableBufferPointer<Scalar>
     {
-        // ensure the right will be complete before addiontal operations
-        try queueWaitForWriteToComplete(using: stream)
-        
         // get the array replica for `stream`
         let replica = try getArray(type: Scalar.self, for: stream)
         lastAccessCopiedBuffer = false

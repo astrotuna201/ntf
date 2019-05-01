@@ -15,7 +15,6 @@ final public class CpuStreamEvent : StreamEvent {
     private let semaphore = DispatchSemaphore(value: 0)
     public  let stream: DeviceStream
     private var _occurred: Bool = true
-    private static let name = String(describing: CpuStreamEvent.self)
 
     //--------------------------------------------------------------------------
     // initializers
@@ -50,7 +49,8 @@ final public class CpuStreamEvent : StreamEvent {
             guard !_occurred else { return }
             #if DEBUG
             stream.diagnostic(
-                "\(CpuStreamEvent.name)(\(trackingId)) waiting...",
+                "StreamEvent(\(trackingId)) waiting... " +
+                "on \(stream.device.name)_s\(stream.id)",
                 categories: .streamSync)
             #endif
             
@@ -58,8 +58,7 @@ final public class CpuStreamEvent : StreamEvent {
                 let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
                 if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
                     #if DEBUG
-                    stream.diagnostic(
-                        "\(CpuStreamEvent.name)(\(trackingId)) timed out",
+                    stream.diagnostic("StreamEvent(\(trackingId)) timed out",
                         categories: .streamSync)
                     #endif
                     throw StreamEventError.timedOut
@@ -69,7 +68,8 @@ final public class CpuStreamEvent : StreamEvent {
             }
             
             #if DEBUG
-            stream.diagnostic("\(CpuStreamEvent.name)(\(trackingId)) occured",
+            stream.diagnostic("StreamEvent(\(trackingId)) occured on " +
+                "\(stream.device.name)_s\(stream.id)",
                 categories: .streamSync)
             #endif
             _occurred = true

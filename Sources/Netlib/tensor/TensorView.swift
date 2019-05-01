@@ -337,8 +337,19 @@ public extension TensorView {
     /// this is an app thread blocking version of the call. It will synchronize
     /// with the appThreadStream
     func readOnly() throws -> UnsafeBufferPointer<Scalar> {
-        let buffer = try readOnly(using: _Streams.local.appThreadStream)
-        try _Streams.local.appThreadStream.waitUntilStreamIsComplete()
+        // get the app thread stream
+        let stream = _Streams.local.appThreadStream
+        
+        // add a stream wait for completion of pending writes to this tensor
+        waitForFutureCompletion(on: stream)
+
+        // try to get the buffer
+        let buffer = try readOnly(using: stream)
+
+        // wait for the app thread stream to complete so we can gain access
+        try stream.waitUntilStreamIsComplete()
+
+        // return the buffer safe for app access
         return buffer
     }
     
@@ -366,10 +377,84 @@ public extension TensorView {
         }
     }
 
+    //--------------------------------------------------------------------------
+    /// readWrite
+    /// this is an app thread blocking version of the call. It will synchronize
+    /// with the appThreadStream
     mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
-        let buffer = try readWrite(using: _Streams.local.appThreadStream)
-        try _Streams.local.appThreadStream.waitUntilStreamIsComplete()
+        // get the app thread stream
+        let stream = _Streams.local.appThreadStream
+        
+        // add a stream wait for completion of pending writes to this tensor
+        waitForFutureCompletion(on: stream)
+        
+        // try to get the buffer
+        let buffer = try readWrite(using: stream)
+
+        // wait for the app thread stream to complete so we can gain access
+        try stream.waitUntilStreamIsComplete()
+
+        // return the buffer safe for app access
         return buffer
+    }
+    
+    //--------------------------------------------------------------------------
+    /// waitForFutureCompletion
+    /// if there is a completion event and it hasn't already occured,
+    /// then schedule a future wait op on the stream
+    func waitForFutureCompletion(on stream: DeviceStream) {
+        do {
+            // get the queue, if we reference it as a dataArray member it
+            // it adds a ref count which messes things up
+            let queue = tensorArray.accessQueue
+            
+            try queue.sync {
+                if let event = tensorArray.writeCompletionEvent,
+                    !event.occurred {
+                    try stream.futureWait(for: event)
+                    
+                    diagnostic("\(stream.device.name)_s\(stream.id) " +
+                        "will wait for \(name)(\(tensorArray.trackingId))" +
+                        " elements[\(dataShape.elementCount)]",
+                        categories: .scheduling, indent: 1)
+                    
+                } else {
+                    diagnostic(" \(name)(\(tensorArray.trackingId))" +
+                        " elements[\(dataShape.elementCount)]" +
+                        " is already write complete",
+                               categories: .scheduling, indent: 1)
+                }
+            }
+        } catch {
+            stream.reportDevice(error: error)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// createAndSetCompletionEvent
+    /// creates a new completion event and sets it on the tensor
+    func createAndSetCompletionEvent(using stream: DeviceStream) throws
+        -> StreamEvent
+    {
+        // get the queue, if we reference it as a dataArray member it
+        // it adds a ref count which messes things up
+        let queue = tensorArray.accessQueue
+        
+        return try queue.sync {
+            // in the case of inplace operations, wait for pending writes
+            waitForFutureCompletion(on: stream)
+            
+            // create a new event
+            let event = try stream.createEvent()
+            tensorArray.writeCompletionEvent = event
+            
+            diagnostic("\(stream.device.name)_s\(stream.id) will signal " +
+                "StreamEvent(\(event.trackingId))" +
+                " completed for \(name)(\(tensorArray.trackingId)) " +
+                "elements[\(dataShape.elementCount)]",
+                categories: .scheduling, indent: 1)
+            return event
+        }
     }
     
     //--------------------------------------------------------------------------

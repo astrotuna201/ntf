@@ -21,8 +21,44 @@ class test_Async: XCTestCase {
     }
 
     //==========================================================================
-    // test_orphanedStream
+    // test_orphanedStreamShutdown
     func test_orphanedStreamShutdown() {
+    }
+    
+    //==========================================================================
+    // test_twoStreamInterleave
+    func test_twoStreamInterleave() {
+        do {
+            Platform.log.level = .diagnostic
+            //        Platform.local.log.categories = [.streamSync]
+            
+            // create a named stream on two different discreet devices
+            // cpu devices 1 and 2 are discreet memory versions for testing
+//            let stream1 = Platform.local
+//                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            
+//            let stream2 = Platform.local
+//                .createStream(deviceId: 2, serviceName: "cpuUnitTest")
+            
+            let m1 = Matrix<Int32>((2, 3), sequence: 0..<6)
+            let m2 = Matrix<Int32>((2, 3), sequence: 0..<6)
+//            let result = using(stream1) { m1 + m2 }
+            var result = Matrix<Int32>((2, 3))
+            Netlib.add(m1, m2, result: &result)
+
+            let expected: [Int32] = [0, 2, 4, 6, 8, 10]
+            let values = try result.array()
+            XCTAssert(values == expected)
+            
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_threeStreamInterleave
+    func test_threeStreamInterleave() {
+        
     }
     
     //==========================================================================

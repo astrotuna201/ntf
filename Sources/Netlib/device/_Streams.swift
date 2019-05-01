@@ -88,7 +88,8 @@ class _Streams {
     // initializers
     private init() {
         // create the default stream based on service and device priority.
-        let stream = Platform.local.defaultDevice.createStream(name: "default")
+        let stream = Platform.local.defaultDevice
+            .createStream(name: "defaultStream")
         streamScope = [stream]
         
         // _Streams is a static object, so mark the default stream as static

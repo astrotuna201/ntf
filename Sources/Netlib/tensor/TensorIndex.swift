@@ -12,29 +12,48 @@ import Foundation
 /// TensorView Collection extensions
 public extension TensorView {
     //--------------------------------------------------------------------------
+    /// get a Sequence of read only values in spatial order
+    /// called to synchronize with the app thread
+    func values() throws -> TensorViewCollection<Self> {
+        let stream = _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
+        return try TensorViewCollection(view: self, buffer: readOnly())
+    }
+    
+    //--------------------------------------------------------------------------
+    /// get a Sequence of mutable values in spatial order
+    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
+        let stream = _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
+        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
+    }
+
+    //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order as an array
     func array() throws -> [Scalar] {
         return try [Scalar](values())
     }
-
+    
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order
-    func values(using stream: DeviceStream? = nil) throws
+    /// this version is typically called from within async functions to
+    /// get values for processing
+    func values(using stream: DeviceStream) throws
         -> TensorViewCollection<Self>
     {
-        if let lastError = _Streams.current.lastError { throw lastError }
-        let stream = stream ?? _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
         return try TensorViewCollection(view: self,
                                         buffer: readOnly(using: stream))
     }
     
     //--------------------------------------------------------------------------
     /// get a Sequence of mutable values in spatial order
-    mutating func mutableValues(using stream: DeviceStream? = nil) throws
+    /// this version is typically called from within async functions to
+    /// get values for processing
+    mutating func mutableValues(using stream: DeviceStream) throws
         -> TensorViewMutableCollection<Self>
     {
-        if let lastError = _Streams.current.lastError { throw lastError }
-        let stream = stream ?? _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
         return try TensorViewMutableCollection(view: &self,
                                                buffer: readWrite(using: stream))
     }
@@ -43,7 +62,8 @@ public extension TensorView {
     /// get a single value at the specified index
     /// This is not an efficient way to get values
     func value(at index: [Int]) throws -> Scalar {
-        if let lastError = _Streams.current.lastError { throw lastError }
+        let stream = _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
         let buffer = try readOnly()
         let padded = shape.padded(with: padding)
         let tensorIndex = TensorIndex<Self>(self, padded, at: index)
@@ -54,7 +74,8 @@ public extension TensorView {
     /// set a single value at the specified index
     /// This is not an efficient way to set values
     mutating func set(value: Scalar, at index: [Int]) throws {
-        if let lastError = _Streams.current.lastError { throw lastError }
+        let stream = _Streams.local.appThreadStream
+        if let lastError = stream.lastError { throw lastError }
         let buffer = try readWrite()
         let padded = shape.padded(with: padding)
         let tensorIndex = TensorIndex<Self>(self, padded, at: index)

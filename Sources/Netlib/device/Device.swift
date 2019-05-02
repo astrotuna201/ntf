@@ -84,6 +84,10 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     var name: String { get }
     /// the platform this service belongs to
     var platform: ComputePlatform! { get }
+    /// the default maximum amount of time allowed for an operation to complete
+    /// this is inherited by devices and streams when they are created
+    var timeout: TimeInterval { get set }
+
     /// required initializer to support dynamically loaded services
     init(platform: ComputePlatform, id: Int,
          logInfo: LogInfo, name: String?) throws
@@ -125,7 +129,7 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// the service this device belongs to
     var service: ComputeService! { get }
     /// the maximum amount of time allowed for an operation to complete
-    var timeout: TimeInterval? { get set }
+    var timeout: TimeInterval { get set }
     /// the type of memory addressing this device uses
     var memoryAddressing: MemoryAddressing { get }
     /// current percent of the device utilized

@@ -17,7 +17,15 @@ public class CpuComputeService : LocalComputeService {
     public let id: Int
     public var logInfo: LogInfo
     public let name: String
-
+    
+    //--------------------------------------------------------------------------
+    // timeout
+    public var timeout: TimeInterval = 0 {
+        didSet {
+            devices.forEach { $0.timeout = timeout }
+        }
+    }
+    
     //--------------------------------------------------------------------------
     // initializers
     public required init(platform: ComputePlatform,
@@ -35,7 +43,8 @@ public class CpuComputeService : LocalComputeService {
         // add cpu device
         devices.append(CpuDevice(service: self, deviceId: 0,
                                  logInfo: logInfo.flat("cpu:0"),
-                                 memoryAddressing: .unified))
+                                 memoryAddressing: .unified,
+                                 timeout: timeout))
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }
@@ -56,6 +65,14 @@ public class CpuUnitTestComputeService : LocalComputeService {
     public let name: String
     
     //--------------------------------------------------------------------------
+    // timeout
+    public var timeout: TimeInterval = 0 {
+        didSet {
+            devices.forEach { $0.timeout = timeout }
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     // initializers
     public required init(platform: ComputePlatform,
                          id: Int,
@@ -72,16 +89,19 @@ public class CpuUnitTestComputeService : LocalComputeService {
         // add cpu device
         devices.append(CpuDevice(service: self, deviceId: 0,
                                  logInfo: logInfo.flat("cpu:0"),
-                                 memoryAddressing: .unified))
+                                 memoryAddressing: .unified,
+                                 timeout: timeout))
         
         // add two discreet versions for unit testing
         devices.append(CpuDevice(service: self, deviceId: 1,
                                  logInfo: logInfo.flat("cpu:1"),
-                                 memoryAddressing: .discreet))
+                                 memoryAddressing: .discreet,
+                                 timeout: timeout))
         
         devices.append(CpuDevice(service: self, deviceId: 2,
                                  logInfo: logInfo.flat("cpu:2"),
-                                 memoryAddressing: .discreet))
+                                 memoryAddressing: .discreet,
+                                 timeout: timeout))
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

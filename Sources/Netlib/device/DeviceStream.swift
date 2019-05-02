@@ -58,6 +58,9 @@ public extension DeviceStream {
     }
 }
 
+let streamThreadViolationMessage =
+"a stream can only be accessed by the thread that created it"
+
 //==============================================================================
 /// LocalDeviceStream
 public protocol LocalDeviceStream: DeviceStream { }

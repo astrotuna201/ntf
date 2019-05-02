@@ -17,7 +17,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     public var _lastError: Error?
     public var _errorMutex: Mutex = Mutex()
     
-    // serial queue
+    /// used to detect accidental stream access by other threads
+    private let creatorThread: Thread
+    /// the queue used for command execution
     private let commandQueue: DispatchQueue
 
     //--------------------------------------------------------------------------
@@ -35,6 +37,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         self.device = device
         self.id = id
         self.name = name
+        self.creatorThread = Thread.current
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)
     }
@@ -157,6 +160,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	/// createEvent
     /// creates an event object used for stream synchronization
 	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         return CpuStreamEvent(stream: self, options: options)
 	}
 
@@ -164,6 +168,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// record(event:
     @discardableResult
     public func record(event: StreamEvent) throws -> StreamEvent {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         event.occurred = false
         queue {
             event.signal()
@@ -175,6 +180,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// futureWait(for event:
     /// waits until the event is signaled
 	public func futureWait(for event: StreamEvent) throws {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         let timeout = self.timeout
         queue {
             try event.blockingWait(for: timeout)
@@ -185,6 +191,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// waitUntilStreamIsComplete
     /// blocks the calling thread until the command queue is empty
     public func waitUntilStreamIsComplete() throws {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         try record(event: createEvent()).blockingWait(for: timeout)
     }
     
@@ -192,6 +199,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// introduces a delay into command queue processing to simulate workloads
     /// to aid in debugging
     public func debugDelay(seconds: Double) throws {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         queue {
             Thread.sleep(forTimeInterval: TimeInterval(seconds))
         }
@@ -201,6 +209,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// throwTestError
     /// used for unit testing
     public func throwTestError() {
+        assert(Thread.current === creatorThread, streamThreadViolationMessage)
         queue {
             throw DeviceError.streamError(idPath: [], message: "testError")
         }

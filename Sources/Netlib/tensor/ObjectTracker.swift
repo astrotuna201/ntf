@@ -112,22 +112,6 @@ final public class ObjectTracker {
         }
     }
     
-    // TODO: maybe remove this if unused? If so, combine register functions above
-//    //--------------------------------------------------------------------------
-//    // register(type:
-//    public func register<T>(type: T, info: String = "") -> Int {
-//        #if ENABLE_TRACKING
-//            let trackingId = counter.increment()
-//            register(trackingId: trackingId, info:
-//                ItemInfo(object: nil,
-//                         typeName: String(describing: Swift.type(of: T.self)),
-//                         supplementalInfo: info, isStatic: false))
-//            return id
-//        #else
-//            return 0
-//        #endif
-//    }
-
     //--------------------------------------------------------------------------
     /// markStatic
     /// used to note that the object is being held by a static owner, and

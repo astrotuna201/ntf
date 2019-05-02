@@ -893,9 +893,6 @@ extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
 
 //------------------------------------------------------------------------------
 public extension NHWCTensor {
-    // TODO: this probably isn't right now with the new TensorView behavior
-    //       regarding padding. Test this
-    //
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M>(_ matrix: M, name: String? = nil) where
         M: MatrixView,
@@ -920,6 +917,4 @@ public extension NHWCTensor {
                       isShared: matrix.isShared,
                       scalars: nil)
     }
-    
-    //*** TODO add other tensor casts
 }

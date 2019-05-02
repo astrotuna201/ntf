@@ -75,7 +75,6 @@ public class CpuUnitTestComputeService : LocalComputeService {
                                  memoryAddressing: .unified))
         
         // add two discreet versions for unit testing
-        // TODO is there a better solution for testing
         devices.append(CpuDevice(service: self, deviceId: 1,
                                  logInfo: logInfo.flat("cpu:1"),
                                  memoryAddressing: .discreet))

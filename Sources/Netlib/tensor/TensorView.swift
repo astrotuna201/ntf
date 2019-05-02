@@ -190,20 +190,6 @@ public extension TensorView {
         }
     }
 
-    // TODO: investigate need for this check
-//    //--------------------------------------------------------------------------
-//    /// shared memory
-//    /// `true` if the underlying `tensorArray` is being referenced by
-//    /// `reference` views.
-//    var isShared: Bool {
-//        get { return _isShared }
-//        set {
-//            assert(!newValue || isShared || isUniqueReference(),
-//                   "to set memory to shared it must already be shared or unique")
-//            _isShared = newValue
-//        }
-//    }
-
     //--------------------------------------------------------------------------
     /// init<T>(shapedLike other:
     /// convenience initializer used by generics to create typed result

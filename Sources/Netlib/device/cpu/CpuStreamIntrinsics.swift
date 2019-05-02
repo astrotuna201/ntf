@@ -251,8 +251,7 @@ public extension CpuStream {
 
     //--------------------------------------------------------------------------
     // pow
-    // TODO something is wrong, I shouldn't need to do this to interface
-    // with math functions
+    // TODO there needs to be a generic math library!
     func pow<T>(x: T, y: T, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric
     {

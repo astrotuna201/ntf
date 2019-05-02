@@ -46,6 +46,8 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
+    /// TODO: remove redundancy with 2 param version below!
+    ///
     public func queue<T1, R>(_ functionName: @autoclosure () -> String,
                             _ t1: T1, _ result: inout R,
                             _ body: @escaping

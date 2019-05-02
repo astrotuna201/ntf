@@ -45,8 +45,13 @@ public protocol DeviceStream:
 
     //--------------------------------------------------------------------------
     // debugging functions
-    /// creates an artificial delay used to simulate work for debugging
-    func debugDelay(seconds: Double) throws
+    /// simulateWork(x:timePerElement:result:
+    /// introduces a delay in the stream by sleeping a duration of
+    /// x.shape.elementCount * timePerElement
+    func simulateWork<T>(x: T, timePerElement: TimeInterval, result: inout T)
+        where T: TensorView
+    /// causes the stream to sleep for the specified interval for testing
+    func delayStream(atLeast interval: TimeInterval)
     /// for unit testing. It's part of the class protocol so that remote
     /// streams throw the error remotely.
     func throwTestError()

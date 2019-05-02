@@ -64,6 +64,44 @@ class test_Async: XCTestCase {
     }
     
     //==========================================================================
+    // test_threeStreamInterleave
+    func test_threeStreamInterleave() {
+        do {
+            Platform.log.level = .diagnostic
+            
+            // create named streams on two discreet devices
+            // cpuUnitTest device 1 and 2 are discreet memory versions
+            let stream1 = Platform.local
+                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            let stream2 = Platform.local
+                .createStream(deviceId: 2, serviceName: "cpuUnitTest")
+
+            let m1 = Matrix<Int32>((2, 3), name: "m1", sequence: 0..<6)
+            let m2 = Matrix<Int32>((2, 3), name: "m2", sequence: 0..<6)
+            let m3 = Matrix<Int32>((2, 3), name: "m3", sequence: 0..<6)
+
+            // sum the values with a delay on device 1
+            let sum_m1m2: Matrix<Int32> = using(stream1) {
+                delayStream(atLeast: 0.1)
+                return m1 + m2
+            }
+
+            // multiply the values on device 2
+            let result = using(stream2) {
+                sum_m1m2 * m3
+            }
+
+            // synchronize with host stream and retrieve result values
+            let values = try result.array()
+            
+            let expected = (0..<6).map { Int32(($0 + $0) * $0) }
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
     // test_tensorReferenceBufferSync
     func test_tensorReferenceBufferSync() {
     }
@@ -74,12 +112,6 @@ class test_Async: XCTestCase {
     }
 
     //==========================================================================
-    // test_threeStreamInterleave
-    func test_threeStreamInterleave() {
-        
-    }
-    
-    //==========================================================================
     // test_StreamEventWait
     func test_StreamEventWait() {
         do {
@@ -88,7 +120,7 @@ class test_Async: XCTestCase {
             
             let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
             let event = try stream.createEvent(options: StreamEventOptions())
-            try stream.debugDelay(seconds: 0.001)
+            stream.delayStream(atLeast: 0.001)
             try stream.record(event: event).blockingWait()
             XCTAssert(event.occurred, "wait failed to block")
         } catch {

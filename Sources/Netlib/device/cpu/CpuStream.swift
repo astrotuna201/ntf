@@ -201,12 +201,24 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     }
     
     //--------------------------------------------------------------------------
-    /// introduces a delay into command queue processing to simulate workloads
-    /// to aid in debugging
-    public func debugDelay(seconds: Double) throws {
+    /// simulateWork(x:timePerElement:result:
+    /// introduces a delay in the stream by sleeping a duration of
+    /// x.shape.elementCount * timePerElement
+    public func simulateWork<T>(x: T, timePerElement: TimeInterval,
+                                result: inout T)
+        where T: TensorView
+    {
+        let delay = TimeInterval(x.shape.elementCount) * timePerElement
+        delayStream(atLeast: delay)
+    }
+
+    //--------------------------------------------------------------------------
+    /// delayStream(atLeast:
+    /// causes the stream to sleep for the specified interval for testing
+    public func delayStream(atLeast interval: TimeInterval) {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
         queue {
-            Thread.sleep(forTimeInterval: TimeInterval(seconds))
+            Thread.sleep(forTimeInterval: interval)
         }
     }
     

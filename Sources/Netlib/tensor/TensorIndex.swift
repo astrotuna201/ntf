@@ -203,11 +203,11 @@ public struct ExtentPosition {
 /// TensorIndex
 public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
     // properties
-    let tensorView: T
+    let padding: ContiguousArray<Padding>
     let viewShape: DataShape
     let dataShape: DataShape
     var currentPosition: Int
-    var position = [ExtentPosition]()
+    var position = ContiguousArray<ExtentPosition>()
     
     // computed properties
     var viewIndex: Int { return position[lastDimension].view.current }
@@ -220,7 +220,8 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
     public init(_ tensorView: T,
                 _ paddedViewShape: DataShape,
                 at initialIndex: [Int]? = nil) {
-        self.tensorView = tensorView
+
+        padding = ContiguousArray<Padding>(tensorView.padding)
         currentPosition = 0
         viewShape = paddedViewShape
         dataShape = tensorView.dataShape
@@ -230,7 +231,7 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
 
     /// end position initializer (faster)
     public init(_ tensorView: T, end: Int) {
-        self.tensorView = tensorView
+        padding = ContiguousArray<Padding>(tensorView.padding)
         currentPosition = end
         viewShape = tensorView.shape.padded(with: tensorView.padding)
         dataShape = tensorView.dataShape
@@ -275,7 +276,6 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
         assert(initialIndex.count == viewShape.rank, "rank mismatch")
         
         // get the padding and set an increment if there is more than one
-        let padding = tensorView.padding
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0
         var viewCurrent = 0
@@ -375,11 +375,6 @@ public struct TensorIndex<T> : Strideable, Comparable where T: TensorView {
             }
         }
         
-//        if dim == viewShape.lastDimension {
-//            let dataPos = position[dim].data.current
-//            print("viewPos: \(position[dim].view.current) dataPos: \(dataPos)")
-//        }
-
         // cache the new position to simplify the Compare < function
         currentPosition = viewIndex
 

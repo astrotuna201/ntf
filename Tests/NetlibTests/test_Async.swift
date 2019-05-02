@@ -16,6 +16,54 @@ class test_Async: XCTestCase {
     ]
 
     //==========================================================================
+    // test_defaultStreamOp
+    // initializes two matrices and adds them together
+    func test_defaultStreamOp() {
+        do {
+            Platform.log.level = .diagnostic
+            
+            let m1 = Matrix<Int32>((2, 5), name: "m1", sequence: 0..<10)
+            let m2 = Matrix<Int32>((2, 5), name: "m2", sequence: 0..<10)
+            let result = m1 + m2
+            let values = try result.array()
+            
+            let expected = (0..<10).map { Int32($0 * 2) }
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_secondaryDiscreetMemoryStream
+    // initializes two matrices on the app thread, executes them on `stream1`,
+    // the retrieves the results
+    func test_secondaryDiscreetMemoryStream() {
+        do {
+            Platform.log.level = .diagnostic
+            
+            // create a named stream on a discreet device
+            // cpuUnitTest device 1 is a discreet memory versions for testing
+            let stream1 = Platform.local
+                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            
+            let m1 = Matrix<Int32>((2, 5), name: "m1", sequence: 0..<10)
+            let m2 = Matrix<Int32>((2, 5), name: "m2", sequence: 0..<10)
+
+            // perform on user provided discreet memory stream
+            let result = using(stream1) { m1 + m2 }
+
+            // synchronize with host stream and retrieve result values
+            let values = try result.array()
+            
+            let expected = (0..<10).map { Int32($0 * 2) }
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
     // test_tensorReferenceBufferSync
     func test_tensorReferenceBufferSync() {
     }
@@ -24,39 +72,7 @@ class test_Async: XCTestCase {
     // test_orphanedStreamShutdown
     func test_orphanedStreamShutdown() {
     }
-    
-    //==========================================================================
-    // test_twoStreamInterleave
-    func test_twoStreamInterleave() {
-        do {
-            Platform.log.level = .diagnostic
-            //        Platform.local.log.categories = [.streamSync]
-            
-            // create a named stream on two different discreet devices
-            // cpu devices 1 and 2 are discreet memory versions for testing
-//            let stream1 = Platform.local
-//                .createStream(deviceId: 1, serviceName: "cpuUnitTest")
-            
-//            let stream2 = Platform.local
-//                .createStream(deviceId: 2, serviceName: "cpuUnitTest")
-            
-            let m1 = Matrix<Int32>((2, 3), name: "left", sequence: 0..<6)
-            let m2 = Matrix<Int32>((2, 3), name: "right", sequence: 0..<6)
-//            let result = using(stream1) { m1 + m2 }
-//            var result = Matrix<Int32>((2, 3), name: "result")
-//            Netlib.add(m1, m2, result: &result)
-            
-            let result = m1 + m2
 
-            let expected: [Int32] = [0, 2, 4, 6, 8, 10]
-            let values = try result.array()
-            XCTAssert(values == expected)
-            
-        } catch {
-            XCTFail(String(describing: error))
-        }
-    }
-    
     //==========================================================================
     // test_threeStreamInterleave
     func test_threeStreamInterleave() {

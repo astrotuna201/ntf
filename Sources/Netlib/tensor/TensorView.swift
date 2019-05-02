@@ -188,7 +188,6 @@ public extension TensorView {
                                           name: name)
             }
         }
-        assert(viewByteOffset + viewSpanByteCount <= tensorArray.byteCount)
     }
 
     // TODO: investigate need for this check
@@ -278,20 +277,9 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// viewByteOffset
-    /// the byte offset into the `tensorArray` buffer where this view begins
-    var viewByteOffset: Int { return viewDataOffset * MemoryLayout<Scalar>.size}
-    
-    //--------------------------------------------------------------------------
-    /// viewSpanByteCount
-    /// the number of bytes in the `tensorArray` spanned by this view
-    var viewSpanByteCount: Int {
-        return dataShape.elementSpanCount * MemoryLayout<Scalar>.size
-    }
-
-    //--------------------------------------------------------------------------
     /// copyIfMutates
-    /// Creates a copy of the tensorArray if read-write access will cause mutation
+    /// Creates a copy of the tensorArray if read-write access
+    /// will cause mutation
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
     private mutating func copyIfMutates(using stream: DeviceStream) throws {
@@ -311,26 +299,21 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// futureWaitForCompletion(on stream:
-    /// if there is a pending write completion event, then queue
-    /// a wait it on this stream
+    /// if there is a pending write completion event from a different
+    /// stream that has not occurred, then queue a wait for it on this stream
+    ///
+    /// NOTE: this must be called from inside the accessQueue.sync block
     private func futureWaitForCompletion(on stream: DeviceStream) throws {
-        if let event = tensorArray.writeCompletionEvent, !event.occurred {
-            if event.stream !== stream {
-                try stream.futureWait(for: event)
-                
-                diagnostic(
-                    "\(stream.device.name)_\(stream.name) " +
-                        "will wait for \(name)(\(tensorArray.trackingId)) " +
-                        "\(String(describing: Scalar.self))" +
-                    "[\(dataShape.elementCount)]",
-                    categories: .scheduling, indent: 1)
-            }
-        } else {
+        if let event = tensorArray.writeCompletionEvent,
+            event.stream !== stream && !event.occurred {
+            
+            try stream.futureWait(for: event)
+            
             diagnostic(
-                "\(name)(\(tensorArray.trackingId)) " +
+                "\(stream.device.name)_\(stream.name) " +
+                    "will wait for \(name)(\(tensorArray.trackingId)) " +
                     "\(String(describing: Scalar.self))" +
-                    "[\(dataShape.elementCount)] " +
-                "is already write complete",
+                "[\(dataShape.elementCount)]",
                 categories: .scheduling, indent: 1)
         }
     }
@@ -360,6 +343,7 @@ public extension TensorView {
                                                   using: deviceStream)
             
             // if no stream is specified then wait for completion
+            // which will sync for host access
             if let event = tensorArray.writeCompletionEvent, stream == nil {
                 try event.blockingWait(for: deviceStream.timeout)
             }
@@ -396,6 +380,7 @@ public extension TensorView {
                                                    using: deviceStream)
             
             // if no stream is specified then wait for completion
+            // which will sync for host access
             if let event = tensorArray.writeCompletionEvent, stream == nil {
                 try event.blockingWait(for: deviceStream.timeout)
             }
@@ -426,7 +411,7 @@ public extension TensorView {
                 " when \(name)(\(tensorArray.trackingId)) " +
                 "\(String(describing: Scalar.self))" +
                 "[\(dataShape.elementCount)] is complete",
-                categories: .scheduling, indent: 1)
+                categories: .scheduling)
             return event
         }
     }

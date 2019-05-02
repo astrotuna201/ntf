@@ -55,6 +55,8 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     {
         diagnostic("\(schedulingString): \(functionName())",
             categories: .scheduling)
+        let currentNestingLevel = logInfo.nestingLevel
+        logInfo.nestingLevel = currentNestingLevel + 1
         
         // if the stream is in an error state, no additional work
         // will be queued
@@ -82,7 +84,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                     }
                 }
                 diagnostic(">>> \(functionName()) is queued",
-                           categories: .scheduling, indent: 1)
+                           categories: .scheduling)
                 
                 // queue signaling of the completion event after the work
                 // is complete
@@ -91,6 +93,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         } catch {
             self.reportDevice(error: error)
         }
+        
+        // put back
+        logInfo.nestingLevel = currentNestingLevel
     }
 
     //--------------------------------------------------------------------------

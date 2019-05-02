@@ -119,12 +119,34 @@ class test_Async: XCTestCase {
             Platform.local.log.categories = [.streamSync]
             
             let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
-            let event = try stream.createEvent(options: StreamEventOptions())
+            let event = try stream.createEvent()
             stream.delayStream(atLeast: 0.001)
-            try stream.record(event: event).blockingWait()
+            try stream.record(event: event).blockingWait(for: stream.timeout)
             XCTAssert(event.occurred, "wait failed to block")
         } catch {
             XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_StreamEventTimeout
+    func test_StreamEventTimeout() {
+        do {
+            Platform.log.level = .diagnostic
+            Platform.local.log.categories = [.streamSync]
+            
+            let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
+            stream.timeout = 0.1
+
+            // create an event then delay stream
+            let event = try stream.createEvent()
+            try stream.futureWait(for: event)
+            stream.delayStream(atLeast: 1.0)
+            try stream.waitUntilStreamIsComplete()
+            // shouldn't get here
+            XCTFail("should have thrown a timeout error")
+        } catch {
+            XCTAssert(true)
         }
     }
     

@@ -11,7 +11,7 @@ import Foundation
 final public class CpuStreamEvent : StreamEvent {
     // properties
     public private (set) var trackingId = 0
-    private let accessMutex = Mutex()
+    private let access = Mutex()
     private let semaphore = DispatchSemaphore(value: 0)
     public  let stream: DeviceStream
     private var _occurred: Bool = true
@@ -40,12 +40,12 @@ final public class CpuStreamEvent : StreamEvent {
     }
     
     public var occurred: Bool {
-        get { return accessMutex.sync { _occurred } }
-        set { accessMutex.sync { _occurred = newValue } }
+        get { return access.sync { _occurred } }
+        set { access.sync { _occurred = newValue } }
     }
     
     public func blockingWait(for timeout: TimeInterval) throws {
-        try accessMutex.sync {
+        try access.sync {
             guard !_occurred else { return }
             #if DEBUG
             stream.diagnostic(
@@ -55,8 +55,7 @@ final public class CpuStreamEvent : StreamEvent {
             #endif
             
             if timeout > 0 {
-                let waitUntil = DispatchWallTime.now() + (timeout * 1000000)
-                if semaphore.wait(wallTimeout: waitUntil) == .timedOut {
+                if semaphore.wait(timeout: .now() + timeout) == .timedOut {
                     #if DEBUG
                     stream.diagnostic("StreamEvent(\(trackingId)) timed out",
                         categories: .streamSync)

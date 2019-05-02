@@ -43,12 +43,12 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
-    public func queue<T>(_ functionName: @autoclosure () -> String,
-                         _ lhs: T, _ rhs: T, _ result: inout T,
-                         _ body: @escaping
+    public func queue<T, R>(_ functionName: @autoclosure () -> String,
+                            _ lhs: T, _ rhs: T, _ result: inout R,
+                            _ body: @escaping
         (TensorViewCollection<T>, TensorViewCollection<T>,
-        inout TensorViewMutableCollection<T>) throws -> Void)
-        where T: TensorView
+        inout TensorViewMutableCollection<R>) throws -> Void)
+        where T: TensorView, R: TensorView
     {
         diagnostic("\(schedulingString): \(functionName())",
             categories: .scheduling)
@@ -78,7 +78,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                         self.reportDevice(error: error)
                     }
                 }
-                diagnostic(">>> function queued",
+                diagnostic(">>> \(functionName()) is queued",
                            categories: .scheduling, indent: 1)
                 
                 // queue signaling of the completion event after the work

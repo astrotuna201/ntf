@@ -63,11 +63,7 @@ public extension CpuStream {
         T : TensorView, T.Scalar : AnyFloatingPoint,
         T.BoolView.Scalar == Bool
     {
-        queue(&result) { ref in
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
             zip(lhs, rhs).map(to: &results) { $0.0 - $0.1 <= tolerance }
         }
     }
@@ -120,11 +116,7 @@ public extension CpuStream {
     func div<T>(lhs: T, rhs: T, result: inout T) where
         T : TensorView, T.Scalar : FloatingPoint
     {
-        queue(&result) { ref in
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
             zip(lhs, rhs).map(to: &results) { $0 / $1 }
         }
     }
@@ -135,11 +127,7 @@ public extension CpuStream {
         T: TensorView, T.Scalar: Equatable,
         T.BoolView.Scalar == Bool
     {
-        queue(&result) { ref in
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
             zip(lhs, rhs).map(to: &results) { $0 == $1 }
         }
     }
@@ -260,11 +248,7 @@ public extension CpuStream {
     }
     
     func mul<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        queue(&result) { ref in
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
             zip(lhs, rhs).map(to: &results) { $0 * $1 }
         }
     }
@@ -284,11 +268,7 @@ public extension CpuStream {
     func pow<T>(x: T, y: T, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            let y = try y.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, x, y, &result) { x, y, results in
             zip(x, y).map(to: &results) {
                 T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
             }
@@ -350,11 +330,7 @@ public extension CpuStream {
     func subtract<T>(lhs: T, rhs: T, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {
-        queue(&result) { ref in
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
             zip(lhs, rhs).map(to: &results) { $0 - $1 }
         }
     }

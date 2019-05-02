@@ -232,7 +232,6 @@ public extension TensorView {
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Scalar {
         assert(shape.elementCount == 1)
-        if let lastError = _Streams.current.lastError { throw lastError }
         return try readOnly()[0]
     }
 
@@ -356,10 +355,11 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            try copyIfMutates(using: deviceStream)
-            
             // queue a wait for pending writes
             try futureWaitForCompletion(on: deviceStream)
+
+            // mutating write?
+            try copyIfMutates(using: deviceStream)
             
             // get the buffer
             let buffer = try tensorArray.readWrite(type: Scalar.self,

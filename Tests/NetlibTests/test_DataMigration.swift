@@ -11,6 +11,7 @@ class test_DataMigration: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
+        ("test_fastCopyOnWriteDevice", test_fastCopyOnWriteDevice),
         ("test_viewMutateOnWrite", test_viewMutateOnWrite),
         ("test_tensorDataMigration", test_tensorDataMigration),
         ("test_mutateOnDevice", test_mutateOnDevice),
@@ -20,6 +21,32 @@ class test_DataMigration: XCTestCase {
         ("test_columnMajorDataView", test_columnMajorDataView),
     ]
 	
+    //--------------------------------------------------------------------------
+    // test_fastCopyOnWriteDevice
+    // stresses view mutation and async copies on device
+    func test_fastCopyOnWriteDevice() {
+        do {
+//            Platform.log.level = .diagnostic
+//            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            
+            let matrix = Matrix<Float>((3, 2), name: "matrix", sequence: 0..<6)
+            let index = [1, 1]
+            
+            for i in 0..<500 {
+                var matrix2 = matrix
+                try matrix2.set(value: 7, at: index)
+                
+                let value = try matrix2.value(at: index)
+                if value != 7.0 {
+                    XCTFail("i: \(i)  value is: \(value)")
+                    break
+                }
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
     //==========================================================================
 	// test_viewMutateOnWrite
 	func test_viewMutateOnWrite() {

@@ -167,6 +167,9 @@ final public class TensorArray: ObjectTracking, Logging {
         
         // copy the other master array
         try replica.copyAsync(from: otherMaster, using: stream)
+        
+        // record async copy completion event
+        writeCompletionEvent = try stream.record(event: stream.createEvent())
 
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.device.name)" +
@@ -269,10 +272,6 @@ final public class TensorArray: ObjectTracking, Logging {
                 // get the master uma buffer
                 let buffer = UnsafeRawBufferPointer(master.buffer)
                 try other.copyAsync(from: buffer, using: stream)
-                
-                // record async copy completion event
-                writeCompletionEvent = try stream
-                    .record(event: stream.createEvent())
 
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "uma:\(master.device.name)" +
@@ -318,6 +317,9 @@ final public class TensorArray: ObjectTracking, Logging {
                 "[\(other.buffer.bindMemory(to: Scalar.self).count)]",
                 categories: .dataCopy)
         }
+        
+        // record async copy completion event
+        writeCompletionEvent = try stream.record(event: stream.createEvent())
     }
     
     //--------------------------------------------------------------------------
@@ -331,8 +333,11 @@ final public class TensorArray: ObjectTracking, Logging {
         // only copy if the devices have discreet memory
         guard master.device.memoryAddressing == .discreet else { return }
         lastAccessCopiedBuffer = true
-        try other.copyAsync(from: master, using: stream)
         
+        // async copy and record completion event
+        try other.copyAsync(from: master, using: stream)
+        writeCompletionEvent = try stream.record(event: stream.createEvent())
+
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(master.device.name)" +
             "\(setText(" --> ", color: .blue))" +

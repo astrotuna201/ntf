@@ -48,6 +48,62 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// This will catch and propagate the last asynchronous error thrown.
     /// TODO: remove redundancy with 2 param version below!
     ///
+    public func queue<R>(
+        _ functionName: @autoclosure () -> String,
+        _ result: inout R,
+        _ body: @escaping (inout TensorViewMutableCollection<R>) throws -> Void)
+        where R: TensorView
+    {
+        // if the stream is in an error state, no additional work
+        // will be queued
+        guard lastError == nil else { return }
+        
+        // schedule the work
+        diagnostic("\(schedulingString): \(functionName())",
+            categories: .scheduling)
+        let currentNestingLevel = logInfo.nestingLevel
+        logInfo.nestingLevel = currentNestingLevel + 1
+        
+        do {
+            // get the parameter sequences
+            var ref = try result.reference(using: self)
+            var results = try ref.mutableValues(using: self)
+            
+            if executeSynchronously {
+                try body(&results)
+            } else {
+                // safely set a new completion event on the result
+                let completionEvent =
+                    try ref.createAndSetCompletionEvent(using: self)
+                
+                // queue the work
+                commandQueue.async {
+                    do {
+                        try body(&results)
+                    } catch {
+                        self.reportDevice(error: error)
+                    }
+                }
+                diagnostic(">>> \(functionName()) is queued",
+                    categories: .scheduling)
+                
+                // queue signaling of the completion event after the work
+                // is complete
+                try record(event: completionEvent)
+            }
+        } catch {
+            self.reportDevice(error: error)
+        }
+        
+        // put back
+        logInfo.nestingLevel = currentNestingLevel
+    }
+    
+    //--------------------------------------------------------------------------
+    /// queues a closure on the stream for execution
+    /// This will catch and propagate the last asynchronous error thrown.
+    /// TODO: remove redundancy with 2 param version below!
+    ///
     public func queue<T1, R>(_ functionName: @autoclosure () -> String,
                             _ t1: T1, _ result: inout R,
                             _ body: @escaping

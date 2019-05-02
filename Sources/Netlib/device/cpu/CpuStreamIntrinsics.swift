@@ -138,7 +138,7 @@ public extension CpuStream {
     /// fill(result:with:
     /// NOTE: this can be much faster, doesn't need to be ordered access
     func fill<T>(_ result: inout T, with value: T.Scalar) where T : TensorView {
-        queue(#function, result, &result) { _ , result in
+        queue(#function, &result) { result in
             for index in result.indices {
                 result[index] = value
             }
@@ -150,7 +150,7 @@ public extension CpuStream {
     func fillWithIndex<T>(_ result: inout T, startAt: Int) where
         T : TensorView, T.Scalar: AnyNumeric
     {
-        queue(#function, result, &result) { _ , result in
+        queue(#function, &result) { result in
             var value = startAt
             for index in result.indices {
                 result[index] = T.Scalar(any: value)

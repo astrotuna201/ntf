@@ -310,13 +310,39 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
+    /// futureWaitForCompletion(on stream:
+    /// if there is a pending write completion event, then queue
+    /// a wait it on this stream
+    private func futureWaitForCompletion(on stream: DeviceStream) throws {
+        if let event = tensorArray.writeCompletionEvent, !event.occurred {
+            if event.stream !== stream {
+                try stream.futureWait(for: event)
+                
+                diagnostic(
+                    "\(stream.device.name)_\(stream.name) " +
+                        "will wait for \(name)(\(tensorArray.trackingId)) " +
+                        "\(String(describing: Scalar.self))" +
+                    "[\(dataShape.elementCount)]",
+                    categories: .scheduling, indent: 1)
+            }
+        } else {
+            diagnostic(
+                "\(name)(\(tensorArray.trackingId)) " +
+                    "\(String(describing: Scalar.self))" +
+                    "[\(dataShape.elementCount)] " +
+                "is already write complete",
+                categories: .scheduling, indent: 1)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// readOnly(using stream:
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     func readOnly(using stream: DeviceStream? = nil) throws
         -> UnsafeBufferPointer<Scalar>
     {
-        let deviceStream = stream ?? _Streams.umaStream
+        let deviceStream = stream ?? _Streams.hostStream
         if let lastError = deviceStream.lastError { throw lastError }
 
         // get the queue, if we reference it directly as a dataArray member it
@@ -325,25 +351,9 @@ public extension TensorView {
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
-            
-            // wait for
-            if let event = tensorArray.writeCompletionEvent,
-                !event.occurred {
-                try deviceStream.futureWait(for: event)
-                
-                diagnostic("\(deviceStream.device.name)_\(deviceStream.name) " +
-                    "will wait for \(name)(\(tensorArray.trackingId)) " +
-                    "\(String(describing: Scalar.self))" +
-                    "[\(dataShape.elementCount)]",
-                    categories: .scheduling, indent: 1)
-                
-            } else {
-                diagnostic("\(name)(\(tensorArray.trackingId)) " +
-                    "\(String(describing: Scalar.self))" +
-                    "[\(dataShape.elementCount)] " +
-                    "is already write complete",
-                           categories: .scheduling, indent: 1)
-            }
+
+            // queue a wait for pending writes
+            try futureWaitForCompletion(on: deviceStream)
 
             // get the buffer
             let buffer = try tensorArray.readOnly(type: Scalar.self,
@@ -368,7 +378,7 @@ public extension TensorView {
         -> UnsafeMutableBufferPointer<Scalar>
     {
         precondition(!tensorArray.isReadOnly, "the tensor is read only")
-        let deviceStream = stream ?? _Streams.umaStream
+        let deviceStream = stream ?? _Streams.hostStream
         if let lastError = deviceStream.lastError { throw lastError }
 
         // get the queue, if we reference it as a dataArray member it
@@ -377,6 +387,11 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: deviceStream)
+            
+            // queue a wait for pending writes
+            try futureWaitForCompletion(on: deviceStream)
+            
+            // get the buffer
             let buffer = try tensorArray.readWrite(type: Scalar.self,
                                                    using: deviceStream)
             

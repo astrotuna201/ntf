@@ -298,7 +298,7 @@ final public class TensorArray: ObjectTracking, Logging {
             // both are discreet and not in the same service, so
             // transfer to host memory as an intermediate step
             let host = try getArray(type: Scalar.self,
-                                    for: _Streams.umaStream)
+                                    for: _Streams.hostStream)
             try master.copyAsync(to: host.buffer, using: stream)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +

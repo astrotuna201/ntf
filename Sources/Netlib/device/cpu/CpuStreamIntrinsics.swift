@@ -281,10 +281,7 @@ public extension CpuStream {
         T : TensorView, T.Scalar : AnyNumeric
     {
 //        if let axes = axes {
-//            queue(&result) { ref in
-//                let x = try x.values(using: self)
-//                var results = try ref.mutableValues(using: self)
-//
+//            queue(#function, x, axes, &result) { x, axes, results in
 //                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
 //            }
 //        } else {

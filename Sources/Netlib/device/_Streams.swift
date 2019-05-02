@@ -32,7 +32,7 @@ public func using<R>(_ stream: DeviceStream,
 @usableFromInline
 class _Streams {
     /// stream that creates arrays unified with the app address space
-    var _umaStream: DeviceStream
+    var _hostStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
     var streamScope: [DeviceStream] = []
 
@@ -72,9 +72,9 @@ class _Streams {
     }
     
     //--------------------------------------------------------------------------
-    /// umaStream
-    public static var umaStream: DeviceStream {
-        return _Streams.local._umaStream
+    /// hostStream
+    public static var hostStream: DeviceStream {
+        return _Streams.local._hostStream
     }
     
     //--------------------------------------------------------------------------
@@ -92,7 +92,7 @@ class _Streams {
     // initializers
     private init() {
         // create dedicated stream for app data transfer
-        _umaStream = Platform.local.createStream(
+        _hostStream = Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "host")
 
         // create the default stream based on service and device priority.
@@ -102,7 +102,7 @@ class _Streams {
         // _Streams is a static object, so mark the default stream as static
         // so it won't show up in leak reports
         ObjectTracker.global.markStatic(trackingId: stream.trackingId)
-        ObjectTracker.global.markStatic(trackingId: _umaStream.trackingId)
+        ObjectTracker.global.markStatic(trackingId: _hostStream.trackingId)
     }
     
     //--------------------------------------------------------------------------

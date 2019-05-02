@@ -77,12 +77,8 @@ final public class TensorArray: ObjectTracking, Logging {
         isReadOnly = true
         byteCount = buffer.count
         
-        // queue a completion event just in case to make sure any writing
-        // by the app thread is complete before future access
-        let stream = _Streams.local.appThreadStream
-        writeCompletionEvent = try! stream.record(event: stream.createEvent())
-
         // create the replica device array
+        let stream = _Streams.current
         let key = stream.device.deviceArrayReplicaKey
         let bytes = UnsafeRawBufferPointer(buffer)
         let array = stream.device.createReferenceArray(buffer: bytes)
@@ -106,13 +102,9 @@ final public class TensorArray: ObjectTracking, Logging {
         masterVersion = 0
         isReadOnly = false
         byteCount = buffer.count
-
-        // queue a completion event just in case to make sure any writing
-        // by the app thread is complete before future access
-        let stream = _Streams.local.appThreadStream
-        writeCompletionEvent = try! stream.record(event: stream.createEvent())
         
         // create the replica device array
+        let stream = _Streams.current
         let key = stream.device.deviceArrayReplicaKey
         let bytes = UnsafeMutableRawBufferPointer(buffer)
         let array = stream.device.createMutableReferenceArray(buffer: bytes)
@@ -140,10 +132,8 @@ final public class TensorArray: ObjectTracking, Logging {
             "\(String(describing: Scalar.self))[\(buffer.count)]",
             categories: .dataAlloc)
 
-        // copying an app buffer is synchronous
-        let stream = _Streams.local.appThreadStream
-
         // initialize
+        let stream = _Streams.current
         _ = try readWrite(type: Scalar.self,
                           using: stream).initialize(from: buffer)
     }
@@ -308,7 +298,7 @@ final public class TensorArray: ObjectTracking, Logging {
             // both are discreet and not in the same service, so
             // transfer to host memory as an intermediate step
             let host = try getArray(type: Scalar.self,
-                                    for: _Streams.local.appThreadStream)
+                                    for: _Streams.umaStream)
             try master.copyAsync(to: host.buffer, using: stream)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +

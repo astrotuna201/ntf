@@ -40,10 +40,10 @@ class test_Async: XCTestCase {
 //            let stream2 = Platform.local
 //                .createStream(deviceId: 2, serviceName: "cpuUnitTest")
             
-            let m1 = Matrix<Int32>((2, 3), sequence: 0..<6)
-            let m2 = Matrix<Int32>((2, 3), sequence: 0..<6)
+            let m1 = Matrix<Int32>((2, 3), name: "left", sequence: 0..<6)
+            let m2 = Matrix<Int32>((2, 3), name: "right", sequence: 0..<6)
 //            let result = using(stream1) { m1 + m2 }
-            var result = Matrix<Int32>((2, 3))
+            var result = Matrix<Int32>((2, 3), name: "result")
             Netlib.add(m1, m2, result: &result)
 
             let expected: [Int32] = [0, 2, 4, 6, 8, 10]

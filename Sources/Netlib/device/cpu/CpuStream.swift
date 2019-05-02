@@ -16,7 +16,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
     public var _errorMutex: Mutex = Mutex()
-
+    
     // serial queue
     private let commandQueue: DispatchQueue
 
@@ -39,6 +39,56 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         trackingId = ObjectTracker.global.register(self, namePath: path)
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
+
+    //--------------------------------------------------------------------------
+    /// queues a closure on the stream for execution
+    /// This will catch and propagate the last asynchronous error thrown.
+    public func queue<T>(_ functionName: @autoclosure () -> String,
+                         _ lhs: T, _ rhs: T, _ result: inout T,
+                         _ body: @escaping
+        (TensorViewCollection<T>, TensorViewCollection<T>,
+        inout TensorViewMutableCollection<T>) throws -> Void)
+        where T: TensorView
+    {
+        diagnostic("\(schedulingString): \(functionName())",
+            categories: .scheduling)
+        
+        // if the stream is in an error state, no additional work
+        // will be queued
+        guard lastError == nil else { return }
+        do {
+            let lhs = try lhs.values(using: self)
+            let rhs = try rhs.values(using: self)
+
+            var ref = try result.reference(using: self)
+            var results = try ref.mutableValues(using: self)
+
+            if executeSynchronously {
+                try body(lhs, rhs, &results)
+            } else {
+                // safely set a new completion event on the result
+                let completionEvent =
+                    try ref.createAndSetCompletionEvent(using: self)
+                
+                // queue the work
+                commandQueue.async {
+                    do {
+                        try body(lhs, rhs, &results)
+                    } catch {
+                        self.reportDevice(error: error)
+                    }
+                }
+                diagnostic(">>> function queued",
+                           categories: .scheduling, indent: 1)
+                
+                // queue signaling of the completion event after the work
+                // is complete
+                try record(event: completionEvent)
+            }
+        } catch {
+            self.reportDevice(error: error)
+        }
+    }
 
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
@@ -78,7 +128,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             self.reportDevice(error: error)
         }
     }
-
+    
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.

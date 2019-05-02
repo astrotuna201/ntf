@@ -31,10 +31,8 @@ public func using<R>(_ stream: DeviceStream,
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
-    /// appThreadStream
-    /// a unified memory stream used to synchronize access for the
-    /// application thread
-    public let appThreadStream: DeviceStream
+    /// stream that creates arrays unified with the app address space
+    var _umaStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
     var streamScope: [DeviceStream] = []
 
@@ -74,6 +72,12 @@ class _Streams {
     }
     
     //--------------------------------------------------------------------------
+    /// umaStream
+    public static var umaStream: DeviceStream {
+        return _Streams.local._umaStream
+    }
+    
+    //--------------------------------------------------------------------------
     /// logInfo
     // there will always be the platform default stream and logInfo
     public var logInfo: LogInfo { return streamScope.last!.logInfo }
@@ -87,27 +91,18 @@ class _Streams {
     //--------------------------------------------------------------------------
     // initializers
     private init() {
+        // create dedicated stream for app data transfer
+        _umaStream = Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "host")
+
         // create the default stream based on service and device priority.
-        let stream = Platform.local.defaultDevice
-            .createStream(name: "defaultStream")
+        let stream = Platform.local.defaultDevice.createStream(name: "default")
         streamScope = [stream]
         
         // _Streams is a static object, so mark the default stream as static
         // so it won't show up in leak reports
         ObjectTracker.global.markStatic(trackingId: stream.trackingId)
-
-        // use the default stream as the app stream if it uses
-        // unified memory addressing
-        if stream.device.memoryAddressing == .unified {
-            appThreadStream = stream
-            
-        } else {
-            // create a uma stream for app thread synchronization
-            appThreadStream =
-                Platform.local.createStream(deviceId: 0,
-                                            serviceName: "cpu",
-                                            name: "applicationThreadStream")
-        }
+        ObjectTracker.global.markStatic(trackingId: _umaStream.trackingId)
     }
     
     //--------------------------------------------------------------------------

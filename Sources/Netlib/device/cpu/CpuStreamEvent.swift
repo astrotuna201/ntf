@@ -49,8 +49,8 @@ final public class CpuStreamEvent : StreamEvent {
             guard !_occurred else { return }
             #if DEBUG
             stream.diagnostic(
-                "StreamEvent(\(trackingId)) waiting... " +
-                "on \(stream.device.name)_s\(stream.id)",
+                "\(waitString) StreamEvent(\(trackingId)) " +
+                "on \(stream.device.name)_\(stream.name)",
                 categories: .streamSync)
             #endif
             
@@ -68,8 +68,8 @@ final public class CpuStreamEvent : StreamEvent {
             }
             
             #if DEBUG
-            stream.diagnostic("StreamEvent(\(trackingId)) occured on " +
-                "\(stream.device.name)_s\(stream.id)",
+            stream.diagnostic("\(signaledString) StreamEvent(\(trackingId)) on " +
+                "\(stream.device.name)_\(stream.name)",
                 categories: .streamSync)
             #endif
             _occurred = true

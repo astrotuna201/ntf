@@ -16,18 +16,8 @@ public extension CpuStream {
     func add<T>(lhs: T, rhs: T, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {
-        diagnostic("\(schedulingString): \(#function)", categories: .scheduling)
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
-        queue(&result) { ref in
-            print("begin add")
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-            
-            print("do zip map add")
-            try zip(lhs, rhs).map(to: &ref) { $0 + $1 }
-            print("finish add")
+        queue(#function, lhs, rhs, &result) { lhs, rhs, results in
+            zip(lhs, rhs).map(to: &results) { $0 + $1 }
         }
     }
     
@@ -36,8 +26,6 @@ public extension CpuStream {
     func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar == Bool
     {
-        x.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             let result = try ref.readWrite(using: self)
@@ -55,8 +43,6 @@ public extension CpuStream {
     func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar == Bool
     {
-        x.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             let result = try ref.readWrite(using: self)
@@ -77,9 +63,6 @@ public extension CpuStream {
         T : TensorView, T.Scalar : AnyFloatingPoint,
         T.BoolView.Scalar == Bool
     {
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let lhs = try lhs.values(using: self)
             let rhs = try rhs.values(using: self)
@@ -102,8 +85,6 @@ public extension CpuStream {
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
     {
-        x.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             var results = try ref.mutableValues(using: self)
@@ -139,9 +120,6 @@ public extension CpuStream {
     func div<T>(lhs: T, rhs: T, result: inout T) where
         T : TensorView, T.Scalar : FloatingPoint
     {
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let lhs = try lhs.values(using: self)
             let rhs = try rhs.values(using: self)
@@ -157,9 +135,6 @@ public extension CpuStream {
         T: TensorView, T.Scalar: Equatable,
         T.BoolView.Scalar == Bool
     {
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let lhs = try lhs.values(using: self)
             let rhs = try rhs.values(using: self)
@@ -230,8 +205,6 @@ public extension CpuStream {
     func log<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint
     {
-        x.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             var results = try ref.mutableValues(using: self)
@@ -287,9 +260,6 @@ public extension CpuStream {
     }
     
     func mul<T>(lhs: T, rhs: T, result: inout T) where T : TensorView, T.Scalar : Numeric {
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let lhs = try lhs.values(using: self)
             let rhs = try rhs.values(using: self)
@@ -314,9 +284,6 @@ public extension CpuStream {
     func pow<T>(x: T, y: T, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric
     {
-        x.waitForFutureCompletion(on: self)
-        y.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             let y = try y.values(using: self)
@@ -333,25 +300,21 @@ public extension CpuStream {
     func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric
     {
-        x.waitForFutureCompletion(on: self)
-        
-        if let axes = axes {
-            axes.waitForFutureCompletion(on: self)
-            
+//        if let axes = axes {
+//            queue(&result) { ref in
+//                let x = try x.values(using: self)
+//                var results = try ref.mutableValues(using: self)
+//
+//                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
+//            }
+//        } else {
             queue(&result) { ref in
                 let x = try x.values(using: self)
                 var results = try ref.mutableValues(using: self)
                 
                 x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
             }
-        } else {
-            queue(&result) { ref in
-                let x = try x.values(using: self)
-                var results = try ref.mutableValues(using: self)
-                
-                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
-            }
-        }
+//        }
     }
     
     func rsqrt<T>(x: T, result: inout T) where T : TensorView, T.Scalar : FloatingPoint {
@@ -387,9 +350,6 @@ public extension CpuStream {
     func subtract<T>(lhs: T, rhs: T, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {
-        lhs.waitForFutureCompletion(on: self)
-        rhs.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let lhs = try lhs.values(using: self)
             let rhs = try rhs.values(using: self)
@@ -404,8 +364,6 @@ public extension CpuStream {
     func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {
-        x.waitForFutureCompletion(on: self)
-        
         queue(&result) { ref in
             let x = try x.values(using: self)
             var results = try ref.mutableValues(using: self)

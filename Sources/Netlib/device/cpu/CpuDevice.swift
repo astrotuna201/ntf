@@ -83,8 +83,10 @@ public class CpuDevice: LocalComputeDevice {
         let streamName = "\(streamName):\(id)"
         let stream = CpuStream(logInfo: logInfo.flat(streamName),
                          device: self, name: streamName, id: id)
+        
         diagnostic("\(allocString) DeviceStream(\(trackingId)) " +
-            "name: `\(streamName)` on \(name)", categories: [.streamAlloc])
+            "\(name)_\(streamName)", categories: [.streamAlloc])
+        
         return stream
 	}
 } // CpuDevice

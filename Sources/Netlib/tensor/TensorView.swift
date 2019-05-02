@@ -313,120 +313,81 @@ public extension TensorView {
     /// readOnly(using stream:
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
-    func readOnly(using stream: DeviceStream) throws
+    func readOnly(using stream: DeviceStream? = nil) throws
         -> UnsafeBufferPointer<Scalar>
     {
-        if let lastError = stream.lastError { throw lastError }
-        
+        let deviceStream = stream ?? _Streams.umaStream
+        if let lastError = deviceStream.lastError { throw lastError }
+
         // get the queue, if we reference it directly as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
+            
+            // wait for
+            if let event = tensorArray.writeCompletionEvent,
+                !event.occurred {
+                try deviceStream.futureWait(for: event)
+                
+                diagnostic("\(deviceStream.device.name)_\(deviceStream.name) " +
+                    "will wait for \(name)(\(tensorArray.trackingId)) " +
+                    "\(String(describing: Scalar.self))" +
+                    "[\(dataShape.elementCount)]",
+                    categories: .scheduling, indent: 1)
+                
+            } else {
+                diagnostic("\(name)(\(tensorArray.trackingId)) " +
+                    "\(String(describing: Scalar.self))" +
+                    "[\(dataShape.elementCount)] " +
+                    "is already write complete",
+                           categories: .scheduling, indent: 1)
+            }
+
+            // get the buffer
             let buffer = try tensorArray.readOnly(type: Scalar.self,
-                                                  using: stream)
+                                                  using: deviceStream)
+            
+            // if no stream is specified then wait for completion
+            if let event = tensorArray.writeCompletionEvent, stream == nil {
+                try event.blockingWait(for: deviceStream.timeout)
+            }
+
             return UnsafeBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
         }
-    }
-
-    //--------------------------------------------------------------------------
-    /// readOnly
-    /// this is an app thread blocking version of the call. It will synchronize
-    /// with the appThreadStream
-    func readOnly() throws -> UnsafeBufferPointer<Scalar> {
-        // get the app thread stream
-        let stream = _Streams.local.appThreadStream
-        
-        // add a stream wait for completion of pending writes to this tensor
-        waitForFutureCompletion(on: stream)
-
-        // try to get the buffer
-        let buffer = try readOnly(using: stream)
-
-        // wait for the app thread stream to complete so we can gain access
-        try stream.waitUntilStreamIsComplete()
-
-        // return the buffer safe for app access
-        return buffer
     }
     
     //--------------------------------------------------------------------------
     /// readWrite(using stream:
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
-    mutating func readWrite(using stream: DeviceStream) throws
+    mutating func readWrite(using stream: DeviceStream? = nil) throws
         -> UnsafeMutableBufferPointer<Scalar>
     {
         precondition(!tensorArray.isReadOnly, "the tensor is read only")
-        if let lastError = stream.lastError { throw lastError }
+        let deviceStream = stream ?? _Streams.umaStream
+        if let lastError = deviceStream.lastError { throw lastError }
 
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            try copyIfMutates(using: stream)
+            try copyIfMutates(using: deviceStream)
             let buffer = try tensorArray.readWrite(type: Scalar.self,
-                                                   using: stream)
+                                                   using: deviceStream)
+            
+            // if no stream is specified then wait for completion
+            if let event = tensorArray.writeCompletionEvent, stream == nil {
+                try event.blockingWait(for: deviceStream.timeout)
+            }
+            
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
-        }
-    }
-
-    //--------------------------------------------------------------------------
-    /// readWrite
-    /// this is an app thread blocking version of the call. It will synchronize
-    /// with the appThreadStream
-    mutating func readWrite() throws -> UnsafeMutableBufferPointer<Scalar> {
-        // get the app thread stream
-        let stream = _Streams.local.appThreadStream
-        
-        // add a stream wait for completion of pending writes to this tensor
-        waitForFutureCompletion(on: stream)
-        
-        // try to get the buffer
-        let buffer = try readWrite(using: stream)
-
-        // wait for the app thread stream to complete so we can gain access
-        try stream.waitUntilStreamIsComplete()
-
-        // return the buffer safe for app access
-        return buffer
-    }
-    
-    //--------------------------------------------------------------------------
-    /// waitForFutureCompletion
-    /// if there is a completion event and it hasn't already occured,
-    /// then schedule a future wait op on the stream
-    func waitForFutureCompletion(on stream: DeviceStream) {
-        do {
-            // get the queue, if we reference it as a dataArray member it
-            // it adds a ref count which messes things up
-            let queue = tensorArray.accessQueue
-            
-            try queue.sync {
-                if let event = tensorArray.writeCompletionEvent,
-                    !event.occurred {
-                    try stream.futureWait(for: event)
-                    
-                    diagnostic("\(stream.device.name)_s\(stream.id) " +
-                        "will wait for \(name)(\(tensorArray.trackingId))" +
-                        " elements[\(dataShape.elementCount)]",
-                        categories: .scheduling, indent: 1)
-                    
-                } else {
-                    diagnostic(" \(name)(\(tensorArray.trackingId))" +
-                        " elements[\(dataShape.elementCount)]" +
-                        " is already write complete",
-                               categories: .scheduling, indent: 1)
-                }
-            }
-        } catch {
-            stream.reportDevice(error: error)
         }
     }
     
@@ -441,17 +402,15 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            // in the case of inplace operations, wait for pending writes
-            waitForFutureCompletion(on: stream)
-            
             // create a new event
             let event = try stream.createEvent()
             tensorArray.writeCompletionEvent = event
             
-            diagnostic("\(stream.device.name)_s\(stream.id) will signal " +
+            diagnostic("\(stream.device.name)_\(stream.name) will signal " +
                 "StreamEvent(\(event.trackingId))" +
-                " completed for \(name)(\(tensorArray.trackingId)) " +
-                "elements[\(dataShape.elementCount)]",
+                " when \(name)(\(tensorArray.trackingId)) " +
+                "\(String(describing: Scalar.self))" +
+                "[\(dataShape.elementCount)] is complete",
                 categories: .scheduling, indent: 1)
             return event
         }

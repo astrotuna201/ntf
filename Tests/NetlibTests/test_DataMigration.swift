@@ -352,7 +352,7 @@ class test_DataMigration: XCTestCase {
     func test_copyOnWrite() {
         do {
             Platform.log.level = .diagnostic
-            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+//            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             let index = [1, 1]
             var matrix1 = Matrix<Float>((3, 2))

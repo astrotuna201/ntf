@@ -26,15 +26,13 @@ public extension CpuStream {
     func all<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar == Bool
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            let result = try ref.readWrite(using: self)
-            
+        queue(#function, x, &result) { x, result in
+            let index = result.startIndex
             for value in x where !value {
-                result[0] = false
+                result[index] = false
                 return
             }
-            result[0] = true
+            result[index] = true
         }
     }
     
@@ -43,15 +41,14 @@ public extension CpuStream {
     func any<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar == Bool
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            let result = try ref.readWrite(using: self)
-            
+        queue(#function, x, &result) { x, result in
+            let index = result.startIndex
+
             for value in x where value {
-                result[0] = true
+                result[index] = true
                 return
             }
-            result[0] = false
+            result[index] = false
         }
     }
     
@@ -81,11 +78,8 @@ public extension CpuStream {
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
-            x.reduce(to: &results, T.Scalar.zero) {
+        queue(#function, x, &result) { x, result in
+            x.reduce(to: &result, T.Scalar.zero) {
                 $0 + $1.magnitude
             }
         }
@@ -142,10 +136,9 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// fill(result:with:
+    /// NOTE: this can be much faster, doesn't need to be ordered access
     func fill<T>(_ result: inout T, with value: T.Scalar) where T : TensorView {
-        queue(&result) { ref in
-            var result = try ref.mutableValues(using: self)
-            
+        queue(#function, result, &result) { _ , result in
             for index in result.indices {
                 result[index] = value
             }
@@ -157,10 +150,8 @@ public extension CpuStream {
     func fillWithIndex<T>(_ result: inout T, startAt: Int) where
         T : TensorView, T.Scalar: AnyNumeric
     {
-        queue(&result) { ref in
+        queue(#function, result, &result) { _ , result in
             var value = startAt
-            var result = try ref.mutableValues(using: self)
-
             for index in result.indices {
                 result[index] = T.Scalar(any: value)
                 value += 1
@@ -193,11 +184,8 @@ public extension CpuStream {
     func log<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
-            x.map(to: &results) {
+        queue(#function, x, &result) { x, result in
+            x.map(to: &result) {
                 T.Scalar(any: Foundation.log($0.asFloat))
             }
         }
@@ -280,16 +268,14 @@ public extension CpuStream {
     func prod<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : AnyNumeric
     {
+        let one = T.Scalar(any: 1)
 //        if let axes = axes {
 //            queue(#function, x, axes, &result) { x, axes, results in
 //                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
 //            }
 //        } else {
-            queue(&result) { ref in
-                let x = try x.values(using: self)
-                var results = try ref.mutableValues(using: self)
-                
-                x.reduce(to: &results, T.Scalar(any: 1)) { $0 * $1 }
+            queue(#function, x, &result) { x, results in
+                x.reduce(to: &results, one) { $0 * $1 }
             }
 //        }
     }
@@ -337,11 +323,8 @@ public extension CpuStream {
     func sum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
         T : TensorView, T.Scalar : Numeric
     {
-        queue(&result) { ref in
-            let x = try x.values(using: self)
-            var results = try ref.mutableValues(using: self)
-            
-            x.reduce(to: &results, T.Scalar.zero) { $0 + $1 }
+        queue(#function, x, &result) { x, result in
+            x.reduce(to: &result, T.Scalar.zero) { $0 + $1 }
         }
     }
     

@@ -12,7 +12,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	public let name: String
     public var logInfo: LogInfo
     public var timeout: TimeInterval = 0
-    public var executeSynchronously: Bool = true
+    public var executeSynchronously: Bool = false
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
     public var _errorMutex: Mutex = Mutex()
@@ -46,30 +46,30 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
-    public func queue<T, R>(_ functionName: @autoclosure () -> String,
-                            _ lhs: T, _ rhs: T, _ result: inout R,
+    public func queue<T1, R>(_ functionName: @autoclosure () -> String,
+                            _ t1: T1, _ result: inout R,
                             _ body: @escaping
-        (TensorViewCollection<T>, TensorViewCollection<T>,
-        inout TensorViewMutableCollection<R>) throws -> Void)
-        where T: TensorView, R: TensorView
+        (TensorViewCollection<T1>, inout TensorViewMutableCollection<R>) throws
+        -> Void) where T1: TensorView, R: TensorView
     {
+        // if the stream is in an error state, no additional work
+        // will be queued
+        guard lastError == nil else { return }
+
+        // schedule the work
         diagnostic("\(schedulingString): \(functionName())",
             categories: .scheduling)
         let currentNestingLevel = logInfo.nestingLevel
         logInfo.nestingLevel = currentNestingLevel + 1
         
-        // if the stream is in an error state, no additional work
-        // will be queued
-        guard lastError == nil else { return }
         do {
-            let lhs = try lhs.values(using: self)
-            let rhs = try rhs.values(using: self)
-
+            // get the parameter sequences
+            let t1 = try t1.values(using: self)
             var ref = try result.reference(using: self)
             var results = try ref.mutableValues(using: self)
 
             if executeSynchronously {
-                try body(lhs, rhs, &results)
+                try body(t1, &results)
             } else {
                 // safely set a new completion event on the result
                 let completionEvent =
@@ -78,7 +78,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                 // queue the work
                 commandQueue.async {
                     do {
-                        try body(lhs, rhs, &results)
+                        try body(t1, &results)
                     } catch {
                         self.reportDevice(error: error)
                     }
@@ -101,17 +101,32 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
-    public func queue<T>(_ result: inout T,
-                         _ body: @escaping (inout T) throws -> Void)
-        where T: TensorView
+    public func queue<T1, T2, R>(_ functionName: @autoclosure () -> String,
+                                 _ t1: T1, _ t2: T2, _ result: inout R,
+                                 _ body: @escaping
+        (TensorViewCollection<T1>, TensorViewCollection<T2>,
+        inout TensorViewMutableCollection<R>) throws -> Void)
+        where T1: TensorView, T2: TensorView, R: TensorView
     {
         // if the stream is in an error state, no additional work
         // will be queued
         guard lastError == nil else { return }
+        
+        // schedule the work
+        diagnostic("\(schedulingString): \(functionName())",
+            categories: .scheduling)
+        let currentNestingLevel = logInfo.nestingLevel
+        logInfo.nestingLevel = currentNestingLevel + 1
+        
         do {
+            // get the parameter sequences
+            let t1 = try t1.values(using: self)
+            let t2 = try t2.values(using: self)
             var ref = try result.reference(using: self)
+            var results = try ref.mutableValues(using: self)
+            
             if executeSynchronously {
-                try body(&ref)
+                try body(t1, t2, &results)
             } else {
                 // safely set a new completion event on the result
                 let completionEvent =
@@ -120,13 +135,13 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                 // queue the work
                 commandQueue.async {
                     do {
-                        try body(&ref)
+                        try body(t1, t2, &results)
                     } catch {
                         self.reportDevice(error: error)
                     }
                 }
-                diagnostic(">>> function queued",
-                           categories: .scheduling, indent: 1)
+                diagnostic(">>> \(functionName()) is queued",
+                    categories: .scheduling)
                 
                 // queue signaling of the completion event after the work
                 // is complete
@@ -135,8 +150,11 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         } catch {
             self.reportDevice(error: error)
         }
+        
+        // put back
+        logInfo.nestingLevel = currentNestingLevel
     }
-    
+
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.

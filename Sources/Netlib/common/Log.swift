@@ -333,6 +333,7 @@ let waitString       = "[\(setText("WAIT     ", color: .red))]"
 let schedulingString = "\(setText("~~scheduling", color: .yellow))"
 let signaledString   = "[\(setText("SIGNALED ", color: .green))]"
 let syncString       = "[\(setText("SYNC     ", color: .yellow))]"
+let timeoutString    = "[\(setText("TIMEOUT  ", color: .red))]"
 let referenceString  = "[\(setText("REFERENCE", color: .cyan))]"
 let mutationString   = "[\(setText("MUTATE   ", color: .blue))]"
 

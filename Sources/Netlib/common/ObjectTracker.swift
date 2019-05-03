@@ -85,7 +85,7 @@ final public class ObjectTracker {
                          namePath: String? = nil,
                          supplementalInfo: @autoclosure () -> String? = nil,
                          isStatic: Bool = false) -> Int {
-        #if ENABLE_TRACKING
+        #if DEBUG
         let info = ItemInfo(isStatic: isStatic,
                             namePath: namePath,
                             supplementalInfo: supplementalInfo(),
@@ -117,7 +117,7 @@ final public class ObjectTracker {
     /// used to note that the object is being held by a static owner, and
     /// should not show up in a normal leak report
     public func markStatic(trackingId: Int) {
-        #if ENABLE_TRACKING
+        #if DEBUG
         _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
         #endif
     }
@@ -125,7 +125,7 @@ final public class ObjectTracker {
 	//--------------------------------------------------------------------------
 	// remove
 	public func remove(trackingId: Int) {
-		#if ENABLE_TRACKING
+		#if DEBUG
         _ = queue.sync {
             if trackingId == debuggerRemoveBreakId {
                 print("ObjectTracker debug break remove for id(\(trackingId))")

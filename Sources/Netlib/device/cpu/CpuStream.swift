@@ -40,8 +40,31 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         self.creatorThread = Thread.current
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)
+        
+        diagnostic("\(createString) DeviceStream(\(trackingId)) " +
+            "\(device.name)_\(name)", categories: [.streamAlloc])
     }
-    deinit { ObjectTracker.global.remove(trackingId: trackingId) }
+    
+    //--------------------------------------------------------------------------
+    /// deinit
+    /// waits for the queue to finish
+    deinit {
+        // release
+        ObjectTracker.global.remove(trackingId: trackingId)
+
+        diagnostic("\(releaseString) DeviceStream(\(trackingId)) " +
+            "\(device.name)_\(name)", categories: [.streamAlloc])
+        
+        // try to wait for the command queue to complete before shutting
+        // down.
+        do {
+            try waitUntilStreamIsComplete()
+        } catch {
+            diagnostic("\(timeoutString) DeviceStream(\(trackingId)) " +
+                "\(device.name)_\(name) timeout: \(timeout)",
+                categories: [.streamAlloc])
+        }
+    }
     
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution

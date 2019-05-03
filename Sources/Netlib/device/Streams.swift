@@ -91,6 +91,7 @@ class _Streams {
     //--------------------------------------------------------------------------
     // initializers
     private init() {
+        print("creating thread local _Streams")
         // create dedicated stream for app data transfer
         _hostStream = Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "host")

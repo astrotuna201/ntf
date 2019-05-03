@@ -213,8 +213,8 @@ public protocol DeviceArray: ObjectTracking {
 public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get set }
-    /// the stream that created this event
-    var stream: DeviceStream { get }
+    /// weak reference to the stream that created this event
+    var stream: DeviceStream? { get }
 
     /// signals that the event has occurred
     func signal()

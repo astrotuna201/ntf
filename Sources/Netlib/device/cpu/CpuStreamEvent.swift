@@ -13,7 +13,7 @@ final public class CpuStreamEvent : StreamEvent {
     public private (set) var trackingId = 0
     private let access = Mutex()
     private let semaphore = DispatchSemaphore(value: 0)
-    public  let stream: DeviceStream
+    public  weak var stream: DeviceStream?
     private var _occurred: Bool = true
 
     //--------------------------------------------------------------------------
@@ -48,16 +48,16 @@ final public class CpuStreamEvent : StreamEvent {
         try access.sync {
             guard !_occurred else { return }
             #if DEBUG
-            stream.diagnostic(
+            stream?.diagnostic(
                 "\(waitString) StreamEvent(\(trackingId)) " +
-                "on \(stream.device.name)_\(stream.name)",
+                "on \(stream!.device.name)_\(stream!.name)",
                 categories: .streamSync)
             #endif
             
             if timeout > 0 {
                 if semaphore.wait(timeout: .now() + timeout) == .timedOut {
                     #if DEBUG
-                    stream.diagnostic("StreamEvent(\(trackingId)) timed out",
+                    stream?.diagnostic("StreamEvent(\(trackingId)) timed out",
                         categories: .streamSync)
                     #endif
                     throw StreamEventError.timedOut
@@ -67,8 +67,8 @@ final public class CpuStreamEvent : StreamEvent {
             }
             
             #if DEBUG
-            stream.diagnostic("\(signaledString) StreamEvent(\(trackingId)) on " +
-                "\(stream.device.name)_\(stream.name)",
+            stream?.diagnostic("\(signaledString) StreamEvent(\(trackingId)) on " +
+                "\(stream!.device.name)_\(stream!.name)",
                 categories: .streamSync)
             #endif
             _occurred = true

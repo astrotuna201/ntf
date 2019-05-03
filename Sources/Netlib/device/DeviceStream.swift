@@ -265,7 +265,7 @@ public protocol StreamIntrinsicsProtocol {
     ///   that `mask.scalarCount == self.shape[0]`.
     func replacing<T>(x: T, with other: T, where mask: T.BoolView,
                       result: inout T)
-        where T: TensorView
+        where T: TensorView, T.BoolView.Scalar == Bool
     /// Computes the element-wise `sin`
     func sin<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint

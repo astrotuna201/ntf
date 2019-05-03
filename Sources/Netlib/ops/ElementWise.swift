@@ -12,7 +12,7 @@ import Foundation
 /// - Parameter x: value tensor
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: AnyFloatingPoint
 {
@@ -23,7 +23,7 @@ public func log<T>(_ x: T, result: inout T)
 /// - Parameter x: value tensor
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T) -> T
     where T: TensorView, T.Scalar: AnyFloatingPoint
 {
@@ -36,7 +36,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
     func log() -> Self {
         var result = Self.init(shapedLike: self)
         Netlib.log(self, result: &result)
@@ -52,7 +52,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
 /// - Parameter x: value tensor
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T, result: inout T)
     where T: TensorView, T.Scalar: AnyFloatingPoint
 {
@@ -63,7 +63,7 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 /// - Parameter x: value tensor
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T) -> T
     where T: TensorView, T.Scalar: AnyFloatingPoint
 {
@@ -76,7 +76,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpLogSoftmax(_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
     func logSoftmax() throws -> Self {
         var result = Self.init(shapedLike: self)
         Netlib.logSoftmax(self, result: &result)
@@ -94,7 +94,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
 ///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
     where T: TensorView, T.Scalar: AnyNumeric
 {
@@ -107,7 +107,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 ///   broadcasting will be performed via repeated indexing.
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
     where T: TensorView, T.Scalar: AnyNumeric
 {
@@ -122,7 +122,7 @@ public extension TensorView where Self.Scalar: AnyNumeric {
     ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow(_ y: Self) -> Self{
         var result = Self.init(shapedLike: self)
         Netlib.pow(self, y, result: &result)
@@ -135,7 +135,7 @@ public extension TensorView where Self.Scalar: AnyNumeric {
     ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyNumeric>(_ y: S) -> Self {
         var result = Self.init(shapedLike: self)
         Netlib.pow(self, Self.init(Scalar(any: y)), result: &result)
@@ -149,7 +149,7 @@ public extension TensorView where Self.Scalar: AnyNumeric {
     ///   broadcasting will be performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpPow(_:_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyInteger>(
         _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
         var result = Self.init(shapedLike: self)

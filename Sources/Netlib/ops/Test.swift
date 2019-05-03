@@ -26,7 +26,7 @@ public func simulateWork<T>(_ x: T, timePerElement: TimeInterval,
 /// - Parameter x: value tensor
 /// - Returns: a new tensor containing `x` copied with delay
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func simulateWork<T>(_ x: T, timePerElement: TimeInterval) -> T
     where T: TensorView
 {
@@ -39,7 +39,7 @@ public extension TensorView {
     /// returns new view
     /// - Returns: a new tensor containing `x` copied with delay
     @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpLog(_:) where T : TensorFlowFloatingPoint)
+    //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
     func simulateWork(timePerElement: TimeInterval = 0.0000001) -> Self {
         var result = Self.init(shapedLike: self)
         Netlib.simulateWork(self, timePerElement: timePerElement,

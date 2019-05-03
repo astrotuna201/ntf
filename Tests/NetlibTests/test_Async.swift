@@ -166,14 +166,20 @@ class test_Async: XCTestCase {
             Platform.log.level = .diagnostic
             Platform.local.log.categories = [.streamSync]
             
-            let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
-            stream.timeout = 0.1
+            var stream = Platform.local.createStream(serviceName: "cpuUnitTest") as! CpuStream
+            stream.timeout = 0
 
             // create an event then delay stream
             let event = try stream.createEvent()
-            try stream.futureWait(for: event)
-//            stream.delayStream(atLeast: 1.0)
-//            try stream.waitUntilStreamIsComplete()
+            print(isKnownUniquelyReferenced(&stream))
+            
+//            try stream.futureWait(for: event)
+//            print(isKnownUniquelyReferenced(&stream))
+            stream.delayStream(atLeast: 1.0)
+            print(isKnownUniquelyReferenced(&stream))
+            try stream.record(event: event)
+            try stream.waitUntilStreamIsComplete()
+            print(isKnownUniquelyReferenced(&stream))
 //            // shouldn't get here
 //            XCTFail("should have thrown a timeout error")
         } catch {

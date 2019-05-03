@@ -26,6 +26,9 @@ final public class CpuStreamEvent : StreamEvent {
         #endif
     }
     deinit {
+        // signal if anyone was waiting
+        signal()
+        
         #if DEBUG
         ObjectTracker.global.remove(trackingId: trackingId)
         #endif
@@ -36,7 +39,7 @@ final public class CpuStreamEvent : StreamEvent {
     /// These are not exposed through the protocol because they should only
     /// be manipulated via the DeviceStream protocol
     public func signal() {
-        semaphore.signal()
+        if !occurred { semaphore.signal() }
     }
     
     public var occurred: Bool {

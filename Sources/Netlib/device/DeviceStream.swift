@@ -87,7 +87,7 @@ public extension LocalDeviceStream {
 public protocol StreamIntrinsicsProtocol {
     /// Computes the absolute value of the specified TensorView element-wise.
     func abs<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
+        T: TensorView, T.Scalar: Numeric, T.Scalar.Magnitude == T.Scalar
     /// Adds two tensors and produces their sum.
     func add<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Scalar: Numeric
@@ -129,7 +129,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func asum<T>(x: T, axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: SignedNumeric, T.Scalar.Magnitude == T.Scalar
+        T: TensorView, T.Scalar: Numeric, T.Scalar.Magnitude == T.Scalar
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output
@@ -138,7 +138,7 @@ public protocol StreamIntrinsicsProtocol {
         R: TensorView, R.Scalar: AnyConvertable
     /// Computes the ceiling of the specified TensorView element-wise.
     func ceil<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Concatenates tensors along the specified axis.
     /// - Precondition: The tensors must have the same dimensions, except for the
     ///                 specified axis.
@@ -147,14 +147,14 @@ public protocol StreamIntrinsicsProtocol {
                         result: inout T) where T: TensorView
     /// Computes the element-wise `cos`
     func cos<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes the element-wise `cosh`
     func cosh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     func div<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Scalar: FloatingPoint
+        where T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// scalars.
     /// - Note: `.==` supports broadcasting.
@@ -163,7 +163,7 @@ public protocol StreamIntrinsicsProtocol {
         T.BoolView.Scalar == Bool
     /// Computes the element-wise `exp`
     func exp<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// fills the view with the scalar value
     func fill<T>(_ result: inout T, with: T.Scalar) where T: TensorView
     /// fills the view with the spatial sequential index
@@ -171,24 +171,19 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Scalar: AnyNumeric
     /// Computes the element-wise `floor`
     func floor<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
-    /// Computes `lhs > rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+        T: TensorView, T.Scalar: AnyFloatingPoint
+    /// Computes `lhs > rhs` element-wise and returns a tensor of Bool scalars.
     func greater<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Scalar: Numeric
-    /// Computes `lhs >= rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+        where T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+    /// Computes `lhs >= rhs` element-wise and returns a tensor of Bool scalars.
     func greaterOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Scalar: Numeric
-    /// Computes `lhs < rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+        where T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+    /// Computes `lhs < rhs` element-wise and returns a tensor of Bool scalars.
     func less<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Scalar: Numeric
-    /// lessEqual
-    /// Computes `lhs <= rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+        where T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+    /// Computes `lhs <= rhs` element-wise and returns a tensor of Bool scalars.
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Scalar: Numeric
+        where T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
     /// Computes the element-wise `log`
     func log<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint
@@ -203,7 +198,7 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Scalar == Bool
     /// Computes the element-wise `logSoftmax`
     func logSoftmax<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Performs matrix multiplication with another TensorView and produces the
     /// result.
     func matmul<T>(lhs: T, rhs: T, result: inout T) where
@@ -217,7 +212,7 @@ public protocol StreamIntrinsicsProtocol {
     /// Computes the element-wise maximum of two tensors.
     /// - Note: `max` supports broadcasting.
     func maximum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Scalar: Comparable
     /// Returns the arithmetic mean along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter x: the tensor value
@@ -234,22 +229,21 @@ public protocol StreamIntrinsicsProtocol {
     /// Computes the element-wise minimum of two tensors.
     /// - Note: `max` supports broadcasting.
     func minimum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Scalar: Comparable
     /// Returns the remainder of dividing the first TensorView by the second.
     /// - Note: `%` supports broadcasting.
     func mod<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Scalar: Numeric
+        where T: TensorView, T.Scalar: AnyFloatingPoint
     /// mul
     func mul<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise negation
     func neg<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: SignedNumeric
-    /// Computes `lhs != rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+    /// Computes `lhs != rhs` element-wise and returns a tensor of Bools
     /// - Note: `.==` supports broadcasting.
     func notEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Scalar: Numeric
+        where T: TensorView, T.Scalar: Numeric, T.BoolView.Scalar == Bool
     /// Computes the element-wise `x**y`
     func pow<T>(x: T, y: T, result: inout T)
         where T: TensorView, T.Scalar: AnyNumeric
@@ -261,7 +255,7 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Scalar: AnyNumeric
     /// Computes the element-wise `rsqrt`
     func rsqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
     ///
     /// - Precondition: `x` and `other` must have the same shape. If
@@ -274,10 +268,10 @@ public protocol StreamIntrinsicsProtocol {
         where T: TensorView
     /// Computes the element-wise `sin`
     func sin<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes the element-wise `sinh`
     func sinh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes the element-wise `square`
     func square<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: Numeric
@@ -286,7 +280,7 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `sqrt`
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Scalar: Numeric
@@ -298,8 +292,8 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `tan`
     func tan<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
     /// Computes the element-wise `tanh`
     func tanh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: FloatingPoint
+        T: TensorView, T.Scalar: AnyFloatingPoint
 }

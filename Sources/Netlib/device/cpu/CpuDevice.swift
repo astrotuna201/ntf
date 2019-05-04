@@ -60,13 +60,6 @@ public class CpuDevice: LocalComputeDevice {
 	}
     
     //--------------------------------------------------------------------------
-    /// createEvent
-    /// creates an event object used for stream synchronization
-    public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
-        return CpuStreamEvent(device: self, options: options)
-    }
-    
-    //--------------------------------------------------------------------------
     // createMutableReferenceArray
     /// creates a device array from a uma buffer.
     public func createMutableReferenceArray(

@@ -30,9 +30,8 @@ public extension LocalPlatform {
     /// print the message, break to the debugger if possible, and exit.
     func handleDevice(error: Error) {
         if (deviceErrorHandler?(error) ?? .propagate) == .propagate {
-            print(String(describing: error))
-            raise(SIGINT)
-            exit(1)
+            print("Unhandled platform error: \(String(describing: error))")
+//            raise(SIGINT)
         }
     }
 
@@ -78,12 +77,10 @@ public extension LocalPlatform {
                                              id: loadedServices.count,
                                              logInfo: logInfo, name: nil)
                     
-                    if willLog(level: .diagnostic) {
-                        diagnostic(
-                            "Loaded compute service '\(service.name)'." +
-                            " ComputeDevice count = \(service.devices.count)",
-                            categories: .initialize)
-                    }
+                    diagnostic(
+                        "Loaded compute service '\(service.name)'." +
+                        " ComputeDevice count = \(service.devices.count)",
+                        categories: .initialize)
                     
                     if service.devices.count > 0 {
                         // add plugin service

@@ -50,15 +50,15 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// waits for the queue to finish
     deinit {
         assert(Thread.current === creatorThread,
-               "Stream has been captured by a different thread!" +
-               "Probably by a queued function on the stream.")
-        
-        // release
-        ObjectTracker.global.remove(trackingId: trackingId)
+               "Stream has been captured and is being released by a " +
+            "different thread. Probably by a queued function on the stream.")
 
         diagnostic("\(releaseString) DeviceStream(\(trackingId)) " +
             "\(device.name)_\(name)", categories: [.streamAlloc])
         
+        // release
+        ObjectTracker.global.remove(trackingId: trackingId)
+
         // try to wait for the command queue to complete before shutting
         // down.
         do {
@@ -88,8 +88,6 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         // schedule the work
         diagnostic("\(schedulingString): \(functionName())",
             categories: .scheduling)
-        let currentNestingLevel = logInfo.nestingLevel
-        logInfo.nestingLevel = currentNestingLevel + 1
         
         do {
             // get the parameter sequences
@@ -105,26 +103,24 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                     try ref.createAndSetCompletionEvent(using: self)
                 
                 // queue the work
+                // report to device so we don't take a reference to `self`
+                let errorDevice = device
                 commandQueue.async {
                     do {
                         try body(input, &results)
                     } catch {
-                        self.reportDevice(error: error)
+                        errorDevice.reportDevice(error: error)
                     }
                 }
-                diagnostic(">>> \(functionName()) is queued",
-                    categories: .scheduling)
-                
                 // queue signaling of the completion event after the work
                 // is complete
                 try record(event: completionEvent)
+                diagnostic("~~\(schedulingString): \(functionName()) complete",
+                    categories: .scheduling)
             }
         } catch {
             self.reportDevice(error: error)
         }
-        
-        // put back
-        logInfo.nestingLevel = currentNestingLevel
     }
 
     //--------------------------------------------------------------------------
@@ -134,12 +130,14 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         // if the stream is in an error state, no additional work
         // will be queued
         guard lastError == nil else { return }
-        
+        let errorDevice = device
+
+        // make sure not to capture `self`
         func performBody() {
             do {
                 try body()
             } catch {
-                self.reportDevice(error: error)
+                errorDevice.reportDevice(error: error)
             }
         }
         
@@ -152,10 +150,23 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     }
 
     //--------------------------------------------------------------------------
+    /// createEvent
+    /// creates an event object used for stream synchronization
+    public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
+        let event = CpuStreamEvent(options: options)
+        diagnostic("\(createString) StreamEvent(\(event.trackingId)) on " +
+            "\(device.name)_\(name)", categories: .streamAlloc)
+        return event
+    }
+    
+    //--------------------------------------------------------------------------
     /// record(event:
     @discardableResult
     public func record(event: StreamEvent) throws -> StreamEvent {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
+        guard lastError == nil else { throw lastError! }
+        diagnostic("\(recordString) StreamEvent(\(event.trackingId)) on " +
+            "\(device.name)_\(name)", categories: .streamSync)
         queue {
             event.signal()
         }
@@ -163,13 +174,15 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     }
 
     //--------------------------------------------------------------------------
-    /// futureWait(for event:
+    /// wait(for event:
     /// waits until the event is signaled
-	public func futureWait(for event: StreamEvent) throws {
+	public func wait(for event: StreamEvent) throws {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
-        let timeout = self.timeout
-        queue {
-            try event.blockingWait(for: timeout)
+        guard lastError == nil else { throw lastError! }
+        diagnostic("\(waitString) StreamEvent(\(event.trackingId)) on " +
+            "\(device.name)_\(name)", categories: .streamSync)
+        queue{
+            event.wait()
         }
 	}
 
@@ -178,7 +191,13 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// blocks the calling thread until the command queue is empty
     public func waitUntilStreamIsComplete() throws {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
-        try record(event: createEvent()).blockingWait(for: timeout)
+        let event = try record(event: createEvent())
+        diagnostic("\(waitString) StreamEvent(\(event.trackingId)) " +
+            "waiting for \(device.name)_\(name) to complete",
+            categories: .streamSync)
+        event.wait()
+        diagnostic("\(signaledString) StreamEvent(\(event.trackingId)) on " +
+            "\(device.name)_\(name)", categories: .streamSync)
     }
     
     //--------------------------------------------------------------------------

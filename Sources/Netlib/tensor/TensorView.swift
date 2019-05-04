@@ -283,21 +283,21 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// futureWaitForCompletion(on stream:
+    /// waitForCompletion(on stream:
     /// if there is a pending write completion event from a different
     /// stream that has not occurred, then queue a wait for it on this stream
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
-    private func futureWaitForCompletion(on stream: DeviceStream) throws {
+    private func waitForCompletion(on stream: DeviceStream) throws {
         if let event = tensorArray.writeCompletionEvent, !event.occurred {
-            try stream.futureWait(for: event)
+            try stream.wait(for: event)
             
             diagnostic(
-                "\(stream.device.name)_\(stream.name) " +
+                "\(waitString) \(stream.device.name)_\(stream.name) " +
                     "will wait for \(name)(\(tensorArray.trackingId)) " +
                     "\(String(describing: Scalar.self))" +
                 "[\(dataShape.elementCount)]",
-                categories: .scheduling, indent: 1)
+                categories: .scheduling)
         }
     }
     
@@ -319,7 +319,7 @@ public extension TensorView {
             tensorArray.lastAccessMutatedView = false
 
             // queue a wait for pending writes
-            try futureWaitForCompletion(on: deviceStream)
+            try waitForCompletion(on: deviceStream)
 
             // get the buffer
             let buffer = try tensorArray.readOnly(type: Scalar.self,
@@ -328,7 +328,7 @@ public extension TensorView {
             // if no stream is specified then wait for completion
             // which will sync for host access
             if let event = tensorArray.writeCompletionEvent, stream == nil {
-                try event.blockingWait(for: deviceStream.timeout)
+                event.wait()
             }
 
             return UnsafeBufferPointer(
@@ -354,7 +354,7 @@ public extension TensorView {
         
         return try queue.sync {
             // queue a wait for pending writes
-            try futureWaitForCompletion(on: deviceStream)
+            try waitForCompletion(on: deviceStream)
 
             // mutating write?
             try copyIfMutates(using: deviceStream)
@@ -366,7 +366,7 @@ public extension TensorView {
             // if no stream is specified then wait for completion
             // which will sync for host access
             if let event = tensorArray.writeCompletionEvent, stream == nil {
-                try event.blockingWait(for: deviceStream.timeout)
+                event.wait()
             }
             
             return UnsafeMutableBufferPointer(

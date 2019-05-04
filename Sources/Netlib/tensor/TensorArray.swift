@@ -190,12 +190,8 @@ final public class TensorArray: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     deinit {
-        do {
-            // make sure any pending write operations are complete
-            try writeCompletionEvent?.blockingWait()
-        } catch {
-            _Streams.current.reportDevice(error: error)
-        }
+        // make sure any pending write operations are complete
+        writeCompletionEvent?.wait()
         ObjectTracker.global.remove(trackingId: trackingId)
 
         if byteCount > 0 {

@@ -139,8 +139,6 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     // device resource functions
     /// creates an array on this device
     func createArray(count: Int) throws -> DeviceArray
-    /// creates a StreamEvent
-    func createEvent(options: StreamEventOptions) throws -> StreamEvent
     /// creates a device array from a uma buffer.
     func createMutableReferenceArray(buffer: UnsafeMutableRawBufferPointer)
         -> DeviceArray
@@ -194,8 +192,6 @@ public protocol DeviceArray: ObjectTracking {
     var version: Int { get set }
 
     //-------------------------------------
-    /// clears the array to zero
-    func zero(using stream: DeviceStream) throws
     /// asynchronously copies the contents of another device array
     func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
     /// asynchronously copies the contents of an app memory buffer
@@ -204,6 +200,8 @@ public protocol DeviceArray: ObjectTracking {
     /// copies the contents to an app memory buffer asynchronously
     func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
                    using stream: DeviceStream) throws
+    /// clears the array to zero
+    func zero(using stream: DeviceStream) throws
 }
 
 //==============================================================================
@@ -212,22 +210,14 @@ public protocol DeviceArray: ObjectTracking {
 /// - created by a `ComputeDevice`
 /// - recorded on a stream to create a barrier
 /// - waited on by one or more threads for group synchronization
-public protocol StreamEvent: ObjectTracking, Logging {
-    /// the device that created this event
-    var device: ComputeDevice { get }
+public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
     /// signals that the event has occurred
     func signal()
     /// will block the caller until the timeout has elapsed, or
     /// if `timeout` is 0 it will wait forever
-    func blockingWait(for timeout: TimeInterval) throws
-}
-
-public extension StreamEvent {
-    func blockingWait() throws {
-        return try blockingWait(for: 0)
-    }
+    func wait()
 }
 
 public struct StreamEventOptions: OptionSet {

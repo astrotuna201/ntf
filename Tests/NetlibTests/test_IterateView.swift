@@ -134,8 +134,8 @@ class test_IterateView: XCTestCase {
     func test_perfMatrix() {
         #if !DEBUG
         do {
-            let rows = 512
-            let cols = 512
+            let rows = 128
+            let cols = 1024
 
             let matrix = Matrix<Int32>((rows, cols), sequence: 0..<(rows * cols))
             //            print(matrix.formatted((2,0)))

@@ -32,12 +32,14 @@ public protocol DeviceStream:
     
     //--------------------------------------------------------------------------
     // synchronization functions
-    /// records an op on the stream that will perform a stream blocking wait
-    /// when it is encountered in the future
-    func futureWait(for event: StreamEvent) throws
+    /// creates a StreamEvent
+    func createEvent(options: StreamEventOptions) throws -> StreamEvent
     /// queues a stream event op. When executed the event is signaled
     @discardableResult
     func record(event: StreamEvent) throws -> StreamEvent
+    /// records an op on the stream that will perform a stream blocking wait
+    /// when it is processed
+    func wait(for event: StreamEvent) throws
     /// blocks the calling thread until the stream queue has completed all work
     func waitUntilStreamIsComplete() throws
 
@@ -57,7 +59,7 @@ public protocol DeviceStream:
 
 public extension DeviceStream {
     func createEvent() throws -> StreamEvent {
-        return try device.createEvent(options: StreamEventOptions())
+        return try createEvent(options: StreamEventOptions())
     }
 }
 

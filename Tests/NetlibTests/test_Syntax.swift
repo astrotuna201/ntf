@@ -24,7 +24,7 @@ class test_Syntax: XCTestCase {
     // initialize a matrix with a sequence and take the sum
     func test_simple() {
         Platform.log.level = .diagnostic
-        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation, .streamSync]
+        Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
         
         do {
             let matrix = Matrix<Float>((3, 5), sequence: 0..<15)

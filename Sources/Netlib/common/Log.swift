@@ -51,9 +51,6 @@ public protocol _Logging {
     /// message formatting.
     var logNestingLevel: Int { get }
 
-    /// reports whether a message at the specified level will be logged
-    /// - Parameter level: the level to test
-    func willLog(level: LogLevel) -> Bool
     /// writes a message to the log
     /// - Parameter message: the message to write
     /// - Parameter level: the level of the message (error, warning, ...)
@@ -84,12 +81,12 @@ public protocol _Logging {
 }
 
 public extension _Logging {
-    //--------------------------------------------------------------------------
-    // willLog
-    func willLog(level: LogLevel) -> Bool {
-        return level <= log.level || level <= logLevel
-    }
-    
+//    //--------------------------------------------------------------------------
+//    // willLog
+//    func willLog(level: LogLevel) -> Bool {
+//        return level <= log.level || level <= logLevel
+//    }
+//
     //--------------------------------------------------------------------------
     /// writeLog
     ///
@@ -107,6 +104,7 @@ public extension _Logging {
     
     //--------------------------------------------------------------------------
     // diagnostic
+    #if DEBUG
     func diagnostic(_ message: @autoclosure () -> String,
                     categories: LogCategories,
                     indent: Int = 0,
@@ -123,6 +121,13 @@ public extension _Logging {
                   nestingLevel: indent + logNestingLevel,
                   trailing: trailing, minCount: minCount)
     }
+    #else
+    func diagnostic(_ message: @autoclosure () -> String,
+                    categories: LogCategories,
+                    indent: Int = 0,
+                    trailing: String = "",
+                    minCount: Int = 80) { }
+    #endif
 }
 
 
@@ -325,17 +330,18 @@ public struct LogCategories: OptionSet {
 
 // strings
 let allocString      = "[\(setText("ALLOCATE ", color: .cyan))]"
-let createString     = "[\(setText("CREATE   ", color: .cyan))]"
-let copyString       = "[\(setText("COPY     ", color: .blue))]"
-let releaseString    = "[\(setText("RELEASE  ", color: .cyan))]"
 let blockString      = "[\(setText("BLOCK    ", color: .red))]"
-let waitString       = "[\(setText("WAIT     ", color: .red))]"
+let copyString       = "[\(setText("COPY     ", color: .blue))]"
+let createString     = "[\(setText("CREATE   ", color: .cyan))]"
+let mutationString   = "[\(setText("MUTATE   ", color: .blue))]"
+let recordString     = "[\(setText("RECORD   ", color: .cyan))]"
+let referenceString  = "[\(setText("REFERENCE", color: .cyan))]"
+let releaseString    = "[\(setText("RELEASE  ", color: .cyan))]"
 let schedulingString = "\(setText("~~scheduling", color: .yellow))"
 let signaledString   = "[\(setText("SIGNALED ", color: .green))]"
 let syncString       = "[\(setText("SYNC     ", color: .yellow))]"
 let timeoutString    = "[\(setText("TIMEOUT  ", color: .red))]"
-let referenceString  = "[\(setText("REFERENCE", color: .cyan))]"
-let mutationString   = "[\(setText("MUTATE   ", color: .blue))]"
+let waitString       = "[\(setText("WAIT     ", color: .red))]"
 
 //------------------------------------------------------------------------------
 // LogLevel

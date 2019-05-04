@@ -33,6 +33,10 @@ class test_Async: XCTestCase {
         } catch {
             XCTFail(String(describing: error))
         }
+
+        if ObjectTracker.global.hasUnreleasedObjects {
+            XCTFail(ObjectTracker.global.getActiveObjectReport())
+        }
     }
     
     //==========================================================================
@@ -62,6 +66,10 @@ class test_Async: XCTestCase {
             XCTAssert(values == expected)
         } catch {
             XCTFail(String(describing: error))
+        }
+
+        if ObjectTracker.global.hasUnreleasedObjects {
+            XCTFail(ObjectTracker.global.getActiveObjectReport())
         }
     }
     
@@ -101,6 +109,10 @@ class test_Async: XCTestCase {
             XCTAssert(values == expected)
         } catch {
             XCTFail(String(describing: error))
+        }
+
+        if ObjectTracker.global.hasUnreleasedObjects {
+            XCTFail(ObjectTracker.global.getActiveObjectReport())
         }
     }
     
@@ -151,45 +163,15 @@ class test_Async: XCTestCase {
             let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
             let event = try stream.createEvent()
             stream.delayStream(atLeast: 0.001)
-            try stream.record(event: event).blockingWait(for: stream.timeout)
+            try stream.record(event: event).wait()
             XCTAssert(event.occurred, "wait failed to block")
         } catch {
             XCTFail(String(describing: error))
         }
-    }
-    
-    //==========================================================================
-    // test_StreamEventTimeout
-    func test_StreamEventTimeout() {
-        print("~~~thread: \(Thread.current)")
-        do {
-            Platform.log.level = .diagnostic
-            Platform.local.log.categories = [.streamSync]
-            
-            var stream = Platform.local.createStream(serviceName: "cpuUnitTest") as! CpuStream
-            stream.timeout = 0
 
-            // create an event then delay stream
-//            let event = try stream.createEvent()
-//            print(isKnownUniquelyReferenced(&stream))
-            
-//            try stream.futureWait(for: event)
-//            print(isKnownUniquelyReferenced(&stream))
-//            stream.delayStream(atLeast: 1.0)
-//            print(isKnownUniquelyReferenced(&stream))
-//            try stream.record(event: event)
-            try stream.waitUntilStreamIsComplete()
-            print(isKnownUniquelyReferenced(&stream))
-//            // shouldn't get here
-//            XCTFail("should have thrown a timeout error")
-        } catch {
-            XCTAssert(true)
+        if ObjectTracker.global.hasUnreleasedObjects {
+            XCTFail(ObjectTracker.global.getActiveObjectReport())
         }
-        
-//        if ObjectTracker.global.hasUnreleasedObjects {
-//            print(ObjectTracker.global.getActiveObjectReport())
-//            XCTFail("Retain cycle detected")
-//        }
     }
     
     //==========================================================================

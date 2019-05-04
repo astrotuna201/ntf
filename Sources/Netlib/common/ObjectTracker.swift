@@ -46,10 +46,7 @@ final public class ObjectTracker {
 	public private(set) var activeObjects = [Int: ItemInfo]()
     /// true if there are currently unreleased non static objects
 	public var hasUnreleasedObjects: Bool {
-        for object in activeObjects where !object.value.isStatic {
-            return true
-        }
-        return false
+        return activeObjects.first { !$0.value.isStatic } != nil
     }
 
 	//--------------------------------------------------------------------------

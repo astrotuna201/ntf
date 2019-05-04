@@ -12,17 +12,20 @@ final public class CpuStreamEvent : StreamEvent {
     // properties
     public private (set) var trackingId = 0
     private let access = Mutex()
+    public var device: ComputeDevice
     private let semaphore = DispatchSemaphore(value: 0)
-    public  weak var stream: DeviceStream?
     private var _occurred: Bool = true
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(stream: DeviceStream,
-                options: StreamEventOptions = StreamEventOptions()) {
-        self.stream = stream
+    public init(device: ComputeDevice, options: StreamEventOptions) {
+        self.device = device
         #if DEBUG
         trackingId = ObjectTracker.global.register(self)
+
+        device.diagnostic(
+            "\(createString) StreamEvent(\(trackingId)) on \(device.name)",
+            categories: .streamSync)
         #endif
     }
     deinit {
@@ -36,31 +39,31 @@ final public class CpuStreamEvent : StreamEvent {
     
     //--------------------------------------------------------------------------
     // functions
+    ///
     /// These are not exposed through the protocol because they should only
     /// be manipulated via the DeviceStream protocol
     public func signal() {
-        if !occurred { semaphore.signal() }
+        semaphore.signal()
     }
     
     public var occurred: Bool {
         get { return access.sync { _occurred } }
-        set { access.sync { _occurred = newValue } }
     }
     
     public func blockingWait(for timeout: TimeInterval) throws {
         try access.sync {
             guard !_occurred else { return }
             #if DEBUG
-            stream?.diagnostic(
-                "\(waitString) StreamEvent(\(trackingId)) " +
-                "on \(stream!.device.name)_\(stream!.name)",
+            device.diagnostic(
+                "\(waitString) StreamEvent(\(trackingId)) on \(device.name)",
                 categories: .streamSync)
             #endif
             
             if timeout > 0 {
                 if semaphore.wait(timeout: .now() + timeout) == .timedOut {
                     #if DEBUG
-                    stream?.diagnostic("StreamEvent(\(trackingId)) timed out",
+                    device.diagnostic(
+                        "StreamEvent(\(trackingId)) timed out",
                         categories: .streamSync)
                     #endif
                     throw StreamEventError.timedOut
@@ -70,8 +73,8 @@ final public class CpuStreamEvent : StreamEvent {
             }
             
             #if DEBUG
-            stream?.diagnostic("\(signaledString) StreamEvent(\(trackingId)) on " +
-                "\(stream!.device.name)_\(stream!.name)",
+            device.diagnostic(
+                "\(signaledString) StreamEvent(\(trackingId)) on \(device.name)",
                 categories: .streamSync)
             #endif
             _occurred = true

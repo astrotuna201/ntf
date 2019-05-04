@@ -49,6 +49,10 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// deinit
     /// waits for the queue to finish
     deinit {
+        assert(Thread.current === creatorThread,
+               "Stream has been captured by a different thread!" +
+               "Probably by a queued function on the stream.")
+        
         // release
         ObjectTracker.global.remove(trackingId: trackingId)
 
@@ -148,19 +152,10 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     }
 
     //--------------------------------------------------------------------------
-	/// createEvent
-    /// creates an event object used for stream synchronization
-	public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
-        assert(Thread.current === creatorThread, streamThreadViolationMessage)
-        return CpuStreamEvent(stream: self, options: options)
-	}
-
-    //--------------------------------------------------------------------------
     /// record(event:
     @discardableResult
     public func record(event: StreamEvent) throws -> StreamEvent {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
-        event.occurred = false
         queue {
             event.signal()
         }

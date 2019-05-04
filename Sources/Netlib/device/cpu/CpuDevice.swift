@@ -52,14 +52,29 @@ public class CpuDevice: LocalComputeDevice {
 	}
 	deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 
-	//-------------------------------------
+    //--------------------------------------------------------------------------
 	// createArray
 	//	This creates memory on the device
 	public func createArray(count: Int) throws -> DeviceArray {
         return CpuDeviceArray(device: self, count: count)
 	}
-
-    //-------------------------------------
+    
+    //--------------------------------------------------------------------------
+    /// createEvent
+    /// creates an event object used for stream synchronization
+    public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
+        return CpuStreamEvent(device: self, options: options)
+    }
+    
+    //--------------------------------------------------------------------------
+    // createMutableReferenceArray
+    /// creates a device array from a uma buffer.
+    public func createMutableReferenceArray(
+        buffer: UnsafeMutableRawBufferPointer) -> DeviceArray {
+        return CpuDeviceArray(device: self, buffer: buffer)
+    }
+    
+    //--------------------------------------------------------------------------
     // createReferenceArray
     /// creates a device array from a uma buffer.
     public func createReferenceArray(buffer: UnsafeRawBufferPointer)
@@ -68,15 +83,7 @@ public class CpuDevice: LocalComputeDevice {
         return CpuDeviceArray(device: self, buffer: buffer)
     }
 
-    //-------------------------------------
-    // createMutableReferenceArray
-    /// creates a device array from a uma buffer.
-    public func createMutableReferenceArray(
-        buffer: UnsafeMutableRawBufferPointer) -> DeviceArray {
-        return CpuDeviceArray(device: self, buffer: buffer)
-    }
-
-    //-------------------------------------
+    //--------------------------------------------------------------------------
 	// createStream
 	public func createStream(name streamName: String) -> DeviceStream {
         let id = streamId.increment()

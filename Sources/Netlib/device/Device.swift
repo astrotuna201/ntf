@@ -139,11 +139,13 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     // device resource functions
     /// creates an array on this device
     func createArray(count: Int) throws -> DeviceArray
-    /// creates a device array from a uma buffer.
-    func createReferenceArray(buffer: UnsafeRawBufferPointer) -> DeviceArray
+    /// creates a StreamEvent
+    func createEvent(options: StreamEventOptions) throws -> StreamEvent
     /// creates a device array from a uma buffer.
     func createMutableReferenceArray(buffer: UnsafeMutableRawBufferPointer)
         -> DeviceArray
+    /// creates a device array from a uma buffer.
+    func createReferenceArray(buffer: UnsafeRawBufferPointer) -> DeviceArray
     /// creates a named command stream for this device
     func createStream(name: String) -> DeviceStream
 }
@@ -153,12 +155,12 @@ public enum MemoryAddressing { case unified, discreet }
 //==============================================================================
 /// DeviceArrayReplicaKey
 public struct DeviceArrayReplicaKey: Hashable {
-    let platformId: UInt8
+    let platformId: UInt16
     let serviceId: UInt8
     let deviceId: UInt8
     
     public init(platformId: Int, serviceId: Int, deviceId: Int) {
-        self.platformId = UInt8(platformId)
+        self.platformId = UInt16(platformId)
         self.serviceId = UInt8(serviceId)
         self.deviceId = UInt8(deviceId)
     }
@@ -184,7 +186,7 @@ public extension LocalComputeDevice {
 public protocol DeviceArray: ObjectTracking {
     //-------------------------------------
     // properties
-    /// the device where this array is allocated
+    /// the device that created this array
     var device: ComputeDevice { get }
     /// a pointer to the memory on the device
     var buffer: UnsafeMutableRawBufferPointer { get }
@@ -211,11 +213,10 @@ public protocol DeviceArray: ObjectTracking {
 /// - recorded on the stream to create a barrier
 /// - waited on by one or more threads for group synchronization
 public protocol StreamEvent: ObjectTracking {
+    /// the device that created this event
+    var device: ComputeDevice { get }
     /// is `true` if the even has occurred, used for polling
-    var occurred: Bool { get set }
-    /// weak reference to the stream that created this event
-    var stream: DeviceStream? { get }
-
+    var occurred: Bool { get }
     /// signals that the event has occurred
     func signal()
     /// will block the caller until the timeout has elapsed, or

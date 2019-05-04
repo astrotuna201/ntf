@@ -289,9 +289,7 @@ public extension TensorView {
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
     private func futureWaitForCompletion(on stream: DeviceStream) throws {
-        if let event = tensorArray.writeCompletionEvent,
-            event.stream !== stream && !event.occurred {
-            
+        if let event = tensorArray.writeCompletionEvent, !event.occurred {
             try stream.futureWait(for: event)
             
             diagnostic(

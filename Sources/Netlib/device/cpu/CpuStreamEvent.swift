@@ -29,6 +29,9 @@ final public class CpuStreamEvent : StreamEvent {
             categories: .streamSync)
         #endif
     }
+    
+    //--------------------------------------------------------------------------
+    // deinit
     deinit {
         // signal if anyone was waiting
         signal()

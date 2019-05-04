@@ -115,7 +115,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                 // queue signaling of the completion event after the work
                 // is complete
                 try record(event: completionEvent)
-                diagnostic("~~\(schedulingString): \(functionName()) complete",
+                diagnostic("\(schedulingString): \(functionName()) complete",
                     categories: .scheduling)
             }
         } catch {

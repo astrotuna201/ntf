@@ -410,7 +410,7 @@ diagnostic: ~~scheduling: add(lhs:rhs:result:)
 diagnostic: [ALLOCATE ] Matrix<Int32>(15) device array on cpu:1 Int32[10]
 diagnostic: cpu:1_stream:0 will signal StreamEvent(17) when Matrix<Int32>(15) Int32[10] is complete
 diagnostic: [RECORD   ] StreamEvent(17) on cpu:1_stream:0
-diagnostic: ~~~~scheduling: add(lhs:rhs:result:) complete
+diagnostic: ~~scheduling: add(lhs:rhs:result:) complete
 diagnostic: [WAIT     ] StreamEvent(17) on cpu:0_host:0
 diagnostic: [WAIT     ] cpu:0_host:0 will wait for Matrix<Int32>(15) Int32[10]
 diagnostic: [ALLOCATE ] Matrix<Int32>(15) device array on cpu:0 Int32[10]

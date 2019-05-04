@@ -209,8 +209,8 @@ public protocol DeviceArray: ObjectTracking {
 //==============================================================================
 /// StreamEvent
 /// A stream event is a barrier synchronization object that is
-/// - created by a `DeviceStream`
-/// - recorded on the stream to create a barrier
+/// - created by a `ComputeDevice`
+/// - recorded on a stream to create a barrier
 /// - waited on by one or more threads for group synchronization
 public protocol StreamEvent: ObjectTracking, Logging {
     /// the device that created this event

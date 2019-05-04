@@ -12,7 +12,7 @@ final public class CpuStreamEvent : StreamEvent {
     // properties
     public private (set) var trackingId = 0
     private let barrier = Mutex()
-    public  var device: ComputeDevice
+    public  let device: ComputeDevice
     private let occurredAccess = Mutex()
     private var _occurred: Bool = true
     private let semaphore = DispatchSemaphore(value: 0)

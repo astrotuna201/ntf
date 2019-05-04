@@ -212,7 +212,7 @@ public protocol DeviceArray: ObjectTracking {
 /// - created by a `DeviceStream`
 /// - recorded on the stream to create a barrier
 /// - waited on by one or more threads for group synchronization
-public protocol StreamEvent: ObjectTracking {
+public protocol StreamEvent: ObjectTracking, Logging {
     /// the device that created this event
     var device: ComputeDevice { get }
     /// is `true` if the even has occurred, used for polling

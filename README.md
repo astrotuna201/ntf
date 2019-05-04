@@ -372,6 +372,57 @@ diagnostic: [COPY     ] Volume<Int32>(17) cpu:2_s0 --> uma:cpu:0 Int32[1]
 diagnostic: [RELEASE  ] Volume<Int32>(17) 
 diagnostic: [RELEASE  ] Volume<Int32>(15) 
 ```
+In this example function scheduling and stream synchronization diagnostics are displayed to track exactly what is going on. Object tracking is checked at the end to make sure there are no retain cycles.
+```swift
+Platform.log.level = .diagnostic
+Platform.log.categories = [.dataAlloc, .dataCopy, .scheduling, .streamSync]
+
+do {
+    let stream1 = Platform.local.createStream(deviceId: 1, serviceName: "cpuUnitTest")
+    let m1 = Matrix<Int32>((2, 5), name: "m1", sequence: 0..<10)
+    let m2 = Matrix<Int32>((2, 5), name: "m2", sequence: 0..<10)
+
+    // perform on user provided discreet memory stream
+    let result = using(stream1) { m1 + m2 }
+
+    // synchronize with host stream and retrieve result values
+    let values = try result.array()
+
+    let expected = (0..<10).map { Int32($0 * 2) }
+    assert(values == expected)
+} catch {
+    print(String(describing: error))
+}
+
+if ObjectTracker.global.hasUnreleasedObjects {
+    print(ObjectTracker.global.getActiveObjectReport())
+}
+```
+Log output
+```
+status    : default device: [cpu] cpu:0
+diagnostic: [CREATE   ] m1(11) Int32[10]
+diagnostic: [ALLOCATE ] m1(11) device array on cpu:0 Int32[10]
+diagnostic: [CREATE   ] m2(13) Int32[10]
+diagnostic: [ALLOCATE ] m2(13) device array on cpu:0 Int32[10]
+diagnostic: [CREATE   ] Matrix<Int32>(15) Int32[10]
+diagnostic: ~~scheduling: add(lhs:rhs:result:)
+diagnostic: [ALLOCATE ] Matrix<Int32>(15) device array on cpu:1 Int32[10]
+diagnostic: cpu:1_stream:0 will signal StreamEvent(17) when Matrix<Int32>(15) Int32[10] is complete
+diagnostic: [RECORD   ] StreamEvent(17) on cpu:1_stream:0
+diagnostic: ~~~~scheduling: add(lhs:rhs:result:) complete
+diagnostic: [WAIT     ] StreamEvent(17) on cpu:0_host:0
+diagnostic: [WAIT     ] cpu:0_host:0 will wait for Matrix<Int32>(15) Int32[10]
+diagnostic: [ALLOCATE ] Matrix<Int32>(15) device array on cpu:0 Int32[10]
+diagnostic: [COPY     ] Matrix<Int32>(15) cpu:1_s0 --> uma:cpu:0 Int32[10]
+diagnostic: [RECORD   ] StreamEvent(19) on cpu:0_host:0
+diagnostic: [RELEASE  ] Matrix<Int32>(15) 
+diagnostic: [RELEASE  ] m2(13) 
+diagnostic: [RELEASE  ] m1(11) 
+diagnostic: [RECORD   ] StreamEvent(20) on cpu:1_stream:0
+diagnostic: [WAIT     ] StreamEvent(20) waiting for cpu:1_stream:0 to complete
+diagnostic: [SIGNALED ] StreamEvent(20) on cpu:1_stream:0
+```
 # Object Tracking
 Class objects receive a unique __id__ when registered with the _ObjectTracker_ class. These ids are used in diagnostic messages to know which object is which. 
 

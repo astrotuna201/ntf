@@ -20,7 +20,6 @@ class test_Async: XCTestCase {
     // initializes two matrices and adds them together
     func test_defaultStreamOp() {
         do {
-            print("~~~thread: \(Thread.current)")
             Platform.log.level = .diagnostic
             
             let m1 = Matrix<Int32>((2, 5), name: "m1", sequence: 0..<10)
@@ -45,9 +44,9 @@ class test_Async: XCTestCase {
     // the retrieves the results
     func test_secondaryDiscreetMemoryStream() {
         do {
-            print("~~~thread: \(Thread.current)")
             Platform.log.level = .diagnostic
-            
+            Platform.log.categories = [.dataAlloc, .dataCopy, .scheduling, .streamSync]
+
             // create a named stream on a discreet device
             // cpuUnitTest device 1 is a discreet memory versions for testing
             let stream1 = Platform.local
@@ -77,7 +76,6 @@ class test_Async: XCTestCase {
     // test_threeStreamInterleave
     func test_threeStreamInterleave() {
         do {
-            print("~~~thread: \(Thread.current)")
             Platform.log.level = .diagnostic
             
             // create named streams on two discreet devices
@@ -125,7 +123,6 @@ class test_Async: XCTestCase {
     // test_temporaryStreamShutdown
     func test_temporaryStreamShutdown() {
         do {
-            print("~~~thread: \(Thread.current)")
             Platform.log.level = .diagnostic
             
             for i in 0..<1000 {
@@ -156,7 +153,6 @@ class test_Async: XCTestCase {
     // test_StreamEventWait
     func test_StreamEventWait() {
         do {
-            print("~~~thread: \(Thread.current)")
             Platform.log.level = .diagnostic
             Platform.local.log.categories = [.streamSync]
             

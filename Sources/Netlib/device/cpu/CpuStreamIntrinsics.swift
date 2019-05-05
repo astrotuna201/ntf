@@ -513,8 +513,11 @@ public extension CpuStream {
     func sum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Scalar: Numeric
     {
-        if let axes = axes {
-            
+        if let axes = axes, axes.shape.extents[0] > 0 {
+            assert(axes.rank <= x.rank, "rank mismatch")
+            queue(#function, { try (x.values(), axes.values()) }, &result) { params, result in
+                
+            }
         } else {
             queue(#function, { try x.values() }, &result) {
                 $0.reduce(to: &$1, T.Scalar.zero) { $0 + $1 }

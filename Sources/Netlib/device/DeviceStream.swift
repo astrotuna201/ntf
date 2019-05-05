@@ -94,12 +94,12 @@ public protocol StreamIntrinsicsProtocol {
     /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func all<T>(x: T, squeezing axes: Vector<IndexScalar>?, result: inout T)
+    func all<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T)
         where T: TensorView, T.Scalar == Bool
     /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func any<T>(x: T, squeezing axes: Vector<IndexScalar>?, result: inout T)
+    func any<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T)
         where T: TensorView, T.Scalar == Bool
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
@@ -112,7 +112,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func argmax<T>(x: T, squeezing axes: Vector<IndexScalar>?,
+    func argmax<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == IndexScalar
@@ -121,15 +121,14 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func argmin<T>(x: T, squeezing axes: Vector<IndexScalar>?,
+    func argmin<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == IndexScalar
     /// Sums the absolute value of the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func asum<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where
+    func asum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Scalar: Numeric,
         T.Scalar.Magnitude == T.Scalar
     /// cast scalar types
@@ -209,7 +208,7 @@ public protocol StreamIntrinsicsProtocol {
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func max<T>(x: T, squeezing axes: [Int], result: inout T) where
+    func max<T>(x: T, along axes: [Int], result: inout T) where
         T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise maximum of two tensors.
     /// - Note: `max` supports broadcasting.
@@ -220,13 +219,13 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-    func mean<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where T: TensorView, T.Scalar: Numeric
+    func mean<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: Numeric
     /// Returns the minimum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-    func min<T>(x: T, squeezing axes: [Int], result: inout T) where
+    func min<T>(x: T, along axes: [Int], result: inout T) where
         T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise minimum of two tensors.
     /// - Note: `max` supports broadcasting.
@@ -253,8 +252,8 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
-    func prod<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where T: TensorView, T.Scalar: AnyNumeric
+    func prod<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: AnyNumeric
     /// Computes the element-wise `rsqrt`
     func rsqrt<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint
@@ -289,8 +288,8 @@ public protocol StreamIntrinsicsProtocol {
     /// Sums the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
-    func sum<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                result: inout T) where T: TensorView, T.Scalar: Numeric
+    func sum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: Numeric
     /// Computes the element-wise `tan`
     func tan<T>(x: T, result: inout T) where
         T: TensorView, T.Scalar: AnyFloatingPoint

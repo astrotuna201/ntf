@@ -20,7 +20,7 @@ public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar == Bool
 {
-    _Streams.current.all(x: x, squeezing: axes, result: &result)
+    _Streams.current.all(x: x, along: axes, result: &result)
 }
 
 /// returns new view
@@ -55,7 +55,6 @@ public extension TensorView where Self.Scalar == Bool {
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
     func all(squeezing: Int...) -> NDTensor<Scalar> {
-        
         let axes = shape.makePositive(indices: squeezing)
         let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)
@@ -80,7 +79,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar: Numeric
 {
-    _Streams.current.sum(x: x, squeezing: axes, result: &result)
+    _Streams.current.sum(x: x, along: axes, result: &result)
 }
 
 /// return result
@@ -94,7 +93,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
 {
     let extents = [Int](repeating: 1, count: x.rank)
     var result = T.init(shapedLike: x, with: extents)
-    _Streams.current.sum(x: x, squeezing: axes, result: &result)
+    _Streams.current.sum(x: x, along: axes, result: &result)
     return result
 }
 

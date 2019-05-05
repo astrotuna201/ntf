@@ -27,8 +27,8 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// all
-    func all<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                result: inout T) where T: TensorView, T.Scalar == Bool
+    func all<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == false } != nil
@@ -37,8 +37,8 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// any
-    func any<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                result: inout T) where T: TensorView, T.Scalar == Bool
+    func any<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == true } != nil
@@ -60,7 +60,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// argmax
-    func argmax<T>(x: T, squeezing axes: Vector<IndexScalar>?,
+    func argmax<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == IndexScalar
@@ -70,7 +70,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// argmin
-    func argmin<T>(x: T, squeezing axes: Vector<IndexScalar>?,
+    func argmin<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Scalar: Numeric,
         T.IndexView.Scalar == IndexScalar
@@ -80,8 +80,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// asum
-    func asum<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where
+    func asum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Scalar: Numeric, T.Scalar.Magnitude == T.Scalar
     {
         queue(#function, { try x.values() }, &result) {
@@ -310,7 +309,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// max
-    func max<T>(x: T, squeezing axes: [Int], result: inout T) where
+    func max<T>(x: T, along axes: [Int], result: inout T) where
         T: TensorView, T.Scalar: Numeric
     {
         
@@ -328,15 +327,15 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// mean
-    func mean<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where T: TensorView, T.Scalar: Numeric
+    func mean<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: Numeric
     {
         
     }
     
     //--------------------------------------------------------------------------
     /// min
-    func min<T>(x: T, squeezing axes: [Int], result: inout T) where
+    func min<T>(x: T, along axes: [Int], result: inout T) where
         T: TensorView, T.Scalar: Numeric
     {
         
@@ -409,8 +408,8 @@ public extension CpuStream {
 
     //--------------------------------------------------------------------------
     // prod
-    func prod<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                 result: inout T) where T: TensorView, T.Scalar: AnyNumeric
+    func prod<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: AnyNumeric
     {
         let one = T.Scalar(any: 1)
         queue(#function, { try x.values() }, &result) {
@@ -511,11 +510,15 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     // sum
-    func sum<T>(x: T, squeezing axes: Vector<IndexScalar>?,
-                result: inout T) where T: TensorView, T.Scalar: Numeric
+    func sum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+        T: TensorView, T.Scalar: Numeric
     {
-        queue(#function, { try x.values() }, &result) {
-            $0.reduce(to: &$1, T.Scalar.zero) { $0 + $1 }
+        if let axes = axes {
+            
+        } else {
+            queue(#function, { try x.values() }, &result) {
+                $0.reduce(to: &$1, T.Scalar.zero) { $0 + $1 }
+            }
         }
     }
     

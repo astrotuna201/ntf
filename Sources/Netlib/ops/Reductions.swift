@@ -20,7 +20,7 @@ public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar == Bool
 {
-    _Streams.current.all(x: x, axes: axes, result: &result)
+    _Streams.current.all(x: x, squeezing: axes, result: &result)
 }
 
 /// returns new view
@@ -54,9 +54,9 @@ public extension TensorView where Self.Scalar == Bool {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func all(squeezingAxes: Int...) -> NDTensor<Scalar> {
+    func all(squeezing: Int...) -> NDTensor<Scalar> {
         
-        let axes = shape.makePositive(indices: squeezingAxes)
+        let axes = shape.makePositive(indices: squeezing)
         let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)
         Netlib.all(self, alongAxes: axesVec, result: &result)
@@ -80,7 +80,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
     where T: TensorView, T.Scalar: Numeric
 {
-    _Streams.current.sum(x: x, axes: axes, result: &result)
+    _Streams.current.sum(x: x, squeezing: axes, result: &result)
 }
 
 /// return result
@@ -94,7 +94,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
 {
     let extents = [Int](repeating: 1, count: x.rank)
     var result = T.init(shapedLike: x, with: extents)
-    _Streams.current.sum(x: x, axes: axes, result: &result)
+    _Streams.current.sum(x: x, squeezing: axes, result: &result)
     return result
 }
 
@@ -129,9 +129,8 @@ public extension TensorView where Self.Scalar: Numeric {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func sum(squeezingAxes: Int...) -> NDTensor<Scalar> {
-        
-        let axes = shape.makePositive(indices: squeezingAxes)
+    func sum(alongAxes: Int...) -> NDTensor<Scalar> {
+        let axes = shape.makePositive(indices: alongAxes)
         let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)
         Netlib.sum(self, alongAxes: axesVec, result: &result)

@@ -36,7 +36,12 @@ public protocol TensorView: Logging, DefaultInitializer {
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
     associatedtype IndexView: TensorView
-
+    /// A tensor shape specific indexer used to calculate a data buffer
+    /// index based on a view's spatial position
+    associatedtype ViewIndex: TensorIndex
+    /// A tensor shape specific spatial position data structure
+    associatedtype ViewPosition
+    
     //--------------------------------------------------------------------------
     // Properties that should be user readonly begin with _xyz, and accessor
     // functions with correct access are exposed as protocol extensions.
@@ -87,6 +92,9 @@ public protocol TensorView: Logging, DefaultInitializer {
          viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
+
+    /// function used to create a tensor data indexer
+    func createIndex(at position: ViewPosition) -> ViewIndex
 }
 
 //==============================================================================

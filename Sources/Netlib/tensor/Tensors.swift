@@ -98,6 +98,14 @@ public extension ScalarView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -146,8 +154,17 @@ extension ScalarValue: CustomStringConvertible where Scalar: AnyConvertable {
 public protocol VectorView: TensorView
 where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
 
+public typealias VectorPosition = Int
+public typealias VectorExtents = Int
+
+extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
+//==============================================================================
+// VectorView extensions
 public extension VectorView {
-    //--------------------------------------------------------------------------
+
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
@@ -227,6 +244,14 @@ public extension VectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -269,25 +294,47 @@ where Scalar: ScalarConformance {
     }
 }
 
-extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
+//==============================================================================
+/// VectorIndex
+public struct VectorIndex: TensorIndex {
+    // properties
+    public let advanceFn: AdvanceFn
+    public var dataIndex: Int
+    public var isPad: Bool
+    public var index: Int
+    
+    public init(at position: VectorPosition, advance: @escaping AdvanceFn) {
+        advanceFn = advance
+        index = position
+        dataIndex = 0
+        isPad = false
+    }
+    
+    public init(position: Int, fn: @escaping AdvanceFn, data: Int, pad: Bool) {
+        index = position
+        advanceFn = fn
+        dataIndex = data
+        isPad = pad
+    }
 }
 
 //==============================================================================
 // MatrixView
 public protocol MatrixView: TensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {
-    associatedtype ViewPosition
-    associatedtype ViewIndex: TensorIndex
-    
-    func createIndex(at position: ViewPosition) -> ViewIndex
-}
+where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
+
+public typealias MatrixPosition = (r: Int, c: Int)
+public typealias MatrixExtents = (rows: Int, cols: Int)
 
 public enum MatrixLayout { case rowMajor, columnMajor }
 
-public extension MatrixView {
-    typealias MatrixExtents = (rows: Int, cols: Int)
+extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
 
+//==============================================================================
+// MatrixView extensions
+public extension MatrixView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -384,59 +431,18 @@ public extension MatrixView {
                          isShared: isShared,
                          scalars: nil)
     }
-}
-
-//------------------------------------------------------------------------------
-// Matrix
-public struct Matrix<Scalar>: MatrixView
-where Scalar: ScalarConformance
-{
-    // properties
-    public let dataShape: DataShape
-    public let isPadded: Bool
-    public let isRepeated: Bool
-    public let isShared: Bool
-    public let padding: [Padding]
-    public let padValue: Scalar
-    public let shape: DataShape
-    public var tensorArray: TensorArray
-    public var viewDataOffset: Int
     
-    public init(shape: DataShape,
-                dataShape: DataShape,
-                name: String?,
-                padding: [Padding]?,
-                padValue: Scalar?,
-                tensorArray: TensorArray?,
-                viewDataOffset: Int,
-                isShared: Bool,
-                scalars: [Scalar]?) {
-
-        assert(scalars == nil || scalars!.count == shape.elementCount,
-               "tensor size and scalars count do not match")
-        self.shape = shape
-        self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
-        self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
-        self.isRepeated = dataShape != shape
-        self.isShared = isShared
-        self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, scalars)
-    }
-
     //--------------------------------------------------------------------------
     /// createIndex
-    /// The advance functions are used by collections that do pre bounds
-    /// checking, so only valid positions are requested
-    public func createIndex(at position: MatrixPosition) -> MatrixIndex<Matrix<Scalar>> {
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: MatrixPosition) -> MatrixIndex {
         let rows = shape.extents[0]
         let endcol = shape.extents[1] - 1
         let rowStride = dataShape.strides[0]
         let colStride = dataShape.strides[1]
         
-        let advanceFn: ViewIndex.AdvanceFn
+        let advanceFn: MatrixIndex.AdvanceFn
         if isPadded {
             //------------------------------------------------------------------
             fatalError()
@@ -473,13 +479,50 @@ where Scalar: ScalarConformance
         
         return MatrixIndex(at: position, advance: advanceFn)
     }
-
 }
 
-//==========================================================================
-public typealias MatrixPosition = (r: Int, c: Int)
+//==============================================================================
+// Matrix
+public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
+    // properties
+    public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
+    public let isShared: Bool
+    public let padding: [Padding]
+    public let padValue: Scalar
+    public let shape: DataShape
+    public var tensorArray: TensorArray
+    public var viewDataOffset: Int
+    
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Scalar?,
+                tensorArray: TensorArray?,
+                viewDataOffset: Int,
+                isShared: Bool,
+                scalars: [Scalar]?) {
 
-public struct MatrixIndex<View>: TensorIndex where View: MatrixView {
+        assert(scalars == nil || scalars!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding ?? [Padding(0)]
+        self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
+        self.isShared = isShared
+        self.viewDataOffset = viewDataOffset
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, scalars)
+    }
+}
+
+//==============================================================================
+/// MatrixIndex
+public struct MatrixIndex: TensorIndex {
     // properties
     public let advanceFn: AdvanceFn
     public var dataIndex: Int
@@ -487,8 +530,7 @@ public struct MatrixIndex<View>: TensorIndex where View: MatrixView {
     public var row: Int
     public var col: Int
     
-    public init(at position: MatrixPosition,
-                advance: @escaping AdvanceFn) {
+    public init(at position: MatrixPosition, advance: @escaping AdvanceFn) {
         advanceFn = advance
         row = position.r
         col = position.c
@@ -496,8 +538,7 @@ public struct MatrixIndex<View>: TensorIndex where View: MatrixView {
         isPad = false
     }
     
-    public init(r: Int, c: Int, fn: @escaping AdvanceFn,
-                data: Int, pad: Bool) {
+    public init(r: Int, c: Int, fn: @escaping AdvanceFn, data: Int, pad: Bool) {
         row = r
         col = c
         advanceFn = fn
@@ -506,18 +547,20 @@ public struct MatrixIndex<View>: TensorIndex where View: MatrixView {
     }
 }
 
-extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
 //==============================================================================
 // VolumeView
 public protocol VolumeView: TensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
-public extension VolumeView {
-    typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
+public typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
 
+extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
+//==============================================================================
+// VolumeView extension
+public extension VolumeView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -588,9 +631,17 @@ public extension VolumeView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
+    }
 }
 
-//------------------------------------------------------------------------------
+//==============================================================================
 /// Volume
 public struct Volume<Scalar>: VolumeView
 where Scalar: ScalarConformance {
@@ -630,15 +681,17 @@ where Scalar: ScalarConformance {
     }
 }
 
-extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
 //==============================================================================
 // NDTensorView
 public protocol NDTensorView: TensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
 
+extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
+//==============================================================================
+// NDTensorView extensions
 public extension NDTensorView {
     //-------------------------------------
     /// with reference to read only buffer
@@ -676,6 +729,14 @@ public extension NDTensorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false,
                   scalars: Self.sequence2ScalarArray(sequence))
+    }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
     }
 }
 
@@ -720,10 +781,6 @@ where Scalar: ScalarConformance {
     }
 }
 
-extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
 //==============================================================================
 /// NCHWTensorView
 /// An NCHW tensor is a standard layout for use with cuDNN.
@@ -735,9 +792,15 @@ extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
 public protocol NCHWTensorView: TensorView
 where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 
-public extension NCHWTensorView {
-    typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
+public typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
 
+extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
+//==============================================================================
+/// NCHWTensorView extensions
+public extension NCHWTensorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -811,9 +874,17 @@ public extension NCHWTensorView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
+    }
 }
 
-//------------------------------------------------------------------------------
+//==============================================================================
 // NCHWTensor
 public struct NCHWTensor<Scalar>: NCHWTensorView
 where Scalar: ScalarConformance {
@@ -853,10 +924,6 @@ where Scalar: ScalarConformance {
     }
 }
 
-extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
 //==============================================================================
 /// NHWCTensorView
 /// An NHWC tensor is a standard layout for use with cuDNN.
@@ -868,9 +935,15 @@ extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
 public protocol NHWCTensorView: TensorView
 where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 
+public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
+
+extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
+    public var description: String { return formatted() }
+}
+
+//==============================================================================
+/// NHWCTensorView extensions
 public extension NHWCTensorView {
-    typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
-    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(value: Scalar, name: String? = nil,
@@ -944,10 +1017,18 @@ public extension NHWCTensorView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+    
+    //--------------------------------------------------------------------------
+    /// createIndex(at position:
+    /// The advance functions are used by collections that are bounds
+    /// prechecked, so only valid positions are requested
+    func createIndex(at position: VectorPosition) -> VectorIndex {
+        fatalError()
+    }
 }
 
-//------------------------------------------------------------------------------
-// NHWCTensor
+//==============================================================================
+/// NHWCTensor
 public struct NHWCTensor<Scalar>: NHWCTensorView
 where Scalar: ScalarConformance {
     // properties
@@ -986,11 +1067,8 @@ where Scalar: ScalarConformance {
     }
 }
 
-extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
-//------------------------------------------------------------------------------
+//==============================================================================
+/// NHWCTensor cast
 public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M>(_ matrix: M, name: String? = nil) where

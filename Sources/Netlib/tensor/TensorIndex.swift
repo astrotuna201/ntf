@@ -31,8 +31,8 @@ public extension TensorView {
     func values(using stream: DeviceStream) throws
         -> TensorViewCollection<Self>
     {
-        return try TensorViewCollection(view: self,
-                                         buffer: readOnly(using: stream))
+        return try TensorViewCollection(
+            view: self, buffer: readOnly(using: stream))
     }
     
     //--------------------------------------------------------------------------
@@ -146,7 +146,8 @@ public struct TensorViewMutableCollection<View>: RandomAccessCollection,
     public let count: Int
     public let padValue: Scalar
     
-    public init(view: inout View, buffer: UnsafeMutableBufferPointer<Scalar>) throws {
+    public init(view: inout View,
+                buffer: UnsafeMutableBufferPointer<Scalar>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex

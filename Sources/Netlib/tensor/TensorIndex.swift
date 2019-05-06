@@ -66,7 +66,6 @@
 //==========================================================================
 public protocol TensorIndex: Strideable {
     // types
-    associatedtype Scalar
     typealias AdvanceFn = (Self, _ by: Int) -> Self
 
     // properties

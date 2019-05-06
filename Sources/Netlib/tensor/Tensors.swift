@@ -276,7 +276,12 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // MatrixView
 public protocol MatrixView: TensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
+where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {
+    associatedtype ViewPosition
+    associatedtype ViewIndex: TensorIndex
+    
+    func createIndex(at position: ViewPosition) -> ViewIndex
+}
 
 public enum MatrixLayout { case rowMajor, columnMajor }
 
@@ -386,40 +391,6 @@ public extension MatrixView {
 public struct Matrix<Scalar>: MatrixView
 where Scalar: ScalarConformance
 {
-    public typealias ViewPosition = MatrixPosition
-    public typealias ViewIndex = MatrixIndex
-    
-    //==========================================================================
-    public typealias MatrixPosition = (r: Int, c: Int)
-    
-    public struct MatrixIndex: TensorIndex {
-        // properties
-        public let advanceFn: AdvanceFn
-        public var dataIndex: Int
-        public var isPad: Bool
-        public var row: Int
-        public var col: Int
-
-        public init(at position: MatrixPosition,
-                    advance: @escaping AdvanceFn) {
-            advanceFn = advance
-            row = position.r
-            col = position.c
-            dataIndex = 0
-            isPad = false
-        }
-
-        public init(r: Int, c: Int, fn: @escaping AdvanceFn,
-                    data: Int, pad: Bool) {
-            row = r
-            col = c
-            advanceFn = fn
-            dataIndex = data
-            isPad = pad
-        }
-    }
-    
-    //==========================================================================
     // properties
     public let dataShape: DataShape
     public let isPadded: Bool
@@ -454,19 +425,18 @@ where Scalar: ScalarConformance
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
     }
-    
-    
+
     //--------------------------------------------------------------------------
     /// createIndex
     /// The advance functions are used by collections that do pre bounds
     /// checking, so only valid positions are requested
-    func createIndex(at position: ViewPosition) -> ViewIndex {
+    public func createIndex(at position: MatrixPosition) -> MatrixIndex<Matrix<Scalar>> {
         let rows = shape.extents[0]
         let endcol = shape.extents[1] - 1
         let rowStride = dataShape.strides[0]
         let colStride = dataShape.strides[1]
         
-        let advanceFn: MatrixIndex.AdvanceFn
+        let advanceFn: ViewIndex.AdvanceFn
         if isPadded {
             //------------------------------------------------------------------
             fatalError()
@@ -504,6 +474,36 @@ where Scalar: ScalarConformance
         return MatrixIndex(at: position, advance: advanceFn)
     }
 
+}
+
+//==========================================================================
+public typealias MatrixPosition = (r: Int, c: Int)
+
+public struct MatrixIndex<View>: TensorIndex where View: MatrixView {
+    // properties
+    public let advanceFn: AdvanceFn
+    public var dataIndex: Int
+    public var isPad: Bool
+    public var row: Int
+    public var col: Int
+    
+    public init(at position: MatrixPosition,
+                advance: @escaping AdvanceFn) {
+        advanceFn = advance
+        row = position.r
+        col = position.c
+        dataIndex = 0
+        isPad = false
+    }
+    
+    public init(r: Int, c: Int, fn: @escaping AdvanceFn,
+                data: Int, pad: Bool) {
+        row = r
+        col = c
+        advanceFn = fn
+        dataIndex = data
+        isPad = pad
+    }
 }
 
 extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {

@@ -52,6 +52,8 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// all dimensions during iteration and indexing.
     /// If `dataShape` is nil, then it equals `shape`
     var dataShape: DataShape { get }
+    /// returns an index one past the end of the tensor used for collections
+    var endIndex: ViewIndex { get }
     /// `true` if the view projects padded data
     var isPadded: Bool { get }
     /// `true` if the view projects repeated data
@@ -69,6 +71,8 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
+    /// returns the first tensor index used for collections
+    var startIndex: ViewIndex { get }
     /// class reference to the underlying byte buffer
     var tensorArray: TensorArray { get set }
     /// the linear element offset where the view begins
@@ -152,6 +156,12 @@ public extension TensorView {
                   scalars: nil)
     }
 
+    //--------------------------------------------------------------------------
+    /// elementCount
+    var elementCount: Int {
+        return isPadded ? shape.padded(with: padding).elementCount :
+            shape.elementCount
+    }
     //--------------------------------------------------------------------------
     /// sequence2ScalarArray
     static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Scalar] where

@@ -86,6 +86,15 @@ public protocol ScalarView: TensorView where
     IndexView == ScalarValue<IndexScalar>{}
 
 public extension ScalarView {
+    //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar,
@@ -164,7 +173,15 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // VectorView extensions
 public extension VectorView {
-
+    //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+    
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
@@ -479,6 +496,14 @@ public extension MatrixView {
         
         return MatrixIndex(at: position, advance: advanceFn)
     }
+    
+    var endIndex: MatrixIndex {
+        return createIndex(at: (shape.extents[0], shape.extents[1]))
+    }
+    
+    var startIndex: MatrixIndex {
+        return createIndex(at: (0, 0))
+    }
 }
 
 //==============================================================================
@@ -561,6 +586,15 @@ extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // VolumeView extension
 public extension VolumeView {
+    //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -694,6 +728,15 @@ extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
 // NDTensorView extensions
 public extension NDTensorView {
     //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+
+    //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(extents: [Int], name: String? = nil,
@@ -801,6 +844,15 @@ extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 /// NCHWTensorView extensions
 public extension NCHWTensorView {
+    //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -944,6 +996,15 @@ extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 /// NHWCTensorView extensions
 public extension NHWCTensorView {
+    //-------------------------------------
+    var endIndex: VectorIndex {
+        return createIndex(at: shape.extents[0])
+    }
+    
+    var startIndex: VectorIndex {
+        return createIndex(at: 0)
+    }
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(value: Scalar, name: String? = nil,

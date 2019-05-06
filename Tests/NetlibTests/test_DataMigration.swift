@@ -30,7 +30,7 @@ class test_DataMigration: XCTestCase {
 //            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
             let matrix = Matrix<Float>((3, 2), name: "matrix", sequence: 0..<6)
-            let index = [1, 1]
+            let index = (1, 1)
             
             for i in 0..<500 {
                 var matrix2 = matrix
@@ -207,7 +207,7 @@ class test_DataMigration: XCTestCase {
             // retreive value on app thread
             // memory is allocated in the host app space and the data is copied
             // from device 1 to the host using stream 0.
-            let value1 = try matrix.value(at: [1, 1])
+            let value1 = try matrix.value(at: (1, 1))
             XCTAssert(value1 == 3.0)
 
             // simulate a readonly kernel access on device 1.
@@ -288,7 +288,7 @@ class test_DataMigration: XCTestCase {
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
             // fill with index on device 1
-            let index = [1, 1]
+            let index = (1, 1)
             var matrix1 = Matrix<Float>((3, 2))
             using(stream1) {
                 fillWithIndex(&matrix1)
@@ -330,7 +330,7 @@ class test_DataMigration: XCTestCase {
             let stream2 = Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
-            let index = [1, 1]
+            let index = (1, 1)
             var matrix1 = Matrix<Float>((3, 2))
 
             // allocate array on device 1 and fill with indexes
@@ -381,7 +381,7 @@ class test_DataMigration: XCTestCase {
             Platform.log.level = .diagnostic
 //            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
-            let index = [1, 1]
+            let index = (1, 1)
             var matrix1 = Matrix<Float>((3, 2))
             fillWithIndex(&matrix1)
             var value = try matrix1.value(at: index)

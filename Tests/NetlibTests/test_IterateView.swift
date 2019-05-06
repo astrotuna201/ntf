@@ -141,9 +141,7 @@ class test_IterateView: XCTestCase {
             //            print(matrix.formatted((2,0)))
             
             let values = try matrix.values()
-            if _Streams.current.timeout != 0 {
-                
-            }
+
             self.measure {
                 for _ in values {}
             }

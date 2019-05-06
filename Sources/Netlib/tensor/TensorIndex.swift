@@ -4,6 +4,39 @@
 //
 import Foundation
 
+//==========================================================================
+public protocol TensorIndex: Strideable {
+    // types
+    typealias AdvanceFn = (Self, _ by: Int) -> Self
+
+    // properties
+    var advanceFn: AdvanceFn { get }
+    var viewIndex: Int { get }
+    var dataIndex: Int { get }
+    var isPad: Bool { get }
+}
+
+public extension TensorIndex {
+    // Equatable
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.viewIndex == rhs.viewIndex
+    }
+    
+    // Comparable
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        return lhs.viewIndex < rhs.viewIndex
+    }
+    
+    // Strideable
+    func advanced(by n: Int) -> Self {
+        return advanceFn(self, n)
+    }
+    
+    func distance(to other: Self) -> Int {
+        return other.viewIndex - viewIndex
+    }
+}
+
 //==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {
@@ -58,38 +91,6 @@ public extension TensorView {
         let buffer = try readWrite()
         let index = createIndex(at: position)
         buffer[index.dataIndex] = value
-    }
-}
-
-//==========================================================================
-public protocol TensorIndex: Strideable {
-    // types
-    typealias AdvanceFn = (Self, _ by: Int) -> Self
-
-    // properties
-    var advanceFn: AdvanceFn { get }
-    var dataIndex: Int { get }
-    var isPad: Bool { get }
-}
-
-public extension TensorIndex {
-    // Equatable
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.dataIndex == rhs.dataIndex
-    }
-
-    // Comparable
-    static func < (lhs: Self, rhs: Self) -> Bool {
-        return lhs.dataIndex < rhs.dataIndex
-    }
-
-    // Strideable
-    func advanced(by n: Int) -> Self {
-        return advanceFn(self, n)
-    }
-
-    func distance(to other: Self) -> Int {
-        return other.dataIndex - dataIndex
     }
 }
 

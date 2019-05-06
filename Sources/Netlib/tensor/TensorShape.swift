@@ -227,7 +227,9 @@ public struct DataShape: Equatable, Codable {
     
     //--------------------------------------------------------------------------
     // padded
-    public func padded(with padding: [Padding]) -> DataShape {
+    public func padded(with padding: [Padding]?) -> DataShape {
+        guard let padding = padding else { return self }
+        
         // get the padding and set an increment if there is more than one
         let padIncrement = padding.count > 1 ? 1 : 0
         var padIndex = 0

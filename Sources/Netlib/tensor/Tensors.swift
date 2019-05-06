@@ -123,10 +123,9 @@ public struct ScalarValue<Scalar>: ScalarView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -143,9 +142,8 @@ where Scalar: ScalarConformance {
                 scalars: [Scalar]?) {
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -277,10 +275,9 @@ public struct Vector<Scalar>: VectorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -300,9 +297,8 @@ where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -316,20 +312,20 @@ where Scalar: ScalarConformance {
 public struct VectorIndex: TensorIndex {
     // properties
     public let advanceFn: AdvanceFn
+    public var viewIndex: Int
     public var dataIndex: Int
     public var isPad: Bool
-    public var index: Int
     
     public init(at position: VectorPosition, advance: @escaping AdvanceFn) {
         advanceFn = advance
-        index = position
+        viewIndex = position
         dataIndex = 0
         isPad = false
     }
     
     public init(position: Int, fn: @escaping AdvanceFn, data: Int, pad: Bool) {
-        index = position
         advanceFn = fn
+        viewIndex = position
         dataIndex = data
         isPad = pad
     }
@@ -432,10 +428,6 @@ public extension MatrixView {
     }
     
     //--------------------------------------------------------------------------
-    var rowCount: Int { return shape.extents[0] }
-    var colCount: Int { return shape.extents[1] }
-    
-    //--------------------------------------------------------------------------
     // transpose
     var t: Self {
         return Self.init(shape: shape.transposed(),
@@ -448,73 +440,17 @@ public extension MatrixView {
                          isShared: isShared,
                          scalars: nil)
     }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: MatrixPosition) -> MatrixIndex {
-        let rows = shape.extents[0]
-        let endcol = shape.extents[1] - 1
-        let rowStride = dataShape.strides[0]
-        let colStride = dataShape.strides[1]
-        
-        let advanceFn: MatrixIndex.AdvanceFn
-        if isPadded {
-            //------------------------------------------------------------------
-            fatalError()
-        } else if isRepeated {
-            //------------------------------------------------------------------
-            fatalError()
-        } else {
-            //------------------------------------------------------------------
-            advanceFn = { i, n in
-                var row, col, dataIndex: Int
-                // most frequent increment
-                if n == 1 {
-                    col = i.col + 1
-                    if col < endcol {
-                        row = i.row
-                        dataIndex = i.dataIndex + colStride
-                    } else {
-                        row = i.row + 1
-                        col = 0
-                        dataIndex = row * rowStride
-                    }
-                } else {
-                    // incremental jump
-                    let jump = n.quotientAndRemainder(dividingBy: rows)
-                    row = i.row + jump.quotient
-                    col = i.col + jump.remainder
-                    dataIndex = row * rowStride + col * colStride
-                }
-                
-                return MatrixIndex(r: row, c: col, fn: i.advanceFn,
-                                   data: dataIndex, pad: false)
-            }
-        }
-        
-        return MatrixIndex(at: position, advance: advanceFn)
-    }
-    
-    var endIndex: MatrixIndex {
-        return createIndex(at: (shape.extents[0], shape.extents[1]))
-    }
-    
-    var startIndex: MatrixIndex {
-        return createIndex(at: (0, 0))
-    }
 }
+
 
 //==============================================================================
 // Matrix
 public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -534,41 +470,13 @@ public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
-    }
-}
-
-//==============================================================================
-/// MatrixIndex
-public struct MatrixIndex: TensorIndex {
-    // properties
-    public let advanceFn: AdvanceFn
-    public var dataIndex: Int
-    public var isPad: Bool
-    public var row: Int
-    public var col: Int
-    
-    public init(at position: MatrixPosition, advance: @escaping AdvanceFn) {
-        advanceFn = advance
-        row = position.r
-        col = position.c
-        dataIndex = 0
-        isPad = false
-    }
-    
-    public init(r: Int, c: Int, fn: @escaping AdvanceFn, data: Int, pad: Bool) {
-        row = r
-        col = c
-        advanceFn = fn
-        dataIndex = data
-        isPad = pad
     }
 }
 
@@ -681,10 +589,9 @@ public struct Volume<Scalar>: VolumeView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -704,9 +611,8 @@ where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -790,10 +696,9 @@ public struct NDTensor<Scalar>: NDTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -813,9 +718,8 @@ where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -942,10 +846,9 @@ public struct NCHWTensor<Scalar>: NCHWTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -965,9 +868,8 @@ where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -1094,10 +996,9 @@ public struct NHWCTensor<Scalar>: NHWCTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isPadded: Bool
     public let isRepeated: Bool
     public let isShared: Bool
-    public let padding: [Padding]
+    public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
@@ -1117,9 +1018,8 @@ where Scalar: ScalarConformance {
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.padding = padding ?? [Padding(0)]
+        self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isPadded = padding != nil
         self.isRepeated = dataShape != shape
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset

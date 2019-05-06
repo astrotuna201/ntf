@@ -54,8 +54,6 @@ public protocol TensorView: Logging, DefaultInitializer {
     var dataShape: DataShape { get }
     /// returns an index one past the end of the tensor used for collections
     var endIndex: ViewIndex { get }
-    /// `true` if the view projects padded data
-    var isPadded: Bool { get }
     /// `true` if the view projects repeated data
     var isRepeated: Bool { get }
     /// used internally when obtaining write access to manage
@@ -65,7 +63,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// only during indexing and iteration. It is not reflected in the `shape`
     /// of the view or part of subview creation. It is passed
     /// as a parameter to iterators. It is not inherited by subviews.
-    var padding: [Padding] { get }
+    var padding: [Padding]? { get }
     /// the scalar value to be returned for indexes with padding regions
     var padValue: Scalar { get }
     /// the virtual shape of the view used for indexing
@@ -115,6 +113,8 @@ public extension TensorView {
     // public property accessors
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
+    /// `true` if the view projects padded data
+    var isPadded: Bool { return padding != nil }
     /// is `true` if the last data access caused the view's underlying
     /// tensorArray object to be copied.
     /// Used primarily for debugging and unit testing
@@ -159,9 +159,16 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// elementCount
     var elementCount: Int {
-        return isPadded ? shape.padded(with: padding).elementCount :
+        return isPadded ? shape.padded(with: padding!).elementCount :
             shape.elementCount
     }
+    
+    //--------------------------------------------------------------------------
+    /// elementCount
+    func getPadding(for dim: Int) -> Padding {
+        return padding?[dim % padding!.count] ?? Padding(0)
+    }
+    
     //--------------------------------------------------------------------------
     /// sequence2ScalarArray
     static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Scalar] where
@@ -215,7 +222,7 @@ public extension TensorView {
         if let extents = extents {
             newShape = DataShape(extents: extents)
         } else {
-            newShape = other.shape.dense.padded(with: other.padding)
+            newShape = other.shape.dense
         }
         
         self.init(shape: newShape,

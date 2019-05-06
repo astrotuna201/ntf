@@ -5,26 +5,19 @@
 import Foundation
 
 //==============================================================================
-/// TensorIndexing
-public protocol TensorIndexing where Self: TensorView {
-    /// returns a collection of values in spatial order
-    func values() throws -> TensorValueCollection<Self>
-    /// returns a collection of mutable values in spatial order
-    mutating func mutableValues() throws -> TensorMutableValueCollection<Self>
-}
-
-extension TensorIndexing {
+/// TensorView Collection extensions
+public extension TensorView {
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order
     /// called to synchronize with the app thread
-    func values() throws -> TensorValueCollection<Self> {
-        return try TensorValueCollection(view: self, buffer: readOnly())
+    func values() throws -> TensorViewCollection<Self> {
+        return try TensorViewCollection(view: self, buffer: readOnly())
     }
     
     //--------------------------------------------------------------------------
     /// get a Sequence of mutable values in spatial order
-    mutating func mutableValues() throws -> TensorMutableValueCollection<Self> {
-        return try TensorMutableValueCollection(view: &self, buffer: readWrite())
+    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
+        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
     }
 
     //--------------------------------------------------------------------------
@@ -36,18 +29,18 @@ extension TensorIndexing {
     //--------------------------------------------------------------------------
     /// asynchronously get a Sequence of read only values in spatial order
     func values(using stream: DeviceStream) throws
-        -> TensorValueCollection<Self>
+        -> TensorViewCollection<Self>
     {
-        return try TensorValueCollection(view: self,
+        return try TensorViewCollection(view: self,
                                          buffer: readOnly(using: stream))
     }
     
     //--------------------------------------------------------------------------
     /// asynchronously get a Sequence of mutable values in spatial order
     mutating func mutableValues(using stream: DeviceStream) throws
-        -> TensorMutableValueCollection<Self>
+        -> TensorViewMutableCollection<Self>
     {
-        return try TensorMutableValueCollection(
+        return try TensorViewMutableCollection(
             view: &self, buffer: readWrite(using: stream))
     }
     
@@ -101,17 +94,19 @@ public extension TensorIndex {
 }
 
 //==============================================================================
-/// TensorValueCollection
-public struct TensorValueCollection<View> where View: TensorView {
+/// TensorViewCollection
+public struct TensorViewCollection<View>: RandomAccessCollection
+where View: TensorView
+{
     public typealias Index = View.ViewIndex
     public typealias Scalar = View.Scalar
     
     // properties
-    let buffer: UnsafeBufferPointer<View.Scalar>
-    let startIndex: Index
-    let endIndex: Index
-    let count: Int
-    let padValue: Scalar
+    public let buffer: UnsafeBufferPointer<View.Scalar>
+    public let startIndex: Index
+    public let endIndex: Index
+    public let count: Int
+    public let padValue: Scalar
 
     public init(view: View, buffer: UnsafeBufferPointer<Scalar>) throws {
         self.buffer = buffer
@@ -137,17 +132,19 @@ public struct TensorValueCollection<View> where View: TensorView {
 }
 
 //==============================================================================
-/// TensorMutableValueCollection
-public struct TensorMutableValueCollection<View> where View: TensorView {
+/// TensorViewMutableCollection
+public struct TensorViewMutableCollection<View>: RandomAccessCollection,
+    MutableCollection where View: TensorView
+{
     public typealias Index = View.ViewIndex
     public typealias Scalar = View.Scalar
     
     // properties
-    let buffer: UnsafeMutableBufferPointer<Scalar>
-    let startIndex: Index
-    let endIndex: Index
-    let count: Int
-    let padValue: Scalar
+    public let buffer: UnsafeMutableBufferPointer<Scalar>
+    public let startIndex: Index
+    public let endIndex: Index
+    public let count: Int
+    public let padValue: Scalar
     
     public init(view: inout View, buffer: UnsafeMutableBufferPointer<Scalar>) throws {
         self.buffer = buffer
@@ -168,6 +165,11 @@ public struct TensorMutableValueCollection<View> where View: TensorView {
     }
     
     public subscript(index: Index) -> Scalar {
-        return index.isPad ? padValue : buffer[index.dataIndex]
+        get {
+            return index.isPad ? padValue : buffer[index.dataIndex]
+        }
+        set {
+            buffer[index.dataIndex] = newValue
+        }
     }
 }

@@ -405,7 +405,7 @@ where Scalar: ScalarConformance
             advanceFn = advance
             row = position.r
             col = position.c
-            data = 0
+            dataIndex = 0
             isPad = false
         }
 
@@ -476,13 +476,13 @@ where Scalar: ScalarConformance
         } else {
             //------------------------------------------------------------------
             advanceFn = { i, n in
-                let row, col, dataIndex: Int
+                var row, col, dataIndex: Int
                 // most frequent increment
                 if n == 1 {
                     col = i.col + 1
                     if col < endcol {
                         row = i.row
-                        dataIndex += colStride
+                        dataIndex = i.dataIndex + colStride
                     } else {
                         row = i.row + 1
                         col = 0

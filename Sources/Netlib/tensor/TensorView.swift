@@ -47,11 +47,13 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// all dimensions during iteration and indexing.
     /// If `dataShape` is nil, then it equals `shape`
     var dataShape: DataShape { get }
+    /// `true` if the view projects padded data
+    var isPadded: Bool { get }
+    /// `true` if the view projects repeated data
+    var isRepeated: Bool { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
-    /// `true` if the view projects padded or repeated data
-    var isVirtual: Bool { get }
     /// specifies an amount of padding before and after each dimension used
     /// only during indexing and iteration. It is not reflected in the `shape`
     /// of the view or part of subview creation. It is passed
@@ -85,14 +87,6 @@ public protocol TensorView: Logging, DefaultInitializer {
          viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
-    
-    /// determines if the view holds a unique reference to the underlying
-    /// TensorArray array
-    mutating func isUniqueReference() -> Bool
-
-    /// performs a dynamic rank reduction by removing extents of 1
-    /// along the specified axes
-    func squeezed(axes: [Int]?) -> NDTensor<Scalar>
 }
 
 //==============================================================================

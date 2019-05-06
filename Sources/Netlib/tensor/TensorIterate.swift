@@ -47,6 +47,26 @@ public extension TensorView {
         return try TensorViewMutableCollection(view: &self,
                                                buffer: readWrite(using: stream))
     }
+
+    //--------------------------------------------------------------------------
+    /// get a single value at the specified index
+    /// This is not an efficient way to get values
+    func value(at index: [Int]) throws -> Scalar {
+        let buffer = try readOnly()
+        let padded = shape.padded(with: padding)
+        let tensorIndex = TensorIteratorIndex<Self>(self, padded, at: index)
+        return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
+    }
+    
+    //--------------------------------------------------------------------------
+    /// set a single value at the specified index
+    /// This is not an efficient way to set values
+    mutating func set(value: Scalar, at index: [Int]) throws {
+        let buffer = try readWrite()
+        let padded = shape.padded(with: padding)
+        let tensorIndex = TensorIteratorIndex<Self>(self, padded, at: index)
+        buffer[tensorIndex.dataIndex] = value
+    }
 }
 
 //==============================================================================

@@ -106,8 +106,9 @@ public struct ScalarValue<Scalar>: ScalarView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -127,8 +128,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
@@ -233,8 +235,9 @@ public struct Vector<Scalar>: VectorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -257,8 +260,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
@@ -380,11 +384,47 @@ public extension MatrixView {
 //------------------------------------------------------------------------------
 // Matrix
 public struct Matrix<Scalar>: MatrixView
-where Scalar: ScalarConformance {
+where Scalar: ScalarConformance
+{
+    public typealias ViewPosition = MatrixPosition
+    public typealias ViewIndex = MatrixIndex
+    
+    //==========================================================================
+    public typealias MatrixPosition = (r: Int, c: Int)
+    
+    public struct MatrixIndex: TensorIndex {
+        // properties
+        public let advanceFn: AdvanceFn
+        public var dataIndex: Int
+        public var isPad: Bool
+        public var row: Int
+        public var col: Int
+
+        public init(at position: MatrixPosition,
+                    advance: @escaping AdvanceFn) {
+            advanceFn = advance
+            row = position.r
+            col = position.c
+            data = 0
+            isPad = false
+        }
+
+        public init(r: Int, c: Int, fn: @escaping AdvanceFn,
+                    data: Int, pad: Bool) {
+            row = r
+            col = c
+            advanceFn = fn
+            dataIndex = data
+            isPad = pad
+        }
+    }
+    
+    //==========================================================================
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -407,12 +447,63 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
     }
+    
+    
+    //--------------------------------------------------------------------------
+    /// createIndex
+    /// The advance functions are used by collections that do pre bounds
+    /// checking, so only valid positions are requested
+    func createIndex(at position: ViewPosition) -> ViewIndex {
+        let rows = shape.extents[0]
+        let endcol = shape.extents[1] - 1
+        let rowStride = dataShape.strides[0]
+        let colStride = dataShape.strides[1]
+        
+        let advanceFn: MatrixIndex.AdvanceFn
+        if isPadded {
+            //------------------------------------------------------------------
+            fatalError()
+        } else if isRepeated {
+            //------------------------------------------------------------------
+            fatalError()
+        } else {
+            //------------------------------------------------------------------
+            advanceFn = { i, n in
+                let row, col, dataIndex: Int
+                // most frequent increment
+                if n == 1 {
+                    col = i.col + 1
+                    if col < endcol {
+                        row = i.row
+                        dataIndex += colStride
+                    } else {
+                        row = i.row + 1
+                        col = 0
+                        dataIndex = row * rowStride
+                    }
+                } else {
+                    // incremental jump
+                    let jump = n.quotientAndRemainder(dividingBy: rows)
+                    row = i.row + jump.quotient
+                    col = i.col + jump.remainder
+                    dataIndex = row * rowStride + col * colStride
+                }
+                
+                return MatrixIndex(r: row, c: col, fn: i.advanceFn,
+                                   data: dataIndex, pad: false)
+            }
+        }
+        
+        return MatrixIndex(at: position, advance: advanceFn)
+    }
+
 }
 
 extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
@@ -505,8 +596,9 @@ public struct Volume<Scalar>: VolumeView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -529,8 +621,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
@@ -593,8 +686,9 @@ public struct NDTensor<Scalar>: NDTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -617,8 +711,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
@@ -724,8 +819,9 @@ public struct NCHWTensor<Scalar>: NCHWTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -748,8 +844,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)
@@ -855,8 +952,9 @@ public struct NHWCTensor<Scalar>: NHWCTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
+    public let isPadded: Bool
+    public let isRepeated: Bool
     public let isShared: Bool
-    public let isVirtual: Bool
     public let padding: [Padding]
     public let padValue: Scalar
     public let shape: DataShape
@@ -879,8 +977,9 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding ?? [Padding(0)]
         self.padValue = padValue ?? Scalar()
+        self.isPadded = padding != nil
+        self.isRepeated = dataShape != shape
         self.isShared = isShared
-        self.isVirtual = padding != nil || dataShape != shape
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
         initTensorArray(tensorArray, name, scalars)

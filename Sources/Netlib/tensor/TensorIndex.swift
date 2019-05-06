@@ -1,105 +1,121 @@
-//******************************************************************************
-//  Created by Edward Connell on 5/4/19
-//  Copyright © 2019 Edward Connell. All rights reserved.
+////******************************************************************************
+////  Created by Edward Connell on 5/4/19
+////  Copyright © 2019 Edward Connell. All rights reserved.
+////
+//import Foundation
 //
-import Foundation
-
-//==============================================================================
-/// TensorView Collection extensions
-public extension TensorView {
-    //--------------------------------------------------------------------------
-    /// get a single value at the specified index
-    /// This is not an efficient way to get values
-    func value(at index: [Int]) throws -> Scalar {
-        let buffer = try readOnly()
-        let padded = shape.padded(with: padding)
-        let tensorIndex = TensorIteratorIndex<Self>(self, padded, at: index)
-        return tensorIndex.isPad ? padValue : buffer[tensorIndex.dataIndex]
-    }
-    
-    //--------------------------------------------------------------------------
-    /// set a single value at the specified index
-    /// This is not an efficient way to set values
-    mutating func set(value: Scalar, at index: [Int]) throws {
-        let buffer = try readWrite()
-        let padded = shape.padded(with: padding)
-        let tensorIndex = TensorIteratorIndex<Self>(self, padded, at: index)
-        buffer[tensorIndex.dataIndex] = value
-    }
-}
-
-//==============================================================================
-/// TensorIndexing
-public protocol TensorIndexing {
-    associatedtype View
-    
-    func computeIndex()
-}
-
-public extension TensorIndexing {
-    func computeIndex() {
-        
-    }
-}
-
-public extension TensorIndexing where View: VectorView {
-    func computeIndex() {
-        
-    }
-}
-
-//==============================================================================
-/// TensorDirectIndex
-public struct TensorDirectIndex<T>: TensorIndexing, Strideable, Comparable
-where T: TensorView
-{
+////==============================================================================
+///// TensorIndexing
+//public protocol TensorIndexing where Self: TensorView {
+//    /// returns a collection of values in spatial order
+//    func values() throws -> TensorValueCollection<Self>
+////    /// returns a collection of mutable values in spatial order
+////    mutating func mutableValues() throws -> ViewMutableCollection
+//}
+//
+////==============================================================================
+///// _TensorValueCollection
+//public protocol _TensorValueCollection: RandomAccessCollection where
+//    Index: TensorIndex & Strideable & Comparable
+//{
+//    associatedtype View: TensorView
+//    associatedtype Scalar = View.Scalar
+//
+//    var buffer: UnsafeBufferPointer<Scalar> { get }
+//    var paddedShape: DataShape { get }
+//}
+//
+//public extension _TensorValueCollection {
+//    //--------------------------------------------------------------------------
+//    // Collection
+//    func index(before i: Index) -> Index {
+//        fatalError()
+//    }
+//
+//    func index(after i: Index) -> Index {
+//        fatalError()
+//    }
+//
+//    subscript(index: Index) -> Scalar {
+//        fatalError()
+//    }
+//
+//    func isPad(_ index: Index) -> Bool {
+//        return false
+//    }
+//}
+//
+//public extension _TensorValueCollection where
+//View: MatrixView, Index == MatrixIndex
+//{
+//    //--------------------------------------------------------------------------
+//    // Collection
+//    func index(before i: Index) -> Index {
+//        fatalError()
+//    }
+//
+//    func index(after i: Index) -> Index {
+//        fatalError()
+//    }
+//
+//    subscript(index: Index) -> Scalar {
+//        fatalError()
+//    }
+//}
+//
+//==========================================================================
+public protocol TensorIndex: Strideable {
     // types
-    public typealias Index = TensorDirectIndex<T>
-    public typealias View = T
+    associatedtype Scalar
+    typealias AdvanceFn = (Self, _ by: Int) -> Self
 
     // properties
-    var dataIndex: Int = 0
-    let dataShape: DataShape
-    let padding: [Padding]
-    var rank: Int { return spatialIndex.count }
-    var spatialIndex: ContiguousArray<Int>
-    var viewIndex: Int = 0
-    let viewShape: DataShape
+    var advanceFn: AdvanceFn { get }
+    var dataIndex: Int { get }
+    var isPad: Bool { get }
+}
 
-    // initializers
-    init(_ tensorView: T, index: [Int]) {
-        spatialIndex = ContiguousArray(index)
-        dataShape = tensorView.dataShape
-        padding = tensorView.padding
-        viewShape = tensorView.shape.padded(with: tensorView.padding)
-        computeIndex()
-    }
-
-    //--------------------------------------------------------------------------
+public extension TensorIndex {
     // Equatable
-    public static func == (lhs: Index, rhs: Index) -> Bool {
-        assert(lhs.rank == rhs.rank)
-        return lhs.viewIndex == rhs.viewIndex
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.dataIndex == rhs.dataIndex
     }
-    
+
     // Comparable
-    public static func < (lhs: Index, rhs: Index) -> Bool {
-        assert(lhs.rank == rhs.rank)
-        return lhs.viewIndex < rhs.viewIndex
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        return lhs.dataIndex < rhs.dataIndex
     }
-    
-    public func increment() -> Index {
-        let next = self
-        return next
+
+    // Strideable
+    func advanced(by n: Int) -> Self {
+        return advanceFn(self, n)
     }
-    
-    public func advanced(by n: Int) -> Index {
-        let next = self
-        return next
-    }
-    
-    public func distance(to other: Index) -> Int {
-        return other.viewIndex - viewIndex
+
+    func distance(to other: Self) -> Int {
+        return other.dataIndex - dataIndex
     }
 }
 
+////==============================================================================
+///// TensorValueCollection
+//public struct TensorValueCollection<View>:
+//    _TensorValueCollection
+//    where View: TensorView
+//{
+//    // properties
+//    public let view: View
+//    public let paddedShape: DataShape
+//    public let buffer: UnsafeBufferPointer<View.Scalar>
+//    public var endIndex: Index
+//    public var count: Int { return paddedShape.elementCount }
+//    public var startIndex: Index {
+//        return Index(fn: Index.advance(index:))
+//    }
+//
+//    public init(view: View, buffer: UnsafeBufferPointer<Scalar>) throws {
+//        self.view = view
+//        self.buffer = buffer
+//        paddedShape = view.shape.padded(with: view.padding)
+//        endIndex = Index(view, end: paddedShape.elementCount)
+//    }
+//}

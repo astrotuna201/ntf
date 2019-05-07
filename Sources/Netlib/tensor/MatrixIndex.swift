@@ -47,8 +47,8 @@ public struct MatrixIndex: TensorIndex {
             dataIndex = 0
             
         } else {
-            viewIndex = row * rowBounds.viewExtent + col * colBounds.viewStride
-            dataIndex = row * rowBounds.dataExtent + col * colBounds.dataStride
+            viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
+            dataIndex = row * rowBounds.dataStride + col * colBounds.dataStride
         }
     }
     
@@ -58,17 +58,17 @@ public struct MatrixIndex: TensorIndex {
         if isPadded {
 
         } else if isRepeated {
-
         } else {
-            if next.col == colBounds.viewExtent {
+            next.col += 1
+            if next.col < colBounds.viewExtent {
+                next.dataIndex = dataIndex + colBounds.dataStride
+            } else {
                 next.col = 0
                 next.row += 1
                 next.dataIndex = next.row * rowBounds.dataStride
-            } else {
-                next.col += 1
-                next.dataIndex = dataIndex + colBounds.dataStride
             }
         }
+        next.viewIndex += 1
         return next
     }
 

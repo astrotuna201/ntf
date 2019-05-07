@@ -7,14 +7,19 @@ import Foundation
 //==========================================================================
 public protocol TensorIndex: Strideable {
     associatedtype Position
-    
+    /// the linear spatial position in the virtual view shape. The view
+    /// shape and dataShape are equal if there is no padding or repeating
     var viewIndex: Int { get }
+    /// the linear buffer index of the data corresponding to the `viewIndex`
     var dataIndex: Int { get }
+    /// `true` if the index references a position in a padding region
     var isPad: Bool { get }
     
+    /// initializer
     init<T>(view: T, at position: Position) where T: TensorView
-    
-    @inlinable @inline(__always)
+
+    /// highest frequency function to move the index
+    /// use advanced(by n: for jumps or negative movement
     func increment() -> Self
 }
 

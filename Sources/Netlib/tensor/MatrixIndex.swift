@@ -9,9 +9,9 @@ import Foundation
 /// MatrixIndex
 public struct MatrixIndex: TensorIndex {
     // properties
-    public var viewIndex: Int
-    public var dataIndex: Int
-    public var isPad: Bool
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
+    public var isPad: Bool = false
     
     // local properties
     public let rowBounds: ExtentBounds
@@ -25,41 +25,66 @@ public struct MatrixIndex: TensorIndex {
         let bounds = view.createTensorBounds()
         rowBounds = bounds[0]
         colBounds = bounds[1]
-        
         isPadded = view.isPadded
         isRepeated = view.isRepeated
         row = position.r
         col = position.c
-        viewIndex = 0
-        dataIndex = 0
-        isPad = false
+
         computeIndexes()
     }
     
     @inlinable @inline(__always)
     public mutating func computeIndexes() {
+        viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
+        
+        func indexFrom(_ r: Int, _ c: Int) -> Int {
+            return r * rowBounds.dataStride + c * colBounds.dataStride
+        }
+
+        func repeatedFrom(_ r: Int, _ c: Int) -> Int {
+            return (r % rowBounds.viewExtent) * rowBounds.dataStride +
+                (c % colBounds.viewExtent) * colBounds.dataStride
+        }
+
         if isPadded {
-            viewIndex = 0
-            dataIndex = 0
+            isPad =
+                row < rowBounds.before || row >= rowBounds.after ||
+                col < colBounds.before || col >= colBounds.after
             
+            if !isPad {
+                let r = row - rowBounds.before
+                let c = col - colBounds.before
+                dataIndex = isRepeated ? repeatedFrom(r, c) : indexFrom(r, c)
+            }
         } else if isRepeated {
-            viewIndex = 0
-            dataIndex = 0
-            
+            dataIndex = repeatedFrom(row, col)
         } else {
-            viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
-            dataIndex = row * rowBounds.dataStride + col * colBounds.dataStride
+            dataIndex = indexFrom(row, col)
         }
     }
+
     
     @inlinable @inline(__always)
     public func increment() -> MatrixIndex {
         var next = self
+        next.col += 1
+        
         if isPadded {
+            next.isPad =
+                next.row < rowBounds.before || next.row >= rowBounds.after ||
+                next.col < colBounds.before || next.col >= colBounds.after
+            if next.isPad { return next }
+        }
 
-        } else if isRepeated {
+        if isRepeated {
+            if next.col < colBounds.viewExtent {
+                next.dataIndex = (next.col % colBounds.dataExtent) * colBounds.dataStride
+            } else {
+                next.col = 0
+                next.row += 1
+                next.dataIndex = (next.row % rowBounds.dataExtent) * rowBounds.dataStride
+            }
         } else {
-            next.col += 1
             if next.col < colBounds.viewExtent {
                 next.dataIndex = dataIndex + colBounds.dataStride
             } else {

@@ -9,7 +9,6 @@ import Foundation
 /// MatrixIndex
 public struct MatrixIndex: TensorIndex {
     // properties
-    public let bounds: TensorBounds
     public var viewIndex: Int
     public var dataIndex: Int
     public var isPad: Bool
@@ -23,7 +22,7 @@ public struct MatrixIndex: TensorIndex {
     public let isRepeated: Bool
     
     public init<T>(view: T, at position: MatrixPosition) where T: TensorView {
-        bounds = view.createTensorBounds()
+        let bounds = view.createTensorBounds()
         rowBounds = bounds[0]
         colBounds = bounds[1]
         

@@ -8,7 +8,6 @@ import Foundation
 public protocol TensorIndex: Strideable {
     associatedtype Position
     
-    var bounds: TensorBounds { get }
     var viewIndex: Int { get }
     var dataIndex: Int { get }
     var isPad: Bool { get }

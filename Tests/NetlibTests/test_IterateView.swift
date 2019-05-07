@@ -159,8 +159,8 @@ class test_IterateView: XCTestCase {
         
         self.measure {
             for _ in 0..<1000000 {
-                m = m.increment()
-//                m = m.advanced(by: 1)
+//                m = m.increment()
+                m = m.advanced(by: 1)
             }
         }
         #endif

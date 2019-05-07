@@ -158,7 +158,7 @@ where View: TensorView
     }
     
     public func index(after i: Index) -> Index {
-        return i.advanced(by: 1)
+        return i.increment()
     }
     
     public subscript(index: Index) -> Scalar {
@@ -197,7 +197,7 @@ public struct TensorViewMutableCollection<View>: RandomAccessCollection,
     }
     
     public func index(after i: Index) -> Index {
-        return i.advanced(by: 1)
+        return i.increment()
     }
     
     public subscript(index: Index) -> Scalar {

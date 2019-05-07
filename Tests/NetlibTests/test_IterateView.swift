@@ -155,32 +155,12 @@ class test_IterateView: XCTestCase {
     // test_perfMatrix
     func test_perfCopy() {
         #if !DEBUG
-        let b = ExtentBounds(before: 0, after: 0, viewExtent: 10,
-                             viewStride: 1, dataExtent: 1, dataStride: 1)
-        let eb = [ExtentBounds](repeating: b, count: 4)
-        
-        let fn: (Int) -> Void = { i in
-            var de = eb[1].dataExtent
-        }
-        
-        let mi = Matrix<Int32>((3, 5)).createIndex(at: (0, 0))
-        
-        func update(index: MatrixIndex) -> MatrixIndex {
-            var newIndex = index
-            newIndex.dataIndex = index.dataIndex + 1
-            newIndex.viewIndex = index.viewIndex + 1
-//            newIndex.row = index.row + 1
-            newIndex.col = index.col + 1
-            newIndex.isPad = false
-            return newIndex
-        }
-        
-        var ni = mi
+        var m = Matrix<Int32>((3, 5)).startIndex
         
         self.measure {
             for _ in 0..<1000000 {
-                ni = ni.increment()
-//                ni = ni.advance(by: 1)
+                m = m.increment()
+//                m = m.advanced(by: 1)
             }
         }
         #endif

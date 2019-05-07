@@ -6,14 +6,17 @@ import Foundation
 
 //==========================================================================
 public protocol TensorIndex: Strideable {
-    // types
-    typealias AdvanceFn = (Self, _ by: Int) -> Self
-
-    // properties
-    var advanceFn: AdvanceFn { get }
+    associatedtype Position
+    
+    var bounds: TensorBounds { get }
     var viewIndex: Int { get }
     var dataIndex: Int { get }
     var isPad: Bool { get }
+    
+    init<T>(view: T, at position: Position) where T: TensorView
+    
+    @inlinable @inline(__always)
+    func increment() -> Self
 }
 
 public extension TensorIndex {
@@ -25,11 +28,6 @@ public extension TensorIndex {
     // Comparable
     static func < (lhs: Self, rhs: Self) -> Bool {
         return lhs.viewIndex < rhs.viewIndex
-    }
-    
-    // Strideable
-    func advanced(by n: Int) -> Self {
-        return advanceFn(self, n)
     }
     
     func distance(to other: Self) -> Int {
@@ -51,11 +49,21 @@ public struct ExtentBounds {
 public typealias TensorBounds = ContiguousArray<ExtentBounds>
 
 public extension TensorView {
-    func createExtentBounds() -> TensorBounds {
-        let ca = MemoryLayout<TensorBounds>.size
-        let a = MemoryLayout<Array<ExtentBounds>>.size
-        let b = MemoryLayout<UnsafeBufferPointer<ExtentBounds>>.size
-        fatalError()
+    //--------------------------------------------------------------------------
+    /// used by indexing objects
+    func createTensorBounds() -> TensorBounds {
+        var bounds = TensorBounds()
+        let paddedShape = shape.padded(with: padding)
+        for dim in 0..<rank {
+            let pad = getPadding(for: dim)
+            bounds.append(ExtentBounds(before: pad.before,
+                                     after: pad.after,
+                                     viewExtent: paddedShape.extents[dim],
+                                     viewStride: paddedShape.strides[dim],
+                                     dataExtent: dataShape.extents[dim],
+                                     dataStride: dataShape.strides[dim]))
+        }
+        return bounds
     }
 }
 
@@ -101,17 +109,17 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// get a single value at the specified index
-    func value(at position: ViewPosition) throws -> Scalar {
+    func value(at position: ViewIndex.Position) throws -> Scalar {
         let buffer = try readOnly()
-        let index = createIndex(at: position)
+        let index = ViewIndex.init(view: self, at: position)
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 
     //--------------------------------------------------------------------------
     /// set a single value at the specified index
-    mutating func set(value: Scalar, at position: ViewPosition) throws {
+    mutating func set(value: Scalar, at position: ViewIndex.Position) throws {
         let buffer = try readWrite()
-        let index = createIndex(at: position)
+        let index = ViewIndex.init(view: self, at: position)
         buffer[index.dataIndex] = value
     }
 }

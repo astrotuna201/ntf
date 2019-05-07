@@ -39,8 +39,6 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// A tensor shape specific indexer used to calculate a data buffer
     /// index based on a view's spatial position
     associatedtype ViewIndex: TensorIndex
-    /// A tensor shape specific spatial position data structure
-    associatedtype ViewPosition
     
     //--------------------------------------------------------------------------
     // Properties that should be user readonly begin with _xyz, and accessor
@@ -94,9 +92,6 @@ public protocol TensorView: Logging, DefaultInitializer {
          viewDataOffset: Int,
          isShared: Bool,
          scalars: [Scalar]?)
-
-    /// function used to create a tensor data indexer
-    func createIndex(at position: ViewPosition) -> ViewIndex
 }
 
 //==============================================================================

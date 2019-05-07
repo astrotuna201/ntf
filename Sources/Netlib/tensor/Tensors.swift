@@ -86,15 +86,15 @@ public protocol ScalarView: TensorView where
     IndexView == ScalarValue<IndexScalar>{}
 
 public extension ScalarView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
-    
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar,
@@ -106,14 +106,6 @@ public extension ScalarView {
                   padding: padding, padValue: padValue,
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
-    }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
     }
 }
 
@@ -171,15 +163,15 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // VectorView extensions
 public extension VectorView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
-    
+
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
          padding: [Padding]? = nil, padValue: Scalar? = nil) {
@@ -259,14 +251,6 @@ public extension VectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -308,30 +292,6 @@ where Scalar: ScalarConformance {
 }
 
 //==============================================================================
-/// VectorIndex
-public struct VectorIndex: TensorIndex {
-    // properties
-    public let advanceFn: AdvanceFn
-    public var viewIndex: Int
-    public var dataIndex: Int
-    public var isPad: Bool
-    
-    public init(at position: VectorPosition, advance: @escaping AdvanceFn) {
-        advanceFn = advance
-        viewIndex = position
-        dataIndex = 0
-        isPad = false
-    }
-    
-    public init(position: Int, fn: @escaping AdvanceFn, data: Int, pad: Bool) {
-        advanceFn = fn
-        viewIndex = position
-        dataIndex = data
-        isPad = pad
-    }
-}
-
-//==============================================================================
 // MatrixView
 public protocol MatrixView: TensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
@@ -348,6 +308,15 @@ extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // MatrixView extensions
 public extension MatrixView {
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+    }
+    
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
+    }
+    
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -494,15 +463,15 @@ extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // VolumeView extension
 public extension VolumeView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
-    
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -573,14 +542,6 @@ public extension VolumeView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
-    }
 }
 
 //==============================================================================
@@ -633,13 +594,13 @@ extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 // NDTensorView extensions
 public extension NDTensorView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
 
     //-------------------------------------
@@ -678,14 +639,6 @@ public extension NDTensorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false,
                   scalars: Self.sequence2ScalarArray(sequence))
-    }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
     }
 }
 
@@ -748,15 +701,15 @@ extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 /// NCHWTensorView extensions
 public extension NCHWTensorView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
-    
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(_ value: Scalar, name: String? = nil,
@@ -830,14 +783,6 @@ public extension NCHWTensorView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
-    }
 }
 
 //==============================================================================
@@ -898,15 +843,15 @@ extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
 //==============================================================================
 /// NHWCTensorView extensions
 public extension NHWCTensorView {
-    //-------------------------------------
-    var endIndex: VectorIndex {
-        return createIndex(at: shape.extents[0])
+    //--------------------------------------------------------------------------
+    var endIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (shape.extents[0], 0))
     }
     
-    var startIndex: VectorIndex {
-        return createIndex(at: 0)
+    var startIndex: MatrixIndex {
+        return MatrixIndex(view: self, at: (0, 0))
     }
-    
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     init(value: Scalar, name: String? = nil,
@@ -979,14 +924,6 @@ public extension NHWCTensorView {
                   padding: padding, padValue: padValue,
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// createIndex(at position:
-    /// The advance functions are used by collections that are bounds
-    /// prechecked, so only valid positions are requested
-    func createIndex(at position: VectorPosition) -> VectorIndex {
-        fatalError()
     }
 }
 

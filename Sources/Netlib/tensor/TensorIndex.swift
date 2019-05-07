@@ -38,6 +38,28 @@ public extension TensorIndex {
 }
 
 //==============================================================================
+/// ExtentBounds
+public struct ExtentBounds {
+    public let before: Int
+    public let after: Int
+    public let viewExtent: Int
+    public let viewStride: Int
+    public let dataExtent: Int
+    public let dataStride: Int
+}
+
+public typealias TensorBounds = ContiguousArray<ExtentBounds>
+
+public extension TensorView {
+    func createExtentBounds() -> TensorBounds {
+        let ca = MemoryLayout<TensorBounds>.size
+        let a = MemoryLayout<Array<ExtentBounds>>.size
+        let b = MemoryLayout<UnsafeBufferPointer<ExtentBounds>>.size
+        fatalError()
+    }
+}
+
+//==============================================================================
 /// TensorView Collection extensions
 public extension TensorView {
     //--------------------------------------------------------------------------

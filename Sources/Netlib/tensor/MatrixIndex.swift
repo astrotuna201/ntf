@@ -15,7 +15,9 @@ public struct MatrixIndex: TensorIndex {
     public var isPad: Bool
     public var row: Int
     public var col: Int
-
+    public let bounds: ContiguousArray<ExtentBounds>
+    public let isPadded = false
+    public let isRepeated = false
     public init(r: Int, c: Int,
                 fn: @escaping AdvanceFn,
                 view: Int, data: Int, pad: Bool) {
@@ -25,6 +27,50 @@ public struct MatrixIndex: TensorIndex {
         viewIndex = view
         dataIndex = data
         isPad = pad
+        
+        let b = ExtentBounds(before: 0, after: 0, viewExtent: 10,
+                             viewStride: 1, dataExtent: 1, dataStride: 1)
+        bounds = ContiguousArray<ExtentBounds>(repeating: b, count: 2)
+    }
+
+    @inlinable @inline(__always)
+    public func increment() -> MatrixIndex {
+        var next = self
+        if isPadded {
+            
+        } else if isRepeated {
+            
+        } else {
+            // most frequent increment
+            next.col = col + 1
+            if next.col < bounds[0].viewExtent {
+                next.row = row
+                next.dataIndex = dataIndex + bounds[0].dataStride
+            } else {
+                next.row = row + 1
+                next.col = 0
+                next.dataIndex = next.row * bounds[1].dataStride
+            }
+        }
+        return next
+    }
+
+    @inlinable @inline(__always)
+    public func advance(by n: Int) -> MatrixIndex {
+        guard n != 1 else { return increment() }
+        var next = self
+        if isPadded {
+            
+        } else if isRepeated {
+            
+        } else {
+            // incremental jump
+            let jump = n.quotientAndRemainder(dividingBy: bounds[1].viewExtent)
+            next.row = row + jump.quotient
+            next.col = col + jump.remainder
+            next.dataIndex = next.row * bounds[1].dataStride + next.col * bounds[0].dataStride
+        }
+        return next
     }
 }
 
@@ -104,30 +150,26 @@ public extension MatrixView {
             isPad = false
 
             advanceFn = { i, n in
-                var row, col, dataIndex: Int
+                var next = i
                 // most frequent increment
                 if n == 1 {
-                    col = i.col + 1
-                    if col < cols {
-                        row = i.row
-                        dataIndex = i.dataIndex + colStride
+                    next.col = i.col + 1
+                    if next.col < cols {
+                        next.row = i.row
+                        next.dataIndex = i.dataIndex + colStride
                     } else {
-                        row = i.row + 1
-                        col = 0
-                        dataIndex = row * rowStride
+                        next.row = i.row + 1
+                        next.col = 0
+                        next.dataIndex = next.row * rowStride
                     }
                 } else {
                     // incremental jump
                     let jump = n.quotientAndRemainder(dividingBy: rows)
-                    row = i.row + jump.quotient
-                    col = i.col + jump.remainder
-                    dataIndex = row * rowStride + col * colStride
+                    next.row = i.row + jump.quotient
+                    next.col = i.col + jump.remainder
+                    next.dataIndex = next.row * rowStride + next.col * colStride
                 }
-                
-                return MatrixIndex(r: row, c: col, fn: i.advanceFn,
-                                   view: i.viewIndex + n,
-                                   data: dataIndex,
-                                   pad: false)
+                return next
             }
         }
         

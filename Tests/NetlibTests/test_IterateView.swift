@@ -24,6 +24,7 @@ class test_IterateView: XCTestCase {
         ("test_repeatingVolume", test_repeatingVolume),
         ("test_paddedVector", test_paddedVector),
         ("test_paddedMatrix", test_paddedMatrix),
+        ("test_paddedRepeatedMatrix", test_paddedRepeatedMatrix),
     ]
     
     //==========================================================================
@@ -229,7 +230,6 @@ class test_IterateView: XCTestCase {
         }
     }
     
-    
     //==========================================================================
     // test_repeatingMatrix
     func test_repeatingMatrix() {
@@ -342,6 +342,36 @@ class test_IterateView: XCTestCase {
             
             let values2 = try matrix2.array()
             XCTAssert(values2 == expected2, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_paddedRepeatedMatrix
+    func test_paddedRepeatedMatrix() {
+        do {
+            // create matrix with padding
+            let padding = [
+                Padding(1),                   // row pad
+                Padding(before: 2, after: 3)  // col pad
+            ]
+            
+            let vector = Matrix<Int32>((3, 1), sequence: 0..<3)
+            let matrix = Matrix<Int32>((3, 3), repeating: vector,
+                                       padding: padding, padValue: -1)
+//            print(matrix.formatted((2,0)))
+            
+            let expected: [Int32] = [
+                -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1,  0,  0,  0, -1, -1, -1,
+                -1, -1,  1,  1,  1, -1, -1, -1,
+                -1, -1,  2,  2,  2, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1,
+            ]
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+
         } catch {
             XCTFail(String(describing: error))
         }

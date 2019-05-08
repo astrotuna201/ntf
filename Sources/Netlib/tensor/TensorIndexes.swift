@@ -4,6 +4,95 @@
 //
 import Foundation
 
+//==============================================================================
+/// VectorIndex
+public struct VectorIndex: TensorIndex {
+    // properties
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
+    public var isPad: Bool = false
+    
+    // local properties
+    public let traversal: TensorTraversal
+    public let bounds: ExtentBounds
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init<T>(view: T, at position: VectorPosition) where T: TensorView {
+        bounds = view.createTensorBounds()[0]
+        traversal = view.traversal
+        viewIndex = position
+        computeDataIndex()
+    }
+    
+    public init<T>(endOf view: T) where T: TensorView {
+        bounds = view.createTensorBounds()[0]
+        traversal = view.traversal
+        viewIndex = view.shape.padded(with: view.padding).elementCount
+    }
+    
+    //--------------------------------------------------------------------------
+    /// computeDataIndex
+    @inlinable @inline(__always)
+    public mutating func computeDataIndex() {
+        func getDataIndex(_ i: Int) -> Int {
+            return i * bounds.dataStride
+        }
+        
+        func getRepeatedDataIndex(_ i: Int) -> Int {
+            return (i % bounds.dataExtent) * bounds.dataStride
+        }
+        
+        func testIsPad() -> Bool {
+            return viewIndex < bounds.before || viewIndex >= bounds.after
+        }
+        
+        //----------------------------------
+        // calculate dataIndex
+        switch traversal {
+        case .normal:
+            dataIndex = getDataIndex(viewIndex)
+            
+        case .padded:
+            isPad = testIsPad()
+            if !isPad {
+                dataIndex = getDataIndex(viewIndex - bounds.before)
+            }
+            
+        case .repeated:
+            dataIndex = getRepeatedDataIndex(viewIndex)
+            
+        case .paddedRepeated:
+            isPad = testIsPad()
+            if !isPad {
+                dataIndex = getRepeatedDataIndex(viewIndex - bounds.before)
+            }
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// increment
+    /// incremental update of indexes used for iteration
+    @inlinable @inline(__always)
+    public func increment() -> VectorIndex {
+        var next = self
+        next.viewIndex += 1
+        next.computeDataIndex()
+        return next
+    }
+    
+    //--------------------------------------------------------------------------
+    /// advanced(by n:
+    /// bidirectional jump or movement
+    @inlinable @inline(__always)
+    public func advanced(by n: Int) -> VectorIndex {
+        guard n != 1 else { return increment() }
+        var next = self
+        next.viewIndex += n
+        next.computeDataIndex()
+        return next
+    }
+}
 
 //==============================================================================
 /// MatrixIndex

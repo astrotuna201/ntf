@@ -87,12 +87,12 @@ public protocol ScalarView: TensorView where
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: VectorIndex {
+        return VectorIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: VectorIndex {
+        return VectorIndex(view: self, at: 0)
     }
 
     //--------------------------------------------------------------------------
@@ -164,12 +164,12 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 // VectorView extensions
 public extension VectorView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: VectorIndex {
+        return VectorIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: VectorIndex {
+        return VectorIndex(view: self, at: 0)
     }
 
     /// shaped initializers

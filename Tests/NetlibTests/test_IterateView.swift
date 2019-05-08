@@ -16,6 +16,7 @@ class test_IterateView: XCTestCase {
         ("test_VectorSubView", test_VectorSubView),
         ("test_MatrixSubView", test_MatrixSubView),
         ("test_VolumeSubView", test_VolumeSubView),
+        ("test_perfVector", test_perfVector),
         ("test_perfMatrix", test_perfMatrix),
         ("test_repeatingValue", test_repeatingValue),
         ("test_repeatingRow", test_repeatingRow),
@@ -128,6 +129,25 @@ class test_IterateView: XCTestCase {
         } catch {
             XCTFail(String(describing: error))
         }
+    }
+    
+    //==========================================================================
+    // test_perfVector
+    func test_perfVector() {
+        #if !DEBUG
+        do {
+            let count = 1024 * 1024
+            let vector = Vector<Int32>(count: count, sequence: 0..<count)
+            //            print(matrix.formatted((2,0)))
+            let values = try vector.values()
+            
+            self.measure {
+                for _ in values {}
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        #endif
     }
     
     //==========================================================================

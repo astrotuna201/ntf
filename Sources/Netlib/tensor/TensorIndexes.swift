@@ -4,6 +4,34 @@
 //
 import Foundation
 
+
+//==============================================================================
+/// ScalarIndex
+public struct ScalarIndex: TensorIndex {
+    // properties
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
+    public var isPad: Bool = false
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init<T>(view: T, at position: ScalarPosition) where T: TensorView {}
+    public init<T>(endOf view: T) where T: TensorView { }
+    
+    //--------------------------------------------------------------------------
+    /// increment
+    /// incremental update of indexes used for iteration
+    @inlinable @inline(__always)
+    public func increment() -> ScalarIndex { return self }
+    
+    //--------------------------------------------------------------------------
+    /// advanced(by n:
+    /// bidirectional jump or movement
+    @inlinable @inline(__always)
+    public func advanced(by n: Int) -> ScalarIndex { return self }
+}
+
+
 //==============================================================================
 /// VectorIndex
 public struct VectorIndex: TensorIndex {
@@ -342,6 +370,145 @@ public struct VolumeIndex: TensorIndex {
         jump = quotient.quotientAndRemainder(dividingBy: rowBounds.viewExtent)
         next.row += jump.quotient
         next.col += jump.remainder
+        
+        // now set the indexes
+        next.computeDataIndex()
+        return next
+    }
+}
+
+//==============================================================================
+/// NDIndex
+public struct NDIndex: TensorIndex {
+    // properties
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
+    public var isPad: Bool = false
+    
+    // local properties
+    public let traversal: TensorTraversal
+    public let bounds: TensorBounds
+    public var position: NDPosition
+    
+    //--------------------------------------------------------------------------
+    // initializers
+    public init<T>(view: T, at position: NDPosition) where T: TensorView {
+        traversal = view.traversal
+        // get the bounds and exapand postion if needed
+        let bounds = view.createTensorBounds()
+        if position.count == 1 {
+            self.position = [Int](repeating: position[0], count: bounds.count)
+        } else {
+            self.position = position
+        }
+        self.bounds = bounds
+        
+        // compute the initial view index
+        viewIndex = zip(self.position, self.bounds).reduce(0) {
+            $0 + $1.0 * $1.1.viewStride
+        }
+        computeDataIndex()
+    }
+    
+    public init<T>(endOf view: T) where T: TensorView {
+        bounds = view.createTensorBounds()
+        position = [Int](repeating: 0, count: bounds.count)
+        traversal = view.traversal
+        viewIndex = view.shape.padded(with: view.padding).elementCount
+    }
+    
+    //--------------------------------------------------------------------------
+    /// computeDataIndex
+    @inlinable @inline(__always)
+    public mutating func computeDataIndex() {
+        func getDataIndex(_ p: [Int]) -> Int {
+            return zip(p, bounds).reduce(0) {
+                $0 + $1.0 * $1.1.viewStride
+            }
+        }
+        
+        func getRepeatedDataIndex(_ p: [Int]) -> Int {
+            return zip(p, bounds).reduce(0) {
+                $0 + ($1.0 % $1.1.dataExtent) * $1.1.viewStride
+            }
+        }
+        
+        func testIsPad() -> Bool {
+            for dim in 0..<bounds.count {
+                if position[dim] < bounds[dim].before ||
+                    position[dim] >= bounds[dim].after {
+                    return true
+                }
+            }
+            return false
+        }
+        
+        //----------------------------------
+        // calculate dataIndex
+        switch traversal {
+        case .normal:
+            dataIndex = getDataIndex(position)
+            
+        case .padded:
+            isPad = testIsPad()
+            if !isPad {
+                let padPos = zip(position, bounds).map { $0.0 - $0.1.before }
+                dataIndex = getDataIndex(padPos)
+            }
+            
+        case .repeated:
+            dataIndex = getRepeatedDataIndex(position)
+            
+        case .paddedRepeated:
+            isPad = testIsPad()
+            if !isPad {
+                let padPos = zip(position, bounds).map { $0.0 - $0.1.before }
+                dataIndex = getRepeatedDataIndex(padPos)
+            }
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// increment
+    /// incremental update of indexes used for iteration
+    @inlinable @inline(__always)
+    public func increment() -> NDIndex {
+        var next = self
+        next.viewIndex += 1
+
+        // increment the last dimension
+        func nextPosition(for dim: Int) {
+            next.position[dim] += 1
+            if next.position[dim] == bounds[dim].viewExtent && dim > 0 {
+                next.position[dim] = 0
+                nextPosition(for: dim - 1)
+            }
+        }
+        nextPosition(for: bounds.count - 1)
+        
+        next.computeDataIndex()
+        return next
+    }
+    
+    //--------------------------------------------------------------------------
+    /// advanced(by n:
+    /// bidirectional jump or movement
+    @inlinable @inline(__always)
+    public func advanced(by n: Int) -> NDIndex {
+        guard n != 1 else { return increment() }
+        var next = self
+        var distance = n
+        
+        var jump: (quotient: Int, remainder: Int)
+        for dim in (1..<bounds.count).reversed() {
+            jump = distance
+                .quotientAndRemainder(dividingBy: bounds[dim].viewExtent)
+            next.position[dim] += jump.quotient
+            distance = jump.remainder
+            if dim == 1 {
+                next.position[0] += jump.remainder
+            }
+        }
         
         // now set the indexes
         next.computeDataIndex()

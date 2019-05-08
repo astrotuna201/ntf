@@ -85,25 +85,24 @@ public protocol ScalarView: TensorView where
     BoolView == ScalarValue<Bool>,
     IndexView == ScalarValue<IndexScalar>{}
 
+public typealias ScalarPosition = Int
+
 public extension ScalarView {
     //--------------------------------------------------------------------------
-    var endIndex: VectorIndex {
-        return VectorIndex(endOf: self)
+    var endIndex: ScalarIndex {
+        return ScalarIndex(view: self, at: 0)
     }
     
-    var startIndex: VectorIndex {
-        return VectorIndex(view: self, at: 0)
+    var startIndex: ScalarIndex {
+        return ScalarIndex(endOf: self)
     }
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Scalar,
-         padding: [Padding]? = nil, padValue: Scalar? = nil,
-         name: String? = nil) {
-        
+    init(_ value: Scalar, name: String? = nil) {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
-                  padding: padding, padValue: padValue,
+                  padding: nil, padValue: nil,
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
     }
@@ -468,7 +467,7 @@ public extension VolumeView {
     var endIndex: VolumeIndex {
         return VolumeIndex(endOf: self)
     }
-    
+
     var startIndex: VolumeIndex {
         return VolumeIndex(view: self, at: (0, 0, 0))
     }
@@ -588,6 +587,8 @@ where Scalar: ScalarConformance {
 public protocol NDTensorView: TensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
 
+public typealias NDPosition = [Int]
+
 extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
     public var description: String { return formatted() }
 }
@@ -596,12 +597,12 @@ extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
 // NDTensorView extensions
 public extension NDTensorView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: NDIndex {
+        return NDIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: NDIndex {
+        return NDIndex(view: self, at: [0])
     }
 
     //-------------------------------------
@@ -703,12 +704,12 @@ extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
 /// NCHWTensorView extensions
 public extension NCHWTensorView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: NDIndex {
+        return NDIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: NDIndex {
+        return NDIndex(view: self, at: [0])
     }
 
     //--------------------------------------------------------------------------
@@ -845,12 +846,12 @@ extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
 /// NHWCTensorView extensions
 public extension NHWCTensorView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: NDIndex {
+        return NDIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: NDIndex {
+        return NDIndex(view: self, at: [0])
     }
 
     //--------------------------------------------------------------------------

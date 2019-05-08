@@ -454,6 +454,7 @@ public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
 public protocol VolumeView: TensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
+public typealias VolumePosition = (d: Int, r: Int, c: Int)
 public typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
 
 extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
@@ -464,12 +465,12 @@ extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
 // VolumeView extension
 public extension VolumeView {
     //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
+    var endIndex: VolumeIndex {
+        return VolumeIndex(endOf: self)
     }
     
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
+    var startIndex: VolumeIndex {
+        return VolumeIndex(view: self, at: (0, 0, 0))
     }
 
     //--------------------------------------------------------------------------

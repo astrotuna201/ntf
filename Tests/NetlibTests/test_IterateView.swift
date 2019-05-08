@@ -18,6 +18,8 @@ class test_IterateView: XCTestCase {
         ("test_VolumeSubView", test_VolumeSubView),
         ("test_perfVector", test_perfVector),
         ("test_perfMatrix", test_perfMatrix),
+        ("test_perfVolume", test_perfVolume),
+        ("test_perfIndexCopy", test_perfIndexCopy),
         ("test_repeatingValue", test_repeatingValue),
         ("test_repeatingRow", test_repeatingRow),
         ("test_repeatingCol", test_repeatingCol),
@@ -173,8 +175,32 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_perfMatrix
-    func test_perfCopy() {
+    // test_perfVolume
+    func test_perfVolume() {
+        #if !DEBUG
+        do {
+            let depths = 4
+            let rows = 512
+            let cols = 512
+            
+            let matrix = Volume<Int32>((depths, rows, cols),
+                                       sequence: 0..<(depths * rows * cols))
+            //            print(matrix.formatted((2,0)))
+            
+            let values = try matrix.values()
+            
+            self.measure {
+                for _ in values {}
+            }
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        #endif
+    }
+    
+    //==========================================================================
+    // test_perfIndexCopy
+    func test_perfIndexCopy() {
         #if !DEBUG
         var m = Matrix<Int32>((1024, 1024)).startIndex
         

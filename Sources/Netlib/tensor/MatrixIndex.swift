@@ -19,8 +19,6 @@ public struct MatrixIndex: TensorIndex {
     public let colBounds: ExtentBounds
     public var row: Int
     public var col: Int
-    public let isPadded: Bool
-    public let isRepeated: Bool
     
     //--------------------------------------------------------------------------
     // initializers
@@ -30,10 +28,7 @@ public struct MatrixIndex: TensorIndex {
         colBounds = bounds[1]
         row = position.r
         col = position.c
-
-        traversal = initTraversal(nil, false)
-        isPadded = view.isPadded
-        isRepeated = view.isRepeated
+        traversal = view.traversal
         computeIndexes()
     }
 
@@ -43,10 +38,7 @@ public struct MatrixIndex: TensorIndex {
         colBounds = bounds[1]
         row = 0
         col = 0
-
         traversal = initTraversal(nil, false)
-        isPadded = view.isPadded
-        isRepeated = view.isRepeated
         viewIndex = view.shape.padded(with: view.padding).elementCount
     }
     
@@ -57,29 +49,43 @@ public struct MatrixIndex: TensorIndex {
     public mutating func computeIndexes() {
         viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
         
-        func indexFrom(_ r: Int, _ c: Int) -> Int {
+        func getDataIndex(_ r: Int, _ c: Int) -> Int {
             return r * rowBounds.dataStride + c * colBounds.dataStride
         }
 
-        func repeatedFrom(_ r: Int, _ c: Int) -> Int {
+        func getRepeatedDataIndex(_ r: Int, _ c: Int) -> Int {
             return (r % rowBounds.viewExtent) * rowBounds.dataStride +
                 (c % colBounds.viewExtent) * colBounds.dataStride
         }
-
-        if isPadded {
-            isPad =
+        
+        func getIsPad() -> Bool {
+            return
                 row < rowBounds.before || row >= rowBounds.after ||
                 col < colBounds.before || col >= colBounds.after
-            
+        }
+
+        //----------------------------------
+        // calculate dataIndex
+        switch traversal {
+        case .normal:
+            dataIndex = getDataIndex(row, col)
+
+        case .padded:
+            isPad = getIsPad()
             if !isPad {
-                let r = row - rowBounds.before
-                let c = col - colBounds.before
-                dataIndex = isRepeated ? repeatedFrom(r, c) : indexFrom(r, c)
+                dataIndex = getDataIndex(row - rowBounds.before,
+                                         col - colBounds.before)
             }
-        } else if isRepeated {
-            dataIndex = repeatedFrom(row, col)
-        } else {
-            dataIndex = indexFrom(row, col)
+
+        case .repeated:
+            dataIndex = getRepeatedDataIndex(row, col)
+
+        case .paddedRepeated:
+            isPad = getIsPad()
+            if !isPad {
+                dataIndex = getRepeatedDataIndex(row - rowBounds.before,
+                                                 col - colBounds.before)
+            }
         }
     }
 
@@ -122,6 +128,7 @@ public struct MatrixIndex: TensorIndex {
             }
         }
 
+        //----------------------------------
         // increment position
         next.viewIndex += 1
         next.col += 1

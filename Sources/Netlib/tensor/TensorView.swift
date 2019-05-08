@@ -52,8 +52,6 @@ public protocol TensorView: Logging, DefaultInitializer {
     var dataShape: DataShape { get }
     /// returns an index one past the end of the tensor used for collections
     var endIndex: ViewIndex { get }
-    /// `true` if the view projects repeated data
-    var isRepeated: Bool { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
@@ -71,6 +69,8 @@ public protocol TensorView: Logging, DefaultInitializer {
     var startIndex: ViewIndex { get }
     /// class reference to the underlying byte buffer
     var tensorArray: TensorArray { get set }
+    /// the indexing traversal procedure to use
+    var traversal: TensorTraversal { get }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 

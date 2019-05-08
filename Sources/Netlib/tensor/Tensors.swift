@@ -115,12 +115,12 @@ public struct ScalarValue<Scalar>: ScalarView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -136,7 +136,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -259,12 +259,12 @@ public struct Vector<Scalar>: VectorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -283,7 +283,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -417,12 +417,12 @@ public extension MatrixView {
 public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -441,7 +441,7 @@ public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -550,12 +550,12 @@ public struct Volume<Scalar>: VolumeView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -574,7 +574,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -649,12 +649,12 @@ public struct NDTensor<Scalar>: NDTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -673,7 +673,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -791,12 +791,12 @@ public struct NCHWTensor<Scalar>: NCHWTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -815,7 +815,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
@@ -933,12 +933,12 @@ public struct NHWCTensor<Scalar>: NHWCTensorView
 where Scalar: ScalarConformance {
     // properties
     public let dataShape: DataShape
-    public let isRepeated: Bool
     public let isShared: Bool
     public let padding: [Padding]?
     public let padValue: Scalar
     public let shape: DataShape
     public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
@@ -957,7 +957,7 @@ where Scalar: ScalarConformance {
         self.dataShape = dataShape
         self.padding = padding
         self.padValue = padValue ?? Scalar()
-        self.isRepeated = dataShape != shape
+        self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()

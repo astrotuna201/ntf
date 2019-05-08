@@ -134,7 +134,7 @@ class test_IterateView: XCTestCase {
     func test_perfMatrix() {
         #if !DEBUG
         do {
-            let rows = 128
+            let rows = 1024
             let cols = 1024
 
             let matrix = Matrix<Int32>((rows, cols), sequence: 0..<(rows * cols))
@@ -155,7 +155,7 @@ class test_IterateView: XCTestCase {
     // test_perfMatrix
     func test_perfCopy() {
         #if !DEBUG
-        var m = Matrix<Int32>((3, 5)).startIndex
+        var m = Matrix<Int32>((1024, 1024)).startIndex
         
         self.measure {
             for _ in 0..<1000000 {

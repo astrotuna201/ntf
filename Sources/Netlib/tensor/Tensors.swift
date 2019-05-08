@@ -88,7 +88,7 @@ public protocol ScalarView: TensorView where
 public extension ScalarView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -165,7 +165,7 @@ extension Vector: CustomStringConvertible where Scalar: AnyConvertable {
 public extension VectorView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -310,7 +310,7 @@ extension Matrix: CustomStringConvertible where Scalar: AnyConvertable {
 public extension MatrixView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -465,7 +465,7 @@ extension Volume: CustomStringConvertible where Scalar: AnyConvertable {
 public extension VolumeView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -596,7 +596,7 @@ extension NDTensor: CustomStringConvertible where Scalar: AnyConvertable {
 public extension NDTensorView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -703,7 +703,7 @@ extension NCHWTensor: CustomStringConvertible where Scalar: AnyConvertable {
 public extension NCHWTensorView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {
@@ -845,7 +845,7 @@ extension NHWCTensor: CustomStringConvertible where Scalar: AnyConvertable {
 public extension NHWCTensorView {
     //--------------------------------------------------------------------------
     var endIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (shape.extents[0], 0))
+        return MatrixIndex(endOf: self)
     }
     
     var startIndex: MatrixIndex {

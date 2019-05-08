@@ -15,9 +15,11 @@ public protocol TensorIndex: Strideable {
     /// `true` if the index references a position in a padding region
     var isPad: Bool { get }
     
-    /// initializer
+    /// initializer for starting at any position
     init<T>(view: T, at position: Position) where T: TensorView
-
+    /// initializer specifically for the endIndex
+    init<T>(endOf view: T) where T: TensorView
+    
     /// highest frequency function to move the index
     /// use advanced(by n: for jumps or negative movement
     func increment() -> Self
@@ -57,13 +59,13 @@ public extension TensorView {
     /// used by indexing objects
     func createTensorBounds() -> TensorBounds {
         var bounds = TensorBounds()
-        let paddedShape = shape.padded(with: padding)
+        let padShape = shape.padded(with: padding)
         for dim in 0..<rank {
             let pad = getPadding(for: dim)
             bounds.append(ExtentBounds(before: pad.before,
-                                     after: pad.after,
-                                     viewExtent: paddedShape.extents[dim],
-                                     viewStride: paddedShape.strides[dim],
+                                     after: padShape.extents[dim] - pad.after,
+                                     viewExtent: padShape.extents[dim],
+                                     viewStride: padShape.strides[dim],
                                      dataExtent: dataShape.extents[dim],
                                      dataStride: dataShape.strides[dim]))
         }

@@ -102,6 +102,24 @@ public typealias IndexScalar = Int32
 public typealias ScalarConformance = DefaultInitializer
 
 //==============================================================================
+/// traversal
+public enum TensorTraversal: Int32 {
+    case normal, padded, repeated, paddedRepeated
+}
+
+public func initTraversal(_ padding: [Padding]?, _ isRepeated: Bool)
+    -> TensorTraversal
+{
+    if padding != nil {
+        return isRepeated ? .paddedRepeated : .padded
+    } else if isRepeated {
+        return .repeated
+    } else {
+        return .normal
+    }
+}
+
+//==============================================================================
 // TensorView default implementation
 public extension TensorView {
     //--------------------------------------------------------------------------

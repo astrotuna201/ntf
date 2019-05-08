@@ -48,7 +48,7 @@ class test_IterateView: XCTestCase {
         do {
             let expected = [Int32](0..<4)
             let matrix = Matrix<Int32>((2, 2), scalars: expected)
-            //            print(matrix.formatted((2,0)))
+//                        print(matrix.formatted((2,0)))
             
             let values = try matrix.array()
             XCTAssert(values == expected, "values do not match")
@@ -94,7 +94,7 @@ class test_IterateView: XCTestCase {
         do {
             let matrix = Matrix<Int32>((3, 4), sequence: 0..<12)
             let view = matrix.view(at: [1, 1], extents: [2, 2])
-            //        print(subView.formatted((2,0)))
+                    print(view.formatted((2,0)))
             
             let expected: [Int32] = [
                 5, 6,
@@ -214,7 +214,7 @@ class test_IterateView: XCTestCase {
             // try repeating a row vector
             let col = Matrix<Int32>((3, 1), sequence: 0..<3)
             let matrix = Matrix<Int32>((3, 2), repeating: col)
-            //            print(matrix.formatted((2,0)))
+                        print(matrix.formatted((2,0)))
             
             let expected: [Int32] = [
                 0, 0,

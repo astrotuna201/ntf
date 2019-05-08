@@ -29,7 +29,8 @@ public struct MatrixIndex: TensorIndex {
         row = position.r
         col = position.c
         traversal = view.traversal
-        computeIndexes()
+        viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
+        computeDataIndex()
     }
 
     public init<T>(endOf view: T) where T: TensorView {
@@ -38,27 +39,24 @@ public struct MatrixIndex: TensorIndex {
         colBounds = bounds[1]
         row = 0
         col = 0
-        traversal = initTraversal(nil, false)
+        traversal = view.traversal
         viewIndex = view.shape.padded(with: view.padding).elementCount
     }
     
     //--------------------------------------------------------------------------
-    /// computeIndexes
-    /// direct computation of indexes from position. non incremental.
+    /// computeDataIndex
     @inlinable @inline(__always)
-    public mutating func computeIndexes() {
-        viewIndex = row * rowBounds.viewStride + col * colBounds.viewStride
-        
+    public mutating func computeDataIndex() {
         func getDataIndex(_ r: Int, _ c: Int) -> Int {
             return r * rowBounds.dataStride + c * colBounds.dataStride
         }
 
         func getRepeatedDataIndex(_ r: Int, _ c: Int) -> Int {
-            return (r % rowBounds.viewExtent) * rowBounds.dataStride +
-                (c % colBounds.viewExtent) * colBounds.dataStride
+            return (r % rowBounds.dataExtent) * rowBounds.dataStride +
+                (c % colBounds.dataExtent) * colBounds.dataStride
         }
         
-        func getIsPad() -> Bool {
+        func testIsPad() -> Bool {
             return
                 row < rowBounds.before || row >= rowBounds.after ||
                 col < colBounds.before || col >= colBounds.after
@@ -71,7 +69,7 @@ public struct MatrixIndex: TensorIndex {
             dataIndex = getDataIndex(row, col)
 
         case .padded:
-            isPad = getIsPad()
+            isPad = testIsPad()
             if !isPad {
                 dataIndex = getDataIndex(row - rowBounds.before,
                                          col - colBounds.before)
@@ -81,7 +79,7 @@ public struct MatrixIndex: TensorIndex {
             dataIndex = getRepeatedDataIndex(row, col)
 
         case .paddedRepeated:
-            isPad = getIsPad()
+            isPad = testIsPad()
             if !isPad {
                 dataIndex = getRepeatedDataIndex(row - rowBounds.before,
                                                  col - colBounds.before)
@@ -95,52 +93,13 @@ public struct MatrixIndex: TensorIndex {
     @inlinable @inline(__always)
     public func increment() -> MatrixIndex {
         var next = self
-        
-        func incDataIndex(to c: Int) -> Int {
-            switch traversal {
-            case .normal:
-                return dataIndex + colBounds.dataStride
-                
-            case .padded:
-                return dataIndex + colBounds.dataStride
-
-            case .repeated:
-                return (c % colBounds.dataExtent) * colBounds.dataStride
-                
-            case .paddedRepeated:
-                return dataIndex + colBounds.dataStride
-            }
-        }
-        
-        func setDataIndex(to r: Int) -> Int {
-            switch traversal {
-            case .normal:
-                return r * rowBounds.dataStride
-                
-            case .padded:
-                return r * rowBounds.dataStride
-                
-            case .repeated:
-                return (r % rowBounds.dataExtent) * rowBounds.dataStride
-                
-            case .paddedRepeated:
-                return (r % rowBounds.dataExtent) * rowBounds.dataStride
-            }
-        }
-
-        //----------------------------------
-        // increment position
         next.viewIndex += 1
         next.col += 1
-        
-        if next.col < colBounds.viewExtent {
-            next.dataIndex = incDataIndex(to: next.col)
-        } else {
+        if next.col == colBounds.viewExtent {
             next.col = 0
             next.row += 1
-            next.dataIndex = setDataIndex(to: next.row)
         }
-        
+        next.computeDataIndex()
         return next
     }
 
@@ -158,7 +117,7 @@ public struct MatrixIndex: TensorIndex {
         next.col += jump.remainder
         
         // now set the indexes
-        next.computeIndexes()
+        next.computeDataIndex()
         return next
     }
 }

@@ -27,15 +27,18 @@ public protocol TensorIndex: Strideable {
 
 public extension TensorIndex {
     // Equatable
+    @inlinable @inline(__always)
     static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.viewIndex == rhs.viewIndex
     }
     
     // Comparable
+    @inlinable @inline(__always)
     static func < (lhs: Self, rhs: Self) -> Bool {
         return lhs.viewIndex < rhs.viewIndex
     }
     
+    @inlinable @inline(__always)
     func distance(to other: Self) -> Int {
         return other.viewIndex - viewIndex
     }
@@ -79,24 +82,28 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order
     /// called to synchronize with the app thread
+    @inlinable @inline(__always)
     func values() throws -> TensorViewCollection<Self> {
         return try TensorViewCollection(view: self, buffer: readOnly())
     }
     
     //--------------------------------------------------------------------------
     /// get a Sequence of mutable values in spatial order
+    @inlinable @inline(__always)
     mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
         return try TensorViewMutableCollection(view: &self, buffer: readWrite())
     }
 
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order as an array
+    @inlinable @inline(__always)
     func array() throws -> [Scalar] {
         return try [Scalar](values())
     }
     
     //--------------------------------------------------------------------------
     /// asynchronously get a Sequence of read only values in spatial order
+    @inlinable @inline(__always)
     func values(using stream: DeviceStream) throws
         -> TensorViewCollection<Self>
     {
@@ -106,6 +113,7 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// asynchronously get a Sequence of mutable values in spatial order
+    @inlinable @inline(__always)
     mutating func mutableValues(using stream: DeviceStream) throws
         -> TensorViewMutableCollection<Self>
     {
@@ -115,6 +123,7 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// get a single value at the specified index
+    @inlinable @inline(__always)
     func value(at position: ViewIndex.Position) throws -> Scalar {
         let buffer = try readOnly()
         let index = ViewIndex.init(view: self, at: position)
@@ -123,6 +132,7 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// set a single value at the specified index
+    @inlinable @inline(__always)
     mutating func set(value: Scalar, at position: ViewIndex.Position) throws {
         let buffer = try readWrite()
         let index = ViewIndex.init(view: self, at: position)
@@ -155,14 +165,17 @@ where View: TensorView
 
     //--------------------------------------------------------------------------
     // Collection
+    @inlinable @inline(__always)
     public func index(before i: Index) -> Index {
         return i.advanced(by: -1)
     }
     
+    @inlinable @inline(__always)
     public func index(after i: Index) -> Index {
         return i.increment()
     }
     
+    @inlinable @inline(__always)
     public subscript(index: Index) -> Scalar {
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
@@ -194,14 +207,17 @@ public struct TensorViewMutableCollection<View>: RandomAccessCollection,
     
     //--------------------------------------------------------------------------
     // Collection
+    @inlinable @inline(__always)
     public func index(before i: Index) -> Index {
         return i.advanced(by: -1)
     }
     
+    @inlinable @inline(__always)
     public func index(after i: Index) -> Index {
         return i.increment()
     }
     
+    @inlinable @inline(__always)
     public subscript(index: Index) -> Scalar {
         get {
             return index.isPad ? padValue : buffer[index.dataIndex]

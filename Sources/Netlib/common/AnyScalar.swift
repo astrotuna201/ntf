@@ -61,6 +61,7 @@ public protocol AnyConvertable: AnyScalar, CVarArg {
 	var normDouble : Double  { get }
 	var normBool   : Bool    { get }
 
+    static var normScalef: Float { get }
 	var isFiniteValue: Bool { get }
     static var isFiniteType: Bool { get }
     static var dataType: DataType { get }
@@ -525,6 +526,7 @@ extension Float : AnyFloatingPoint {
 	public var normDouble : Double { return asDouble }
 	public var normBool   : Bool   { return asBool }
 
+    public static var normScalef: Float = 1
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
     public static var dataType: DataType { return .real32F }
@@ -569,6 +571,7 @@ extension Double : AnyFloatingPoint {
 	public var normDouble : Double { return asDouble }
 	public var normBool   : Bool   { return asBool }
 
+    public static var normScalef: Float = 1
 	public var isFiniteValue: Bool { return self.isFinite }
     public static var isFiniteType: Bool { return false }
     public static var dataType: DataType { return .real64F }

@@ -698,7 +698,7 @@ public extension Sequence {
 //==============================================================================
 // zip
 public func zip<T1, T2>(_ t1: T1, _ t2: T2) throws ->
-    Zip2Sequence<TensorViewCollection<T1>, TensorViewCollection<T2>>
+    Zip2Sequence<TensorValueCollection<T1>, TensorValueCollection<T2>>
     where T1: TensorView, T2: TensorView
 {
     return try zip(t1.values(), t2.values())
@@ -736,21 +736,6 @@ public extension Sequence {
         }
         result[result.startIndex] = partial
     }
-}
-
-//==============================================================================
-// QuantizedView protocol
-/// scalars are transformed from Scalar -> ViewedScalar during iteration
-public protocol QuantizedView: TensorView {
-    /// the scalar type stored by the view
-    associatedtype Scalar
-    /// the scalar type presented by the view
-    associatedtype ViewedScalar
-    
-    /// the bias to apply during conversion
-    var bias: ViewedScalar { get set }
-    /// the scale to apply during conversion
-    var scale: ViewedScalar { get set }
 }
 
 //==============================================================================

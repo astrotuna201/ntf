@@ -21,7 +21,7 @@ public extension TensorView where Scalar: AnyConvertable {
         let indentSize = "  "
         let extents = shape.padded(with: padding).extents
         let lastDimension = shape.lastDimension
-        var iterator: IndexingIterator<TensorViewCollection<Self>>
+        var iterator: IndexingIterator<TensorValueCollection<Self>>
         do {
             iterator = try values().makeIterator()
         } catch {

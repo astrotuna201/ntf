@@ -67,8 +67,11 @@ public protocol AnyConvertable: AnyScalar, CVarArg {
     static func formatString(_ format: (width: Int, precision: Int)?) -> String
 }
 
-public protocol AnyNumeric: AnyConvertable, AnyFixedSizeScalar, Numeric {}
-public protocol AnyInteger: AnyNumeric {}
+public protocol AnyNumeric:
+    AnyConvertable, AnyFixedSizeScalar,
+    Numeric, DefaultInitializer {}
+
+public protocol AnyInteger: BinaryInteger, AnyNumeric {}
 public protocol AnyFloatingPoint: FloatingPoint, AnyNumeric {}
 
 //------------------------------------------------------------------------------

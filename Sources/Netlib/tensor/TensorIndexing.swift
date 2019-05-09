@@ -83,15 +83,15 @@ public extension TensorView {
     /// get a Sequence of read only values in spatial order
     /// called to synchronize with the app thread
     @inlinable @inline(__always)
-    func values() throws -> TensorViewCollection<Self> {
-        return try TensorViewCollection(view: self, buffer: readOnly())
+    func values() throws -> TensorValueCollection<Self> {
+        return try TensorValueCollection(view: self, buffer: readOnly())
     }
     
     //--------------------------------------------------------------------------
     /// get a Sequence of mutable values in spatial order
     @inlinable @inline(__always)
-    mutating func mutableValues() throws -> TensorViewMutableCollection<Self> {
-        return try TensorViewMutableCollection(view: &self, buffer: readWrite())
+    mutating func mutableValues() throws -> TensorMutableValueCollection<Self> {
+        return try TensorMutableValueCollection(view: &self, buffer: readWrite())
     }
 
     //--------------------------------------------------------------------------
@@ -105,9 +105,9 @@ public extension TensorView {
     /// asynchronously get a Sequence of read only values in spatial order
     @inlinable @inline(__always)
     func values(using stream: DeviceStream) throws
-        -> TensorViewCollection<Self>
+        -> TensorValueCollection<Self>
     {
-        return try TensorViewCollection(
+        return try TensorValueCollection(
             view: self, buffer: readOnly(using: stream))
     }
     
@@ -115,9 +115,9 @@ public extension TensorView {
     /// asynchronously get a Sequence of mutable values in spatial order
     @inlinable @inline(__always)
     mutating func mutableValues(using stream: DeviceStream) throws
-        -> TensorViewMutableCollection<Self>
+        -> TensorMutableValueCollection<Self>
     {
-        return try TensorViewMutableCollection(
+        return try TensorMutableValueCollection(
             view: &self, buffer: readWrite(using: stream))
     }
     
@@ -141,21 +141,18 @@ public extension TensorView {
 }
 
 //==============================================================================
-/// TensorViewCollection
-public struct TensorViewCollection<View>: RandomAccessCollection
-where View: TensorView
+/// TensorValueCollection
+public struct TensorValueCollection<View>: RandomAccessCollection
+    where View: TensorView
 {
-    public typealias Index = View.ViewIndex
-    public typealias Scalar = View.Scalar
-    
     // properties
     public let buffer: UnsafeBufferPointer<View.Scalar>
-    public let startIndex: Index
-    public let endIndex: Index
+    public let startIndex: View.ViewIndex
+    public let endIndex: View.ViewIndex
     public let count: Int
-    public let padValue: Scalar
+    public let padValue: View.Scalar
 
-    public init(view: View, buffer: UnsafeBufferPointer<Scalar>) throws {
+    public init(view: View, buffer: UnsafeBufferPointer<View.Scalar>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -166,24 +163,24 @@ where View: TensorView
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
-    public func index(before i: Index) -> Index {
+    public func index(before i: View.ViewIndex) -> View.ViewIndex {
         return i.advanced(by: -1)
     }
     
     @inlinable @inline(__always)
-    public func index(after i: Index) -> Index {
+    public func index(after i: View.ViewIndex) -> View.ViewIndex {
         return i.increment()
     }
     
     @inlinable @inline(__always)
-    public subscript(index: Index) -> Scalar {
+    public subscript(index: View.ViewIndex) -> View.Scalar {
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 }
 
 //==============================================================================
-/// TensorViewMutableCollection
-public struct TensorViewMutableCollection<View>: RandomAccessCollection,
+/// TensorMutableValueCollection
+public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     MutableCollection where View: TensorView
 {
     public typealias Index = View.ViewIndex

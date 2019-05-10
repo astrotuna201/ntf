@@ -21,6 +21,24 @@ public extension UniformDenseScalar {
     }
 }
 
+public protocol UniformDenseScalar2: UniformDenseScalar {
+    var c0: Component { get set }
+    var c1: Component { get set }
+}
+
+public protocol UniformDenseScalar3: UniformDenseScalar {
+    var c0: Component { get set }
+    var c1: Component { get set }
+    var c2: Component { get set }
+}
+
+public protocol UniformDenseScalar4: UniformDenseScalar {
+    var c0: Component { get set }
+    var c1: Component { get set }
+    var c2: Component { get set }
+    var c3: Component { get set }
+}
+
 //==============================================================================
 // RGBImageSample
 public protocol RGBImageSample: UniformDenseScalar {

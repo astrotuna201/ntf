@@ -7,8 +7,6 @@ import Foundation
 //==============================================================================
 // Quantizing
 public protocol Quantizing where Self: TensorView {
-    /// the quantizing converter
-    associatedtype Converter: QuantizeConverting
     /// parameters type
     associatedtype Stored
     /// the scalar type presented by the view
@@ -19,7 +17,7 @@ public protocol Quantizing where Self: TensorView {
     /// the scale to apply during conversion
     var scale: Float { get set }
     /// converts Stored <--> Viewed
-    var quantizer: Converter { get }
+    var quantizer: Quantizer<Stored, Viewed> { get }
 }
 
 //==============================================================================
@@ -75,8 +73,7 @@ public extension TensorView where Self: Quantizing, Stored == Scalar {
         let buffer = try readOnly()
         let index = ViewIndex.init(view: self, at: position)
         let stored: Stored = index.isPad ? padValue : buffer[index.dataIndex]
-        let viewed: Viewed = quantizer.convert(stored: stored)
-        return viewed
+        return quantizer.convert(stored: stored)
     }
 
     //--------------------------------------------------------------------------

@@ -18,16 +18,29 @@ public protocol QuantizeConverting {
 public extension QuantizeConverting {
     func convert(stored: Stored) -> Viewed { fatalError("not implemented") }
     func convert(viewed: Viewed) -> Stored { fatalError("not implemented") }
+    
+    @inlinable @inline(__always)
+    func Float2Int<TF, TI>(value: TF) -> TI where TF: BinaryFloatingPoint, TI: BinaryInteger {
+        if value > 0 {
+            return TI(((Float(value) - bias) * oneOverScale) - 1)
+        } else {
+            return TI((Float(value) - bias) * oneOverScale)
+        }
+    }
 }
 
 //==============================================================================
 /// Integer --> Float
+/// NOTE: It's likely most of the time Viewed will be Float, so the cast of
+/// Viewed(bias) should be thrown out by the compiler. In the case of
+/// something like Float16, it will likely be faster to cast anyway.
 public extension QuantizeConverting where
     Stored: BinaryInteger, Viewed: BinaryFloatingPoint
 {
+    @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
         if stored == 0 {
-            return 0
+            return Viewed(bias)
         } else if stored > 0 {
             return Viewed((Float(stored) + 1) * scale + bias)
         } else {
@@ -35,8 +48,9 @@ public extension QuantizeConverting where
         }
     }
     
+    @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        if viewed == 0 {
+        if viewed == Viewed(bias) {
             return 0
         } else if viewed > 0 {
             return Stored(((Float(viewed) - bias) * oneOverScale) - 1)
@@ -51,6 +65,7 @@ public extension QuantizeConverting where
 public extension QuantizeConverting where
     Stored: BinaryFloatingPoint, Viewed: BinaryInteger
 {
+    @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
         if stored == 0 {
             return 0
@@ -61,6 +76,7 @@ public extension QuantizeConverting where
         }
     }
     
+    @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
         if viewed == 0 {
             return 0
@@ -79,7 +95,7 @@ public struct Quantizer<Stored, Viewed>: QuantizeConverting {
     public let scale: Float
     public let oneOverScale: Float
     
-    public init(bias: Float, scale: Float) {
+    public init(scale: Float, bias: Float = 0) {
         self.bias = bias
         self.scale = scale
         self.oneOverScale = 1 / scale

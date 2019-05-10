@@ -17,7 +17,7 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertUInt8Float
     func test_convertUInt8Float() {
-        let converter = Quantizer<UInt8, Float>(bias: 0, scale: UInt8.normScalef)
+        let converter = Quantizer<UInt8, Float>(scale: UInt8.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: UInt8.max / 2) == 0.5)
@@ -29,7 +29,7 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertInt8Float
     func test_convertInt8Float() {
-        let converter = Quantizer<Int8, Float>(bias: 0, scale: Int8.normScalef)
+        let converter = Quantizer<Int8, Float>(scale: Int8.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: Int8.max / 2) == 0.5)
@@ -41,23 +41,24 @@ class test_QConverter: XCTestCase {
     }
     
     //==========================================================================
-    // test_convertInt8Float
+    // test_convertInt8FloatBias
     func test_convertInt8FloatBias() {
-        let converter = Quantizer<Int8, Float>(bias: 0.5, scale: Int8.normScalef)
-        XCTAssert(converter.convert(viewed: 0) == 0)
-        XCTAssert(converter.convert(stored: 0) == 0)
-//        XCTAssert(converter.convert(stored: Int8.max / 2) == 0.5)
-//        XCTAssert(converter.convert(viewed: 0.5) == Int8.max / 2)
-//        XCTAssert(converter.convert(viewed: 1.0) == Int8.max)
-//        XCTAssert(converter.convert(stored: Int8.max) == 1.0)
-//        XCTAssert(converter.convert(viewed: -1.0) == Int8.min)
-//        XCTAssert(converter.convert(stored: Int8.min) == -1.0)
+        let bias: Float = 0.5
+        let converter = Quantizer<Int8, Float>(scale: Int8.normScalef, bias: bias)
+        XCTAssert(converter.convert(stored: 0) == bias)
+        XCTAssert(converter.convert(viewed: bias) == 0)
+        XCTAssert(converter.convert(stored: Int8.max / 2) == 0.5 + bias)
+        XCTAssert(converter.convert(viewed: 0.5 + bias) == Int8.max / 2)
+        XCTAssert(converter.convert(viewed: 1.0 + bias) == Int8.max)
+        XCTAssert(converter.convert(stored: Int8.max) == 1.0 + bias)
+        XCTAssert(converter.convert(viewed: -1.0 + bias) == Int8.min)
+        XCTAssert(converter.convert(stored: Int8.min) == -1.0 + bias)
     }
     
     //==========================================================================
     // test_convertUInt16Float
     func test_convertUInt16Float() {
-        let converter = Quantizer<UInt16, Float>(bias: 0, scale: UInt16.normScalef)
+        let converter = Quantizer<UInt16, Float>(scale: UInt16.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: UInt16.max / 2) == 0.5)
@@ -69,7 +70,7 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertFloatUInt8
     func test_convertFloatUInt8() {
-        let converter = Quantizer<Float, UInt8>(bias: 0, scale: UInt8.normScalef)
+        let converter = Quantizer<Float, UInt8>(scale: UInt8.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: 0.5) == UInt8.max / 2)
@@ -81,7 +82,7 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertInt8Float
     func test_convertFloatInt8() {
-        let converter = Quantizer<Float, Int8>(bias: 0, scale: Int8.normScalef)
+        let converter = Quantizer<Float, Int8>(scale: Int8.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: 0.5) == Int8.max / 2)
@@ -95,12 +96,27 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertUInt16Float
     func test_convertFloatUInt16() {
-        let converter = Quantizer<Float, UInt16>(bias: 0, scale: UInt16.normScalef)
+        let converter = Quantizer<Float, UInt16>(scale: UInt16.normScalef)
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: 0.5) == UInt16.max / 2)
         XCTAssert(converter.convert(viewed: UInt16.max / 2) == 0.5)
         XCTAssert(converter.convert(viewed: UInt16.max) == 1.0)
         XCTAssert(converter.convert(stored: 1.0) == UInt16.max)
+    }
+    
+    //==========================================================================
+    // test_convertRGBAUInt8Float
+    func test_convertRGBAUInt8Float() {
+//        let qv = UInt8.max / 4
+//        let hv = UInt8.max / 2
+//        let fv = UInt8.max
+//        let scale = UInt8.normScalef
+//        let converter = Quantizer<RGBASample<UInt8>, Float>(scale: scale)
+//        let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
+//        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
+//
+//        XCTAssert(converter.convert(viewed: viewed) == stored)
+//        XCTAssert(converter.convert(stored: stored) == viewed)
     }
 }

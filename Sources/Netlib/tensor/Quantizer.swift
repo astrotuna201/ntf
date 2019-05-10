@@ -16,6 +16,20 @@ public protocol QuantizeConverting {
 }
 
 //==============================================================================
+/// Quantizer
+public struct Quantizer<Stored, Viewed>: QuantizeConverting {
+    public let bias: Float
+    public let scale: Float
+    public let oneOverScale: Float
+    
+    public init(scale: Float, bias: Float = 0) {
+        self.bias = bias
+        self.scale = scale
+        self.oneOverScale = 1 / scale
+    }
+}
+
+//==============================================================================
 /// QuantizeConverting
 public extension QuantizeConverting {
     func convert(stored: Stored) -> Viewed { fatalError("not implemented") }
@@ -86,32 +100,121 @@ public extension QuantizeConverting where
 }
 
 //==============================================================================
-/// Integer --> Float
-//public extension QuantizeConverting where
-//    Stored: BinaryInteger,
-//    Viewed: BinaryFloatingPoint
-//{
-//    @inlinable @inline(__always)
-//    func convert(stored: Stored) -> Viewed {
-//        return Int2Float(value: stored)
-//    }
-//
-//    @inlinable @inline(__always)
-//    func convert(viewed: Viewed) -> Stored {
-//        return Float2Int(value: viewed)
-//    }
-//}
-
-//==============================================================================
-/// Quantizer
-public struct Quantizer<Stored, Viewed>: QuantizeConverting {
-    public let bias: Float
-    public let scale: Float
-    public let oneOverScale: Float
+/// UniformDenseScalar2
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar2, Stored.Component: BinaryInteger,
+    Viewed: UniformDenseScalar2, Viewed.Component: BinaryFloatingPoint
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Int2Float(value: stored.c0),
+                      c1: Int2Float(value: stored.c1))
+    }
     
-    public init(scale: Float, bias: Float = 0) {
-        self.bias = bias
-        self.scale = scale
-        self.oneOverScale = 1 / scale
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Float2Int(value: viewed.c0),
+                      c1: Float2Int(value: viewed.c1))
     }
 }
+
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar2, Stored.Component: BinaryFloatingPoint,
+    Viewed: UniformDenseScalar2, Viewed.Component: BinaryInteger
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Float2Int(value: stored.c0),
+                      c1: Float2Int(value: stored.c1))
+    }
+    
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Int2Float(value: viewed.c0),
+                      c1: Int2Float(value: viewed.c1))
+    }
+}
+//==============================================================================
+/// UniformDenseScalar3
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar3, Stored.Component: BinaryInteger,
+    Viewed: UniformDenseScalar3, Viewed.Component: BinaryFloatingPoint
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Int2Float(value: stored.c0),
+                      c1: Int2Float(value: stored.c1),
+                      c2: Int2Float(value: stored.c2))
+    }
+    
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Float2Int(value: viewed.c0),
+                      c1: Float2Int(value: viewed.c1),
+                      c2: Float2Int(value: viewed.c2))
+    }
+}
+
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar3, Stored.Component: BinaryFloatingPoint,
+    Viewed: UniformDenseScalar3, Viewed.Component: BinaryInteger
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Float2Int(value: stored.c0),
+                      c1: Float2Int(value: stored.c1),
+                      c2: Float2Int(value: stored.c2))
+    }
+    
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Int2Float(value: viewed.c0),
+                      c1: Int2Float(value: viewed.c1),
+                      c2: Int2Float(value: viewed.c2))
+    }
+}
+
+//==============================================================================
+/// UniformDenseScalar4
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar4, Stored.Component: BinaryInteger,
+    Viewed: UniformDenseScalar4, Viewed.Component: BinaryFloatingPoint
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Int2Float(value: stored.c0),
+                      c1: Int2Float(value: stored.c1),
+                      c2: Int2Float(value: stored.c2),
+                      c3: Int2Float(value: stored.c3))
+    }
+
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Float2Int(value: viewed.c0),
+                      c1: Float2Int(value: viewed.c1),
+                      c2: Float2Int(value: viewed.c2),
+                      c3: Float2Int(value: viewed.c3))
+    }
+}
+
+public extension QuantizeConverting where
+    Stored: UniformDenseScalar4, Stored.Component: BinaryFloatingPoint,
+    Viewed: UniformDenseScalar4, Viewed.Component: BinaryInteger
+{
+    @inlinable @inline(__always)
+    func convert(stored: Stored) -> Viewed {
+        return Viewed(c0: Float2Int(value: stored.c0),
+                      c1: Float2Int(value: stored.c1),
+                      c2: Float2Int(value: stored.c2),
+                      c3: Float2Int(value: stored.c3))
+    }
+    
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Stored {
+        return Stored(c0: Int2Float(value: viewed.c0),
+                      c1: Int2Float(value: viewed.c1),
+                      c2: Int2Float(value: viewed.c2),
+                      c3: Int2Float(value: viewed.c3))
+    }
+}
+

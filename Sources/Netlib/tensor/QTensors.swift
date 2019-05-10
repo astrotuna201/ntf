@@ -1,6 +1,6 @@
 //==============================================================================
-/// Quantizer
-public protocol Quantizer {
+/// QuantizeConverting
+public protocol QuantizeConverting {
     associatedtype Stored
     associatedtype Viewed
     
@@ -15,47 +15,66 @@ public protocol Quantizer {
     func convert(viewed: Viewed) -> Stored
 }
 
-public extension Quantizer {
+public extension QuantizeConverting {
     func convert(stored: Stored) -> Viewed { fatalError("not implemented") }
     func convert(viewed: Viewed) -> Stored { fatalError("not implemented") }
 }
 
-public extension Quantizer where Stored: BinaryInteger, Viewed: BinaryFloatingPoint {
+//==============================================================================
+/// Integer --> Float
+public extension QuantizeConverting where
+    Stored: BinaryInteger, Viewed: BinaryFloatingPoint
+{
     func convert(stored: Stored) -> Viewed {
-        let value = stored == 0 ? 0 : (Float(stored) + 1) * scale + bias
-        return Viewed(value)
+        if stored == 0 {
+            return 0
+        } else if stored > 0 {
+            return Viewed((Float(stored) + 1) * scale + bias)
+        } else {
+            return Viewed((Float(stored)) * scale + bias)
+        }
     }
     
     func convert(viewed: Viewed) -> Stored {
-        let value: Float = viewed == 0 ? 0 : ((Float(viewed) - bias) * oneOverScale) - 1
-        return Stored(value)
+        if viewed == 0 {
+            return 0
+        } else if viewed > 0 {
+            return Stored(((Float(viewed) - bias) * oneOverScale) - 1)
+        } else {
+            return Stored((Float(viewed) - bias) * oneOverScale)
+        }
     }
 }
 
-public extension Quantizer where Stored: BinaryFloatingPoint, Viewed: BinaryInteger {
+//==============================================================================
+/// Float --> Integer -->
+public extension QuantizeConverting where
+    Stored: BinaryFloatingPoint, Viewed: BinaryInteger
+{
     func convert(stored: Stored) -> Viewed {
-        let value = stored == 0 ? 0 : Float(stored) * scale + bias
-        return Viewed(value)
+        if stored == 0 {
+            return 0
+        } else if stored > 0 {
+            return Viewed((Float(stored) - bias) * oneOverScale - 1)
+        } else {
+            return Viewed((Float(stored) - bias) * oneOverScale)
+        }
     }
     
     func convert(viewed: Viewed) -> Stored {
-        return Stored((Float(viewed) - bias) * oneOverScale)
+        if viewed == 0 {
+            return 0
+        } else if viewed > 0 {
+            return Stored(((Float(viewed) + 1 - bias) * scale))
+        } else {
+            return Stored((Float(viewed) - bias) * scale)
+        }
     }
 }
 
-public extension Quantizer where Stored: BinaryInteger, Viewed: BinaryInteger {
-    func convert(stored: Stored) -> Viewed {
-        let value = stored == 0 ? 0 : (Float(stored) + 1) * scale + bias
-        return Viewed(value)
-    }
-    
-    func convert(viewed: Viewed) -> Stored {
-        return Stored(Float(viewed) / scale + bias)
-    }
-}
-
-
-public struct QConverter<Stored, Viewed>: Quantizer {
+//==============================================================================
+/// Quantizer
+public struct Quantizer<Stored, Viewed>: QuantizeConverting {
     public let bias: Float
     public let scale: Float
     public let oneOverScale: Float

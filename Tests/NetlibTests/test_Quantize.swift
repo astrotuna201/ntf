@@ -144,20 +144,30 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_perfPixelQuantizing8
     func test_perfPixelQuantizing8() {
-//        let qv = UInt8.max / 4
-//        let hv = UInt8.max / 2
-//        let fv = UInt8.max
-//        // pixel quantizer
-//        let scale = UInt8.normScalef
-//        let quantizer =
-//            Quantizer<RGBASample<UInt8>, RGBASample<Float>>(scale: scale)
-//
-//        let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
-////        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-//
-//        let rows = 1024
-//        let cols = 1024
-//        let matrix = QMatrix<RGBASample<UInt8>,RGBASample<Float>>((rows, cols), repeating: Matrix(stored))
+        do {
+            let qv = UInt8.max / 4
+            let hv = UInt8.max / 2
+            let fv = UInt8.max
+            
+            let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
+            let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
+            
+            let rows = 2
+            let cols = 3
+            var matrix = QMatrix<RGBASample<UInt8>,RGBASample<Float>>((rows, cols), repeating: QMatrix(stored))
+            matrix.scale = UInt8.normScalef
+            
+            let value = matrix.quantizer.convert(stored: stored)
+            XCTAssert(value == viewed)
+
+            
+            
+            let values = try [RGBASample<Float>](matrix.values())
+//            let values = try matrix.array()
+            print(values)
+        } catch {
+            XCTFail(String(describing: error))
+        }
     }
     
 

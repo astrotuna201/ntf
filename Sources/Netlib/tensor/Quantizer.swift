@@ -1,14 +1,20 @@
 //==============================================================================
-/// QuantizeConverting
-public protocol QuantizeConverting {
+/// QuantizerProtocol
+public protocol QuantizerProtocol {
     associatedtype Stored
     associatedtype Viewed
     
     /// the bias to apply during conversion
-    var bias: Float { get }
+    var bias: Float { get set }
     /// the scale to apply during conversion
-    var scale: Float { get }
-    var oneOverScale: Float { get }
+    var scale: Float { get set }
+    /// the scale factor used to map into the range of the type, times
+    /// the user scale factor
+    var _transformScale: Float { get set }
+    /// a private scale factor used by the transform functions
+    var _oneOverTransformScale: Float { get set }
+
+    //--------------------------------------------------------------------------
     /// converts from Scalar to ViewedScalar
     func convert(stored: Stored) -> Viewed
     /// converts from Scalar to ViewedScalar
@@ -16,25 +22,54 @@ public protocol QuantizeConverting {
 }
 
 //==============================================================================
-/// Quantizer
-public struct Quantizer<Stored, Viewed>: QuantizeConverting {
-    public let bias: Float
-    public let scale: Float
-    public let oneOverScale: Float
-    
-    public init(scale: Float, bias: Float = 0) {
-        self.bias = bias
-        self.scale = scale
-        self.oneOverScale = 1 / scale
+/// QuantizerProtocol extensions
+public extension QuantizerProtocol {
+    var typeNormalScale: Float { fatalError("not implemented") }
+}
+
+public extension QuantizerProtocol where Stored: FixedWidthInteger {
+    var typeNormalScale: Float {
+        return Float(1.0) / (Float(Stored.max) + 1)
+    }
+}
+
+public extension QuantizerProtocol where Viewed: FixedWidthInteger {
+    var typeNormalScale: Float {
+        return Float(1.0) / (Float(Viewed.max) + 1)
     }
 }
 
 //==============================================================================
-/// QuantizeConverting
-public extension QuantizeConverting {
+/// Quantizer
+public struct Quantizer<Stored, Viewed>: QuantizerProtocol {
+    // properties
+    public var _transformScale: Float = 0
+    public var _oneOverTransformScale: Float = 0
+    public var bias: Float = 0
+    public var scale: Float = 1 { didSet { updateScales() } }
+
+    // initializers
+    public init() {
+        updateScales()
+    }
+    public init(scale: Float, bias: Float) {
+        self.scale = scale
+        self.bias = bias
+        updateScales()
+    }
+    
+    private mutating func updateScales() {
+        _transformScale = typeNormalScale * scale
+        _oneOverTransformScale = 1 / _transformScale
+    }
+}
+
+//==============================================================================
+/// QuantizerProtocol
+public extension QuantizerProtocol {
     func convert(stored: Stored) -> Viewed { fatalError("not implemented") }
     func convert(viewed: Viewed) -> Stored { fatalError("not implemented") }
-    
+
     //==========================================================================
     /// NOTE: It's likely most of the time value will be Float, so the cast of
     /// TF(bias) should be thrown out by the compiler. In the case of
@@ -46,9 +81,9 @@ public extension QuantizeConverting {
         if value == TF(bias) {
             return 0
         } else if value > 0 {
-            return TI(((Float(value) - bias) * oneOverScale) - 1)
+            return TI(((Float(value) - bias) * _oneOverTransformScale) - 1)
         } else {
-            return TI((Float(value) - bias) * oneOverScale)
+            return TI((Float(value) - bias) * _oneOverTransformScale)
         }
     }
 
@@ -60,16 +95,16 @@ public extension QuantizeConverting {
         if value == 0 {
             return TF(bias)
         } else if value > 0 {
-            return TF((Float(value) + 1) * scale + bias)
+            return TF((Float(value) + 1) * _transformScale + bias)
         } else {
-            return TF((Float(value)) * scale + bias)
+            return TF((Float(value)) * _transformScale + bias)
         }
     }
 }
 
 //==============================================================================
 /// Integer --> Float
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: BinaryInteger, Viewed: BinaryFloatingPoint
 {
     @inlinable @inline(__always)
@@ -85,7 +120,7 @@ public extension QuantizeConverting where
 
 //==============================================================================
 /// Float --> Integer -->
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: BinaryFloatingPoint, Viewed: BinaryInteger
 {
     @inlinable @inline(__always)
@@ -101,7 +136,7 @@ public extension QuantizeConverting where
 
 //==============================================================================
 /// UniformDenseScalar2
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar2, Stored.Component: BinaryInteger,
     Viewed: UniformDenseScalar2, Viewed.Component: BinaryFloatingPoint
 {
@@ -118,7 +153,7 @@ public extension QuantizeConverting where
     }
 }
 
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar2, Stored.Component: BinaryFloatingPoint,
     Viewed: UniformDenseScalar2, Viewed.Component: BinaryInteger
 {
@@ -136,7 +171,7 @@ public extension QuantizeConverting where
 }
 //==============================================================================
 /// UniformDenseScalar3
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar3, Stored.Component: BinaryInteger,
     Viewed: UniformDenseScalar3, Viewed.Component: BinaryFloatingPoint
 {
@@ -155,7 +190,7 @@ public extension QuantizeConverting where
     }
 }
 
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar3, Stored.Component: BinaryFloatingPoint,
     Viewed: UniformDenseScalar3, Viewed.Component: BinaryInteger
 {
@@ -176,7 +211,7 @@ public extension QuantizeConverting where
 
 //==============================================================================
 /// UniformDenseScalar4
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar4, Stored.Component: BinaryInteger,
     Viewed: UniformDenseScalar4, Viewed.Component: BinaryFloatingPoint
 {
@@ -197,7 +232,7 @@ public extension QuantizeConverting where
     }
 }
 
-public extension QuantizeConverting where
+public extension QuantizerProtocol where
     Stored: UniformDenseScalar4, Stored.Component: BinaryFloatingPoint,
     Viewed: UniformDenseScalar4, Viewed.Component: BinaryInteger
 {

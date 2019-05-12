@@ -105,34 +105,34 @@ class test_QConverter: XCTestCase {
         XCTAssert(converter.convert(stored: 1.0) == UInt16.max)
     }
     
-    //==========================================================================
-    // test_PixelQuantizing8
-    func test_PixelQuantizing8() {
-        let qv = UInt8.max / 4
-        let hv = UInt8.max / 2
-        let fv = UInt8.max
-        // pixel quantizer
-        let quantizer = Quantizer<RGBASample<UInt8>, RGBASample<Float>>()
-        let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
-        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-        XCTAssert(quantizer.convert(viewed: viewed) == stored)
-        XCTAssert(quantizer.convert(stored: stored) == viewed)
-    }
-
-    //==========================================================================
-    // test_PixelQuantizing16
-    func test_PixelQuantizing16() {
-        let qv = UInt16.max / 4
-        let hv = UInt16.max / 2
-        let fv = UInt16.max
-        // pixel quantizer
-        let quantizer = Quantizer<RGBASample<UInt16>, RGBASample<Float>>()
-        let stored = RGBASample<UInt16>(r: 0, g: qv, b: hv, a: fv)
-        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-        
-        XCTAssert(quantizer.convert(viewed: viewed) == stored)
-        XCTAssert(quantizer.convert(stored: stored) == viewed)
-    }
+//    //==========================================================================
+//    // test_PixelQuantizing8
+//    func test_PixelQuantizing8() {
+//        let qv = UInt8.max / 4
+//        let hv = UInt8.max / 2
+//        let fv = UInt8.max
+//        // pixel quantizer
+//        let quantizer = Quantizer<RGBASample<UInt8>, RGBASample<Float>>()
+//        let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
+//        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
+//        XCTAssert(quantizer.convert(viewed: viewed) == stored)
+//        XCTAssert(quantizer.convert(stored: stored) == viewed)
+//    }
+//
+//    //==========================================================================
+//    // test_PixelQuantizing16
+//    func test_PixelQuantizing16() {
+//        let qv = UInt16.max / 4
+//        let hv = UInt16.max / 2
+//        let fv = UInt16.max
+//        // pixel quantizer
+//        let quantizer = Quantizer<RGBASample<UInt16>, RGBASample<Float>>()
+//        let stored = RGBASample<UInt16>(r: 0, g: qv, b: hv, a: fv)
+//        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
+//
+//        XCTAssert(quantizer.convert(viewed: viewed) == stored)
+//        XCTAssert(quantizer.convert(stored: stored) == viewed)
+//    }
 
     //==========================================================================
     // test_matrixUInt8Float
@@ -150,30 +150,30 @@ class test_QConverter: XCTestCase {
         }
     }
 
-    //==========================================================================
-    // test_matrixRGBA8
-    func test_matrixRGBA8() {
-        do {
-            typealias Stored = RGBASample<UInt8>
-            typealias Viewed = RGBASample<Float>
-            let qv = UInt8.max / 4
-            let hv = UInt8.max / 2
-            let fv = UInt8.max
-            let stored = Stored(r: 0, g: qv, b: hv, a: fv)
-            let matrix = QMatrix<Stored, Viewed>((2, 3),
-                                                 repeating: QMatrix(stored))
-
-//            let viewed = Viewed(r: 0, g: 0.25, b: 0.5, a: 1)
-//            let value = matrix.quantizer.convert(stored: stored)
-//            XCTAssert(value == viewed)
-            
-            let values = try [Viewed](matrix.values())
-//            let values = try matrix.array()
-            print(values)
-        } catch {
-            XCTFail(String(describing: error))
-        }
-    }
-    
+//    //==========================================================================
+//    // test_matrixRGBA8
+//    func test_matrixRGBA8() {
+//        do {
+//            typealias Stored = RGBASample<UInt8>
+//            typealias Viewed = RGBASample<Float>
+//            let qv = UInt8.max / 4
+//            let hv = UInt8.max / 2
+//            let fv = UInt8.max
+//            let stored = Stored(r: 0, g: qv, b: hv, a: fv)
+//            let matrix = QMatrix<Stored, Viewed>((2, 3),
+//                                                 repeating: QMatrix(stored))
+//
+////            let viewed = Viewed(r: 0, g: 0.25, b: 0.5, a: 1)
+////            let value = matrix.quantizer.convert(stored: stored)
+////            XCTAssert(value == viewed)
+//
+//            let values = try [Viewed](matrix.values())
+////            let values = try matrix.array()
+//            print(values)
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+//    }
+//
 
 }

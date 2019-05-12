@@ -11,7 +11,7 @@ import Foundation
 /// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
 public protocol UniformDenseScalar:
-    DefaultInitializer, Equatable, Quantizable
+    DefaultInitializer, Equatable
 {
     associatedtype Component
     static var componentCount: Int { get }

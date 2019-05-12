@@ -90,29 +90,29 @@ public extension QuantizerProtocol {
     /// TF(bias) should be thrown out by the compiler. In the case of
     /// something like Float16, it will likely be faster to cast anyway.
     @inlinable @inline(__always)
-    func convert<T, R>(value: T) -> R
-        where T: BinaryFloatingPoint, R: FixedWidthInteger
+    func convert<Value, Result>(value: Value) -> Result
+        where Value: BinaryFloatingPoint, Result: FixedWidthInteger
     {
-        if value == T(bias) {
+        if value == Value(bias) {
             return 0
         } else if value > 0 {
-            return R(((Float(value) - bias) * _inverseTransformScale) - 1)
+            return Result(((Float(value) - bias) * _inverseTransformScale) - 1)
         } else {
-            return R((Float(value) - bias) * _inverseTransformScale)
+            return Result((Float(value) - bias) * _inverseTransformScale)
         }
     }
 
     //==========================================================================
     @inlinable @inline(__always)
-    func convert<T, R>(value: T) -> R
-        where T: FixedWidthInteger, R: BinaryFloatingPoint
+    func convert<Value, Result>(value: Value) -> Result
+        where Value: FixedWidthInteger, Result: BinaryFloatingPoint
     {
         if value == 0 {
-            return R(bias)
+            return Result(bias)
         } else if value > 0 {
-            return R((Float(value) + 1) * _transformScale + bias)
+            return Result((Float(value) + 1) * _transformScale + bias)
         } else {
-            return R((Float(value)) * _transformScale + bias)
+            return Result((Float(value)) * _transformScale + bias)
         }
     }
 }

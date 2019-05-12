@@ -6,9 +6,9 @@ import Foundation
 
 //==============================================================================
 // Quantizing
-public protocol Quantizing where Self: TensorView {
+public protocol Quantizing where Self: TensorView, Scalar: Quantizable {
     /// the scalar type presented by the view
-    associatedtype Viewed
+    associatedtype Viewed: Quantizable
     
     /// the bias to apply during conversion
     var bias: Float { get set }
@@ -33,7 +33,8 @@ public extension Quantizing {
 //==============================================================================
 // QMatrix
 public struct QMatrix<Scalar, Viewed>: MatrixView, Quantizing where
-    Scalar: ScalarConformance, Viewed: ScalarConformance
+    Scalar: Quantizable & DefaultInitializer,
+    Viewed: Quantizable
 {
     // properties
     public let dataShape: DataShape

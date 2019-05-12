@@ -20,16 +20,16 @@ public enum DataType: Int {
 
 //==============================================================================
 /// AnyScalar
-public protocol AnyScalar { }
+//public protocol AnyScalar { }
 
-public protocol AnyFixedSizeScalar: AnyScalar { }
+public protocol AnyFixedSizeScalar: DefaultInitializer { }
 
 //==============================================================================
 /// AnyConvertable
 /// AnyNumeric enables the use of constants, type conversion, and
 /// normalization within generics
 ///
-public protocol AnyConvertable: AnyScalar, CVarArg {
+public protocol AnyConvertable: AnyFixedSizeScalar, CVarArg {
 	// unchanged cast value
 	init(any: AnyConvertable)
 	init?(string: String)
@@ -68,9 +68,7 @@ public protocol AnyConvertable: AnyScalar, CVarArg {
     static func formatString(_ format: (width: Int, precision: Int)?) -> String
 }
 
-public protocol AnyNumeric:
-    AnyConvertable, AnyFixedSizeScalar,
-    Numeric, DefaultInitializer {}
+public protocol AnyNumeric: AnyConvertable, Numeric {}
 
 public protocol AnyInteger: BinaryInteger, AnyNumeric {}
 public protocol AnyFloatingPoint: FloatingPoint, AnyNumeric {}

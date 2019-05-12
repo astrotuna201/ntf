@@ -1,8 +1,8 @@
 //==============================================================================
 /// QuantizerProtocol
 public protocol QuantizerProtocol {
-    associatedtype Stored
-    associatedtype Viewed
+    associatedtype Stored: Quantizable
+    associatedtype Viewed: Quantizable
     
     /// the bias to apply during conversion
     var bias: Float { get set }
@@ -12,7 +12,7 @@ public protocol QuantizerProtocol {
     /// the user scale factor
     var _transformScale: Float { get set }
     /// a private scale factor used by the transform functions
-    var _oneOverTransformScale: Float { get set }
+    var _inverseTransformScale: Float { get set }
 
     //--------------------------------------------------------------------------
     /// converts from Scalar to ViewedScalar
@@ -22,47 +22,61 @@ public protocol QuantizerProtocol {
 }
 
 //==============================================================================
-/// QuantizerProtocol extensions
-public extension QuantizerProtocol {
-    var typeNormalScale: Float { fatalError("not implemented") }
-}
-
-public extension QuantizerProtocol where Stored: FixedWidthInteger {
-    var typeNormalScale: Float {
-        return Float(1.0) / (Float(Stored.max) + 1)
-    }
-}
-
-public extension QuantizerProtocol where Viewed: FixedWidthInteger {
-    var typeNormalScale: Float {
-        return Float(1.0) / (Float(Viewed.max) + 1)
-    }
-}
-
-//==============================================================================
 /// Quantizer
-public struct Quantizer<Stored, Viewed>: QuantizerProtocol {
+/// an object used to perform value conversion between types
+public struct Quantizer<Stored, Viewed>: QuantizerProtocol
+    where Stored: Quantizable, Viewed: Quantizable
+{
     // properties
-    public var _transformScale: Float = 0
-    public var _oneOverTransformScale: Float = 0
-    public var bias: Float = 0
-    public var scale: Float = 1 { didSet { updateScales() } }
-
-    // initializers
-    public init() {
-        updateScales()
-    }
-    public init(scale: Float, bias: Float) {
+    public var bias: Float
+    public var scale: Float
+    public var _transformScale: Float = 1
+    public var _inverseTransformScale: Float = 1
+    
+    public init(scale: Float = 1, bias: Float = 0) {
         self.scale = scale
         self.bias = bias
         updateScales()
     }
     
-    private mutating func updateScales() {
-        _transformScale = typeNormalScale * scale
-        _oneOverTransformScale = 1 / _transformScale
+    mutating func updateScales() {
+        _transformScale = Stored.normalScale * Viewed.normalScale * scale
+        _inverseTransformScale = 1 / _transformScale
     }
 }
+
+//==============================================================================
+/// Quantizable
+/// conformed to by convertable types
+public protocol Quantizable {
+    static var normalScale: Float { get }
+}
+
+public extension Quantizable {
+    static var normalScale: Float { return 1 }
+}
+
+public extension Quantizable where Self: FixedWidthInteger {
+    static var normalScale: Float { return 1 / (Float(self.max) + 1) }
+}
+
+public extension Quantizable where Self: UniformDenseScalar {
+    static var normalScale: Float { return 1 }
+}
+
+public extension Quantizable where
+    Self: UniformDenseScalar, Component: FixedWidthInteger {
+    static var normalScale: Float { return 1 / (Float(Component.max) + 1) }
+}
+
+extension Int8: Quantizable {}
+extension UInt8: Quantizable {}
+extension Int16: Quantizable {}
+extension UInt16: Quantizable {}
+extension Int32: Quantizable {}
+extension UInt32: Quantizable {}
+extension Float: Quantizable {}
+extension Double: Quantizable {}
 
 //==============================================================================
 /// QuantizerProtocol
@@ -76,21 +90,21 @@ public extension QuantizerProtocol {
     /// something like Float16, it will likely be faster to cast anyway.
     @inlinable @inline(__always)
     func Float2Int<TF, TI>(value: TF) -> TI
-        where TF: BinaryFloatingPoint, TI: BinaryInteger
+        where TF: BinaryFloatingPoint, TI: FixedWidthInteger
     {
         if value == TF(bias) {
             return 0
         } else if value > 0 {
-            return TI(((Float(value) - bias) * _oneOverTransformScale) - 1)
+            return TI(((Float(value) - bias) * _inverseTransformScale) - 1)
         } else {
-            return TI((Float(value) - bias) * _oneOverTransformScale)
+            return TI((Float(value) - bias) * _inverseTransformScale)
         }
     }
 
     //==========================================================================
     @inlinable @inline(__always)
     func Int2Float<TI, TF>(value: TI) -> TF
-        where TI: BinaryInteger, TF: BinaryFloatingPoint
+        where TI: FixedWidthInteger, TF: BinaryFloatingPoint
     {
         if value == 0 {
             return TF(bias)
@@ -105,7 +119,7 @@ public extension QuantizerProtocol {
 //==============================================================================
 /// Integer --> Float
 public extension QuantizerProtocol where
-    Stored: BinaryInteger, Viewed: BinaryFloatingPoint
+    Stored: FixedWidthInteger, Viewed: BinaryFloatingPoint
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
@@ -121,7 +135,7 @@ public extension QuantizerProtocol where
 //==============================================================================
 /// Float --> Integer -->
 public extension QuantizerProtocol where
-    Stored: BinaryFloatingPoint, Viewed: BinaryInteger
+    Stored: BinaryFloatingPoint, Viewed: FixedWidthInteger
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
@@ -137,7 +151,7 @@ public extension QuantizerProtocol where
 //==============================================================================
 /// UniformDenseScalar2
 public extension QuantizerProtocol where
-    Stored: UniformDenseScalar2, Stored.Component: BinaryInteger,
+    Stored: UniformDenseScalar2, Stored.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar2, Viewed.Component: BinaryFloatingPoint
 {
     @inlinable @inline(__always)
@@ -155,7 +169,7 @@ public extension QuantizerProtocol where
 
 public extension QuantizerProtocol where
     Stored: UniformDenseScalar2, Stored.Component: BinaryFloatingPoint,
-    Viewed: UniformDenseScalar2, Viewed.Component: BinaryInteger
+    Viewed: UniformDenseScalar2, Viewed.Component: FixedWidthInteger
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
@@ -169,10 +183,11 @@ public extension QuantizerProtocol where
                       c1: Int2Float(value: viewed.c1))
     }
 }
+
 //==============================================================================
 /// UniformDenseScalar3
 public extension QuantizerProtocol where
-    Stored: UniformDenseScalar3, Stored.Component: BinaryInteger,
+    Stored: UniformDenseScalar3, Stored.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar3, Viewed.Component: BinaryFloatingPoint
 {
     @inlinable @inline(__always)
@@ -192,7 +207,7 @@ public extension QuantizerProtocol where
 
 public extension QuantizerProtocol where
     Stored: UniformDenseScalar3, Stored.Component: BinaryFloatingPoint,
-    Viewed: UniformDenseScalar3, Viewed.Component: BinaryInteger
+    Viewed: UniformDenseScalar3, Viewed.Component: FixedWidthInteger
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
@@ -212,7 +227,7 @@ public extension QuantizerProtocol where
 //==============================================================================
 /// UniformDenseScalar4
 public extension QuantizerProtocol where
-    Stored: UniformDenseScalar4, Stored.Component: BinaryInteger,
+    Stored: UniformDenseScalar4, Stored.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar4, Viewed.Component: BinaryFloatingPoint
 {
     @inlinable @inline(__always)
@@ -234,8 +249,12 @@ public extension QuantizerProtocol where
 
 public extension QuantizerProtocol where
     Stored: UniformDenseScalar4, Stored.Component: BinaryFloatingPoint,
-    Viewed: UniformDenseScalar4, Viewed.Component: BinaryInteger
+    Viewed: UniformDenseScalar4, Viewed.Component: FixedWidthInteger
 {
+    var typeNormalScale: Float {
+        return Float(1.0) / (Float(Viewed.Component.max) + 1)
+    }
+    
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
         return Viewed(c0: Float2Int(value: stored.c0),

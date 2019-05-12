@@ -90,29 +90,29 @@ public extension QuantizerProtocol {
     /// TF(bias) should be thrown out by the compiler. In the case of
     /// something like Float16, it will likely be faster to cast anyway.
     @inlinable @inline(__always)
-    func Float2Int<TF, TI>(value: TF) -> TI
-        where TF: BinaryFloatingPoint, TI: FixedWidthInteger
+    func convert<T, R>(value: T) -> R
+        where T: BinaryFloatingPoint, R: FixedWidthInteger
     {
-        if value == TF(bias) {
+        if value == T(bias) {
             return 0
         } else if value > 0 {
-            return TI(((Float(value) - bias) * _inverseTransformScale) - 1)
+            return R(((Float(value) - bias) * _inverseTransformScale) - 1)
         } else {
-            return TI((Float(value) - bias) * _inverseTransformScale)
+            return R((Float(value) - bias) * _inverseTransformScale)
         }
     }
 
     //==========================================================================
     @inlinable @inline(__always)
-    func Int2Float<TI, TF>(value: TI) -> TF
-        where TI: FixedWidthInteger, TF: BinaryFloatingPoint
+    func convert<T, R>(value: T) -> R
+        where T: FixedWidthInteger, R: BinaryFloatingPoint
     {
         if value == 0 {
-            return TF(bias)
+            return R(bias)
         } else if value > 0 {
-            return TF((Float(value) + 1) * _transformScale + bias)
+            return R((Float(value) + 1) * _transformScale + bias)
         } else {
-            return TF((Float(value)) * _transformScale + bias)
+            return R((Float(value)) * _transformScale + bias)
         }
     }
 }
@@ -124,12 +124,12 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Int2Float(value: stored)
+        return convert(value: stored)
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Float2Int(value: viewed)
+        return convert(value: viewed)
     }
 }
 
@@ -140,12 +140,12 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Float2Int(value: stored)
+        return convert(value: stored)
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Int2Float(value: viewed)
+        return convert(value: viewed)
     }
 }
 
@@ -157,14 +157,14 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Int2Float(value: stored.c0),
-                      c1: Int2Float(value: stored.c1))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1))
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Float2Int(value: viewed.c0),
-                      c1: Float2Int(value: viewed.c1))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1))
     }
 }
 
@@ -174,14 +174,14 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Float2Int(value: stored.c0),
-                      c1: Float2Int(value: stored.c1))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1))
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Int2Float(value: viewed.c0),
-                      c1: Int2Float(value: viewed.c1))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1))
     }
 }
 
@@ -193,16 +193,16 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Int2Float(value: stored.c0),
-                      c1: Int2Float(value: stored.c1),
-                      c2: Int2Float(value: stored.c2))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1),
+                      c2: convert(value: stored.c2))
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Float2Int(value: viewed.c0),
-                      c1: Float2Int(value: viewed.c1),
-                      c2: Float2Int(value: viewed.c2))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1),
+                      c2: convert(value: viewed.c2))
     }
 }
 
@@ -212,16 +212,16 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Float2Int(value: stored.c0),
-                      c1: Float2Int(value: stored.c1),
-                      c2: Float2Int(value: stored.c2))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1),
+                      c2: convert(value: stored.c2))
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Int2Float(value: viewed.c0),
-                      c1: Int2Float(value: viewed.c1),
-                      c2: Int2Float(value: viewed.c2))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1),
+                      c2: convert(value: viewed.c2))
     }
 }
 
@@ -233,18 +233,18 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Int2Float(value: stored.c0),
-                      c1: Int2Float(value: stored.c1),
-                      c2: Int2Float(value: stored.c2),
-                      c3: Int2Float(value: stored.c3))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1),
+                      c2: convert(value: stored.c2),
+                      c3: convert(value: stored.c3))
     }
 
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Float2Int(value: viewed.c0),
-                      c1: Float2Int(value: viewed.c1),
-                      c2: Float2Int(value: viewed.c2),
-                      c3: Float2Int(value: viewed.c3))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1),
+                      c2: convert(value: viewed.c2),
+                      c3: convert(value: viewed.c3))
     }
 }
 
@@ -254,18 +254,18 @@ public extension QuantizerProtocol where
 {
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
-        return Viewed(c0: Float2Int(value: stored.c0),
-                      c1: Float2Int(value: stored.c1),
-                      c2: Float2Int(value: stored.c2),
-                      c3: Float2Int(value: stored.c3))
+        return Viewed(c0: convert(value: stored.c0),
+                      c1: convert(value: stored.c1),
+                      c2: convert(value: stored.c2),
+                      c3: convert(value: stored.c3))
     }
     
     @inlinable @inline(__always)
     func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: Int2Float(value: viewed.c0),
-                      c1: Int2Float(value: viewed.c1),
-                      c2: Int2Float(value: viewed.c2),
-                      c3: Int2Float(value: viewed.c3))
+        return Stored(c0: convert(value: viewed.c0),
+                      c1: convert(value: viewed.c1),
+                      c2: convert(value: viewed.c2),
+                      c3: convert(value: viewed.c3))
     }
 }
 

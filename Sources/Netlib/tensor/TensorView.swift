@@ -99,8 +99,6 @@ public protocol TensorView: Logging, DefaultInitializer {
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexScalar = Int32
 
-public typealias ScalarConformance = DefaultInitializer
-
 //==============================================================================
 /// traversal
 public enum TensorTraversal: Int32 {

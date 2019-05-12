@@ -17,9 +17,7 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertUInt8Float
     func test_convertUInt8Float() {
-        var converter = Quantizer<UInt8, Float>()
-        converter.updateScales()
-//        converter.convert(viewed: 0)
+        let converter = Quantizer<UInt8, Float>()
         XCTAssert(converter.convert(viewed: 0) == 0)
         XCTAssert(converter.convert(stored: 0) == 0)
         XCTAssert(converter.convert(stored: UInt8.max / 2) == 0.5)
@@ -117,7 +115,6 @@ class test_QConverter: XCTestCase {
         let quantizer = Quantizer<RGBASample<UInt8>, RGBASample<Float>>()
         let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
         let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-        
         XCTAssert(quantizer.convert(viewed: viewed) == stored)
         XCTAssert(quantizer.convert(stored: stored) == viewed)
     }
@@ -138,27 +135,39 @@ class test_QConverter: XCTestCase {
     }
 
     //==========================================================================
-    // test_perfPixelQuantizing8
-    func test_perfPixelQuantizing8() {
+    // test_matrixUInt8Float
+    func test_matrixUInt8Float() {
         do {
-            typealias SourceMatrix = QMatrix<RGBASample<UInt8>,RGBASample<Float>>
+            let scalars: [UInt8] = [0, 63, 127, 255]
+            let matrix = QMatrix<UInt8, Float>((2, 2), scalars: scalars)
+            let values = try [Float](matrix.values())
+            //            let values = try matrix.array()
+            print(values)
+            let expected: [Float] = [0, 0.25, 0.5, 1]
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
+    //==========================================================================
+    // test_matrixRGBA8
+    func test_matrixRGBA8() {
+        do {
+            typealias Stored = RGBASample<UInt8>
+            typealias Viewed = RGBASample<Float>
             let qv = UInt8.max / 4
             let hv = UInt8.max / 2
             let fv = UInt8.max
-            
-            let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
-            let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-            
-            let rows = 2
-            let cols = 3
-            let matrix = SourceMatrix((rows, cols), repeating: QMatrix(stored))
-            
-            let value = matrix.quantizer.convert(stored: stored)
-            XCTAssert(value == viewed)
+            let stored = Stored(r: 0, g: qv, b: hv, a: fv)
+            let matrix = QMatrix<Stored, Viewed>((2, 3),
+                                                 repeating: QMatrix(stored))
 
+//            let viewed = Viewed(r: 0, g: 0.25, b: 0.5, a: 1)
+//            let value = matrix.quantizer.convert(stored: stored)
+//            XCTAssert(value == viewed)
             
-            
-            let values = try [RGBASample<Float>](matrix.values())
+            let values = try [Viewed](matrix.values())
 //            let values = try matrix.array()
             print(values)
         } catch {

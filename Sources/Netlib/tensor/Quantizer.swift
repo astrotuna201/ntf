@@ -10,9 +10,9 @@ public protocol QuantizerProtocol {
     var scale: Float { get set }
     /// the scale factor used to map into the range of the type, times
     /// the user scale factor
-    var _transformScale: Float { get set }
+    var _transformScale: Float { get }
     /// a private scale factor used by the transform functions
-    var _inverseTransformScale: Float { get set }
+    var _inverseTransformScale: Float { get }
 
     //--------------------------------------------------------------------------
     /// converts from Scalar to ViewedScalar
@@ -29,17 +29,18 @@ public struct Quantizer<Stored, Viewed>: QuantizerProtocol
 {
     // properties
     public var bias: Float
-    public var scale: Float
+    public var scale: Float { didSet { updateScales() } }
     public var _transformScale: Float = 1
     public var _inverseTransformScale: Float = 1
     
+    // initializers
     public init(scale: Float = 1, bias: Float = 0) {
         self.scale = scale
         self.bias = bias
         updateScales()
     }
     
-    mutating func updateScales() {
+    private mutating func updateScales() {
         _transformScale = Stored.normalScale * Viewed.normalScale * scale
         _inverseTransformScale = 1 / _transformScale
     }
@@ -65,8 +66,8 @@ public extension Quantizable where Self: UniformDenseScalar {
 }
 
 public extension Quantizable where
-    Self: UniformDenseScalar, Component: FixedWidthInteger {
-    static var normalScale: Float { return 1 / (Float(Component.max) + 1) }
+    Self: UniformDenseScalar, Component: Quantizable {
+    static var normalScale: Float { return Component.normalScale }
 }
 
 extension Int8: Quantizable {}
@@ -251,10 +252,6 @@ public extension QuantizerProtocol where
     Stored: UniformDenseScalar4, Stored.Component: BinaryFloatingPoint,
     Viewed: UniformDenseScalar4, Viewed.Component: FixedWidthInteger
 {
-    var typeNormalScale: Float {
-        return Float(1.0) / (Float(Viewed.Component.max) + 1)
-    }
-    
     @inlinable @inline(__always)
     func convert(stored: Stored) -> Viewed {
         return Viewed(c0: Float2Int(value: stored.c0),

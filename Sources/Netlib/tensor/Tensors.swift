@@ -36,7 +36,7 @@ public extension ScalarView {
 //------------------------------------------------------------------------------
 // ScalarValue
 public struct ScalarValue<Scalar>: ScalarView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -180,7 +180,7 @@ public extension VectorView {
 //------------------------------------------------------------------------------
 // Vector
 public struct Vector<Scalar>: VectorView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -338,7 +338,7 @@ public extension MatrixView {
 
 //==============================================================================
 // Matrix
-public struct Matrix<Scalar>: MatrixView where Scalar: ScalarConformance {
+public struct Matrix<Scalar>: MatrixView where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -472,7 +472,7 @@ public extension VolumeView {
 //==============================================================================
 /// Volume
 public struct Volume<Scalar>: VolumeView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -573,7 +573,7 @@ public extension NDTensorView {
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Scalar>: NDTensorView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -715,7 +715,7 @@ public extension NCHWTensorView {
 //==============================================================================
 // NCHWTensor
 public struct NCHWTensor<Scalar>: NCHWTensorView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -857,7 +857,7 @@ public extension NHWCTensorView {
 //==============================================================================
 /// NHWCTensor
 public struct NHWCTensor<Scalar>: NHWCTensorView
-where Scalar: ScalarConformance {
+where Scalar: DefaultInitializer {
     // properties
     public let dataShape: DataShape
     public let isShared: Bool

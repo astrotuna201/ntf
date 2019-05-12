@@ -10,7 +10,9 @@ import Foundation
 /// non numeric scalar types.
 /// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol UniformDenseScalar: ScalarConformance, Equatable {
+public protocol UniformDenseScalar:
+    DefaultInitializer, Equatable, Quantizable
+{
     associatedtype Component
     static var componentCount: Int { get }
 }
@@ -44,7 +46,9 @@ public protocol UniformDenseScalar4: UniformDenseScalar {
 
 //==============================================================================
 // RGBImageSample
-public protocol RGBImageSample: UniformDenseScalar3 {
+public protocol RGBImageSample: UniformDenseScalar3
+    where Component: Numeric & Quantizable
+{
     var r: Component { get set }
     var g: Component { get set }
     var b: Component { get set }
@@ -63,7 +67,7 @@ public extension RGBImageSample {
 }
 
 public struct RGBSample<Component>: RGBImageSample
-where Component: AnyNumeric & AnyFixedSizeScalar {
+where Component: Numeric & Quantizable {
     public var r, g, b: Component
 
     @inlinable @inline(__always)
@@ -79,7 +83,9 @@ where Component: AnyNumeric & AnyFixedSizeScalar {
 
 //==============================================================================
 // RGBAImageSample
-public protocol RGBAImageSample: UniformDenseScalar4 {
+public protocol RGBAImageSample: UniformDenseScalar4
+    where Component: Numeric & Quantizable
+{
     var r: Component { get set }
     var g: Component { get set }
     var b: Component { get set }
@@ -100,7 +106,7 @@ public extension RGBAImageSample {
 }
 
 public struct RGBASample<Component> : RGBAImageSample
-    where Component: AnyNumeric & AnyFixedSizeScalar
+    where Component: Numeric & Quantizable
 {
     public var r, g, b, a: Component
 
@@ -123,7 +129,9 @@ public struct RGBASample<Component> : RGBAImageSample
 
 //==============================================================================
 // Audio sample types
-public protocol StereoAudioSample: UniformDenseScalar2 {
+public protocol StereoAudioSample: UniformDenseScalar2
+    where Component: Numeric & Quantizable
+{
     var left: Component { get set }
     var right: Component { get set }
     init(left: Component, right: Component)
@@ -140,7 +148,7 @@ public extension StereoAudioSample {
 }
 
 public struct StereoSample<Component>: StereoAudioSample
-where Component: AnyNumeric & AnyFixedSizeScalar {
+where Component: Numeric & Quantizable {
     public var left, right: Component
 
     @inlinable @inline(__always)

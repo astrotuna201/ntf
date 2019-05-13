@@ -56,7 +56,7 @@ public extension TensorView where Self: Quantizing {
         let buffer = try readOnly()
         let index = ViewIndex.init(view: self, at: position)
         let stored = index.isPad ? padValue : buffer[index.dataIndex]
-        return quantizer.convert(stored: stored)
+        return convert(stored: stored)
     }
 
     //--------------------------------------------------------------------------
@@ -65,7 +65,7 @@ public extension TensorView where Self: Quantizing {
     mutating func set(value: Viewed, at position: ViewIndex.Position) throws {
         let buffer = try readWrite()
         let index = ViewIndex.init(view: self, at: position)
-        buffer[index.dataIndex] = quantizer.convert(viewed: value)
+        buffer[index.dataIndex] = convert(viewed: value)
     }
 }
 
@@ -106,7 +106,7 @@ public struct QTensorValueCollection<View>: RandomAccessCollection
     @inlinable @inline(__always)
     public subscript(index: View.ViewIndex) -> View.Viewed {
         let stored = index.isPad ? padValue : buffer[index.dataIndex]
-        return view.quantizer.convert(stored: stored)
+        return view.convert(stored: stored)
     }
 }
 
@@ -152,10 +152,10 @@ public struct QTensorMutableValueCollection<View>: RandomAccessCollection,
     public subscript(index: Index) -> View.Viewed {
         get {
             let stored = index.isPad ? padValue : buffer[index.dataIndex]
-            return view.quantizer.convert(stored: stored)
+            return view.convert(stored: stored)
         }
         set {
-            buffer[index.dataIndex] = view.quantizer.convert(viewed: newValue)
+            buffer[index.dataIndex] = view.convert(viewed: newValue)
         }
     }
 }

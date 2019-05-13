@@ -6,35 +6,61 @@ import Foundation
 
 //==============================================================================
 // Quantizing
-public protocol Quantizing where Self: TensorView, Scalar: Quantizable {
+public protocol Quantizing where Self: TensorView, Scalar: FixedWidthInteger {
     /// the scalar type presented by the view
-    associatedtype Viewed: Quantizable
+    associatedtype Viewed: BinaryFloatingPoint
     
     /// the bias to apply during conversion
     var bias: Float { get set }
     /// the scale to apply during conversion
     var scale: Float { get set }
-    /// converts Stored <--> Viewed
-    var quantizer: Quantizer<Scalar, Viewed> { get set }
+    /// the scale factor used to map into the range of the type, times
+    /// the user scale factor
+    var _transformScale: Float { get set }
+    /// a private scale factor used by the transform functions
+    var _inverseTransformScale: Float { get set }
+    
+    //--------------------------------------------------------------------------
+    /// converts from Scalar to ViewedScalar
+    func convert(stored: Scalar) -> Viewed
+    /// converts from Scalar to ViewedScalar
+    func convert(viewed: Viewed) -> Scalar
 }
 
 public extension Quantizing {
-    var bias: Float {
-        get { return quantizer.bias }
-        set { quantizer.bias = newValue }
+    mutating func updateScales() {
+        _transformScale = (Float(Scalar.max) + 1) * scale
+        _inverseTransformScale = 1 / _transformScale
     }
     
-    var scale: Float {
-        get { return quantizer.scale }
-        set { quantizer.scale = newValue }
+    @inlinable @inline(__always)
+    func convert(stored: Scalar) -> Viewed {
+        if stored == 0 {
+            return Viewed(bias)
+        } else if stored > 0 {
+            return Viewed((Float(stored) + 1) * _inverseTransformScale + bias)
+        } else {
+            return Viewed((Float(stored)) * _inverseTransformScale + bias)
+        }
+    }
+    
+    @inlinable @inline(__always)
+    func convert(viewed: Viewed) -> Scalar {
+        if viewed == Viewed(bias) {
+            return 0
+        } else if viewed > 0 {
+            return Scalar(((Float(viewed) - bias) * _transformScale) - 1)
+        } else {
+            return Scalar((Float(viewed) - bias) * _transformScale)
+        }
     }
 }
 
 //==============================================================================
 // QMatrix
 public struct QMatrix<Scalar, Viewed>: MatrixView, Quantizing where
-    Scalar: Quantizable & DefaultInitializer,
-    Viewed: Quantizable
+    Scalar: FixedWidthInteger & DefaultInitializer,
+    Viewed: BinaryFloatingPoint
 {
     // properties
     public let dataShape: DataShape
@@ -45,8 +71,13 @@ public struct QMatrix<Scalar, Viewed>: MatrixView, Quantizing where
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
     public var viewDataOffset: Int
-    public var quantizer: Quantizer<Scalar, Viewed>
-    
+    // quant
+    public var bias: Float = 0
+    public var scale: Float = 1
+    public var _transformScale: Float = 1
+    public var _inverseTransformScale: Float = 1
+
+    // initializer
     public init(shape: DataShape,
                 dataShape: DataShape,
                 name: String?,
@@ -67,8 +98,8 @@ public struct QMatrix<Scalar, Viewed>: MatrixView, Quantizing where
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
         self.tensorArray = TensorArray()
-        self.quantizer = Quantizer<Scalar, Viewed>()
         initTensorArray(tensorArray, name, scalars)
+        updateScales()
     }
 }
 

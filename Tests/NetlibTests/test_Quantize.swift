@@ -17,13 +17,13 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // test_convertUInt8Float
     func test_convertUInt8Float() {
-        let converter = Quantizer<UInt8, Float>()
-        XCTAssert(converter.convert(viewed: 0) == 0)
-        XCTAssert(converter.convert(stored: 0) == 0)
-        XCTAssert(converter.convert(stored: UInt8.max / 2) == 0.5)
-        XCTAssert(converter.convert(viewed: 0.5) == UInt8.max / 2)
-        XCTAssert(converter.convert(viewed: 1.0) == UInt8.max)
-        XCTAssert(converter.convert(stored: UInt8.max) == 1.0)
+        let matrix = QMatrix<UInt8, Float>()
+        XCTAssert(matrix.convert(viewed: 0) == 0)
+        XCTAssert(matrix.convert(stored: 0) == 0)
+        XCTAssert(matrix.convert(stored: UInt8.max / 2) == 0.5)
+        XCTAssert(matrix.convert(viewed: 0.5) == UInt8.max / 2)
+        XCTAssert(matrix.convert(viewed: 1.0) == UInt8.max)
+        XCTAssert(matrix.convert(stored: UInt8.max) == 1.0)
     }
 
     //==========================================================================

@@ -102,10 +102,11 @@ public extension ShapedTensorView {
     
     //--------------------------------------------------------------------------
     /// reference
-    /// creation of a reference is for the purpose of reshaped write
-    /// operations. Therefore the data will be copied before
-    /// reference view creation if not uniquely held. References will not
-    /// be checked on the resulting view when a write pointer is taken
+    /// creation of a reference is for the purpose of reshaped writes
+    /// and multi-threaded writes to prevent mutation.
+    /// The data will be copied before reference view creation if
+    /// not uniquely held. Reference views will not perform
+    /// copy-on-write when a write pointer is taken
     mutating func reference(using stream: DeviceStream) throws -> Self {
         // get the queue, if we reference it as a tensorArray member it
         // it adds a ref count which messes things up
@@ -113,15 +114,15 @@ public extension ShapedTensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return Self.init(shape: shape,
-                             dataShape: dataShape,
-                             name: name,
-                             padding: padding,
-                             padValue: padValue,
-                             tensorArray: tensorArray,
-                             viewDataOffset: viewDataOffset,
-                             isShared: true,
-                             scalars: nil)
+            return Self(shape: shape,
+                        dataShape: dataShape,
+                        name: name,
+                        padding: padding,
+                        padValue: padValue,
+                        tensorArray: tensorArray,
+                        viewDataOffset: viewDataOffset,
+                        isShared: true,
+                        scalars: nil)
         }
     }
     
@@ -137,15 +138,15 @@ public extension ShapedTensorView {
         
         // create flattened view
         let flatShape = shape.flattened()
-        return Self.init(shape: flatShape,
-                         dataShape: flatShape,
-                         name: name,
-                         padding: padding,
-                         padValue: padValue,
-                         tensorArray: tensorArray,
-                         viewDataOffset: viewDataOffset,
-                         isShared: isShared,
-                         scalars: nil)
+        return Self(shape: flatShape,
+                    dataShape: flatShape,
+                    name: name,
+                    padding: padding,
+                    padValue: padValue,
+                    tensorArray: tensorArray,
+                    viewDataOffset: viewDataOffset,
+                    isShared: isShared,
+                    scalars: nil)
     }
 }
 

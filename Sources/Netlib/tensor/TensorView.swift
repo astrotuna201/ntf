@@ -92,6 +92,11 @@ public protocol TensorView: Logging, DefaultInitializer {
                     isReference: Bool) -> Self
     
     /// create a reference view
+    /// creation of a reference is for the purpose of reshaped writes
+    /// and multi-threaded writes to prevent mutation.
+    /// The data will be copied before reference view creation if
+    /// not uniquely held. Reference views will not perform
+    /// copy-on-write when a write pointer is taken
     mutating func reference(using stream: DeviceStream) throws -> Self
     
     /// create a flattened view

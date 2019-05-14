@@ -5,6 +5,22 @@
 import Foundation
 
 //==============================================================================
+// shaped positions and extents used for indexing and selection
+public enum MatrixLayout { case rowMajor, columnMajor }
+public typealias NDPosition = [Int]
+public typealias ScalarPosition = Int
+public typealias VectorPosition = Int
+public typealias VectorExtents = Int
+public typealias MatrixPosition = (r: Int, c: Int)
+public typealias MatrixExtents = (rows: Int, cols: Int)
+public typealias VolumePosition = (d: Int, r: Int, c: Int)
+public typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
+public typealias NCHWPosition = (i: Int, ch: Int, r: Int, c: Int)
+public typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
+public typealias NHWCPosition = (i: Int, r: Int, c: Int, ch: Int)
+public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
+
+//==============================================================================
 // ShapedView
 public protocol ShapedTensorView: TensorView {
     /// fully specified used for creating views
@@ -156,8 +172,6 @@ public protocol ScalarView: ShapedTensorView where
     BoolView == ScalarValue<Bool>,
     IndexView == ScalarValue<IndexScalar>{}
 
-public typealias ScalarPosition = Int
-
 public extension ScalarView {
     //--------------------------------------------------------------------------
     var endIndex: ScalarIndex {
@@ -222,9 +236,6 @@ extension ScalarValue: CustomStringConvertible where Stored: AnyConvertable {
 // VectorView
 public protocol VectorView: ShapedTensorView
 where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
-
-public typealias VectorPosition = Int
-public typealias VectorExtents = Int
 
 extension Vector: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }
@@ -365,11 +376,6 @@ where Stored: DefaultInitializer {
 // MatrixView
 public protocol MatrixView: ShapedTensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
-
-public typealias MatrixPosition = (r: Int, c: Int)
-public typealias MatrixExtents = (rows: Int, cols: Int)
-
-public enum MatrixLayout { case rowMajor, columnMajor }
 
 extension Matrix: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }
@@ -521,9 +527,6 @@ public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
 public protocol VolumeView: ShapedTensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
-public typealias VolumePosition = (d: Int, r: Int, c: Int)
-public typealias VolumeExtents = (depths: Int, rows: Int, cols: Int)
-
 extension Volume: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }
 }
@@ -653,8 +656,6 @@ where Stored: DefaultInitializer {
 public protocol NDTensorView: ShapedTensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
 
-public typealias NDPosition = [Int]
-
 extension NDTensor: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }
 }
@@ -759,8 +760,6 @@ where Stored: DefaultInitializer {
 /// w: cols
 public protocol NCHWTensorView: ShapedTensorView
 where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
-
-public typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
 
 extension NCHWTensor: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }
@@ -898,8 +897,6 @@ where Stored: DefaultInitializer {
 /// c: channels
 public protocol NHWCTensorView: ShapedTensorView
 where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
-
-public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
 
 extension NHWCTensor: CustomStringConvertible where Stored: AnyConvertable {
     public var description: String { return formatted() }

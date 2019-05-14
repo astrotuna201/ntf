@@ -31,14 +31,14 @@ import Foundation
 public protocol TensorView: Logging, DefaultInitializer {
     //--------------------------------------------------------------------------
     /// The type of scalar referenced by the view
-    associatedtype Scalar: DefaultInitializer
+    associatedtype Stored: DefaultInitializer
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
     associatedtype IndexView: TensorView
     /// A tensor shape specific indexer used to calculate a data buffer
     /// index based on a view's spatial position
-    associatedtype ViewIndex: TensorIndex
+    associatedtype Index: TensorIndexing
     
     //--------------------------------------------------------------------------
     // Properties that should be user readonly begin with _xyz, and accessor
@@ -51,7 +51,7 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// If `dataShape` is nil, then it equals `shape`
     var dataShape: DataShape { get }
     /// returns an index one past the end of the tensor used for collections
-    var endIndex: ViewIndex { get }
+    var endIndex: Index { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
@@ -61,12 +61,12 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// as a parameter to iterators. It is not inherited by subviews.
     var padding: [Padding]? { get }
     /// the scalar value to be returned for indexes with padding regions
-    var padValue: Scalar { get }
+    var padValue: Stored { get }
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
     /// returns the first tensor index used for collections
-    var startIndex: ViewIndex { get }
+    var startIndex: Index { get }
     /// class reference to the underlying byte buffer
     var tensorArray: TensorArray { get set }
     /// the indexing traversal procedure to use
@@ -79,19 +79,18 @@ public protocol TensorView: Logging, DefaultInitializer {
     init()
     
     /// create a repeating view of other
-    init(extents: [Int], repeating other: Self,
-         padding: [Padding]?, padValue: Scalar?)
+    init(extents: [Int], repeating other: Self)
     
     /// fully specified used for creating views
     init(shape: DataShape,
          dataShape: DataShape,
          name: String?,
          padding: [Padding]?,
-         padValue: Scalar?,
+         padValue: Stored?,
          tensorArray: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
-         scalars: [Scalar]?)
+         scalars: [Stored]?)
 }
 
 //==============================================================================
@@ -151,16 +150,12 @@ public extension TensorView {
 
     //--------------------------------------------------------------------------
     /// repeated view
-    init(extents: [Int],
-         repeating other: Self,
-         padding: [Padding]? = nil,
-         padValue: Scalar? = nil) {
-
+    init(extents: [Int], repeating other: Self) {
         self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
                   name: other.name,
-                  padding: padding,
-                  padValue: padValue,
+                  padding: nil,
+                  padValue: other.padValue,
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
                   isShared: other.isShared,
@@ -182,18 +177,18 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// sequence2ScalarArray
-    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Scalar] where
+    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Stored] where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Scalar: AnyConvertable
+        Stored: AnyConvertable
     {
-        return sequence.map { Scalar(any: $0) }
+        return sequence.map { Stored(any: $0) }
     }
 
     //--------------------------------------------------------------------------
     /// initTensorArray
     /// a helper to correctly initialize the tensorArray object
     mutating func initTensorArray(_ tensorData: TensorArray?,
-                                  _ name: String?, _ scalars: [Scalar]?) {
+                                  _ name: String?, _ scalars: [Stored]?) {
         if let tensorData = tensorData {
             tensorArray = tensorData
         } else {
@@ -213,7 +208,7 @@ public extension TensorView {
                     _Streams.current.reportDevice(error: error)
                 }
             } else {
-                tensorArray = TensorArray(type: Scalar.self,
+                tensorArray = TensorArray(type: Stored.self,
                                           count: dataShape.elementCount,
                                           name: name)
             }
@@ -248,7 +243,7 @@ public extension TensorView {
     /// init<S>(asScalar value:
     /// convenience initializer used by generics
     /// - Parameter value: the initial value to set
-    init(_ value: Scalar) {
+    init(_ value: Stored) {
         // create scalar version of the shaped view type
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: nil,
@@ -260,7 +255,7 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
-    func scalarValue() throws -> Scalar {
+    func scalarValue() throws -> Stored {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
     }
@@ -271,9 +266,9 @@ public extension TensorView {
     /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
     /// - Returns: the new data shape
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
-    func squeezed(axes: [Int]? = nil) -> NDTensor<Scalar> {
+    func squeezed(axes: [Int]? = nil) -> NDTensor<Stored> {
         let squeezedShape = shape.squeezed(axes: axes)
-        return NDTensor<Scalar>(shape: squeezedShape,
+        return NDTensor<Stored>(shape: squeezedShape,
                                 dataShape: squeezedShape,
                                 name: name,
                                 padding: padding,
@@ -303,10 +298,10 @@ public extension TensorView {
         guard !isShared && !isUniqueReference() else { return }
         
         diagnostic("\(mutationString) \(name)(\(tensorArray.trackingId)) " +
-            "\(String(describing: Scalar.self))[\(dataShape.elementCount)]",
+            "\(String(describing: Stored.self))[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorArray = try TensorArray(type: Scalar.self,
+        tensorArray = try TensorArray(type: Stored.self,
                                       copying: tensorArray,
                                       using: stream)
         tensorArray.lastAccessMutatedView = true
@@ -325,7 +320,7 @@ public extension TensorView {
             diagnostic(
                 "\(waitString) \(stream.device.name)_\(stream.name) " +
                     "will wait for \(name)(\(tensorArray.trackingId)) " +
-                    "\(String(describing: Scalar.self))" +
+                    "\(String(describing: Stored.self))" +
                 "[\(dataShape.elementCount)]",
                 categories: .scheduling)
         }
@@ -336,7 +331,7 @@ public extension TensorView {
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     func readOnly(using stream: DeviceStream? = nil) throws
-        -> UnsafeBufferPointer<Scalar>
+        -> UnsafeBufferPointer<Stored>
     {
         let deviceStream = stream ?? _Streams.hostStream
         if let lastError = deviceStream.lastError { throw lastError }
@@ -352,7 +347,7 @@ public extension TensorView {
             try waitForCompletion(on: deviceStream)
 
             // get the buffer
-            let buffer = try tensorArray.readOnly(type: Scalar.self,
+            let buffer = try tensorArray.readOnly(type: Stored.self,
                                                   using: deviceStream)
             
             // if no stream is specified then wait for completion
@@ -372,7 +367,7 @@ public extension TensorView {
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
     mutating func readWrite(using stream: DeviceStream? = nil) throws
-        -> UnsafeMutableBufferPointer<Scalar>
+        -> UnsafeMutableBufferPointer<Stored>
     {
         precondition(!tensorArray.isReadOnly, "the tensor is read only")
         let deviceStream = stream ?? _Streams.hostStream
@@ -390,7 +385,7 @@ public extension TensorView {
             try copyIfMutates(using: deviceStream)
             
             // get the buffer
-            let buffer = try tensorArray.readWrite(type: Scalar.self,
+            let buffer = try tensorArray.readWrite(type: Stored.self,
                                                    using: deviceStream)
             
             // if no stream is specified then wait for completion
@@ -423,7 +418,7 @@ public extension TensorView {
             diagnostic("\(stream.device.name)_\(stream.name) will signal " +
                 "StreamEvent(\(event.trackingId))" +
                 " when \(name)(\(tensorArray.trackingId)) " +
-                "\(String(describing: Scalar.self))" +
+                "\(String(describing: Stored.self))" +
                 "[\(dataShape.elementCount)] is complete",
                 categories: .scheduling)
             return event
@@ -434,7 +429,6 @@ public extension TensorView {
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
     private func createSubView(at offset: [Int], with extents: [Int],
-                               padding: [Padding]?, padValue: Scalar?,
                                isReference: Bool) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
@@ -443,30 +437,25 @@ public extension TensorView {
         // the subview offset is the current plus the offset of index
         let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
+        let name = "\(self.name).subview"
         
-        return Self.init(
-            shape: subViewShape,
-            dataShape: subViewShape,
-            name: "\(name).subview",
-            padding: padding,
-            padValue: padValue,
-            tensorArray: tensorArray,
-            viewDataOffset: subViewOffset,
-            isShared: isReference,
-            scalars: nil)
+        return Self(shape: subViewShape,
+                    dataShape: subViewShape,
+                    name: name,
+                    padding: padding,
+                    padValue: padValue,
+                    tensorArray: tensorArray,
+                    viewDataOffset: subViewOffset,
+                    isShared: isReference,
+                    scalars: nil)
     }
     
     //--------------------------------------------------------------------------
     /// view
     /// Create a sub view of the tensorArray relative to this view
-    func view(at offset: [Int],
-              extents: [Int],
-              padding: [Padding]? = nil,
-              padValue: Scalar? = nil) -> Self {
+    func view(at offset: [Int], extents: [Int]) -> Self {
         // the view created will have the same isShared state as the parent
-        return createSubView(at: offset, with: extents,
-                             padding: padding, padValue: padValue,
-                             isReference: isShared)
+        return createSubView(at: offset, with: extents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -474,11 +463,7 @@ public extension TensorView {
     /// Returns a view along the first dimension spanning all the others.
     /// It is used to simplify accessing a set of training samples.
     /// The view created will have the same isShared state as the parent
-    func viewItems(at offset: Int,
-                   count: Int,
-                   padding: [Padding]? = nil,
-                   padValue: Scalar? = nil) -> Self {
-
+    func viewItems(at offset: Int, count: Int) -> Self {
         let index, viewExtents: [Int]
         if rank == 1 {
             index = [offset]
@@ -488,38 +473,26 @@ public extension TensorView {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createSubView(at: index, with: viewExtents,
-                             padding: padding, padValue: padValue,
-                             isReference: isShared)
+        return createSubView(at: index, with: viewExtents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     /// view(item:
-    func view(item: Int,
-              padding: [Padding]? = nil,
-              padValue: Scalar? = nil) -> Self {
-        return viewItems(at: item, count: 1,
-                         padding: padding, padValue: padValue)
+    func view(item: Int) -> Self {
+        return viewItems(at: item, count: 1)
     }
     
     //--------------------------------------------------------------------------
     /// flattened
     /// Returns a view reduced in rank depending on the axis selected
-    func flattened(axis: Int = 0,
-                   padding: [Padding]? = nil,
-                   padValue: Scalar? = nil) -> Self {
-        
-        return createFlattened(axis: axis, isShared: isShared,
-                               padding: padding, padValue: padValue)
+    func flattened(axis: Int = 0) -> Self {
+        return createFlattened(axis: axis, isShared: isShared)
     }
     
     //--------------------------------------------------------------------------
     /// createFlattened
     /// helper
-    private func createFlattened(axis: Int,
-                                 isShared: Bool,
-                                 padding: [Padding]?,
-                                 padValue: Scalar?) -> Self {
+    private func createFlattened(axis: Int, isShared: Bool) -> Self {
         // check if self already meets requirements
         guard self.isShared != isShared || axis != shape.rank - 1 else {
             return self
@@ -571,10 +544,8 @@ public extension TensorView {
     
     // TODO: maybe remove this if a subview view can correctly be taken
     // from a `reference` view
-    mutating func referenceView(
-        offset: [Int], extents: [Int],
-        padding: [Padding]? = nil, padValue: Scalar? = nil,
-        using stream: DeviceStream) throws -> Self {
+    mutating func referenceView(offset: [Int], extents: [Int],
+                                using stream: DeviceStream) throws -> Self {
         
         // get the queue, if we reference it as a dataArray member it
         // it adds a ref count which messes things up
@@ -582,9 +553,7 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return createSubView(at: offset, with: extents,
-                                 padding: padding, padValue: padValue,
-                                 isReference: true)
+            return createSubView(at: offset, with: extents, isReference: true)
         }
     }
     
@@ -598,7 +567,7 @@ public extension TensorView {
     // from a `reference` view
     mutating func referenceFlattened(
         axis: Int = 0,
-        padding: [Padding]? = nil, padValue: Scalar? = nil,
+        padding: [Padding]? = nil, padValue: Stored? = nil,
         using stream: DeviceStream) throws -> Self {
         
         // get the queue, if we reference it as a dataArray member it
@@ -607,15 +576,14 @@ public extension TensorView {
         
         return try queue.sync {
             try copyIfMutates(using: stream)
-            return createFlattened(axis: axis, isShared: true,
-                                   padding: padding, padValue: padValue)
+            return createFlattened(axis: axis, isShared: true)
         }
     }
 }
 
 //==============================================================================
 //
-public extension TensorView where Scalar: FloatingPoint {
+public extension TensorView where Stored: FloatingPoint {
     //--------------------------------------------------------------------------
     /// isFinite
     /// `true` if all elements are finite values. Primarily used for debugging
@@ -638,7 +606,7 @@ public extension Zip2Sequence {
     /// map tensors
     @inlinable
     func map<T: TensorView>(to result: inout T,
-                            _ transform: (Pair) -> T.Scalar) throws
+                            _ transform: (Pair) -> T.Stored) throws
     {
         var iterator = self.makeIterator()
         var results = try result.mutableValues()
@@ -667,7 +635,7 @@ public extension Sequence {
     /// map a sequence to a tensor
     @inlinable
     func map<T: TensorView>(to result: inout T,
-                            _ transform: (Element) -> T.Scalar) throws
+                            _ transform: (Element) -> T.Stored) throws
     {
         var iterator = self.makeIterator()
         var results = try result.mutableValues()
@@ -708,9 +676,9 @@ public extension Sequence {
     /// reduce to a tensor
     func reduce<T>(
         to result: inout T,
-        _ initialResult: T.Scalar,
-        _ nextPartialResult: (T.Scalar, T.Scalar) throws -> T.Scalar) throws
-        where T: TensorView, T.Scalar == Self.Element
+        _ initialResult: T.Stored,
+        _ nextPartialResult: (T.Stored, T.Stored) throws -> T.Stored) throws
+        where T: TensorView, T.Stored == Self.Element
     {
         var results = try result.mutableValues()
         var partial = initialResult

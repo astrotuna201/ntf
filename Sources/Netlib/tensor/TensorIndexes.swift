@@ -7,7 +7,7 @@ import Foundation
 
 //==============================================================================
 /// ScalarIndex
-public struct ScalarIndex: TensorIndex {
+public struct ScalarIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
@@ -34,7 +34,7 @@ public struct ScalarIndex: TensorIndex {
 
 //==============================================================================
 /// VectorIndex
-public struct VectorIndex: TensorIndex {
+public struct VectorIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
@@ -124,7 +124,7 @@ public struct VectorIndex: TensorIndex {
 
 //==============================================================================
 /// MatrixIndex
-public struct MatrixIndex: TensorIndex {
+public struct MatrixIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
@@ -241,7 +241,7 @@ public struct MatrixIndex: TensorIndex {
 
 //==============================================================================
 /// VolumeIndex
-public struct VolumeIndex: TensorIndex {
+public struct VolumeIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
@@ -379,7 +379,7 @@ public struct VolumeIndex: TensorIndex {
 
 //==============================================================================
 /// NDIndex
-public struct NDIndex: TensorIndex {
+public struct NDIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0

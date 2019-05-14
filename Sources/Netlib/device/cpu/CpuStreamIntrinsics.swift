@@ -8,7 +8,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// abs
     func abs<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric, T.Scalar.Magnitude == T.Scalar
+        T: TensorView, T.Stored: Numeric, T.Stored.Magnitude == T.Stored
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { $0.magnitude }
@@ -18,7 +18,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// add
     func add<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 + $1 }
@@ -28,7 +28,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// all
     func all<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar == Bool
+        T: TensorView, T.Stored == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == false } != nil
@@ -38,7 +38,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// any
     func any<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar == Bool
+        T: TensorView, T.Stored == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == true } != nil
@@ -48,10 +48,10 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// approximatelyEqual
     func approximatelyEqual<T>(lhs: T, rhs: T,
-                               tolerance: T.Scalar,
+                               tolerance: T.Stored,
                                result: inout T.BoolView) where
-        T: TensorView, T.Scalar: AnyFloatingPoint,
-        T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: AnyFloatingPoint,
+        T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0.0 - $0.1 <= tolerance }
@@ -62,8 +62,8 @@ public extension CpuStream {
     /// argmax
     func argmax<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Scalar: Numeric,
-        T.IndexView.Scalar == IndexScalar
+        T: TensorView, T.Stored: Numeric,
+        T.IndexView.Stored == IndexScalar
     {
         
     }
@@ -72,8 +72,8 @@ public extension CpuStream {
     /// argmin
     func argmin<T>(x: T, along axes: Vector<IndexScalar>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Scalar: Numeric,
-        T.IndexView.Scalar == IndexScalar
+        T: TensorView, T.Stored: Numeric,
+        T.IndexView.Stored == IndexScalar
     {
         
     }
@@ -81,10 +81,10 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// asum
     func asum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric, T.Scalar.Magnitude == T.Scalar
+        T: TensorView, T.Stored: Numeric, T.Stored.Magnitude == T.Stored
     {
         queue(#function, { try x.values() }, &result) {
-            $0.reduce(to: &$1, T.Scalar.zero) {
+            $0.reduce(to: &$1, T.Stored.zero) {
                 $0 + $1.magnitude
             }
         }
@@ -93,8 +93,8 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cast
     func cast<T, R>(from: T, to result: inout R) where
-        T: TensorView, R: TensorView, T.Scalar: AnyConvertable,
-        R.Scalar : AnyConvertable
+        T: TensorView, R: TensorView, T.Stored: AnyConvertable,
+        R.Stored : AnyConvertable
     {
         
     }
@@ -102,11 +102,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// ceil
     func ceil<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.ceilf($0.asFloat))
+                T.Stored(any: Foundation.ceilf($0.asFloat))
             }
         }
     }
@@ -123,11 +123,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cos
     func cos<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.cos($0.asFloat))
+                T.Stored(any: Foundation.cos($0.asFloat))
             }
         }
     }
@@ -135,11 +135,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cosh
     func cosh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.cosh($0.asFloat))
+                T.Stored(any: Foundation.cosh($0.asFloat))
             }
         }
     }
@@ -147,7 +147,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// div
     func div<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 / $1 }
@@ -157,8 +157,8 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// equal
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Equatable,
-        T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Equatable,
+        T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 == $1 }
@@ -168,11 +168,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// exp
     func exp<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.log($0.asFloat))
+                T.Stored(any: Foundation.log($0.asFloat))
             }
         }
     }
@@ -180,7 +180,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// fill(result:with:
     /// NOTE: this can be much faster, doesn't need to be ordered access
-    func fill<T>(_ result: inout T, with value: T.Scalar) where T: TensorView {
+    func fill<T>(_ result: inout T, with value: T.Stored) where T: TensorView {
         queue(#function, {}, &result) {
             for index in $1.indices { $1[index] = value }
         }
@@ -189,12 +189,12 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// fillWithIndex(x:startAt:
     func fillWithIndex<T>(_ result: inout T, startAt: Int) where
-        T: TensorView, T.Scalar: AnyNumeric
+        T: TensorView, T.Stored: AnyNumeric
     {
         queue(#function, {}, &result) {
             var value = startAt
             for index in $1.indices {
-                $1[index] = T.Scalar(any: value)
+                $1[index] = T.Stored(any: value)
                 value += 1
             }
         }
@@ -203,11 +203,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// floor
     func floor<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.floorf($0.asFloat))
+                T.Stored(any: Foundation.floorf($0.asFloat))
             }
         }
     }
@@ -215,7 +215,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// greater
     func greater<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Comparable, T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 > $1 }
@@ -225,7 +225,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// greaterOrEqual
     func greaterOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Comparable, T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 >= $1 }
@@ -235,7 +235,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// less
     func less<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Comparable, T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 < $1 }
@@ -245,7 +245,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// lessOrEqual
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Comparable, T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Comparable, T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 <= $1 }
@@ -255,11 +255,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// log(x:result:
     func log<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.log($0.asFloat))
+                T.Stored(any: Foundation.log($0.asFloat))
             }
         }
     }
@@ -267,7 +267,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalNot(x:result:
     func logicalNot<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar == Bool
+        T: TensorView, T.Stored == Bool
     {
         queue(#function, { try x.values() }, &result) { $0.map(to: &$1) { !$0 } }
     }
@@ -275,7 +275,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalAnd(x:result:
     func logicalAnd<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar == Bool
+        T: TensorView, T.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 && $1 }
@@ -285,7 +285,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalOr(x:result:
     func logicalOr<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar == Bool
+        T: TensorView, T.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 || $1 }
@@ -295,14 +295,14 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logSoftmax(x:result:
     func logSoftmax<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
     }
 
     //--------------------------------------------------------------------------
     /// matmul(lhs:rhs:result:
     func matmul<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         
     }
@@ -310,7 +310,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// max
     func max<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         
     }
@@ -318,7 +318,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// maximum(lhs:rhs:result:
     func maximum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Comparable
+        T: TensorView, T.Stored: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 >= $1 ? $0 : $1 }
@@ -328,7 +328,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// mean
     func mean<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         
     }
@@ -336,7 +336,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// min
     func min<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         
     }
@@ -344,7 +344,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// minimum(lhs:rhs:result:
     func minimum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Comparable
+        T: TensorView, T.Stored: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 <= $1 ? $0 : $1 }
@@ -354,11 +354,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // mod
     func mod<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
-                T.Scalar(any: fmodf($0.asFloat, $1.asFloat))
+                T.Stored(any: fmodf($0.asFloat, $1.asFloat))
             }
         }
     }
@@ -366,7 +366,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // mul
     func mul<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 * $1 }
@@ -376,7 +376,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // neg
     func neg<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: SignedNumeric
+        T: TensorView, T.Stored: SignedNumeric
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { -$0 }
@@ -386,7 +386,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // notEqual
     func notEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Scalar: Equatable, T.BoolView.Scalar == Bool
+        T: TensorView, T.Stored: Equatable, T.BoolView.Stored == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 != $1 }
@@ -397,11 +397,11 @@ public extension CpuStream {
     // pow
     // TODO there needs to be a generic math library!
     func pow<T>(x: T, y: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyNumeric
+        T: TensorView, T.Stored: AnyNumeric
     {
         queue(#function, { try (x.values(), y.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
-                T.Scalar(any: Foundation.pow($0.asDouble, $1.asDouble))
+                T.Stored(any: Foundation.pow($0.asDouble, $1.asDouble))
             }
         }
     }
@@ -409,9 +409,9 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // prod
     func prod<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: AnyNumeric
+        T: TensorView, T.Stored: AnyNumeric
     {
-        let one = T.Scalar(any: 1)
+        let one = T.Stored(any: 1)
         queue(#function, { try x.values() }, &result) {
             $0.reduce(to: &$1, one) { $0 * $1 }
         }
@@ -420,7 +420,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // rsqrt
     func rsqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { 1 / Foundation.sqrt($0) }
@@ -431,7 +431,7 @@ public extension CpuStream {
     // replacing
     func replacing<T>(x: T, with other: T, where mask: T.BoolView,
                       result: inout T) where
-        T: TensorView, T.BoolView.Scalar == Bool
+        T: TensorView, T.BoolView.Stored == Bool
     {
         queue(#function, { try (x.values(), other.values(), mask.values()) },
               &result)
@@ -443,11 +443,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sin
     func sin<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.sinf($0.asFloat))
+                T.Stored(any: Foundation.sinf($0.asFloat))
             }
         }
     }
@@ -456,11 +456,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sinh
     func sinh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.sinhf($0.asFloat))
+                T.Stored(any: Foundation.sinhf($0.asFloat))
             }
         }
     }
@@ -468,7 +468,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // square
     func square<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { $0 * $0 }
@@ -478,7 +478,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // squaredDifference
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
@@ -491,7 +491,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sqrt
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { Foundation.sqrt($0) }
@@ -501,7 +501,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 - $1 }
@@ -511,7 +511,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sum
     func sum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
-        T: TensorView, T.Scalar: Numeric
+        T: TensorView, T.Stored: Numeric
     {
         if let axes = axes, axes.shape.extents[0] > 0 {
             assert(axes.rank <= x.rank, "rank mismatch")
@@ -520,7 +520,7 @@ public extension CpuStream {
             }
         } else {
             queue(#function, { try x.values() }, &result) {
-                $0.reduce(to: &$1, T.Scalar.zero) { $0 + $1 }
+                $0.reduce(to: &$1, T.Stored.zero) { $0 + $1 }
             }
         }
     }
@@ -528,11 +528,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // tan
     func tan<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.tanf($0.asFloat))
+                T.Stored(any: Foundation.tanf($0.asFloat))
             }
         }
     }
@@ -540,11 +540,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // tanh
     func tanh<T>(x: T, result: inout T) where
-        T: TensorView, T.Scalar: AnyFloatingPoint
+        T: TensorView, T.Stored: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Scalar(any: Foundation.tanhf($0.asFloat))
+                T.Stored(any: Foundation.tanhf($0.asFloat))
             }
         }
     }

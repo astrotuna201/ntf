@@ -6,14 +6,14 @@ import Foundation
 
 //==============================================================================
 // TensorView default implementation
-public extension TensorView where Scalar: AnyConvertable {
+public extension TensorView where Stored: AnyConvertable {
     //--------------------------------------------------------------------------
     // formatted
     func formatted(
         _ scalarFormat: (width: Int, precision: Int)? = nil,
         maxCols: Int = 10,
-        maxItems: [Int]? = nil) -> String {
-        
+        maxItems: [Int]? = nil) -> String
+    {
         guard !shape.isEmpty else { return "[Empty]\n" }
         var string = ""
         var index = [Int](repeating: 0, count: shape.rank)
@@ -37,8 +37,8 @@ public extension TensorView where Scalar: AnyConvertable {
         string += "\nTensorView extents: \(shape.extents.description)" +
         " paddedExtents: \(extents.description)\n"
 
-        func appendFormatted(value: Scalar) {
-            let str = String(format: Scalar.formatString(scalarFormat), value)
+        func appendFormatted(value: Stored) {
+            let str = String(format: Stored.formatString(scalarFormat), value)
             string += "\(str) "
         }
 

@@ -43,9 +43,9 @@ infix operator .=
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 // TODO: this complains, talk to the guys
-//@differentiable(vjp: _vjpAdd(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpAdd(lhs:rhs:) where Stored : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -57,14 +57,14 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     var result = T.init(shapedLike: lhs)
     add(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -76,7 +76,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -84,11 +84,11 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self.init(Scalar(any: rhs)))
+        return add(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -96,7 +96,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self.init(Scalar(any: rhs)))
+        return add(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
@@ -110,9 +110,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 ///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Scalar: TensorFlowFloatingPoint)
+//    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Stored: TensorFlowFloatingPoint)
 public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     _Streams.current.subtract(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -124,14 +124,14 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     var result = T.init(shapedLike: lhs)
     subtract(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -143,7 +143,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -151,11 +151,11 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self.init(Scalar(any: rhs)))
+        return subtract(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -163,7 +163,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self.init(Scalar(any: rhs)))
+        return subtract(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
@@ -176,9 +176,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 ///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Stored : TensorFlowFloatingPoint)
 public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     _Streams.current.mul(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -190,14 +190,14 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     var result = T.init(shapedLike: lhs)
     mul(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -209,7 +209,7 @@ public extension TensorView where Self.Scalar: Numeric {
     }
 }
 
-public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -217,11 +217,11 @@ public extension TensorView where Self.Scalar: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self.init(Scalar(any: rhs)))
+        return mul(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
+public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -229,7 +229,7 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self.init(Scalar(any: rhs)))
+        return mul(lhs, Self.init(Stored(any: rhs)))
     }
 }
 
@@ -242,9 +242,9 @@ public extension TensorView where Self.Scalar: BinaryInteger & AnyInteger {
 ///   broadcasting will be performed via repeated indexing.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-//@differentiable(vjp: _vjpDivide(lhs:rhs:) where Scalar : TensorFlowFloatingPoint)
+//@differentiable(vjp: _vjpDivide(lhs:rhs:) where Stored : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -256,14 +256,14 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     var result = T.init(shapedLike: lhs)
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Stored: AnyFloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -275,7 +275,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
     }
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Stored: AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -283,7 +283,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Scalar(any: rhs))
+        let scalarTensor = Self.init(Stored(any: rhs))
         return div(lhs, scalarTensor)
     }
 }

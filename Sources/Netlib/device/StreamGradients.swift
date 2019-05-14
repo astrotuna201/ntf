@@ -12,16 +12,16 @@ import Foundation
 public protocol StreamGradientsProtocol {
     /// _vjpAdd
     static func vjpAdd<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint
     /// _vjpSubtract
     static func vjpSubtract<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint
     /// _vjpMultiply
     static func vjpMultiply<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint
     /// _vjpDivide
     static func vjpDivide<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint
     
     /// And all the rest........
 }
@@ -44,7 +44,7 @@ public protocol StreamGradients: StreamGradientsProtocol { }
 extension StreamGradients where Self: StreamIntrinsicsProtocol {
     @inlinable
     public static func vjpAdd<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint {
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint {
         fatalError("not implemented yet")
 //        return (lhs + rhs, {
 //            [lhsShape = lhs.shape, rhsShape = rhs.shape] v in
@@ -55,7 +55,7 @@ extension StreamGradients where Self: StreamIntrinsicsProtocol {
     
     @inlinable
     public static func vjpSubtract<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint {
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint {
         fatalError("not implemented yet")
 //        return (lhs - rhs, {
 //            [lhsShape = lhs.shape, rhsShape = rhs.shape] v in
@@ -66,7 +66,7 @@ extension StreamGradients where Self: StreamIntrinsicsProtocol {
 
     @inlinable
     public static func vjpMultiply<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint {
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint {
         fatalError("not implemented yet")
 //        return (lhs * rhs, {
 //            [lhsShape = lhs.shape, rhsShape = rhs.shape] v in
@@ -77,7 +77,7 @@ extension StreamGradients where Self: StreamIntrinsicsProtocol {
 
     @inlinable
     public static func vjpDivide<T>(_ lhs: T, _ rhs: T, result: inout T) ->
-        (T, (T) -> (T, T)) where T: TensorView, T.Scalar: FloatingPoint {
+        (T, (T) -> (T, T)) where T: TensorView, T.Stored: FloatingPoint {
         fatalError("not implemented yet")
 //        return (lhs / rhs, {
 //            [lhsShape = lhs.shape, rhsShape = rhs.shape] v in

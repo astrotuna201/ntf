@@ -5,7 +5,7 @@
 import Foundation
 
 //==========================================================================
-public protocol TensorIndex: Strideable {
+public protocol TensorIndexing: Strideable {
     associatedtype Position
     /// the linear spatial position in the virtual view shape. The view
     /// shape and dataShape are equal if there is no padding or repeating
@@ -25,7 +25,7 @@ public protocol TensorIndex: Strideable {
     func increment() -> Self
 }
 
-public extension TensorIndex {
+public extension TensorIndexing {
     // Equatable
     @inlinable @inline(__always)
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -97,8 +97,8 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order as an array
     @inlinable @inline(__always)
-    func array() throws -> [Scalar] {
-        return try [Scalar](values())
+    func array() throws -> [Stored] {
+        return try [Stored](values())
     }
     
     //--------------------------------------------------------------------------
@@ -124,18 +124,18 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// get a single value at the specified index
     @inlinable @inline(__always)
-    func value(at position: ViewIndex.Position) throws -> Scalar {
+    func value(at position: Index.Position) throws -> Stored {
         let buffer = try readOnly()
-        let index = ViewIndex.init(view: self, at: position)
+        let index = Index.init(view: self, at: position)
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 
     //--------------------------------------------------------------------------
     /// set a single value at the specified index
     @inlinable @inline(__always)
-    mutating func set(value: Scalar, at position: ViewIndex.Position) throws {
+    mutating func set(value: Stored, at position: Index.Position) throws {
         let buffer = try readWrite()
-        let index = ViewIndex.init(view: self, at: position)
+        let index = Index.init(view: self, at: position)
         buffer[index.dataIndex] = value
     }
 }
@@ -146,13 +146,13 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     where View: TensorView
 {
     // properties
-    public let buffer: UnsafeBufferPointer<View.Scalar>
-    public let startIndex: View.ViewIndex
-    public let endIndex: View.ViewIndex
+    public let buffer: UnsafeBufferPointer<View.Stored>
+    public let startIndex: View.Index
+    public let endIndex: View.Index
     public let count: Int
-    public let padValue: View.Scalar
+    public let padValue: View.Stored
 
-    public init(view: View, buffer: UnsafeBufferPointer<View.Scalar>) throws {
+    public init(view: View, buffer: UnsafeBufferPointer<View.Stored>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -163,17 +163,17 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
-    public func index(before i: View.ViewIndex) -> View.ViewIndex {
+    public func index(before i: View.Index) -> View.Index {
         return i.advanced(by: -1)
     }
     
     @inlinable @inline(__always)
-    public func index(after i: View.ViewIndex) -> View.ViewIndex {
+    public func index(after i: View.Index) -> View.Index {
         return i.increment()
     }
     
     @inlinable @inline(__always)
-    public subscript(index: View.ViewIndex) -> View.Scalar {
+    public subscript(index: View.Index) -> View.Stored {
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 }
@@ -183,18 +183,18 @@ public struct TensorValueCollection<View>: RandomAccessCollection
 public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     MutableCollection where View: TensorView
 {
-    public typealias Index = View.ViewIndex
-    public typealias Scalar = View.Scalar
+    public typealias Index = View.Index
+    public typealias Stored = View.Stored
     
     // properties
-    public let buffer: UnsafeMutableBufferPointer<Scalar>
+    public let buffer: UnsafeMutableBufferPointer<Stored>
     public let startIndex: Index
     public let endIndex: Index
     public let count: Int
-    public let padValue: Scalar
+    public let padValue: Stored
     
     public init(view: inout View,
-                buffer: UnsafeMutableBufferPointer<Scalar>) throws {
+                buffer: UnsafeMutableBufferPointer<Stored>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -215,7 +215,7 @@ public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     }
     
     @inlinable @inline(__always)
-    public subscript(index: Index) -> Scalar {
+    public subscript(index: Index) -> Stored {
         get {
             return index.isPad ? padValue : buffer[index.dataIndex]
         }

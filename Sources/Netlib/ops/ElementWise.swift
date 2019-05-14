@@ -14,7 +14,7 @@ import Foundation
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     _Streams.current.log(x: x, result: &result)
 }
@@ -25,14 +25,14 @@ public func log<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     var result = T.init(shapedLike: x)
     log(x, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Stored: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -54,7 +54,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     _Streams.current.logSoftmax(x: x, result: &result)
 }
@@ -65,14 +65,14 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T) -> T
-    where T: TensorView, T.Scalar: AnyFloatingPoint
+    where T: TensorView, T.Stored: AnyFloatingPoint
 {
     var result = T.init(shapedLike: x)
     logSoftmax(x, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: AnyFloatingPoint {
+public extension TensorView where Self.Stored: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -96,7 +96,7 @@ public extension TensorView where Self.Scalar: AnyFloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
-    where T: TensorView, T.Scalar: AnyNumeric
+    where T: TensorView, T.Stored: AnyNumeric
 {
     _Streams.current.pow(x: x, y: y, result: &result)
 }
@@ -109,14 +109,14 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
-    where T: TensorView, T.Scalar: AnyNumeric
+    where T: TensorView, T.Stored: AnyNumeric
 {
     var result = T.init(shapedLike: x)
     pow(x, y, result: &result)
     return result
 }
 
-public extension TensorView where Self.Scalar: AnyNumeric {
+public extension TensorView where Self.Stored: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -129,7 +129,7 @@ public extension TensorView where Self.Scalar: AnyNumeric {
         return result
     }
 }
-public extension TensorView where Self.Scalar: AnyNumeric {
+public extension TensorView where Self.Stored: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -138,12 +138,12 @@ public extension TensorView where Self.Scalar: AnyNumeric {
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyNumeric>(_ y: S) -> Self {
         var result = Self.init(shapedLike: self)
-        Netlib.pow(self, Self.init(Scalar(any: y)), result: &result)
+        Netlib.pow(self, Self.init(Stored(any: y)), result: &result)
         return result
     }
 }
 
-public extension TensorView where Self.Scalar: AnyNumeric {
+public extension TensorView where Self.Stored: AnyNumeric {
     /// returns new view
     /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
     ///   broadcasting will be performed via repeated indexing.
@@ -153,7 +153,7 @@ public extension TensorView where Self.Scalar: AnyNumeric {
     func pow<S: AnyInteger>(
         _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
         var result = Self.init(shapedLike: self)
-        Netlib.pow(self, Self.init(Scalar(any: y)), result: &result)
+        Netlib.pow(self, Self.init(Stored(any: y)), result: &result)
         return result
     }
 }
@@ -161,14 +161,14 @@ public extension TensorView where Self.Scalar: AnyNumeric {
 //==============================================================================
 /// fill<T>(result:value:
 /// fills the view with the specified value
-public func fill<T>(_ result: inout T, with value: T.Scalar) where
+public func fill<T>(_ result: inout T, with value: T.Stored) where
     T: TensorView
 {
     _Streams.current.fill(&result, with: value)
 }
 
 public extension TensorView {
-    func filled(with value: Scalar) -> Self {
+    func filled(with value: Stored) -> Self {
         var result = Self.init(shapedLike: self)
         _Streams.current.fill(&result, with: value)
         return result
@@ -179,12 +179,12 @@ public extension TensorView {
 /// fillWithIndex(x:startAt:
 /// fills the view with the spatial sequential index
 public func fillWithIndex<T>(_ result: inout T, startAt index: Int = 0) where
-    T: TensorView, T.Scalar: AnyNumeric
+    T: TensorView, T.Stored: AnyNumeric
 {
     _Streams.current.fillWithIndex(&result, startAt: index)
 }
 
-public extension TensorView where Scalar: AnyNumeric {
+public extension TensorView where Stored: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
         var result = Self.init(shapedLike: self)
         _Streams.current.fillWithIndex(&result, startAt: index)
@@ -196,15 +196,15 @@ public extension TensorView where Scalar: AnyNumeric {
 /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
 /// scalars.
 public func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-    T: TensorView, T.Scalar: Equatable,
-    T.BoolView.Scalar == Bool
+    T: TensorView, T.Stored: Equatable,
+    T.BoolView.Stored == Bool
 {
     _Streams.current.equal(lhs: lhs, rhs: rhs, result: &result)
 }
 
 public extension TensorView where
-    Scalar: Equatable,
-    BoolView.Scalar == Bool
+    Stored: Equatable,
+    BoolView.Stored == Bool
 {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor

@@ -47,7 +47,7 @@ public protocol UniformDenseScalar4: UniformDenseScalar {
 //==============================================================================
 // RGBImageSample
 public protocol RGBImageSample: UniformDenseScalar3
-    where Component: Numeric & Quantizable
+    where Component: Numeric
 {
     var r: Component { get set }
     var g: Component { get set }
@@ -67,7 +67,7 @@ public extension RGBImageSample {
 }
 
 public struct RGBSample<Component>: RGBImageSample
-where Component: Numeric & Quantizable {
+where Component: Numeric {
     public var r, g, b: Component
 
     @inlinable @inline(__always)
@@ -84,7 +84,7 @@ where Component: Numeric & Quantizable {
 //==============================================================================
 // RGBAImageSample
 public protocol RGBAImageSample: UniformDenseScalar4
-    where Component: Numeric & Quantizable
+    where Component: Numeric
 {
     var r: Component { get set }
     var g: Component { get set }
@@ -106,7 +106,7 @@ public extension RGBAImageSample {
 }
 
 public struct RGBASample<Component> : RGBAImageSample
-    where Component: Numeric & Quantizable
+    where Component: Numeric
 {
     public var r, g, b, a: Component
 
@@ -130,7 +130,7 @@ public struct RGBASample<Component> : RGBAImageSample
 //==============================================================================
 // Audio sample types
 public protocol StereoAudioSample: UniformDenseScalar2
-    where Component: Numeric & Quantizable
+    where Component: Numeric
 {
     var left: Component { get set }
     var right: Component { get set }
@@ -148,7 +148,7 @@ public extension StereoAudioSample {
 }
 
 public struct StereoSample<Component>: StereoAudioSample
-where Component: Numeric & Quantizable {
+where Component: Numeric {
     public var left, right: Component
 
     @inlinable @inline(__always)

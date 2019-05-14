@@ -18,7 +18,7 @@ import Foundation
 @inlinable @inline(__always)
 public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
-    where T: TensorView, T.Scalar == Bool
+    where T: TensorView, T.Stored == Bool
 {
     _Streams.current.all(x: x, along: axes, result: &result)
 }
@@ -27,7 +27,7 @@ public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
 /// - Parameter alongAxes: the axes to operate on
 /// - Returns: a new tensor containing the result
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-public extension TensorView where Self.Scalar == Bool {
+public extension TensorView where Self.Stored == Bool {
     @inlinable @inline(__always)
     func all(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
@@ -54,7 +54,7 @@ public extension TensorView where Self.Scalar == Bool {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func all(squeezing: Int...) -> NDTensor<Scalar> {
+    func all(squeezing: Int...) -> NDTensor<Stored> {
         let axes = shape.makePositive(indices: squeezing)
         let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)
@@ -77,7 +77,7 @@ public extension TensorView where Self.Scalar == Bool {
 @inlinable @inline(__always)
 public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
                    result: inout T)
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     _Streams.current.sum(x: x, along: axes, result: &result)
 }
@@ -89,7 +89,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
 public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
-    where T: TensorView, T.Scalar: Numeric
+    where T: TensorView, T.Stored: Numeric
 {
     let extents = [Int](repeating: 1, count: x.rank)
     var result = T.init(shapedLike: x, with: extents)
@@ -101,7 +101,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
 /// - Parameter alongAxes: the axes to operate on
 /// - Returns: a new tensor containing the result
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-public extension TensorView where Self.Scalar: Numeric {
+public extension TensorView where Self.Stored: Numeric {
     @inlinable @inline(__always)
     func sum(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
@@ -128,7 +128,7 @@ public extension TensorView where Self.Scalar: Numeric {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func sum(alongAxes: Int...) -> NDTensor<Scalar> {
+    func sum(alongAxes: Int...) -> NDTensor<Stored> {
         let axes = shape.makePositive(indices: alongAxes)
         let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
         var result = Self.init(shapedLike: self)

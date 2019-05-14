@@ -121,6 +121,16 @@ public extension CpuStream {
     }
     
     //--------------------------------------------------------------------------
+    /// copies the elements from view to result
+    func copy<T, R>(view: T, result: inout R) where
+        T: TensorView, R: TensorView, T.Viewed == R.Viewed
+    {
+        queue(#function, { try view.values() }, &result) {
+            $0.map(to: &$1) { $0 }
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     /// cos
     func cos<T>(x: T, result: inout T) where
         T: TensorView, T.Stored: AnyFloatingPoint

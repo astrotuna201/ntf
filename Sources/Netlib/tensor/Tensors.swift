@@ -90,6 +90,20 @@ public extension ShapedTensorView {
                   isShared: other.isShared,
                   scalars: nil)
     }
+    
+    //--------------------------------------------------------------------------
+    // realizing init
+    init<T>(realizing other: T) throws where
+        T: TensorView, Viewed == T.Viewed
+    {
+        if let other = other as? Self,
+            other.isContiguous && other.traversal == .normal
+        {
+            self = other
+        } else {
+            self = Netlib.copy(view: other)
+        }
+    }
 
     //--------------------------------------------------------------------------
     /// createSubView
@@ -197,6 +211,9 @@ public extension ScalarView {
 // ScalarValue
 public struct ScalarValue<Stored>: ScalarView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -338,6 +355,9 @@ public extension VectorView {
 // Vector
 public struct Vector<Stored>: VectorView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -488,6 +508,9 @@ public extension MatrixView {
 //==============================================================================
 // Matrix
 public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -617,6 +640,9 @@ public extension VolumeView {
 /// Volume
 public struct Volume<Stored>: VolumeView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -716,6 +742,9 @@ public extension NDTensorView {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Stored>: NDTensorView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -853,6 +882,9 @@ public extension NCHWTensorView {
 // NCHWTensor
 public struct NCHWTensor<Stored>: NCHWTensorView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -990,6 +1022,9 @@ public extension NHWCTensorView {
 /// NHWCTensor
 public struct NHWCTensor<Stored>: NHWCTensorView
 where Stored: DefaultInitializer {
+    // types
+    public typealias Viewed = Stored
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool

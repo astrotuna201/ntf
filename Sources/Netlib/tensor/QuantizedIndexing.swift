@@ -10,7 +10,6 @@ import Foundation
 public protocol Quantizing where
     Self: TensorView, Q.Stored == Stored, Q.Viewed == Viewed
 {
-    associatedtype Viewed
     associatedtype Q: Quantizer
     
     var quantizer: Q { get }
@@ -45,13 +44,6 @@ public extension TensorView where Self: Quantizing {
     mutating func mutableValues() throws -> QTensorMutableValueCollection<Self>{
         return try QTensorMutableValueCollection(view: &self,
                                                  buffer: readWrite())
-    }
-    
-    //--------------------------------------------------------------------------
-    /// get a Sequence of read only values in spatial order as an array
-    @inlinable @inline(__always)
-    func array() throws -> [Viewed] {
-        return try [Viewed](values())
     }
     
     //--------------------------------------------------------------------------

@@ -30,8 +30,6 @@ import Foundation
 ///
 public protocol TensorView: Logging, DefaultInitializer {
     //--------------------------------------------------------------------------
-    /// The type of scalar referenced by the view
-    associatedtype Stored: DefaultInitializer
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -39,6 +37,10 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// A tensor shape specific indexer used to calculate a data buffer
     /// index based on a view's spatial position
     associatedtype Index: TensorIndexing
+    /// The type of value stored by the view
+    associatedtype Stored: DefaultInitializer
+    /// the type viewed from indexing
+    associatedtype Viewed
     
     //--------------------------------------------------------------------------
     // Properties that should be user readonly begin with _xyz, and accessor
@@ -81,11 +83,17 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// create an empty dense view
     init(with extents: [Int])
     
-    /// create a view with a scalar value
+    /// create a view with a single scalar value
     init(with value: Stored)
     
     /// create a repeating view of other
     init(with extents: [Int], repeating other: Self)
+    
+    /// create a dense view where the elements from another are coalesced
+    /// and potentially type converted when working with qtensors
+    /// if `other` is already of the correct form, then a data reference is
+    /// taken instead.
+    init<T>(realizing other: T) throws where T: TensorView, Viewed == T.Viewed
     
     /// create a sub view
     func createView(at offset: [Int], with extents: [Int],

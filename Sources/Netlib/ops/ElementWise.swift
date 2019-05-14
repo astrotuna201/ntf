@@ -5,10 +5,47 @@
 import Foundation
 
 //==============================================================================
+/// copy
+/// copies the elements from `view` to `result`
+
+/// with placement
+/// - Parameter view: tensor to be copied
+/// - Parameter result: the tensor where the result will be written
+@inlinable @inline(__always)
+public func copy<T, R>(_ view: T, result: inout R) where
+    T: TensorView, R: TensorView, T.Viewed == R.Viewed
+{
+    _Streams.current.copy(view: view, result: &result)
+}
+
+/// returns new view
+/// - Parameter view: tensor to be copied
+/// - Returns: a new tensor containing the result
+@inlinable @inline(__always)
+public func copy<T, R>(view: T) -> R where
+    T: TensorView, R: TensorView, T.Viewed == R.Viewed
+{
+    var result = R(with: view.extents)
+    copy(view, result: &result)
+    return result
+}
+
+public extension TensorView {
+    /// returns new view
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    func copy() -> Self {
+        var result = Self(with: extents)
+        Netlib.copy(self, result: &result)
+        return result
+    }
+}
+
+//==============================================================================
 /// log(x)
 /// computes the log of `x`
 
-/// in place
+/// with placement
 /// - Parameter x: value tensor
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
@@ -48,7 +85,7 @@ public extension TensorView where Stored: AnyFloatingPoint {
 /// logSoftmax(x)
 /// computes the logSoftmax of `x`
 
-/// in place
+/// with placement
 /// - Parameter x: value tensor
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
@@ -88,7 +125,7 @@ public extension TensorView where Stored: AnyFloatingPoint {
 /// pow(x, y)
 /// raises tensor 'x' to the tensor 'y' power
 
-/// in place
+/// with placement
 /// - Parameter x: value tensor
 /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
 ///   broadcasting will be performed via repeated indexing.

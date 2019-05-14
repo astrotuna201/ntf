@@ -146,6 +146,9 @@ public protocol StreamIntrinsicsProtocol {
     /// - Precondition: The axis must be in the range `-rank..<rank`.
     func concatenate<T>(view: T, with other: T, alongAxis axis: Int,
                         result: inout T) where T: TensorView
+    /// copies the elements from view to result
+    func copy<T, R>(view: T, result: inout R) where
+        T: TensorView, R: TensorView, T.Viewed == R.Viewed
     /// Computes the element-wise `cos`
     func cos<T>(x: T, result: inout T) where
         T: TensorView, T.Stored: AnyFloatingPoint

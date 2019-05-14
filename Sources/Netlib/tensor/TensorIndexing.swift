@@ -78,7 +78,7 @@ public extension TensorView {
 
 //==============================================================================
 /// TensorView Collection extensions
-public extension TensorView {
+public extension TensorView where Stored == Viewed {
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order
     /// called to synchronize with the app thread
@@ -97,8 +97,8 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// get a Sequence of read only values in spatial order as an array
     @inlinable @inline(__always)
-    func array() throws -> [Stored] {
-        return try [Stored](values())
+    func array() throws -> [Viewed] {
+        return try [Viewed](values())
     }
     
     //--------------------------------------------------------------------------
@@ -143,16 +143,21 @@ public extension TensorView {
 //==============================================================================
 /// TensorValueCollection
 public struct TensorValueCollection<View>: RandomAccessCollection
-    where View: TensorView
+    where View: TensorView, View.Stored == View.Viewed
 {
+    // types
+    public typealias Index = View.Index
+    public typealias Stored = View.Stored
+    public typealias Viewed = View.Viewed
+    
     // properties
-    public let buffer: UnsafeBufferPointer<View.Stored>
-    public let startIndex: View.Index
-    public let endIndex: View.Index
+    public let buffer: UnsafeBufferPointer<Stored>
+    public let startIndex: Index
+    public let endIndex: Index
     public let count: Int
-    public let padValue: View.Stored
+    public let padValue: Stored
 
-    public init(view: View, buffer: UnsafeBufferPointer<View.Stored>) throws {
+    public init(view: View, buffer: UnsafeBufferPointer<Stored>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -163,17 +168,17 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
-    public func index(before i: View.Index) -> View.Index {
+    public func index(before i: Index) -> Index {
         return i.advanced(by: -1)
     }
     
     @inlinable @inline(__always)
-    public func index(after i: View.Index) -> View.Index {
+    public func index(after i: Index) -> Index {
         return i.increment()
     }
     
     @inlinable @inline(__always)
-    public subscript(index: View.Index) -> View.Stored {
+    public subscript(index: Index) -> Viewed {
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 }
@@ -181,11 +186,13 @@ public struct TensorValueCollection<View>: RandomAccessCollection
 //==============================================================================
 /// TensorMutableValueCollection
 public struct TensorMutableValueCollection<View>: RandomAccessCollection,
-    MutableCollection where View: TensorView
+    MutableCollection where View: TensorView, View.Stored == View.Viewed
 {
+    // types
     public typealias Index = View.Index
     public typealias Stored = View.Stored
-    
+    public typealias Viewed = View.Viewed
+
     // properties
     public let buffer: UnsafeMutableBufferPointer<Stored>
     public let startIndex: Index
@@ -215,7 +222,7 @@ public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     }
     
     @inlinable @inline(__always)
-    public subscript(index: Index) -> Stored {
+    public subscript(index: Index) -> Viewed {
         get {
             return index.isPad ? padValue : buffer[index.dataIndex]
         }

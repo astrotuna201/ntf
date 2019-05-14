@@ -6,7 +6,7 @@ import Foundation
 
 //==============================================================================
 // TensorView default implementation
-public extension TensorView where Stored: AnyConvertable {
+public extension TensorView where Stored: AnyConvertable, Stored == Viewed {
     //--------------------------------------------------------------------------
     // formatted
     func formatted(

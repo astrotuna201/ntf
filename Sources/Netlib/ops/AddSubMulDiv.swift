@@ -59,12 +59,12 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Stored: Numeric
 {
-    var result = T.init(shapedLike: lhs)
+    var result = T(with: lhs.extents)
     add(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Stored: Numeric {
+public extension TensorView where Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -76,7 +76,7 @@ public extension TensorView where Self.Stored: Numeric {
     }
 }
 
-public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -84,11 +84,11 @@ public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self.init(Stored(any: rhs)))
+        return add(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
+public extension TensorView where Stored: BinaryInteger & AnyInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -96,7 +96,7 @@ public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self.init(Stored(any: rhs)))
+        return add(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
@@ -126,12 +126,12 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Stored: Numeric
 {
-    var result = T.init(shapedLike: lhs)
+    var result = T(with: lhs.extents)
     subtract(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Stored: Numeric {
+public extension TensorView where Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -143,7 +143,7 @@ public extension TensorView where Self.Stored: Numeric {
     }
 }
 
-public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -151,11 +151,11 @@ public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self.init(Stored(any: rhs)))
+        return subtract(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
+public extension TensorView where Stored: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -163,7 +163,7 @@ public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self.init(Stored(any: rhs)))
+        return subtract(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
@@ -192,12 +192,12 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Stored: Numeric
 {
-    var result = T.init(shapedLike: lhs)
+    var result = T(with: lhs.extents)
     mul(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Stored: Numeric {
+public extension TensorView where Stored: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -209,7 +209,7 @@ public extension TensorView where Self.Stored: Numeric {
     }
 }
 
-public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Stored: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -217,11 +217,11 @@ public extension TensorView where Self.Stored: FloatingPoint & AnyFloatingPoint 
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self.init(Stored(any: rhs)))
+        return mul(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
-public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
+public extension TensorView where Stored: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -229,7 +229,7 @@ public extension TensorView where Self.Stored: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self.init(Stored(any: rhs)))
+        return mul(lhs, Self(with: Stored(any: rhs)))
     }
 }
 
@@ -258,12 +258,12 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Stored: AnyFloatingPoint
 {
-    var result = T.init(shapedLike: lhs)
+    var result = T(with: lhs.extents)
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Self.Stored: AnyFloatingPoint {
+public extension TensorView where Stored: AnyFloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -275,7 +275,7 @@ public extension TensorView where Self.Stored: AnyFloatingPoint {
     }
 }
 
-public extension TensorView where Self.Stored: AnyFloatingPoint {
+public extension TensorView where Stored: AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -283,7 +283,7 @@ public extension TensorView where Self.Stored: AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self.init(Stored(any: rhs))
+        let scalarTensor = Self(with: Stored(any: rhs))
         return div(lhs, scalarTensor)
     }
 }

@@ -5,8 +5,153 @@
 import Foundation
 
 //==============================================================================
+// ShapedView
+public protocol ShapedTensorView: TensorView {
+    /// fully specified used for creating views
+    init(shape: DataShape,
+         dataShape: DataShape,
+         name: String?,
+         padding: [Padding]?,
+         padValue: Stored?,
+         tensorArray: TensorArray?,
+         viewDataOffset: Int,
+         isShared: Bool,
+         scalars: [Stored]?)
+}
+
+public extension ShapedTensorView {
+    //--------------------------------------------------------------------------
+    /// empty
+    init() {
+        self.init(shape: DataShape(),
+                  dataShape: DataShape(),
+                  name: nil,
+                  padding: nil,
+                  padValue: nil,
+                  tensorArray: TensorArray(),
+                  viewDataOffset: 0,
+                  isShared: false,
+                  scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// init(with extents:
+    /// convenience initializer used by generics to create typed result
+    /// views of matching shape
+    init(with extents: [Int]) {
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape,
+                  dataShape: shape,
+                  name: nil,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false, scalars: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// init(value:
+    /// convenience initializer used by generics
+    /// - Parameter value: the initial value to set
+    init(with value: Stored) {
+        // create scalar version of the shaped view type
+        let shape = DataShape(extents: [1])
+        self.init(shape: shape, dataShape: shape, name: nil,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false, scalars: [value])
+    }
+
+    //--------------------------------------------------------------------------
+    /// repeated view
+    init(with extents: [Int], repeating other: Self) {
+        self.init(shape: DataShape(extents: extents),
+                  dataShape: other.shape,
+                  name: other.name,
+                  padding: nil,
+                  padValue: other.padValue,
+                  tensorArray: other.tensorArray,
+                  viewDataOffset: other.viewDataOffset,
+                  isShared: other.isShared,
+                  scalars: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// createSubView
+    /// Returns a view of the tensorArray relative to this view
+    func createView(at offset: [Int], with extents: [Int],
+                    isReference: Bool) -> Self {
+        // validate
+        assert(offset.count == shape.rank && extents.count == shape.rank)
+        assert(shape.contains(offset: offset, extents: extents))
+        
+        // the subview offset is the current plus the offset of index
+        let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
+        let subViewShape = DataShape(extents: extents, strides: shape.strides)
+        let name = "\(self.name).subview"
+        
+        return Self(shape: subViewShape,
+                    dataShape: subViewShape,
+                    name: name,
+                    padding: padding,
+                    padValue: padValue,
+                    tensorArray: tensorArray,
+                    viewDataOffset: subViewOffset,
+                    isShared: isReference,
+                    scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// reference
+    /// creation of a reference is for the purpose of reshaped write
+    /// operations. Therefore the data will be copied before
+    /// reference view creation if not uniquely held. References will not
+    /// be checked on the resulting view when a write pointer is taken
+    mutating func reference(using stream: DeviceStream) throws -> Self {
+        // get the queue, if we reference it as a tensorArray member it
+        // it adds a ref count which messes things up
+        let queue = tensorArray.accessQueue
+        
+        return try queue.sync {
+            try copyIfMutates(using: stream)
+            return Self.init(shape: shape,
+                             dataShape: dataShape,
+                             name: name,
+                             padding: padding,
+                             padValue: padValue,
+                             tensorArray: tensorArray,
+                             viewDataOffset: viewDataOffset,
+                             isShared: true,
+                             scalars: nil)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// flattened
+    /// Returns a view with all dimensions higher than `axis` set to 1
+    /// and the extent of `axis` adjusted to be the new total element count
+    func flattened(axis: Int = 0) -> Self {
+        // check if self already meets requirements
+        guard self.isShared != isShared || axis != shape.rank - 1 else {
+            return self
+        }
+        
+        // create flattened view
+        let flatShape = shape.flattened()
+        return Self.init(shape: flatShape,
+                         dataShape: flatShape,
+                         name: name,
+                         padding: padding,
+                         padValue: padValue,
+                         tensorArray: tensorArray,
+                         viewDataOffset: viewDataOffset,
+                         isShared: isShared,
+                         scalars: nil)
+    }
+}
+
+//==============================================================================
 // ScalarView
-public protocol ScalarView: TensorView where
+public protocol ScalarView: ShapedTensorView where
     BoolView == ScalarValue<Bool>,
     IndexView == ScalarValue<IndexScalar>{}
 
@@ -74,7 +219,7 @@ extension ScalarValue: CustomStringConvertible where Stored: AnyConvertable {
 
 //==============================================================================
 // VectorView
-public protocol VectorView: TensorView
+public protocol VectorView: ShapedTensorView
 where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
 
 public typealias VectorPosition = Int
@@ -217,7 +362,7 @@ where Stored: DefaultInitializer {
 
 //==============================================================================
 // MatrixView
-public protocol MatrixView: TensorView
+public protocol MatrixView: ShapedTensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
 public typealias MatrixPosition = (r: Int, c: Int)
@@ -274,7 +419,7 @@ public extension MatrixView {
     /// repeating
     init(_ extents: MatrixExtents, repeating other: Self) {
         let extents = [extents.rows, extents.cols]
-        self.init(extents: extents, repeating: other)
+        self.init(with: extents, repeating: other)
     }
     
     //-------------------------------------
@@ -372,7 +517,7 @@ public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
 
 //==============================================================================
 // VolumeView
-public protocol VolumeView: TensorView
+public protocol VolumeView: ShapedTensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
 public typealias VolumePosition = (d: Int, r: Int, c: Int)
@@ -425,7 +570,7 @@ public extension VolumeView {
     init(_ extents: VolumeExtents, repeating other: Self) {
         
         let extents = [extents.depths, extents.rows, extents.cols]
-        self.init(extents: extents, repeating: other)
+        self.init(with: extents, repeating: other)
     }
     
     //-------------------------------------
@@ -504,7 +649,7 @@ where Stored: DefaultInitializer {
 
 //==============================================================================
 // NDTensorView
-public protocol NDTensorView: TensorView
+public protocol NDTensorView: ShapedTensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
 
 public typealias NDPosition = [Int]
@@ -611,7 +756,7 @@ where Stored: DefaultInitializer {
 /// c: channels
 /// h: rows
 /// w: cols
-public protocol NCHWTensorView: TensorView
+public protocol NCHWTensorView: ShapedTensorView
 where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 
 public typealias NCHWExtents = (items: Int, channels: Int, rows: Int, cols: Int)
@@ -664,7 +809,7 @@ public extension NCHWTensorView {
     init(_ extents: NCHWExtents, repeating other: Self) {
         let extent = [extents.items, extents.channels,
                       extents.rows, extents.cols]
-        self.init(extents: extent, repeating: other)
+        self.init(with: extent, repeating: other)
     }
     
     //-------------------------------------
@@ -750,7 +895,7 @@ where Stored: DefaultInitializer {
 /// h: rows
 /// w: cols
 /// c: channels
-public protocol NHWCTensorView: TensorView
+public protocol NHWCTensorView: ShapedTensorView
 where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 
 public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
@@ -803,7 +948,7 @@ public extension NHWCTensorView {
     init(_ extents: NHWCExtents, repeating other: Self) {
         let extents = [extents.items, extents.rows,
                        extents.cols, extents.channels]
-        self.init(extents: extents, repeating: other)
+        self.init(with: extents, repeating: other)
     }
     
     //-------------------------------------

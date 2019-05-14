@@ -35,7 +35,7 @@ public extension TensorView where
     func approximatelyEqual(to rhs: Self,
                             tolerance: Double = 0.00001) -> BoolView {
 
-        var result = BoolView(shapedLike: self)
+        var result = BoolView(with: shape.extents)
         Netlib.approximatelyEqual(self, rhs, result: &result,
                                   tolerance: tolerance)
         return result

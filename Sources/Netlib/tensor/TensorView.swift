@@ -78,19 +78,24 @@ public protocol TensorView: Logging, DefaultInitializer {
     /// create an empty view
     init()
     
-    /// create a repeating view of other
-    init(extents: [Int], repeating other: Self)
+    /// create an empty dense view
+    init(with extents: [Int])
     
-    /// fully specified used for creating views
-    init(shape: DataShape,
-         dataShape: DataShape,
-         name: String?,
-         padding: [Padding]?,
-         padValue: Stored?,
-         tensorArray: TensorArray?,
-         viewDataOffset: Int,
-         isShared: Bool,
-         scalars: [Stored]?)
+    /// create a view with a scalar value
+    init(with value: Stored)
+    
+    /// create a repeating view of other
+    init(with extents: [Int], repeating other: Self)
+    
+    /// create a sub view
+    func createView(at offset: [Int], with extents: [Int],
+                    isReference: Bool) -> Self
+    
+    /// create a reference view
+    mutating func reference(using stream: DeviceStream) throws -> Self
+    
+    /// create a flattened view
+    func flattened(axis: Int) -> Self
 }
 
 //==============================================================================
@@ -121,6 +126,8 @@ public func initTraversal(_ padding: [Padding]?, _ isRepeated: Bool)
 public extension TensorView {
     //--------------------------------------------------------------------------
     // public property accessors
+    /// the extents of the view
+    var extents: [Int] { return shape.extents }
     /// `true` if the scalars are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
     /// `true` if the view projects padded data
@@ -132,36 +139,8 @@ public extension TensorView {
     /// the name of the view, which can optionally be set to aid in debugging
     var name: String { return tensorArray.name }
     /// the number of dimensions in the view
-    var rank: Int { return dataShape.rank }
+    var rank: Int { return shape.rank }
     
-    //--------------------------------------------------------------------------
-    /// empty
-    init() {
-        self.init(shape: DataShape(),
-                  dataShape: DataShape(),
-                  name: nil,
-                  padding: nil,
-                  padValue: nil,
-                  tensorArray: TensorArray(),
-                  viewDataOffset: 0,
-                  isShared: false,
-                  scalars: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// repeated view
-    init(extents: [Int], repeating other: Self) {
-        self.init(shape: DataShape(extents: extents),
-                  dataShape: other.shape,
-                  name: other.name,
-                  padding: nil,
-                  padValue: other.padValue,
-                  tensorArray: other.tensorArray,
-                  viewDataOffset: other.viewDataOffset,
-                  isShared: other.isShared,
-                  scalars: nil)
-    }
-
     //--------------------------------------------------------------------------
     /// elementCount
     var elementCount: Int {
@@ -170,7 +149,7 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// elementCount
+    /// getPadding(for dim:
     func getPadding(for dim: Int) -> Padding {
         return padding?[dim % padding!.count] ?? Padding(0)
     }
@@ -216,43 +195,6 @@ public extension TensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// init<T>(shapedLike other:
-    /// convenience initializer used by generics to create typed result
-    /// views of a matching size.
-    /// - Parameter other: the desired shape
-    init<T>(shapedLike other: T,
-            with extents: [Int]? = nil) where T: TensorView {
-        
-        // create dense shaped view with specified extents or matching other
-        let newShape: DataShape
-        if let extents = extents {
-            newShape = DataShape(extents: extents)
-        } else {
-            newShape = other.shape.dense
-        }
-        
-        self.init(shape: newShape,
-                  dataShape: newShape,
-                  name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false, scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// init<S>(asScalar value:
-    /// convenience initializer used by generics
-    /// - Parameter value: the initial value to set
-    init(_ value: Stored) {
-        // create scalar version of the shaped view type
-        let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false, scalars: [value])
-    }
-
-    //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Stored {
@@ -292,7 +234,7 @@ public extension TensorView {
     /// will cause mutation
     ///
     /// NOTE: this must be called from inside the accessQueue.sync block
-    private mutating func copyIfMutates(using stream: DeviceStream) throws {
+    mutating func copyIfMutates(using stream: DeviceStream) throws {
         // for unit tests
         tensorArray.lastAccessMutatedView = false
         guard !isShared && !isUniqueReference() else { return }
@@ -426,36 +368,11 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// createSubView
-    /// Returns a view of the tensorArray relative to this view
-    private func createSubView(at offset: [Int], with extents: [Int],
-                               isReference: Bool) -> Self {
-        // validate
-        assert(offset.count == shape.rank && extents.count == shape.rank)
-        assert(shape.contains(offset: offset, extents: extents))
-
-        // the subview offset is the current plus the offset of index
-        let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
-        let subViewShape = DataShape(extents: extents, strides: shape.strides)
-        let name = "\(self.name).subview"
-        
-        return Self(shape: subViewShape,
-                    dataShape: subViewShape,
-                    name: name,
-                    padding: padding,
-                    padValue: padValue,
-                    tensorArray: tensorArray,
-                    viewDataOffset: subViewOffset,
-                    isShared: isReference,
-                    scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
     /// view
     /// Create a sub view of the tensorArray relative to this view
     func view(at offset: [Int], extents: [Int]) -> Self {
         // the view created will have the same isShared state as the parent
-        return createSubView(at: offset, with: extents, isReference: isShared)
+        return createView(at: offset, with: extents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -473,111 +390,13 @@ public extension TensorView {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createSubView(at: index, with: viewExtents, isReference: isShared)
+        return createView(at: index, with: viewExtents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
     /// view(item:
     func view(item: Int) -> Self {
         return viewItems(at: item, count: 1)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// flattened
-    /// Returns a view reduced in rank depending on the axis selected
-    func flattened(axis: Int = 0) -> Self {
-        return createFlattened(axis: axis, isShared: isShared)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// createFlattened
-    /// helper
-    private func createFlattened(axis: Int, isShared: Bool) -> Self {
-        // check if self already meets requirements
-        guard self.isShared != isShared || axis != shape.rank - 1 else {
-            return self
-        }
-        
-        // create flattened view
-        let flatShape = shape.flattened()
-        return Self.init(shape: flatShape,
-                         dataShape: flatShape,
-                         name: name,
-                         padding: padding,
-                         padValue: padValue,
-                         tensorArray: tensorArray,
-                         viewDataOffset: viewDataOffset,
-                         isShared: isShared,
-                         scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// reference
-    /// creation of a reference is for the purpose of reshaped write
-    /// operations. Therefore the data will be copied before
-    /// reference view creation if not uniquely held. References will not
-    /// be checked on the resulting view when a write pointer is taken
-    mutating func reference(using stream: DeviceStream) throws -> Self {
-        // get the queue, if we reference it as a tensorArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        
-        return try queue.sync {
-            try copyIfMutates(using: stream)
-            return Self.init(shape: shape,
-                             dataShape: dataShape,
-                             name: name,
-                             padding: padding,
-                             padValue: padValue,
-                             tensorArray: tensorArray,
-                             viewDataOffset: viewDataOffset,
-                             isShared: true,
-                             scalars: nil)
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    /// referenceView
-    /// Creates a reference view relative to this view. Write operations will
-    /// not cause mutation of tensorArray. It's purpose is to support
-    /// multi-threaded write operations
-    
-    // TODO: maybe remove this if a subview view can correctly be taken
-    // from a `reference` view
-    mutating func referenceView(offset: [Int], extents: [Int],
-                                using stream: DeviceStream) throws -> Self {
-        
-        // get the queue, if we reference it as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        
-        return try queue.sync {
-            try copyIfMutates(using: stream)
-            return createSubView(at: offset, with: extents, isReference: true)
-        }
-    }
-    
-    //--------------------------------------------------------------------------
-    /// referenceFlattened
-    /// Creates a flattened reference view relative to this view.
-    /// Write operations will not cause mutation of tensorArray.
-    /// It's purpose is to support multi-threaded write operations
-
-    // TODO: maybe remove this if a subview view can correctly be taken
-    // from a `reference` view
-    mutating func referenceFlattened(
-        axis: Int = 0,
-        padding: [Padding]? = nil, padValue: Stored? = nil,
-        using stream: DeviceStream) throws -> Self {
-        
-        // get the queue, if we reference it as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        
-        return try queue.sync {
-            try copyIfMutates(using: stream)
-            return createFlattened(axis: axis, isShared: true)
-        }
     }
 }
 

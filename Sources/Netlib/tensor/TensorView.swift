@@ -491,6 +491,40 @@ public extension TensorView where Element: FloatingPoint {
 
 //==============================================================================
 // map
+public extension Sequence {
+    /// map a sequence to a tensor
+    @inlinable
+    func map<T>(to result: inout T,
+                _ transform: (T.Element) -> T.Element) throws
+        where T: TensorView, Element == T.Element
+    {
+        var iterator = self.makeIterator()
+        var results = try result.mutableValues()
+        
+        for i in results.indices {
+            if let value = iterator.next() {
+                results[i] = transform(value)
+            }
+        }
+    }
+    
+    /// map to a mutable collection
+    @inlinable
+    func map<Result>(to result: inout Result,
+                     _ transform: (Element) -> Result.Element) where
+        Result: MutableCollection, Result.Element == Element
+    {
+        
+        var iterator = self.makeIterator()
+        for i in result.indices {
+            if let value = iterator.next() {
+                result[i] = transform(value)
+            }
+        }
+    }
+}
+
+//==============================================================================
 public extension Zip2Sequence {
     typealias Pair = (Sequence1.Element, Sequence2.Element)
     
@@ -504,7 +538,6 @@ public extension Zip2Sequence {
         var results = try result.mutableValues()
         
         for i in results.indices {
-            print(i)
             if let pair = iterator.next() {
                 results[i] = transform(pair)
             }
@@ -527,34 +560,37 @@ public extension Zip2Sequence {
     }
 }
 
-public extension Sequence {
-    /// map a sequence to a tensor
+//==============================================================================
+public extension Zip3Sequence {
+    typealias Input = (S1.Element, S2.Element, S3.Element)
+    
+    /// map tensors
     @inlinable
     func map<T>(to result: inout T,
-                _ transform: (T.Element) -> T.Element) throws
-        where T: TensorView, Element == T.Element
+                _ transform: (Input) -> T.Element) throws
+        where T: TensorView
     {
         var iterator = self.makeIterator()
         var results = try result.mutableValues()
         
         for i in results.indices {
-            if let value = iterator.next() {
-                results[i] = transform(value)
+            if let input = iterator.next() {
+                results[i] = transform(input)
             }
         }
+        
     }
-
+    
     /// map to a mutable collection
     @inlinable
     func map<Result>(to result: inout Result,
-                     _ transform: (Element) -> Result.Element) where
-        Result: MutableCollection, Result.Element == Element
+                     _ transform: (Input) -> Result.Element)
+        where Result: MutableCollection
     {
-
         var iterator = self.makeIterator()
         for i in result.indices {
-            if let value = iterator.next() {
-                result[i] = transform(value)
+            if let input = iterator.next() {
+                result[i] = transform(input)
             }
         }
     }

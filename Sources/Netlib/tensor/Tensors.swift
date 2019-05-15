@@ -94,7 +94,7 @@ public extension ShapedTensorView {
     //--------------------------------------------------------------------------
     // realizing init
     init<T>(realizing other: T) throws where
-        T: TensorView, Viewed == T.Viewed
+        T: TensorView, Element == T.Element
     {
         if let other = other as? Self,
             other.isContiguous && other.traversal == .normal
@@ -228,9 +228,6 @@ public extension ScalarView {
 // ScalarValue
 public struct ScalarValue<Element>: ScalarView
 where Element: DefaultInitializer {
-    // types
-    public typealias Viewed = Element
-
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -372,9 +369,6 @@ public extension VectorView {
 // Vector
 public struct Vector<Element>: VectorView
 where Element: DefaultInitializer {
-    // types
-    public typealias Viewed = Element
-    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -526,7 +520,7 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Element>: MatrixView where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Element
+    public typealias Element = Element
     
     // properties
     public let dataShape: DataShape
@@ -658,7 +652,7 @@ public extension VolumeView {
 public struct Volume<Element>: VolumeView
 where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Element
+    public typealias Element = Element
     
     // properties
     public let dataShape: DataShape
@@ -760,7 +754,7 @@ public extension NDTensorView {
 public struct NDTensor<Element>: NDTensorView
 where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Element
+    public typealias Element = Element
     
     // properties
     public let dataShape: DataShape
@@ -900,7 +894,7 @@ public extension NCHWTensorView {
 public struct NCHWTensor<Element>: NCHWTensorView
 where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Element
+    public typealias Element = Element
     
     // properties
     public let dataShape: DataShape
@@ -1040,7 +1034,7 @@ public extension NHWCTensorView {
 public struct NHWCTensor<Element>: NHWCTensorView
 where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Element
+    public typealias Element = Element
     
     // properties
     public let dataShape: DataShape

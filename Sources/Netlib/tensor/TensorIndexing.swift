@@ -86,7 +86,7 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     public let startIndex: View.Index
     public let endIndex: View.Index
     public let count: Int
-    public let padValue: Element
+    public let padValue: View.Element
 
     public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
         self.buffer = buffer
@@ -119,8 +119,6 @@ public struct TensorValueCollection<View>: RandomAccessCollection
 public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     MutableCollection where View: TensorView
 {
-    public typealias Index = View.Index
-
     // properties
     public let buffer: UnsafeMutableBufferPointer<View.Element>
     public let startIndex: View.Index

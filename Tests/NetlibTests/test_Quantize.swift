@@ -118,19 +118,19 @@ class test_QConverter: XCTestCase {
 ////    func test_matrixRGBA8() {
 ////        do {
 ////            typealias Element = RGBASample<UInt8>
-////            typealias Viewed = RGBASample<Float>
+////            typealias Element = RGBASample<Float>
 ////            let qv = UInt8.max / 4
 ////            let hv = UInt8.max / 2
 ////            let fv = UInt8.max
 ////            let stored = Element(r: 0, g: qv, b: hv, a: fv)
-////            let matrix = QMatrix<Element, Viewed>((2, 3),
+////            let matrix = QMatrix<Element, Element>((2, 3),
 ////                                                 repeating: QMatrix(stored))
 ////
-//////            let viewed = Viewed(r: 0, g: 0.25, b: 0.5, a: 1)
+//////            let viewed = Element(r: 0, g: 0.25, b: 0.5, a: 1)
 //////            let value = matrix.quantizer.convert(stored: stored)
 //////            XCTAssert(value == viewed)
 ////
-////            let values = try [Viewed](matrix.values())
+////            let values = try [Element](matrix.values())
 //////            let values = try matrix.array()
 ////            print(values)
 ////        } catch {

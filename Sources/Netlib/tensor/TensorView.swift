@@ -29,7 +29,8 @@ import Foundation
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
 public protocol TensorView: Logging, DefaultInitializer where
-    Values.Element == Viewed, MutableValues.Element == Viewed
+    Values.Element == Element,
+    MutableValues.Element == Element
 {
     //--------------------------------------------------------------------------
     /// the type of element stored by the tensor
@@ -37,11 +38,9 @@ public protocol TensorView: Logging, DefaultInitializer where
     /// A tensor shape specific indexer used to calculate a data buffer
     /// index based on a view's spatial position
     associatedtype Index: TensorIndexing
-    /// the type viewed by indexing
-    associatedtype Viewed
-    /// the type of viewed elements collection
+    /// the type of read only elements collection
     associatedtype Values: RandomAccessCollection
-    /// the type of mutable viewed elements collection
+    /// the type of read write elements collection
     associatedtype MutableValues: RandomAccessCollection & MutableCollection
 
 
@@ -103,7 +102,7 @@ public protocol TensorView: Logging, DefaultInitializer where
     /// and potentially type converted when working with qtensors
     /// if `other` is already of the correct form, then a data reference is
     /// taken instead.
-    init<T>(realizing other: T) throws where T: TensorView, Viewed == T.Viewed
+    init<T>(realizing other: T) throws where T: TensorView, Element == T.Element
     
     /// create a sub view
     func createView(at offset: [Int], with extents: [Int],
@@ -213,6 +212,25 @@ public extension TensorView {
         let index = Index(view: self, at: position)
         buffer[index.dataIndex] = value
     }
+    
+    //--------------------------------------------------------------------------
+    /// squeezed(axes:
+    /// performs a rank reduction by removing dimensions with an extent of 1
+    /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
+    /// - Returns: the new data shape
+    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
+    func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
+        let squeezedShape = shape.squeezed(axes: axes)
+        return NDTensor<Element>(shape: squeezedShape,
+                                 dataShape: squeezedShape,
+                                 name: name,
+                                 padding: padding,
+                                 padValue: padValue,
+                                 tensorArray: tensorArray,
+                                 viewDataOffset: viewDataOffset,
+                                 isShared: isShared,
+                                 scalars: nil)
+    }
 
     //--------------------------------------------------------------------------
     /// elementCount
@@ -273,25 +291,6 @@ public extension TensorView {
     func scalarValue() throws -> Element {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
-    }
-
-    //--------------------------------------------------------------------------
-    /// squeezed(axes:
-    /// performs a rank reduction by removing dimensions with an extent of 1
-    /// - Parameter axes: the axes to squeeze. `nil` implies all axes.
-    /// - Returns: the new data shape
-    /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
-    func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
-        let squeezedShape = shape.squeezed(axes: axes)
-        return NDTensor<Element>(shape: squeezedShape,
-                                dataShape: squeezedShape,
-                                name: name,
-                                padding: padding,
-                                padValue: padValue,
-                                tensorArray: tensorArray,
-                                viewDataOffset: viewDataOffset,
-                                isShared: isShared,
-                                scalars: nil)
     }
 
     //--------------------------------------------------------------------------
@@ -498,7 +497,7 @@ public extension Zip2Sequence {
     /// map tensors
     @inlinable
     func map<T>(to result: inout T,
-                _ transform: (Pair) -> T.Viewed) throws
+                _ transform: (Pair) -> T.Element) throws
         where T: TensorView
     {
         var iterator = self.makeIterator()
@@ -532,8 +531,8 @@ public extension Sequence {
     /// map a sequence to a tensor
     @inlinable
     func map<T>(to result: inout T,
-                _ transform: (T.Viewed) -> T.Viewed) throws
-        where T: TensorView, Element == T.Viewed
+                _ transform: (T.Element) -> T.Element) throws
+        where T: TensorView, Element == T.Element
     {
         var iterator = self.makeIterator()
         var results = try result.mutableValues()
@@ -576,10 +575,10 @@ public extension Sequence {
     /// reduce to a tensor
     func reduce<T>(
         to result: inout T,
-        _ initialResult: T.Viewed,
-        _ nextPartialResult: (T.Viewed, T.Viewed) throws -> T.Viewed) throws
+        _ initialResult: T.Element,
+        _ nextPartialResult: (T.Element, T.Element) throws -> T.Element) throws
         where
-        T: TensorView, Element == T.Viewed
+        T: TensorView, Element == T.Element
     {
         var results = try result.mutableValues()
         var partial = initialResult

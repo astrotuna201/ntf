@@ -13,7 +13,7 @@ import Foundation
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 public func copy<T, R>(view: T, result: inout R) where
-    T: TensorView, R: TensorView, T.Viewed == R.Viewed
+    T: TensorView, R: TensorView, T.Element == R.Element
 {
     _Streams.current.copy(view: view, result: &result)
 }
@@ -23,7 +23,7 @@ public func copy<T, R>(view: T, result: inout R) where
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func copy<T, R>(view: T) -> R where
-    T: TensorView, R: TensorView, T.Viewed == R.Viewed
+    T: TensorView, R: TensorView, T.Element == R.Element
 {
     var result = R(with: view.extents)
     copy(view: view, result: &result)
@@ -51,7 +51,7 @@ public extension TensorView {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func abs<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Viewed: FloatingPoint
+    where T: TensorView, T.Element: FloatingPoint
 {
     _Streams.current.abs(x: x, result: &result)
 }
@@ -62,14 +62,14 @@ public func abs<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func abs<T>(_ x: T) -> T
-    where T: TensorView, T.Viewed: FloatingPoint
+    where T: TensorView, T.Element: FloatingPoint
 {
     var result = T(with: x.extents)
     abs(x, result: &result)
     return result
 }
 
-public extension TensorView where Viewed: FloatingPoint {
+public extension TensorView where Element: FloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -91,7 +91,7 @@ public extension TensorView where Viewed: FloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Viewed: AnyFloatingPoint
+    where T: TensorView, T.Element: AnyFloatingPoint
 {
     _Streams.current.log(x: x, result: &result)
 }
@@ -102,14 +102,14 @@ public func log<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func log<T>(_ x: T) -> T
-    where T: TensorView, T.Viewed: AnyFloatingPoint
+    where T: TensorView, T.Element: AnyFloatingPoint
 {
     var result = T(with: x.extents)
     log(x, result: &result)
     return result
 }
 
-public extension TensorView where Viewed: AnyFloatingPoint {
+public extension TensorView where Element: AnyFloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
@@ -131,7 +131,7 @@ public extension TensorView where Viewed: AnyFloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Viewed: AnyFloatingPoint
+    where T: TensorView, T.Element: AnyFloatingPoint
 {
     _Streams.current.logSoftmax(x: x, result: &result)
 }
@@ -142,7 +142,7 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
 public func logSoftmax<T>(_ x: T) -> T
-    where T: TensorView, T.Viewed: AnyFloatingPoint
+    where T: TensorView, T.Element: AnyFloatingPoint
 {
     var result = T.init(with: x.extents)
     logSoftmax(x, result: &result)
@@ -173,7 +173,7 @@ public extension TensorView where Element: AnyFloatingPoint {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T, result: inout T)
-    where T: TensorView, T.Viewed: AnyNumeric
+    where T: TensorView, T.Element: AnyNumeric
 {
     _Streams.current.pow(x: x, y: y, result: &result)
 }
@@ -186,7 +186,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
 public func pow<T>(_ x: T, _ y: T) -> T
-    where T: TensorView, T.Viewed: AnyNumeric
+    where T: TensorView, T.Element: AnyNumeric
 {
     var result = T.init(with: x.extents)
     pow(x, y, result: &result)
@@ -238,7 +238,7 @@ public extension TensorView where Element: AnyNumeric {
 //==============================================================================
 /// fill<T>(result:value:
 /// fills the view with the specified value
-public func fill<T>(_ result: inout T, with value: T.Viewed) where
+public func fill<T>(_ result: inout T, with value: T.Element) where
     T: TensorView
 {
     _Streams.current.fill(&result, with: value)
@@ -256,7 +256,7 @@ public extension TensorView {
 /// fillWithIndex(x:startAt:
 /// fills the view with the spatial sequential index
 public func fillWithIndex<T>(_ result: inout T, startAt index: Int = 0) where
-    T: TensorView, T.Viewed: AnyNumeric
+    T: TensorView, T.Element: AnyNumeric
 {
     _Streams.current.fillWithIndex(&result, startAt: index)
 }
@@ -273,7 +273,7 @@ public extension TensorView where Element: AnyNumeric {
 /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
 /// scalars.
 public func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-    T: TensorView, T.Viewed: Equatable,
+    T: TensorView, T.Element: Equatable,
     T.BoolView.Element == Bool
 {
     _Streams.current.equal(lhs: lhs, rhs: rhs, result: &result)

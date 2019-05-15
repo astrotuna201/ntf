@@ -78,7 +78,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         _ functionName: @autoclosure () -> String,
         _ inputs: () throws -> Inputs,
         _ result: inout R,
-        _ body: @escaping (Inputs, inout TensorMutableValueCollection<R>) throws
+        _ body: @escaping (Inputs, inout R.MutableValues) throws
         -> Void) where R: TensorView
     {
         // if the stream is in an error state, no additional work

@@ -278,7 +278,7 @@ sum(view, result: &viewSum)
 assert(viewSum.scalarValue() == 312)
 ```
 ### Synchronized Tensor References to Application Buffers 
-Tensor constructors are provided to create synchronized references to memory buffers. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeBufferPointer\<Stored\>_ or _UnsafeMutableBufferPointer\<Stored\>_ to the data.
+Tensor constructors are provided to create synchronized references to memory buffers. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeBufferPointer\<Element\>_ or _UnsafeMutableBufferPointer\<Element\>_ to the data.
 
 Use Examples:
 * a record from a memory mapped database or file

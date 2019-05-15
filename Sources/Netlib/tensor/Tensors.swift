@@ -21,18 +21,18 @@ public typealias NHWCPosition = (i: Int, r: Int, c: Int, ch: Int)
 public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
 
 //==============================================================================
-// ShapedView
+// ShapedTensorView
 public protocol ShapedTensorView: TensorView {
     /// fully specified used for creating views
     init(shape: DataShape,
          dataShape: DataShape,
          name: String?,
          padding: [Padding]?,
-         padValue: Stored?,
+         padValue: Element?,
          tensorArray: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
-         scalars: [Stored]?)
+         scalars: [Element]?)
 }
 
 public extension ShapedTensorView {
@@ -68,7 +68,7 @@ public extension ShapedTensorView {
     /// init(value:
     /// convenience initializer used by generics
     /// - Parameter value: the initial value to set
-    init(with value: Stored) {
+    init(with value: Element) {
         // create scalar version of the shaped view type
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: nil,
@@ -181,6 +181,23 @@ public extension ShapedTensorView {
 }
 
 //==============================================================================
+// Indexing
+public extension ShapedTensorView {
+
+    func values(using stream: DeviceStream?) throws -> TensorValueCollection<Self> {
+        let buffer = try readOnly(using: stream)
+        return try TensorValueCollection(view: self, buffer: buffer)
+    }
+    
+    mutating func mutableValues(using stream: DeviceStream?) throws
+        -> TensorMutableValueCollection<Self>
+    {
+        let buffer = try readWrite(using: stream)
+        return try TensorMutableValueCollection(view: &self, buffer: buffer)
+    }
+}
+
+//==============================================================================
 // ScalarView
 public protocol ScalarView: ShapedTensorView where
     BoolView == ScalarValue<Bool>,
@@ -198,7 +215,7 @@ public extension ScalarView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Stored, name: String? = nil) {
+    init(_ value: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
@@ -209,16 +226,16 @@ public extension ScalarView {
 
 //------------------------------------------------------------------------------
 // ScalarValue
-public struct ScalarValue<Stored>: ScalarView
-where Stored: DefaultInitializer {
+public struct ScalarValue<Element>: ScalarView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
 
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -228,15 +245,15 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -245,7 +262,7 @@ where Stored: DefaultInitializer {
     }
 }
 
-extension ScalarValue: CustomStringConvertible where Stored: AnyConvertable {
+extension ScalarValue: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -254,7 +271,7 @@ extension ScalarValue: CustomStringConvertible where Stored: AnyConvertable {
 public protocol VectorView: ShapedTensorView
 where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
 
-extension Vector: CustomStringConvertible where Stored: AnyConvertable {
+extension Vector: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -271,8 +288,8 @@ public extension VectorView {
     }
 
     /// shaped initializers
-    init(_ value: Stored, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+    init(_ value: Element, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -283,7 +300,7 @@ public extension VectorView {
     
     /// with Array
     init(count: Int, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -294,10 +311,10 @@ public extension VectorView {
     
     /// with Sequence
     init<Seq>(count: Int, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         self.init(name: name,
                   padding: padding, padValue: padValue,
@@ -308,8 +325,8 @@ public extension VectorView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
         
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -326,8 +343,8 @@ public extension VectorView {
     //--------------------------------------------------------------------------
     /// initialize with scalar array
     init(name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         scalars: [Stored]) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         scalars: [Element]) {
         let shape = DataShape(extents: [scalars.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: padding, padValue: padValue,
@@ -337,10 +354,10 @@ public extension VectorView {
 
     /// with Sequence
     init<Seq>(name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         let scalars = Self.sequence2ScalarArray(sequence)
         let shape = DataShape(extents: [scalars.count])
@@ -353,16 +370,16 @@ public extension VectorView {
 
 //------------------------------------------------------------------------------
 // Vector
-public struct Vector<Stored>: VectorView
-where Stored: DefaultInitializer {
+public struct Vector<Element>: VectorView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -372,18 +389,18 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -397,7 +414,7 @@ where Stored: DefaultInitializer {
 public protocol MatrixView: ShapedTensorView
 where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
 
-extension Matrix: CustomStringConvertible where Stored: AnyConvertable {
+extension Matrix: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -415,8 +432,8 @@ public extension MatrixView {
     
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Stored, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+    init(_ value: Element, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -428,8 +445,8 @@ public extension MatrixView {
     //-------------------------------------
     /// with Array
     init(_ extents: MatrixExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         layout: MatrixLayout = .rowMajor, scalars: [Stored]? = nil) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         layout: MatrixLayout = .rowMajor, scalars: [Element]? = nil) {
         
         let extents = [extents.rows, extents.cols]
         let shape = layout == .rowMajor ?
@@ -452,10 +469,10 @@ public extension MatrixView {
     //-------------------------------------
     /// with Sequence
     init<Seq>(_ extents: MatrixExtents, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               layout: MatrixLayout = .rowMajor, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         self.init(extents, name: name,
                   padding: padding, padValue: padValue,
@@ -467,9 +484,9 @@ public extension MatrixView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: MatrixExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil,
          layout: MatrixLayout = .rowMajor,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
 
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -507,15 +524,15 @@ public extension MatrixView {
 
 //==============================================================================
 // Matrix
-public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
+public struct Matrix<Element>: MatrixView where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -525,18 +542,18 @@ public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -550,7 +567,7 @@ public struct Matrix<Stored>: MatrixView where Stored: DefaultInitializer {
 public protocol VolumeView: ShapedTensorView
 where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
 
-extension Volume: CustomStringConvertible where Stored: AnyConvertable {
+extension Volume: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -568,8 +585,8 @@ public extension VolumeView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Stored, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+    init(_ value: Element, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -581,8 +598,8 @@ public extension VolumeView {
     //-------------------------------------
     /// with Array
     init(_ extents: VolumeExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         scalars: [Stored]? = nil) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         scalars: [Element]? = nil) {
         
         let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
@@ -603,10 +620,10 @@ public extension VolumeView {
     //-------------------------------------
     /// with Sequence
     init<Seq>(_ extents: VolumeExtents, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         self.init(extents, name: name,
                   padding: padding, padValue: padValue,
@@ -617,8 +634,8 @@ public extension VolumeView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: VolumeExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
 
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -638,16 +655,16 @@ public extension VolumeView {
 
 //==============================================================================
 /// Volume
-public struct Volume<Stored>: VolumeView
-where Stored: DefaultInitializer {
+public struct Volume<Element>: VolumeView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -657,18 +674,18 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -682,7 +699,7 @@ where Stored: DefaultInitializer {
 public protocol NDTensorView: ShapedTensorView
 where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
 
-extension NDTensor: CustomStringConvertible where Stored: AnyConvertable {
+extension NDTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -702,8 +719,8 @@ public extension NDTensorView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(extents: [Int], name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
 
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -723,10 +740,10 @@ public extension NDTensorView {
     //-------------------------------------
     /// with Sequence
     init<Seq>(extents: [Int], name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         let shape = DataShape(extents: extents)
         self.init(shape: shape, dataShape: shape, name: name,
@@ -740,16 +757,16 @@ public extension NDTensorView {
 //------------------------------------------------------------------------------
 // NDTensor
 // This is an n-dimentional tensor without specialized extent accessors
-public struct NDTensor<Stored>: NDTensorView
-where Stored: DefaultInitializer {
+public struct NDTensor<Element>: NDTensorView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -759,18 +776,18 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -790,7 +807,7 @@ where Stored: DefaultInitializer {
 public protocol NCHWTensorView: ShapedTensorView
 where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
 
-extension NCHWTensor: CustomStringConvertible where Stored: AnyConvertable {
+extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -808,8 +825,8 @@ public extension NCHWTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(_ value: Stored, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+    init(_ value: Element, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -821,8 +838,8 @@ public extension NCHWTensorView {
     //-------------------------------------
     /// with Array
     init(_ extents: NCHWExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         scalars: [Stored]? = nil) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         scalars: [Element]? = nil) {
 
         let extent = [extents.items, extents.channels,
                       extents.rows, extents.cols]
@@ -844,10 +861,10 @@ public extension NCHWTensorView {
     //-------------------------------------
     /// with Sequence
     init<Seq>(_ extents: NCHWExtents, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               isColMajor: Bool = false, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         self.init(extents, name: name,
                   padding: padding, padValue: padValue,
@@ -858,8 +875,8 @@ public extension NCHWTensorView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: NCHWExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
 
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -880,16 +897,16 @@ public extension NCHWTensorView {
 
 //==============================================================================
 // NCHWTensor
-public struct NCHWTensor<Stored>: NCHWTensorView
-where Stored: DefaultInitializer {
+public struct NCHWTensor<Element>: NCHWTensorView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -899,18 +916,18 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -930,7 +947,7 @@ where Stored: DefaultInitializer {
 public protocol NHWCTensorView: ShapedTensorView
 where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
 
-extension NHWCTensor: CustomStringConvertible where Stored: AnyConvertable {
+extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
 }
 
@@ -948,8 +965,8 @@ public extension NHWCTensorView {
 
     //--------------------------------------------------------------------------
     /// shaped initializers
-    init(value: Stored, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil) {
+    init(value: Element, name: String? = nil,
+         padding: [Padding]? = nil, padValue: Element? = nil) {
         
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -961,8 +978,8 @@ public extension NHWCTensorView {
     //-------------------------------------
     /// with Array
     init(_ extents: NHWCExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         scalars: [Stored]? = nil) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         scalars: [Element]? = nil) {
         
         let extents = [extents.items, extents.rows,
                        extents.cols, extents.channels]
@@ -984,10 +1001,10 @@ public extension NHWCTensorView {
     //-------------------------------------
     /// with Sequence
     init<Seq>(_ extents: NHWCExtents, name: String? = nil,
-              padding: [Padding]? = nil, padValue: Stored? = nil,
+              padding: [Padding]? = nil, padValue: Element? = nil,
               isColMajor: Bool = false, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Stored: AnyConvertable
+        Element: AnyConvertable
     {
         self.init(extents, name: name,
                   padding: padding, padValue: padValue,
@@ -998,8 +1015,8 @@ public extension NHWCTensorView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(_ extents: NHWCExtents, name: String? = nil,
-         padding: [Padding]? = nil, padValue: Stored? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Stored>) {
+         padding: [Padding]? = nil, padValue: Element? = nil,
+         referenceTo buffer: UnsafeBufferPointer<Element>) {
 
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
@@ -1020,16 +1037,16 @@ public extension NHWCTensorView {
 
 //==============================================================================
 /// NHWCTensor
-public struct NHWCTensor<Stored>: NHWCTensorView
-where Stored: DefaultInitializer {
+public struct NHWCTensor<Element>: NHWCTensorView
+where Element: DefaultInitializer {
     // types
-    public typealias Viewed = Stored
+    public typealias Viewed = Element
     
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
     public let padding: [Padding]?
-    public let padValue: Stored
+    public let padValue: Element
     public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
@@ -1039,18 +1056,18 @@ where Stored: DefaultInitializer {
                 dataShape: DataShape,
                 name: String?,
                 padding: [Padding]?,
-                padValue: Stored?,
+                padValue: Element?,
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                scalars: [Stored]?) {
+                scalars: [Element]?) {
 
         assert(scalars == nil || scalars!.count == shape.elementCount,
                "tensor size and scalars count do not match")
         self.shape = shape
         self.dataShape = dataShape
         self.padding = padding
-        self.padValue = padValue ?? Stored()
+        self.padValue = padValue ?? Element()
         self.traversal = initTraversal(padding, shape != dataShape)
         self.isShared = isShared
         self.viewDataOffset = viewDataOffset
@@ -1065,16 +1082,16 @@ public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform scalars to NHWC
     init<M>(_ matrix: M, name: String? = nil) where
         M: MatrixView,
-        M.Stored: UniformDenseScalar,
-        M.Stored.Component == Stored {
+        M.Element: UniformDenseScalar,
+        M.Element.Component == Element {
             let viewExtents = [1,
                                matrix.shape.extents[0],
                                matrix.shape.extents[1],
-                               M.Stored.componentCount]
+                               M.Element.componentCount]
             let dataExtents = [1,
                                matrix.dataShape.extents[0],
                                matrix.dataShape.extents[1],
-                               M.Stored.componentCount]
+                               M.Element.componentCount]
 
             self.init(shape: DataShape(extents: viewExtents),
                       dataShape: DataShape(extents: dataExtents),

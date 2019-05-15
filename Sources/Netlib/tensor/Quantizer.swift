@@ -9,7 +9,7 @@ import Foundation
 /// defines a quantizer converting object
 public protocol Quantizer {
     // types
-    associatedtype Stored
+    associatedtype Element
     associatedtype Viewed
     
     // properties
@@ -23,9 +23,9 @@ public protocol Quantizer {
     var _inverseTransformScale: Float { get set }
 
     /// converts the tensor stored value type to the viewed value type
-    func convert(stored: Stored) -> Viewed
+    func convert(stored: Element) -> Viewed
     /// converts the tensor viewed value type to the stored value type
-    func convert(viewed: Viewed) -> Stored
+    func convert(viewed: Viewed) -> Element
 }
 
 //==============================================================================
@@ -62,20 +62,36 @@ public extension Quantizer {
 }
 
 public extension Quantizer where
-    Stored: UniformDenseScalar,
-    Stored.Component: FixedWidthInteger
+    Element: UniformDenseScalar,
+    Element.Component: FixedWidthInteger
 {
     mutating func updateScales() {
-        _inverseTransformScale = (Float(Stored.Component.max) + 1) * scale
+        _inverseTransformScale = (Float(Element.Component.max) + 1) * scale
         _transformScale = 1 / _inverseTransformScale
     }
+}
+
+
+//==============================================================================
+/// QuantizeVoid
+/// used for default initializers that require a value
+public struct QuantizeVoid<Element, Viewed>: Quantizer
+    where Element: DefaultInitializer, Viewed: DefaultInitializer
+{
+    public var bias: Float = 0
+    public var scale: Float = 1
+    public var _transformScale: Float = 1
+    public var _inverseTransformScale: Float = 1
+
+    public func convert(stored: Element) -> Viewed { return Viewed() }
+    public func convert(viewed: Viewed) -> Element { return Element() }
 }
 
 //==============================================================================
 /// Quantize1
 /// used to convert numeric scalars
-public struct Quantize1<Stored, Viewed>: Quantizer where
-    Stored: FixedWidthInteger,
+public struct Quantize1<Element, Viewed>: Quantizer where
+    Element: FixedWidthInteger,
     Viewed: BinaryFloatingPoint
 {
     public var bias: Float
@@ -83,7 +99,6 @@ public struct Quantize1<Stored, Viewed>: Quantizer where
     public var _transformScale: Float = 1
     public var _inverseTransformScale: Float = 1
     
-    // initializers
     public init(scale: Float = 1, bias: Float = 0) {
         self.scale = scale
         self.bias = bias
@@ -91,17 +106,17 @@ public struct Quantize1<Stored, Viewed>: Quantizer where
     }
     
     private mutating func updateScales() {
-        _inverseTransformScale = (Float(Stored.max) + 1) * scale
+        _inverseTransformScale = (Float(Element.max) + 1) * scale
         _transformScale = 1 / _inverseTransformScale
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Stored) -> Viewed {
+    public func convert(stored: Element) -> Viewed {
         return convert(value: stored)
     }
     
     @inlinable @inline(__always)
-    public func convert(viewed: Viewed) -> Stored {
+    public func convert(viewed: Viewed) -> Element {
         return convert(value: viewed)
     }
 }
@@ -109,8 +124,8 @@ public struct Quantize1<Stored, Viewed>: Quantizer where
 //==============================================================================
 /// Quantize2
 /// used to convert short vector types with 2 numeric scalars
-public struct Quantize2<Stored, Viewed>: Quantizer where
-    Stored: UniformDenseScalar2, Stored.Component: FixedWidthInteger,
+public struct Quantize2<Element, Viewed>: Quantizer where
+    Element: UniformDenseScalar2, Element.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar2, Viewed.Component: BinaryFloatingPoint
 {
     public var bias: Float
@@ -126,14 +141,14 @@ public struct Quantize2<Stored, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Stored) -> Viewed {
+    public func convert(stored: Element) -> Viewed {
         return Viewed(c0: convert(value: stored.c0),
                       c1: convert(value: stored.c1))
     }
     
     @inlinable @inline(__always)
-    public func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: convert(value: viewed.c0),
+    public func convert(viewed: Viewed) -> Element {
+        return Element(c0: convert(value: viewed.c0),
                       c1: convert(value: viewed.c1))
     }
 }
@@ -141,8 +156,8 @@ public struct Quantize2<Stored, Viewed>: Quantizer where
 //==============================================================================
 /// Quantize3
 /// used to convert short vector types with 3 numeric scalars
-public struct Quantize3<Stored, Viewed>: Quantizer where
-    Stored: UniformDenseScalar3, Stored.Component: FixedWidthInteger,
+public struct Quantize3<Element, Viewed>: Quantizer where
+    Element: UniformDenseScalar3, Element.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar3, Viewed.Component: BinaryFloatingPoint
 {
     public var bias: Float
@@ -158,15 +173,15 @@ public struct Quantize3<Stored, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Stored) -> Viewed {
+    public func convert(stored: Element) -> Viewed {
         return Viewed(c0: convert(value: stored.c0),
                       c1: convert(value: stored.c1),
                       c2: convert(value: stored.c2))
     }
     
     @inlinable @inline(__always)
-    public func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: convert(value: viewed.c0),
+    public func convert(viewed: Viewed) -> Element {
+        return Element(c0: convert(value: viewed.c0),
                       c1: convert(value: viewed.c1),
                       c2: convert(value: viewed.c2))
     }
@@ -175,8 +190,8 @@ public struct Quantize3<Stored, Viewed>: Quantizer where
 //==============================================================================
 /// Quantize4
 /// used to convert short vector types with 4 numeric scalars
-public struct Quantize4<Stored, Viewed>: Quantizer where
-    Stored: UniformDenseScalar4, Stored.Component: FixedWidthInteger,
+public struct Quantize4<Element, Viewed>: Quantizer where
+    Element: UniformDenseScalar4, Element.Component: FixedWidthInteger,
     Viewed: UniformDenseScalar4, Viewed.Component: BinaryFloatingPoint
 {
     public var bias: Float
@@ -192,7 +207,7 @@ public struct Quantize4<Stored, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Stored) -> Viewed {
+    public func convert(stored: Element) -> Viewed {
         return Viewed(c0: convert(value: stored.c0),
                       c1: convert(value: stored.c1),
                       c2: convert(value: stored.c2),
@@ -200,8 +215,8 @@ public struct Quantize4<Stored, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(viewed: Viewed) -> Stored {
-        return Stored(c0: convert(value: viewed.c0),
+    public func convert(viewed: Viewed) -> Element {
+        return Element(c0: convert(value: viewed.c0),
                       c1: convert(value: viewed.c1),
                       c2: convert(value: viewed.c2),
                       c3: convert(value: viewed.c3))

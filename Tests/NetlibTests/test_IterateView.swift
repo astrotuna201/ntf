@@ -397,15 +397,9 @@ class test_IterateView: XCTestCase {
     // test_paddedRepeatedMatrix
     func test_paddedRepeatedMatrix() {
         do {
-            // create matrix with padding
-            let padding = [
-                Padding(1),                   // row pad
-                Padding(before: 2, after: 3)  // col pad
-            ]
-            
-            let vector = Matrix<Int32>((3, 1), sequence: 0..<3)
-            let matrix = Matrix<Int32>((3, 3), repeating: vector,
-                                       padding: padding, padValue: -1)
+            let column = Matrix<Int32>((3, 1), sequence: 0..<3)
+            let matrix = Matrix<Int32>((3, 3), repeating: column)
+            let padded = matrix.view(at: [-1, -2], extents: [5, 8])
 //            print(matrix.formatted((2,0)))
             
             let expected: [Int32] = [
@@ -415,7 +409,7 @@ class test_IterateView: XCTestCase {
                 -1, -1,  2,  2,  2, -1, -1, -1,
                 -1, -1, -1, -1, -1, -1, -1, -1,
             ]
-            let values = try matrix.array()
+            let values = try padded.array()
             XCTAssert(values == expected, "values do not match")
 
         } catch {

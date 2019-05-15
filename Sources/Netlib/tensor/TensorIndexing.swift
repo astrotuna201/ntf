@@ -77,87 +77,18 @@ public extension TensorView {
 }
 
 //==============================================================================
-/// TensorView Collection extensions
-public extension TensorView where Stored == Viewed {
-    //--------------------------------------------------------------------------
-    /// get a Sequence of read only values in spatial order
-    /// called to synchronize with the app thread
-    @inlinable @inline(__always)
-    func values() throws -> TensorValueCollection<Self> {
-        return try TensorValueCollection(view: self, buffer: readOnly())
-    }
-    
-    //--------------------------------------------------------------------------
-    /// get a Sequence of mutable values in spatial order
-    @inlinable @inline(__always)
-    mutating func mutableValues() throws -> TensorMutableValueCollection<Self> {
-        return try TensorMutableValueCollection(view: &self, buffer: readWrite())
-    }
-
-    //--------------------------------------------------------------------------
-    /// get a Sequence of read only values in spatial order as an array
-    @inlinable @inline(__always)
-    func array() throws -> [Viewed] {
-        return try [Viewed](values())
-    }
-    
-    //--------------------------------------------------------------------------
-    /// asynchronously get a Sequence of read only values in spatial order
-    @inlinable @inline(__always)
-    func values(using stream: DeviceStream) throws
-        -> TensorValueCollection<Self>
-    {
-        return try TensorValueCollection(
-            view: self, buffer: readOnly(using: stream))
-    }
-    
-    //--------------------------------------------------------------------------
-    /// asynchronously get a Sequence of mutable values in spatial order
-    @inlinable @inline(__always)
-    mutating func mutableValues(using stream: DeviceStream) throws
-        -> TensorMutableValueCollection<Self>
-    {
-        return try TensorMutableValueCollection(
-            view: &self, buffer: readWrite(using: stream))
-    }
-    
-    //--------------------------------------------------------------------------
-    /// get a single value at the specified index
-    @inlinable @inline(__always)
-    func value(at position: Index.Position) throws -> Stored {
-        let buffer = try readOnly()
-        let index = Index.init(view: self, at: position)
-        return index.isPad ? padValue : buffer[index.dataIndex]
-    }
-
-    //--------------------------------------------------------------------------
-    /// set a single value at the specified index
-    @inlinable @inline(__always)
-    mutating func set(value: Stored, at position: Index.Position) throws {
-        let buffer = try readWrite()
-        let index = Index.init(view: self, at: position)
-        buffer[index.dataIndex] = value
-    }
-}
-
-//==============================================================================
 /// TensorValueCollection
 public struct TensorValueCollection<View>: RandomAccessCollection
-    where View: TensorView, View.Stored == View.Viewed
+    where View: TensorView
 {
-    // types
-    public typealias Index = View.Index
-    public typealias Stored = View.Stored
-    public typealias Viewed = View.Viewed
-    
     // properties
-    public let buffer: UnsafeBufferPointer<Stored>
-    public let startIndex: Index
-    public let endIndex: Index
+    public let buffer: UnsafeBufferPointer<View.Element>
+    public let startIndex: View.Index
+    public let endIndex: View.Index
     public let count: Int
-    public let padValue: Stored
+    public let padValue: Element
 
-    public init(view: View, buffer: UnsafeBufferPointer<Stored>) throws {
+    public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -168,17 +99,17 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
-    public func index(before i: Index) -> Index {
+    public func index(before i: View.Index) -> View.Index {
         return i.advanced(by: -1)
     }
     
     @inlinable @inline(__always)
-    public func index(after i: Index) -> Index {
+    public func index(after i: View.Index) -> View.Index {
         return i.increment()
     }
     
     @inlinable @inline(__always)
-    public subscript(index: Index) -> Viewed {
+    public subscript(index: View.Index) -> View.Element {
         return index.isPad ? padValue : buffer[index.dataIndex]
     }
 }
@@ -186,22 +117,19 @@ public struct TensorValueCollection<View>: RandomAccessCollection
 //==============================================================================
 /// TensorMutableValueCollection
 public struct TensorMutableValueCollection<View>: RandomAccessCollection,
-    MutableCollection where View: TensorView, View.Stored == View.Viewed
+    MutableCollection where View: TensorView
 {
-    // types
     public typealias Index = View.Index
-    public typealias Stored = View.Stored
-    public typealias Viewed = View.Viewed
 
     // properties
-    public let buffer: UnsafeMutableBufferPointer<Stored>
-    public let startIndex: Index
-    public let endIndex: Index
+    public let buffer: UnsafeMutableBufferPointer<View.Element>
+    public let startIndex: View.Index
+    public let endIndex: View.Index
     public let count: Int
-    public let padValue: Stored
+    public let padValue: View.Element
     
     public init(view: inout View,
-                buffer: UnsafeMutableBufferPointer<Stored>) throws {
+                buffer: UnsafeMutableBufferPointer<View.Element>) throws {
         self.buffer = buffer
         startIndex = view.startIndex
         endIndex = view.endIndex
@@ -212,17 +140,17 @@ public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
-    public func index(before i: Index) -> Index {
+    public func index(before i: View.Index) -> View.Index {
         return i.advanced(by: -1)
     }
     
     @inlinable @inline(__always)
-    public func index(after i: Index) -> Index {
+    public func index(after i: View.Index) -> View.Index {
         return i.increment()
     }
     
     @inlinable @inline(__always)
-    public subscript(index: Index) -> Viewed {
+    public subscript(index: View.Index) -> View.Element {
         get {
             return index.isPad ? padValue : buffer[index.dataIndex]
         }

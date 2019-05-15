@@ -167,20 +167,20 @@ public extension QShapedTensorView {
 
 //==============================================================================
 // Indexing
-//public extension QShapedTensorView {
-//
-//    func values(using stream: DeviceStream?) throws -> QTensorValueCollection<Self> {
-//        let buffer = try readOnly(using: stream)
-//        return try QTensorValueCollection(view: self, buffer: buffer)
-//    }
-//
-//    mutating func mutableValues(using stream: DeviceStream?) throws
-//        -> QTensorMutableValueCollection<Self>
-//    {
-//        let buffer = try readWrite(using: stream)
-//        return try QTensorMutableValueCollection(view: &self, buffer: buffer)
-//    }
-//}
+public extension QShapedTensorView {
+
+    func values(using stream: DeviceStream?) throws -> QTensorValueCollection<Self> {
+        let buffer = try readOnly(using: stream)
+        return try QTensorValueCollection(view: self, buffer: buffer)
+    }
+
+    mutating func mutableValues(using stream: DeviceStream?) throws
+        -> QTensorMutableValueCollection<Self>
+    {
+        let buffer = try readWrite(using: stream)
+        return try QTensorMutableValueCollection(view: &self, buffer: buffer)
+    }
+}
 
 //==============================================================================
 /// QVectorView

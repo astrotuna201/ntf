@@ -22,9 +22,9 @@ public protocol Quantizer {
     /// float to integer transform scale
     var _inverseTransformScale: Float { get set }
 
-    /// converts the tensor stored value type to the viewed value type
-    func convert(stored: Element) -> Viewed
-    /// converts the tensor viewed value type to the stored value type
+    /// converts the tensor element value type to the viewed value type
+    func convert(element: Element) -> Viewed
+    /// converts the tensor viewed value type to the element value type
     func convert(viewed: Viewed) -> Element
 }
 
@@ -95,8 +95,8 @@ public struct Quantize1<Element, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Element) -> Viewed {
-        return convert(value: stored)
+    public func convert(element: Element) -> Viewed {
+        return convert(value: element)
     }
     
     @inlinable @inline(__always)
@@ -125,9 +125,9 @@ public struct Quantize2<Element, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Element) -> Viewed {
-        return Viewed(c0: convert(value: stored.c0),
-                      c1: convert(value: stored.c1))
+    public func convert(element: Element) -> Viewed {
+        return Viewed(c0: convert(value: element.c0),
+                      c1: convert(value: element.c1))
     }
     
     @inlinable @inline(__always)
@@ -157,10 +157,10 @@ public struct Quantize3<Element, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Element) -> Viewed {
-        return Viewed(c0: convert(value: stored.c0),
-                      c1: convert(value: stored.c1),
-                      c2: convert(value: stored.c2))
+    public func convert(element: Element) -> Viewed {
+        return Viewed(c0: convert(value: element.c0),
+                      c1: convert(value: element.c1),
+                      c2: convert(value: element.c2))
     }
     
     @inlinable @inline(__always)
@@ -191,11 +191,11 @@ public struct Quantize4<Element, Viewed>: Quantizer where
     }
     
     @inlinable @inline(__always)
-    public func convert(stored: Element) -> Viewed {
-        return Viewed(c0: convert(value: stored.c0),
-                      c1: convert(value: stored.c1),
-                      c2: convert(value: stored.c2),
-                      c3: convert(value: stored.c3))
+    public func convert(element: Element) -> Viewed {
+        return Viewed(c0: convert(value: element.c0),
+                      c1: convert(value: element.c1),
+                      c2: convert(value: element.c2),
+                      c3: convert(value: element.c3))
     }
     
     @inlinable @inline(__always)

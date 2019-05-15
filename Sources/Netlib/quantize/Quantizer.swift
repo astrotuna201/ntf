@@ -71,21 +71,6 @@ public extension Quantizer where
     }
 }
 
-
-//==============================================================================
-/// NilQuantizer
-/// used for default initializers that require a value
-public struct NilQuantizer<Element, Viewed>: Quantizer
-{
-    public var bias: Float = 0
-    public var scale: Float = 1
-    public var _transformScale: Float = 1
-    public var _inverseTransformScale: Float = 1
-
-    public func convert(stored: Element) -> Viewed { fatalError() }
-    public func convert(viewed: Viewed) -> Element { fatalError() }
-}
-
 //==============================================================================
 /// Quantize1
 /// used to convert numeric scalars

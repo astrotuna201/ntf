@@ -256,9 +256,6 @@ public protocol StreamIntrinsicsProtocol {
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
     func prod<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
         T: TensorView, T.Element: AnyNumeric
-    /// Computes the element-wise `rsqrt`
-    func rsqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
     /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
     ///
     /// - Precondition: `x` and `other` must have the same shape. If
@@ -269,6 +266,9 @@ public protocol StreamIntrinsicsProtocol {
     func replacing<T>(x: T, with other: T, where mask: T.BoolView,
                       result: inout T)
         where T: TensorView, T.BoolView.Element == Bool
+    /// Computes the element-wise `rsqrt`
+    func rsqrt<T>(x: T, result: inout T) where
+        T: TensorView, T.Element: AnyFloatingPoint
     /// Computes the element-wise `sin`
     func sin<T>(x: T, result: inout T) where
         T: TensorView, T.Element: AnyFloatingPoint

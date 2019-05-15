@@ -16,18 +16,6 @@ public protocol Quantizing where
     associatedtype Viewed
 
     var quantizer: Q { get }
-
-    /// fully specified used for creating views
-    init(shape: DataShape,
-         dataShape: DataShape,
-         name: String?,
-         padding: [Padding]?,
-         padValue: Viewed?,
-         tensorArray: TensorArray?,
-         viewDataOffset: Int,
-         isShared: Bool,
-         quantizer: Q,
-         scalars: [Viewed]?)
 }
 
 ////==============================================================================

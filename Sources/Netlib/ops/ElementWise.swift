@@ -5,7 +5,7 @@
 import Foundation
 
 //==============================================================================
-/// copy
+/// realize
 /// copies the elements from `view` to `result`
 
 /// with placement

@@ -28,10 +28,7 @@ import Foundation
 ///
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
-public protocol TensorView: Logging where
-    Values.Element == Element,
-    MutableValues.Element == Element
-{
+public protocol TensorView: Logging {
     //--------------------------------------------------------------------------
     /// the type of element stored by the tensor
     associatedtype Element: DefaultInitializer
@@ -491,25 +488,25 @@ public extension TensorView where Element: FloatingPoint {
 public extension Sequence {
     /// map a sequence to a tensor
     @inlinable
-    func map<T>(to result: inout T,
-                _ transform: (T.Element) -> T.Element) throws
-        where T: TensorView, Element == T.Element
+    func map<R>(to result: inout R,
+                _ transform: (Element) -> R.MutableValues.Element) throws where
+        R: TensorView
     {
         var iterator = self.makeIterator()
         var results = try result.mutableValues()
-        
+
         for i in results.indices {
             if let value = iterator.next() {
                 results[i] = transform(value)
             }
         }
     }
-    
+
     /// map to a mutable collection
     @inlinable
-    func map<Result>(to result: inout Result,
-                     _ transform: (Element) -> Result.Element) where
-        Result: MutableCollection, Result.Element == Element
+    func map<R>(to result: inout R,
+                _ transform: (Element) -> R.Element) where
+        R: MutableCollection
     {
         
         var iterator = self.makeIterator()
@@ -528,7 +525,7 @@ public extension Zip2Sequence {
     /// map tensors
     @inlinable
     func map<T>(to result: inout T,
-                _ transform: (Pair) -> T.Element) throws
+                _ transform: (Pair) -> T.MutableValues.Element) throws
         where T: TensorView
     {
         var iterator = self.makeIterator()
@@ -564,7 +561,7 @@ public extension Zip3Sequence {
     /// map tensors
     @inlinable
     func map<T>(to result: inout T,
-                _ transform: (Input) -> T.Element) throws
+                _ transform: (Input) -> T.MutableValues.Element) throws
         where T: TensorView
     {
         var iterator = self.makeIterator()
@@ -608,10 +605,9 @@ public extension Sequence {
     /// reduce to a tensor
     func reduce<T>(
         to result: inout T,
-        _ initialResult: T.Element,
-        _ nextPartialResult: (T.Element, T.Element) throws -> T.Element) throws
-        where
-        T: TensorView, Element == T.Element
+        _ initialResult: Element,
+        _ nextPartialResult: (Element, Element) throws -> Element) throws
+        where T: TensorView, Element == T.MutableValues.Element
     {
         var results = try result.mutableValues()
         var partial = initialResult

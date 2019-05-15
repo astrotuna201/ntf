@@ -184,17 +184,111 @@ public extension QShapedTensorView {
 
 //==============================================================================
 /// QVectorView
-public protocol QVectorView: QShapedTensorView {
+public protocol QVectorView: QShapedTensorView
+where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
+
+//extension QVector: CustomStringConvertible where Element: AnyConvertable {
+//    public var description: String { return formatted() }
+//}
+
+//==============================================================================
+// VectorView extensions
+public extension QVectorView {
+    //--------------------------------------------------------------------------
+    var endIndex: VectorIndex {
+        return VectorIndex(endOf: self)
+    }
     
+    var startIndex: VectorIndex {
+        return VectorIndex(view: self, at: 0)
+    }
+    
+//    /// shaped initializers
+//    init(_ value: Element, name: String? = nil,
+//         padding: [Padding]? = nil, padValue: Element? = nil) {
+//
+//        let shape = DataShape(extents: [1])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  padding: padding, padValue: padValue,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  isShared: false, scalars: [value])
+//    }
+//
+//    /// with Array
+//    init(count: Int, name: String? = nil,
+//         padding: [Padding]? = nil, padValue: Element? = nil) {
+//
+//        let shape = DataShape(extents: [count])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  padding: padding, padValue: padValue,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  isShared: false, scalars: nil)
+//    }
+//
+//    /// with Sequence
+//    init<Seq>(count: Int, name: String? = nil,
+//              padding: [Padding]? = nil, padValue: Element? = nil,
+//              sequence: Seq) where
+//        Seq: Sequence, Seq.Element: AnyConvertable,
+//        Element: AnyConvertable
+//    {
+//        self.init(name: name,
+//                  padding: padding, padValue: padValue,
+//                  scalars: Self.sequence2ScalarArray(sequence))
+//    }
+//
+//    //-------------------------------------
+//    /// with reference to read only buffer
+//    /// useful for memory mapped databases, or hardware device buffers
+//    init(name: String? = nil,
+//         padding: [Padding]? = nil, padValue: Element? = nil,
+//         referenceTo buffer: UnsafeBufferPointer<Element>) {
+//
+//        // create tensor data reference to buffer
+//        let name = name ?? String(describing: Self.self)
+//        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+//
+//        // create shape considering column major
+//        let shape = DataShape(extents: [buffer.count])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  padding: padding, padValue: padValue,
+//                  tensorArray: tensorArray, viewDataOffset: 0,
+//                  isShared: false, scalars: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// initialize with scalar array
+//    init(name: String? = nil,
+//         padding: [Padding]? = nil, padValue: Element? = nil,
+//         scalars: [Element]) {
+//        let shape = DataShape(extents: [scalars.count])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  padding: padding, padValue: padValue,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  isShared: false, scalars: scalars)
+//    }
+//
+//    /// with Sequence
+//    init<Seq>(name: String? = nil,
+//              padding: [Padding]? = nil, padValue: Element? = nil,
+//              sequence: Seq) where
+//        Seq: Sequence, Seq.Element: AnyConvertable,
+//        Element: AnyConvertable
+//    {
+//        let scalars = Self.sequence2ScalarArray(sequence)
+//        let shape = DataShape(extents: [scalars.count])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  padding: padding, padValue: padValue,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  isShared: false, scalars: scalars)
+//    }
 }
 
 ////==============================================================================
 ///// Vector
 //public struct QVector<Element, Viewed, Q>: QVectorView where
 //    Element: DefaultInitializer,
-//    Q: Quantizer,
-//    Q.Element == Element,
-//    Q.Viewed == Viewed
+//    Q: Quantizer, Q.Element == Element, Q.Viewed == Viewed
 //{
 //    // properties
 //    public let dataShape: DataShape

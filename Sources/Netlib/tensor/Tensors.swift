@@ -37,20 +37,6 @@ public protocol ShapedTensorView: TensorView {
 
 public extension ShapedTensorView {
     //--------------------------------------------------------------------------
-    /// empty
-    init() {
-        self.init(shape: DataShape(),
-                  dataShape: DataShape(),
-                  name: nil,
-                  padding: nil,
-                  padValue: nil,
-                  tensorArray: TensorArray(),
-                  viewDataOffset: 0,
-                  isShared: false,
-                  scalars: nil)
-    }
-    
-    //--------------------------------------------------------------------------
     /// init(with extents:
     /// convenience initializer used by generics to create typed result
     /// views of matching shape

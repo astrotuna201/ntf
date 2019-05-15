@@ -28,7 +28,7 @@ import Foundation
 ///
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
-public protocol TensorView: Logging, DefaultInitializer where
+public protocol TensorView: Logging where
     Values.Element == Element,
     MutableValues.Element == Element
 {
@@ -85,9 +85,6 @@ public protocol TensorView: Logging, DefaultInitializer where
 
     //--------------------------------------------------------------------------
     // initializers
-    
-    /// create an empty view
-    init()
     
     /// create an empty dense view
     init(with extents: [Int])

@@ -19,34 +19,34 @@ class test_Async: XCTestCase {
     // test_defaultStreamOp
     // initializes two matrices and adds them together
     func test_bug() {
-        do {
-            Platform.log.level = .diagnostic
-            
-            let values: [Float] = [0, -1.5, 2, -3, 4, 5]
-            let m1 = Matrix<Float>((2, 3), values: values)
-//            var results = try m1.mutableValues()
-//            results[results.startIndex] = 7.5
-//            let a = [Float](results)
-//            print(a)
-//            for i in results.indices {
-//                results[i] = 7
-//            }
-//            let a = [Float](results)
-//            print(a)
-
-            let result = abs(m1)
-
-            let values = try result.array()
-            
-            let expected: [Float] = [0, 1.5, 2, 3, 4, 5]
-            XCTAssert(values == expected)
-        } catch {
-            XCTFail(String(describing: error))
-        }
-        
-        if ObjectTracker.global.hasUnreleasedObjects {
-            XCTFail(ObjectTracker.global.getActiveObjectReport())
-        }
+//        do {
+//            Platform.log.level = .diagnostic
+//            
+//            let values: [Float] = [0, -1.5, 2, -3, 4, 5]
+//            let m1 = Matrix<Float>((2, 3), values: values)
+////            var results = try m1.mutableValues()
+////            results[results.startIndex] = 7.5
+////            let a = [Float](results)
+////            print(a)
+////            for i in results.indices {
+////                results[i] = 7
+////            }
+////            let a = [Float](results)
+////            print(a)
+//
+//            let result = abs(m1)
+//
+//            let values = try result.array()
+//            
+//            let expected: [Float] = [0, 1.5, 2, 3, 4, 5]
+//            XCTAssert(values == expected)
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+//        
+//        if ObjectTracker.global.hasUnreleasedObjects {
+//            XCTFail(ObjectTracker.global.getActiveObjectReport())
+//        }
     }
     
 

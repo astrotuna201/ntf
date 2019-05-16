@@ -17,7 +17,7 @@ public protocol QShapedTensorView: Quantizing {
          viewDataOffset: Int,
          isShared: Bool,
          quantizer: Q,
-         scalars: [Element]?)
+         scalars: [Values.Element]?)
 }
 
 public extension QShapedTensorView {

@@ -268,7 +268,7 @@ public extension VectorView {
     //--------------------------------------------------------------------------
     /// shaped initializers
     /// with single value
-    init(value: Values.Element, name: String? = nil) {
+    init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
@@ -422,7 +422,7 @@ public extension MatrixView {
     
     //-------------------------------------
     /// with single value
-    init(value: Values.Element, name: String? = nil) {
+    init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
@@ -595,7 +595,7 @@ public extension VolumeView {
     
     //-------------------------------------
     /// with single value
-    init(value: Values.Element, name: String? = nil) {
+    init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
@@ -869,7 +869,7 @@ public extension NCHWTensorView {
     
     //-------------------------------------
     /// with single value
-    init(value: Values.Element, name: String? = nil) {
+    init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
@@ -1028,7 +1028,7 @@ public extension NHWCTensorView {
     
     //-------------------------------------
     /// with single value
-    init(value: Values.Element, name: String? = nil) {
+    init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1, 1])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,

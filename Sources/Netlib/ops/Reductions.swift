@@ -36,7 +36,7 @@ public extension TensorView where Element == Bool {
         }
         // turn into a vector
         let axesVec = Vector<IndexElement>(scalars: axes)
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result
     }
@@ -44,7 +44,7 @@ public extension TensorView where Element == Bool {
     @inlinable @inline(__always)
     func all() -> Self {
         let extents = [Int](repeating: 1, count: shape.rank)
-        var result = Self(like: self, with: extents)
+        var result = createDenseView(with: extents)
         Netlib.all(self, result: &result)
         return result
     }
@@ -57,7 +57,7 @@ public extension TensorView where Element == Bool {
     func all(squeezing: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: squeezing)
         let axesVec = Vector<IndexElement>(scalars: axes.map { IndexElement($0) })
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
     }
@@ -92,7 +92,7 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
     where T: TensorView, T.Element: Numeric
 {
     let extents = [Int](repeating: 1, count: x.rank)
-    var result = T(like: x, with: extents)
+    var result = x.createDenseView(with: extents)
     _Streams.current.sum(x: x, along: axes, result: &result)
     return result
 }
@@ -110,7 +110,7 @@ public extension TensorView where Element: Numeric {
         }
         // turn into a vector
         let axesVec = Vector<IndexElement>(scalars: axes)
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.sum(self, alongAxes: axesVec, result: &result)
         return result
     }
@@ -118,7 +118,7 @@ public extension TensorView where Element: Numeric {
     @inlinable @inline(__always)
     func sum() -> Self {
         let extents = [Int](repeating: 1, count: shape.rank)
-        var result = Self(like: self, with: extents)
+        var result = createDenseView(with: extents)
         Netlib.sum(self, result: &result)
         return result
     }
@@ -131,7 +131,7 @@ public extension TensorView where Element: Numeric {
     func sum(alongAxes: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: alongAxes)
         let axesVec = Vector<IndexElement>(scalars: axes.map { IndexElement($0) })
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.sum(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
     }

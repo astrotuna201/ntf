@@ -83,26 +83,9 @@ public protocol TensorView: Logging where
     var viewDataOffset: Int { get set }
 
     //--------------------------------------------------------------------------
-    // initializers
-    
-    /// create an empty dense view
-    init(like: Self, with extents: [Int])
-    
-    /// create a view with a single scalar value
-    init<T>(like: T, with value: Element) where
-        T: TensorView, Values.Element == T.Values.Element
-    
-    /// create a dense view where the elements from another are coalesced
-    /// and potentially type converted when working with qtensors
-    /// if `other` is already of the correct form, then a data reference is
-    /// taken instead.
-    init<T>(realizing other: T) throws where
-        T: TensorView, MutableValues.Element == T.Values.Element
-
     /// create a sub view
     func createView(at offset: [Int], with extents: [Int],
                     isReference: Bool) -> Self
-    
     /// create a reference view
     /// creation of a reference is for the purpose of reshaped writes
     /// and multi-threaded writes to prevent mutation.
@@ -111,15 +94,19 @@ public protocol TensorView: Logging where
     /// copy-on-write when a write pointer is taken
     mutating func reference(using stream: DeviceStream) throws -> Self
     
-    /// create a flattened view
+    /// creates a flattened view along the specified axis
     func flattened(axis: Int) -> Self
     
     //--------------------------------------------------------------------------
-    // for creation of shaped temporary result views
-    /// creates a new dense view
-    func createBoolView(with extents: [Int]?) -> BoolView
-//    func createDenseView(with extents: [Int]?, values: [Element]?) -> Self
-//    func createIndexView(with extents: [Int]?, values: [IndexElement]?) -> IndexView
+    /// creates a new dense view where `Element` equals `Bool`
+    /// with the specified extents
+    func createBoolView(with extents: [Int]) -> BoolView
+    /// creates a new dense view of the same type with the specified extents
+    func createDenseView(with extents: [Int], values: [Element]?) -> Self
+    /// creates a new dense view where `Element` equals `IndexElement`
+    /// with the specified extents and initial values
+    func createIndexView(with extents: [Int],
+                         values: [IndexElement]?) -> IndexView
 
     //--------------------------------------------------------------------------
     // indexing
@@ -174,6 +161,45 @@ public extension TensorView {
     /// the number of dimensions in the view
     var rank: Int { return shape.rank }
     
+    //--------------------------------------------------------------------------
+    /// creates a view of the same type and shape as `self` with `Element`
+    /// equal to `Bool`
+    func createBoolView() -> BoolView {
+        return createBoolView(with: extents)
+    }
+
+    /// creates a view of the same type as `self` with the specified extents
+    func createDenseView(with extents: [Int]) -> Self {
+        return createDenseView(with: extents, values: nil)
+    }
+
+    /// creates a view of the same type and shape as `self` initialized with
+    /// the specified values
+    func createDenseView(values: [Element]? = nil) -> Self {
+        return createDenseView(with: extents, values: values)
+    }
+
+    /// creates a view of the same shape as `self` with `Element`
+    /// equal to `IndexElement` and initialized with the specified values
+    func createIndexView(values: [IndexElement]? = nil) -> IndexView {
+        return createIndexView(with: extents, values: values)
+    }
+
+    //--------------------------------------------------------------------------
+    /// realized
+    /// create a dense view where the elements are coalesced
+    /// and potentially type converted when working with qtensors
+    /// if it is already of the correct form, then `self` is reaturned
+    func realized() throws -> Self {
+        if shape.isContiguous && shape == dataShape {
+            return self
+        } else {
+            var result = createDenseView()
+            Netlib.copy(view: self, result: &result)
+            return result
+        }
+    }
+
     //--------------------------------------------------------------------------
     /// a collection of viewed elements
     @inlinable @inline(__always)

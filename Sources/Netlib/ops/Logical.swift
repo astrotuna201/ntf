@@ -31,9 +31,9 @@ public extension TensorView where
 {
     @inlinable @inline(__always)
     func approximatelyEqual(to rhs: Self,
-                            tolerance: Double = 0.00001) -> BoolView {
-
-        var result = BoolView(like: self, with: extents)
+                            tolerance: Double = 0.00001) -> BoolView
+    {
+        var result = createBoolView()
         Netlib.approximatelyEqual(self, rhs, result: &result,
                                   tolerance: tolerance)
         return result

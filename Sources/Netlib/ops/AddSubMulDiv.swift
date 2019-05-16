@@ -59,7 +59,7 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(like: lhs, with: lhs.extents)
+    var result = lhs.createDenseView()
     add(lhs, rhs, result: &result)
     return result
 }
@@ -84,7 +84,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return add(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -96,7 +96,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return add(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -126,7 +126,7 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(like: lhs, with: lhs.extents)
+    var result = lhs.createDenseView()
     subtract(lhs, rhs, result: &result)
     return result
 }
@@ -151,7 +151,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return subtract(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -163,7 +163,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return subtract(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -192,7 +192,7 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(like: lhs, with: lhs.extents)
+    var result = lhs.createDenseView()
     mul(lhs, rhs, result: &result)
     return result
 }
@@ -217,7 +217,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return mul(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -229,7 +229,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self(like: lhs, with: Element(any: rhs)))
+        return mul(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
     }
 }
 
@@ -258,7 +258,7 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T(like: lhs, with: lhs.extents)
+    var result = lhs.createDenseView()
     div(lhs, rhs, result: &result)
     return result
 }
@@ -283,7 +283,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self(like: lhs, with: Element(any: rhs))
+        let scalarTensor = lhs.createDenseView(values: [Element(any: rhs)])
         return div(lhs, scalarTensor)
     }
 }

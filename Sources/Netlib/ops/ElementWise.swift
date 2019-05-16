@@ -29,7 +29,7 @@ public func copy<T, R>(view: T, result: inout R) where
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func abs<T>(_ x: T, result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Values.Element: FloatingPoint
 {
     _Streams.current.abs(x: x, result: &result)
 }
@@ -40,20 +40,20 @@ public func abs<T>(_ x: T, result: inout T)
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
 public func abs<T>(_ x: T) -> T
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Values.Element: FloatingPoint
 {
-    var result = T(like: x, with: x.extents)
+    var result = x.createDenseView()
     abs(x, result: &result)
     return result
 }
 
-public extension TensorView where Element: FloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint {
     /// returns new view
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpAbs(_:) where T: TensorFlowFloatingPoint)
     func abs() -> Self {
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.abs(self, result: &result)
         return result
     }
@@ -82,7 +82,7 @@ public func log<T>(_ x: T, result: inout T)
 public func log<T>(_ x: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T(like: x, with: x.extents)
+    var result = x.createDenseView()
     log(x, result: &result)
     return result
 }
@@ -93,7 +93,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
     func log() -> Self {
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.log(self, result: &result)
         return result
     }
@@ -122,7 +122,7 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 public func logSoftmax<T>(_ x: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T.init(like: x, with: x.extents)
+    var result = x.createDenseView()
     logSoftmax(x, result: &result)
     return result
 }
@@ -133,7 +133,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
     func logSoftmax() throws -> Self {
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.logSoftmax(self, result: &result)
         return result
     }
@@ -166,7 +166,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 public func pow<T>(_ x: T, _ y: T) -> T
     where T: TensorView, T.Element: AnyNumeric
 {
-    var result = T.init(like: x, with: x.extents)
+    var result = x.createDenseView()
     pow(x, y, result: &result)
     return result
 }
@@ -179,7 +179,7 @@ public extension TensorView where Element: AnyNumeric {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow(_ y: Self) -> Self{
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         Netlib.pow(self, y, result: &result)
         return result
     }
@@ -192,8 +192,8 @@ public extension TensorView where Element: AnyNumeric {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyNumeric>(_ y: S) -> Self {
-        var result = Self(like: self, with: extents)
-        let yTensor = Self(like: self, with: Element(any: y))
+        var result = createDenseView()
+        let yTensor = createDenseView(values: [Element(any: y)])
         Netlib.pow(self, yTensor, result: &result)
         return result
     }
@@ -208,8 +208,8 @@ public extension TensorView where Element: AnyNumeric {
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyInteger>(
         _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
-        var result = Self(like: self, with: extents)
-        let yTensor = Self(like: self, with: Element(any: y))
+        var result = createDenseView()
+        let yTensor = createDenseView(values: [Element(any: y)])
         Netlib.pow(self, yTensor, result: &result)
         return result
     }
@@ -226,7 +226,7 @@ public func fill<T>(_ result: inout T, with value: T.Element) where
 
 public extension TensorView {
     func filled(with value: Element) -> Self {
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         _Streams.current.fill(&result, with: value)
         return result
     }
@@ -243,7 +243,7 @@ public func fillWithIndex<T>(_ result: inout T, startAt index: Int = 0) where
 
 public extension TensorView where Element: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
-        var result = Self(like: self, with: extents)
+        var result = createDenseView()
         _Streams.current.fillWithIndex(&result, startAt: index)
         return result
     }
@@ -267,7 +267,7 @@ public extension TensorView where Element: Equatable
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func .== (lhs: Self, rhs: Self) -> BoolView {
-        var result = BoolView(like: lhs, with: lhs.extents)
+        var result = lhs.createBoolView()
         equal(lhs: lhs, rhs: rhs, result: &result)
         return result
     }

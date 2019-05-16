@@ -37,36 +37,17 @@ public protocol ShapedTensorView: TensorView {
 
 public extension ShapedTensorView {
     //--------------------------------------------------------------------------
-    /// init(with extents:
-    /// convenience initializer used by generics to create typed result
-    /// views of matching shape
-    init<T>(like: T, with extents: [Int])
-        where T: TensorView, Values.Element == T.Values.Element
+    /// DenseView
+    func createDenseView(with extents: [Int], values: [Element]? = nil) -> Self
     {
         let shape = DataShape(extents: extents)
-        self.init(shape: shape,
-                  dataShape: shape,
-                  name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false, scalars: nil)
+        return Self(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
     }
-
-    //--------------------------------------------------------------------------
-    /// init(value:
-    /// convenience initializer used by generics
-    /// - Parameter value: the initial value to set
-    init<T>(like: T, with value: Element)
-        where T: TensorView, Values.Element == T.Values.Element
-    {
-        // create scalar version of the shaped view type
-        let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false, scalars: [value])
-    }
-
+    
     //--------------------------------------------------------------------------
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
@@ -81,22 +62,6 @@ public extension ShapedTensorView {
                   scalars: nil)
     }
     
-    //--------------------------------------------------------------------------
-    // realizing init
-    init<T>(realizing other: T) throws where
-        T: TensorView, MutableValues.Element == T.Values.Element
-    {
-        if let other = other as? Self,
-            other.isContiguous && other.traversal == .normal
-        {
-            self = other
-        } else {
-            var result = Self(like: other, with: other.extents)
-            Netlib.copy(view: other, result: &result)
-            self = result
-        }
-    }
-
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
@@ -176,7 +141,9 @@ public extension ShapedTensorView {
 // Indexing
 public extension ShapedTensorView {
 
-    func values(using stream: DeviceStream?) throws -> TensorValueCollection<Self> {
+    func values(using stream: DeviceStream?) throws
+        -> TensorValueCollection<Self>
+    {
         let buffer = try readOnly(using: stream)
         return try TensorValueCollection(view: self, buffer: buffer)
     }
@@ -191,9 +158,7 @@ public extension ShapedTensorView {
 
 //==============================================================================
 // ScalarView
-public protocol ScalarView: ShapedTensorView where
-    BoolView == ScalarValue<Bool>,
-    IndexView == ScalarValue<IndexElement>{}
+public protocol ScalarView: ShapedTensorView {}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
@@ -213,6 +178,30 @@ public extension ScalarView {
                   padding: nil, padValue: nil,
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: [value])
+    }
+    
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> ScalarValue<Bool> {
+        let shape = DataShape(extents: extents)
+        return ScalarValue<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> ScalarValue<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return ScalarValue<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
     }
 }
 
@@ -257,8 +246,7 @@ extension ScalarValue: CustomStringConvertible where Element: AnyConvertable {
 
 //==============================================================================
 // VectorView
-public protocol VectorView: ShapedTensorView
-where BoolView == Vector<Bool>, IndexView == Vector<IndexElement> { }
+public protocol VectorView: ShapedTensorView { }
 
 extension Vector: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -355,6 +343,30 @@ public extension VectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, scalars: scalars)
     }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> Vector<Bool> {
+        let shape = DataShape(extents: extents)
+        return Vector<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> Vector<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return Vector<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -397,8 +409,7 @@ where Element: DefaultInitializer {
 
 //==============================================================================
 // MatrixView
-public protocol MatrixView: ShapedTensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<IndexElement> {}
+public protocol MatrixView: ShapedTensorView {}
 
 extension Matrix: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -491,7 +502,31 @@ public extension MatrixView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> Matrix<Bool> {
+        let shape = DataShape(extents: extents)
+        return Matrix<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
     
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> Matrix<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return Matrix<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
+    }
+
     //--------------------------------------------------------------------------
     // transpose
     var t: Self {
@@ -550,8 +585,7 @@ public struct Matrix<Element>: MatrixView where Element: DefaultInitializer {
 
 //==============================================================================
 // VolumeView
-public protocol VolumeView: ShapedTensorView
-where BoolView == Volume<Bool>, IndexView == Volume<IndexElement> { }
+public protocol VolumeView: ShapedTensorView { }
 
 extension Volume: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -637,6 +671,30 @@ public extension VolumeView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> Volume<Bool> {
+        let shape = DataShape(extents: extents)
+        return Volume<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> Volume<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return Volume<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
+    }
 }
 
 //==============================================================================
@@ -682,8 +740,7 @@ where Element: DefaultInitializer {
 
 //==============================================================================
 // NDTensorView
-public protocol NDTensorView: ShapedTensorView
-where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexElement> { }
+public protocol NDTensorView: ShapedTensorView { }
 
 extension NDTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -738,6 +795,30 @@ public extension NDTensorView {
                   isShared: false,
                   scalars: Self.sequence2ScalarArray(sequence))
     }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> NDTensor<Bool> {
+        let shape = DataShape(extents: extents)
+        return NDTensor<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> NDTensor<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return NDTensor<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -790,8 +871,7 @@ where Element: DefaultInitializer {
 /// c: channels
 /// h: rows
 /// w: cols
-public protocol NCHWTensorView: ShapedTensorView
-where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexElement> { }
+public protocol NCHWTensorView: ShapedTensorView { }
 
 extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -879,6 +959,30 @@ public extension NCHWTensorView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
     }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> NCHWTensor<Bool> {
+        let shape = DataShape(extents: extents)
+        return NCHWTensor<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> NCHWTensor<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return NCHWTensor<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
+    }
 }
 
 //==============================================================================
@@ -930,8 +1034,7 @@ where Element: DefaultInitializer {
 /// h: rows
 /// w: cols
 /// c: channels
-public protocol NHWCTensorView: ShapedTensorView
-where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexElement> { }
+public protocol NHWCTensorView: ShapedTensorView { }
 
 extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -1018,6 +1121,30 @@ public extension NHWCTensorView {
                   padding: padding, padValue: padValue,
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, scalars: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> NHWCTensor<Bool> {
+        let shape = DataShape(extents: extents)
+        return NHWCTensor<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> NHWCTensor<IndexElement>
+    {
+        let shape = DataShape(extents: extents)
+        return NHWCTensor<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, scalars: values)
     }
 }
 

@@ -16,7 +16,7 @@ import Foundation
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func all<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
+public func all<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
                    result: inout T)
     where T: TensorView, T.Element == Bool
 {
@@ -32,11 +32,11 @@ public extension TensorView where Element == Bool {
     func all(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
         let axes = shape.makePositive(indices: alongAxes).map {
-            IndexScalar($0)
+            IndexElement($0)
         }
         // turn into a vector
-        let axesVec = Vector<IndexScalar>(scalars: axes)
-        var result = Self(with: shape.extents)
+        let axesVec = Vector<IndexElement>(scalars: axes)
+        var result = Self(like: self, with: extents)
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result
     }
@@ -44,7 +44,7 @@ public extension TensorView where Element == Bool {
     @inlinable @inline(__always)
     func all() -> Self {
         let extents = [Int](repeating: 1, count: shape.rank)
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.all(self, result: &result)
         return result
     }
@@ -56,8 +56,8 @@ public extension TensorView where Element == Bool {
     @inlinable @inline(__always)
     func all(squeezing: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: squeezing)
-        let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
-        var result = Self(with: shape.extents)
+        let axesVec = Vector<IndexElement>(scalars: axes.map { IndexElement($0) })
+        var result = Self(like: self, with: extents)
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
     }
@@ -75,7 +75,7 @@ public extension TensorView where Element == Bool {
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
+public func sum<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
                    result: inout T)
     where T: TensorView, T.Element: Numeric
 {
@@ -88,11 +88,11 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil,
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func sum<T>(_ x: T, alongAxes axes: Vector<IndexScalar>? = nil) -> T
+public func sum<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
     where T: TensorView, T.Element: Numeric
 {
     let extents = [Int](repeating: 1, count: x.rank)
-    var result = T(with: extents)
+    var result = T(like: x, with: extents)
     _Streams.current.sum(x: x, along: axes, result: &result)
     return result
 }
@@ -106,11 +106,11 @@ public extension TensorView where Element: Numeric {
     func sum(alongAxes: Int...) -> Self {
         // make sure to handle negative axes
         let axes = shape.makePositive(indices: alongAxes).map {
-            IndexScalar($0)
+            IndexElement($0)
         }
         // turn into a vector
-        let axesVec = Vector<IndexScalar>(scalars: axes)
-        var result = Self(with: shape.extents)
+        let axesVec = Vector<IndexElement>(scalars: axes)
+        var result = Self(like: self, with: extents)
         Netlib.sum(self, alongAxes: axesVec, result: &result)
         return result
     }
@@ -118,7 +118,7 @@ public extension TensorView where Element: Numeric {
     @inlinable @inline(__always)
     func sum() -> Self {
         let extents = [Int](repeating: 1, count: shape.rank)
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.sum(self, result: &result)
         return result
     }
@@ -130,8 +130,8 @@ public extension TensorView where Element: Numeric {
     @inlinable @inline(__always)
     func sum(alongAxes: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: alongAxes)
-        let axesVec = Vector<IndexScalar>(scalars: axes.map { IndexScalar($0) })
-        var result = Self(with: shape.extents)
+        let axesVec = Vector<IndexElement>(scalars: axes.map { IndexElement($0) })
+        var result = Self(like: self, with: extents)
         Netlib.sum(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
     }

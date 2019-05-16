@@ -59,7 +59,7 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(with: lhs.extents)
+    var result = T(like: lhs, with: lhs.extents)
     add(lhs, rhs, result: &result)
     return result
 }
@@ -84,7 +84,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self(with: Element(any: rhs)))
+        return add(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -96,7 +96,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, Self(with: Element(any: rhs)))
+        return add(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -126,7 +126,7 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(with: lhs.extents)
+    var result = T(like: lhs, with: lhs.extents)
     subtract(lhs, rhs, result: &result)
     return result
 }
@@ -151,7 +151,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self(with: Element(any: rhs)))
+        return subtract(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -163,7 +163,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, Self(with: Element(any: rhs)))
+        return subtract(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -192,7 +192,7 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: Numeric
 {
-    var result = T(with: lhs.extents)
+    var result = T(like: lhs, with: lhs.extents)
     mul(lhs, rhs, result: &result)
     return result
 }
@@ -217,7 +217,7 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self(with: Element(any: rhs)))
+        return mul(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -229,7 +229,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, Self(with: Element(any: rhs)))
+        return mul(lhs, Self(like: lhs, with: Element(any: rhs)))
     }
 }
 
@@ -258,7 +258,7 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T(with: lhs.extents)
+    var result = T(like: lhs, with: lhs.extents)
     div(lhs, rhs, result: &result)
     return result
 }
@@ -283,7 +283,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = Self(with: Element(any: rhs))
+        let scalarTensor = Self(like: lhs, with: Element(any: rhs))
         return div(lhs, scalarTensor)
     }
 }

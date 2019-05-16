@@ -74,7 +74,8 @@ public extension QShapedTensorView {
     //--------------------------------------------------------------------------
     // realizing init
     init<T>(realizing other: T, quantizer: Q) throws where
-        T: TensorView, T.Element == Element
+        T: TensorView,
+        MutableValues.Element == T.Values.Element
     {
         if let other = other as? Self,
             other.isContiguous && other.traversal == .normal
@@ -185,7 +186,7 @@ public extension QShapedTensorView {
 //==============================================================================
 /// QVectorView
 public protocol QVectorView: QShapedTensorView
-where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
+where BoolView == Vector<Bool>, IndexView == Vector<IndexElement> { }
 
 //extension QVector: CustomStringConvertible where Element: AnyConvertable {
 //    public var description: String { return formatted() }
@@ -203,85 +204,82 @@ public extension QVectorView {
         return VectorIndex(view: self, at: 0)
     }
     
-//    /// shaped initializers
-//    init(_ value: Element, name: String? = nil,
-//         padding: [Padding]? = nil, padValue: Element? = nil) {
-//
-//        let shape = DataShape(extents: [1])
-//        self.init(shape: shape, dataShape: shape, name: name,
-//                  padding: padding, padValue: padValue,
-//                  tensorArray: nil, viewDataOffset: 0,
-//                  isShared: false, scalars: [value])
-//    }
-//
-//    /// with Array
-//    init(count: Int, name: String? = nil,
-//         padding: [Padding]? = nil, padValue: Element? = nil) {
-//
-//        let shape = DataShape(extents: [count])
-//        self.init(shape: shape, dataShape: shape, name: name,
-//                  padding: padding, padValue: padValue,
-//                  tensorArray: nil, viewDataOffset: 0,
-//                  isShared: false, scalars: nil)
-//    }
-//
-//    /// with Sequence
-//    init<Seq>(count: Int, name: String? = nil,
-//              padding: [Padding]? = nil, padValue: Element? = nil,
-//              sequence: Seq) where
-//        Seq: Sequence, Seq.Element: AnyConvertable,
-//        Element: AnyConvertable
-//    {
-//        self.init(name: name,
-//                  padding: padding, padValue: padValue,
-//                  scalars: Self.sequence2ScalarArray(sequence))
-//    }
-//
-//    //-------------------------------------
-//    /// with reference to read only buffer
-//    /// useful for memory mapped databases, or hardware device buffers
-//    init(name: String? = nil,
-//         padding: [Padding]? = nil, padValue: Element? = nil,
-//         referenceTo buffer: UnsafeBufferPointer<Element>) {
-//
-//        // create tensor data reference to buffer
-//        let name = name ?? String(describing: Self.self)
-//        let tensorArray = TensorArray(referenceTo: buffer, name: name)
-//
-//        // create shape considering column major
-//        let shape = DataShape(extents: [buffer.count])
-//        self.init(shape: shape, dataShape: shape, name: name,
-//                  padding: padding, padValue: padValue,
-//                  tensorArray: tensorArray, viewDataOffset: 0,
-//                  isShared: false, scalars: nil)
-//    }
-//
-//    //--------------------------------------------------------------------------
-//    /// initialize with scalar array
-//    init(name: String? = nil,
-//         padding: [Padding]? = nil, padValue: Element? = nil,
-//         scalars: [Element]) {
-//        let shape = DataShape(extents: [scalars.count])
-//        self.init(shape: shape, dataShape: shape, name: name,
-//                  padding: padding, padValue: padValue,
-//                  tensorArray: nil, viewDataOffset: 0,
-//                  isShared: false, scalars: scalars)
-//    }
-//
-//    /// with Sequence
-//    init<Seq>(name: String? = nil,
-//              padding: [Padding]? = nil, padValue: Element? = nil,
-//              sequence: Seq) where
-//        Seq: Sequence, Seq.Element: AnyConvertable,
-//        Element: AnyConvertable
-//    {
-//        let scalars = Self.sequence2ScalarArray(sequence)
-//        let shape = DataShape(extents: [scalars.count])
-//        self.init(shape: shape, dataShape: shape, name: name,
-//                  padding: padding, padValue: padValue,
-//                  tensorArray: nil, viewDataOffset: 0,
-//                  isShared: false, scalars: scalars)
-//    }
+    /// reserved space
+    init(count: Int,
+         quantizer: Q,
+         name: String? = nil)
+    {
+        let shape = DataShape(extents: [count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false,
+                  quantizer: quantizer,
+                  scalars: nil)
+    }
+
+    /// with Sequence
+    init<Seq>(count: Int,
+              quantizer: Q,
+              name: String? = nil,
+              sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Element: AnyConvertable
+    {
+        self.init(quantizer: quantizer, name: name,
+                  scalars: Self.sequence2ScalarArray(sequence))
+    }
+
+    //-------------------------------------
+    /// with reference to read only buffer
+    /// useful for memory mapped databases, or hardware device buffers
+    init(referenceTo buffer: UnsafeBufferPointer<Element>,
+         quantizer: Q,
+         name: String? = nil)
+    {
+        // create tensor data reference to buffer
+        let name = name ?? String(describing: Self.self)
+        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+
+        // create shape considering column major
+        let shape = DataShape(extents: [buffer.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: tensorArray, viewDataOffset: 0,
+                  isShared: false,
+                  quantizer: quantizer,
+                  scalars: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// initialize with scalar array
+    init(quantizer: Q,
+         name: String? = nil,
+         scalars: [Element])
+    {
+        let shape = DataShape(extents: [scalars.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false,
+                  quantizer: quantizer,
+                  scalars: scalars)
+    }
+
+    /// with Sequence
+    init<Seq>(quantizer: Q, name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Element: AnyConvertable
+    {
+        let scalars = Self.sequence2ScalarArray(sequence)
+        let shape = DataShape(extents: [scalars.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false,
+                  quantizer: quantizer,
+                  scalars: scalars)
+    }
 }
 
 ////==============================================================================

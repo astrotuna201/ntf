@@ -40,7 +40,9 @@ public extension ShapedTensorView {
     /// init(with extents:
     /// convenience initializer used by generics to create typed result
     /// views of matching shape
-    init(with extents: [Int]) {
+    init<T>(like: T, with extents: [Int])
+        where T: TensorView, Values.Element == T.Values.Element
+    {
         let shape = DataShape(extents: extents)
         self.init(shape: shape,
                   dataShape: shape,
@@ -54,7 +56,9 @@ public extension ShapedTensorView {
     /// init(value:
     /// convenience initializer used by generics
     /// - Parameter value: the initial value to set
-    init(with value: Element) {
+    init<T>(like: T, with value: Element)
+        where T: TensorView, Values.Element == T.Values.Element
+    {
         // create scalar version of the shaped view type
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: nil,
@@ -80,14 +84,16 @@ public extension ShapedTensorView {
     //--------------------------------------------------------------------------
     // realizing init
     init<T>(realizing other: T) throws where
-        T: TensorView, Element == T.Element
+        T: TensorView, MutableValues.Element == T.Values.Element
     {
         if let other = other as? Self,
             other.isContiguous && other.traversal == .normal
         {
             self = other
         } else {
-            self = Netlib.copy(view: other)
+            var result = Self(like: other, with: other.extents)
+            Netlib.copy(view: other, result: &result)
+            self = result
         }
     }
 
@@ -187,7 +193,7 @@ public extension ShapedTensorView {
 // ScalarView
 public protocol ScalarView: ShapedTensorView where
     BoolView == ScalarValue<Bool>,
-    IndexView == ScalarValue<IndexScalar>{}
+    IndexView == ScalarValue<IndexElement>{}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
@@ -252,7 +258,7 @@ extension ScalarValue: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 // VectorView
 public protocol VectorView: ShapedTensorView
-where BoolView == Vector<Bool>, IndexView == Vector<IndexScalar> { }
+where BoolView == Vector<Bool>, IndexView == Vector<IndexElement> { }
 
 extension Vector: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -392,7 +398,7 @@ where Element: DefaultInitializer {
 //==============================================================================
 // MatrixView
 public protocol MatrixView: ShapedTensorView
-where BoolView == Matrix<Bool>, IndexView == Matrix<IndexScalar> {}
+where BoolView == Matrix<Bool>, IndexView == Matrix<IndexElement> {}
 
 extension Matrix: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -545,7 +551,7 @@ public struct Matrix<Element>: MatrixView where Element: DefaultInitializer {
 //==============================================================================
 // VolumeView
 public protocol VolumeView: ShapedTensorView
-where BoolView == Volume<Bool>, IndexView == Volume<IndexScalar> { }
+where BoolView == Volume<Bool>, IndexView == Volume<IndexElement> { }
 
 extension Volume: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -677,7 +683,7 @@ where Element: DefaultInitializer {
 //==============================================================================
 // NDTensorView
 public protocol NDTensorView: ShapedTensorView
-where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexScalar> { }
+where BoolView == NDTensor<Bool>, IndexView == NDTensor<IndexElement> { }
 
 extension NDTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -785,7 +791,7 @@ where Element: DefaultInitializer {
 /// h: rows
 /// w: cols
 public protocol NCHWTensorView: ShapedTensorView
-where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexScalar> { }
+where BoolView == NCHWTensor<Bool>, IndexView == NCHWTensor<IndexElement> { }
 
 extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -925,7 +931,7 @@ where Element: DefaultInitializer {
 /// w: cols
 /// c: channels
 public protocol NHWCTensorView: ShapedTensorView
-where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexScalar> { }
+where BoolView == NHWCTensor<Bool>, IndexView == NHWCTensor<IndexElement> { }
 
 extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }

@@ -13,32 +13,10 @@ import Foundation
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
 public func copy<T, R>(view: T, result: inout R) where
-    T: TensorView, R: TensorView, T.Element == R.Element
+    T: TensorView, R: TensorView,
+    R.MutableValues.Element == T.Values.Element
 {
     _Streams.current.copy(view: view, result: &result)
-}
-
-/// returns new view
-/// - Parameter view: tensor to be copied
-/// - Returns: a new tensor containing the result
-@inlinable @inline(__always)
-public func copy<T, R>(view: T) -> R where
-    T: TensorView, R: TensorView, T.Element == R.Element
-{
-    var result = R(with: view.extents)
-    copy(view: view, result: &result)
-    return result
-}
-
-public extension TensorView {
-    /// returns new view
-    /// - Returns: a new tensor containing the result
-    @inlinable @inline(__always)
-    func copy() -> Self {
-        var result = Self(with: extents)
-        Netlib.copy(view: self, result: &result)
-        return result
-    }
 }
 
 //==============================================================================
@@ -64,7 +42,7 @@ public func abs<T>(_ x: T, result: inout T)
 public func abs<T>(_ x: T) -> T
     where T: TensorView, T.Element: FloatingPoint
 {
-    var result = T(with: x.extents)
+    var result = T(like: x, with: x.extents)
     abs(x, result: &result)
     return result
 }
@@ -75,7 +53,7 @@ public extension TensorView where Element: FloatingPoint {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpAbs(_:) where T: TensorFlowFloatingPoint)
     func abs() -> Self {
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.abs(self, result: &result)
         return result
     }
@@ -104,7 +82,7 @@ public func log<T>(_ x: T, result: inout T)
 public func log<T>(_ x: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T(with: x.extents)
+    var result = T(like: x, with: x.extents)
     log(x, result: &result)
     return result
 }
@@ -115,7 +93,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
     func log() -> Self {
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.log(self, result: &result)
         return result
     }
@@ -144,7 +122,7 @@ public func logSoftmax<T>(_ x: T, result: inout T)
 public func logSoftmax<T>(_ x: T) -> T
     where T: TensorView, T.Element: AnyFloatingPoint
 {
-    var result = T.init(with: x.extents)
+    var result = T.init(like: x, with: x.extents)
     logSoftmax(x, result: &result)
     return result
 }
@@ -155,7 +133,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLogSoftmax(_:) where T: TensorFlowFloatingPoint)
     func logSoftmax() throws -> Self {
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.logSoftmax(self, result: &result)
         return result
     }
@@ -188,7 +166,7 @@ public func pow<T>(_ x: T, _ y: T, result: inout T)
 public func pow<T>(_ x: T, _ y: T) -> T
     where T: TensorView, T.Element: AnyNumeric
 {
-    var result = T.init(with: x.extents)
+    var result = T.init(like: x, with: x.extents)
     pow(x, y, result: &result)
     return result
 }
@@ -201,7 +179,7 @@ public extension TensorView where Element: AnyNumeric {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow(_ y: Self) -> Self{
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         Netlib.pow(self, y, result: &result)
         return result
     }
@@ -214,8 +192,9 @@ public extension TensorView where Element: AnyNumeric {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyNumeric>(_ y: S) -> Self {
-        var result = Self(with: extents)
-        Netlib.pow(self, Self(with: Element(any: y)), result: &result)
+        var result = Self(like: self, with: extents)
+        let yTensor = Self(like: self, with: Element(any: y))
+        Netlib.pow(self, yTensor, result: &result)
         return result
     }
 }
@@ -229,8 +208,9 @@ public extension TensorView where Element: AnyNumeric {
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow<S: AnyInteger>(
         _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
-        var result = Self(with: extents)
-        Netlib.pow(self, Self(with: Element(any: y)), result: &result)
+        var result = Self(like: self, with: extents)
+        let yTensor = Self(like: self, with: Element(any: y))
+        Netlib.pow(self, yTensor, result: &result)
         return result
     }
 }
@@ -246,7 +226,7 @@ public func fill<T>(_ result: inout T, with value: T.Element) where
 
 public extension TensorView {
     func filled(with value: Element) -> Self {
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         _Streams.current.fill(&result, with: value)
         return result
     }
@@ -263,7 +243,7 @@ public func fillWithIndex<T>(_ result: inout T, startAt index: Int = 0) where
 
 public extension TensorView where Element: AnyNumeric {
     func filledWithIndex(startAt index: Int = 0) -> Self {
-        var result = Self(with: extents)
+        var result = Self(like: self, with: extents)
         _Streams.current.fillWithIndex(&result, startAt: index)
         return result
     }
@@ -273,15 +253,12 @@ public extension TensorView where Element: AnyNumeric {
 /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
 /// scalars.
 public func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-    T: TensorView, T.Element: Equatable,
-    T.BoolView.Element == Bool
+    T: TensorView, T.Element: Equatable
 {
     _Streams.current.equal(lhs: lhs, rhs: rhs, result: &result)
 }
 
-public extension TensorView where
-    Element: Equatable,
-    BoolView.Element == Bool
+public extension TensorView where Element: Equatable
 {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
@@ -290,7 +267,7 @@ public extension TensorView where
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func .== (lhs: Self, rhs: Self) -> BoolView {
-        var result = BoolView(with: lhs.extents)
+        var result = BoolView(like: lhs, with: lhs.extents)
         equal(lhs: lhs, rhs: rhs, result: &result)
         return result
     }

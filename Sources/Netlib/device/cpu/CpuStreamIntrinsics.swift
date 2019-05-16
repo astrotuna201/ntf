@@ -27,7 +27,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// all
-    func all<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func all<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element == Bool
     {
 //        queue(#function, { try x.values() }, &result) {
@@ -37,7 +37,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// any
-    func any<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func any<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element == Bool
     {
 //        queue(#function, { try x.values() }, &result) {
@@ -60,27 +60,27 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// argmax
-    func argmax<T>(x: T, along axes: Vector<IndexScalar>?,
+    func argmax<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Element: Numeric,
-        T.IndexView.Element == IndexScalar
+        T.IndexView.Element == IndexElement
     {
         
     }
     
     //--------------------------------------------------------------------------
     /// argmin
-    func argmin<T>(x: T, along axes: Vector<IndexScalar>?,
+    func argmin<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
         T: TensorView, T.Element: Numeric,
-        T.IndexView.Element == IndexScalar
+        T.IndexView.Element == IndexElement
     {
         
     }
     
     //--------------------------------------------------------------------------
     /// asum
-    func asum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func asum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element: FloatingPoint
     {
 //        queue(#function, { try x.values() }, &result) {
@@ -123,7 +123,8 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// copies the elements from view to result
     func copy<T, R>(view: T, result: inout R) where
-        T: TensorView, R: TensorView, T.Element == R.Element
+        T: TensorView, R: TensorView,
+        R.MutableValues.Element == T.Values.Element
     {
 //        queue(#function, { try view.values() }, &result) {
 //            $0.map(to: &$1) { $0 }
@@ -337,7 +338,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// mean
-    func mean<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func mean<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element: Numeric
     {
         
@@ -418,10 +419,10 @@ public extension CpuStream {
 
     //--------------------------------------------------------------------------
     // prod
-    func prod<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func prod<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element: AnyNumeric
     {
-        let one = T.Element(any: 1)
+//        let one = T.Element(any: 1)
 //        queue(#function, { try x.values() }, &result) {
 //            $0.reduce(to: &$1, one) { $0 * $1 }
 //        }
@@ -520,7 +521,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     // sum
-    func sum<T>(x: T, along axes: Vector<IndexScalar>?, result: inout T) where
+    func sum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Element: Numeric
     {
 //        if let axes = axes, axes.shape.extents[0] > 0 {

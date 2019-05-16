@@ -28,7 +28,11 @@ import Foundation
 ///
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
-public protocol TensorView: Logging {
+public protocol TensorView: Logging where
+    MutableValues.Element == Values.Element,
+    BoolView.Element == Bool,
+    IndexView.Element == IndexElement
+{
     //--------------------------------------------------------------------------
     /// the type of element stored by the tensor
     associatedtype Element: DefaultInitializer
@@ -39,8 +43,6 @@ public protocol TensorView: Logging {
     associatedtype Values: RandomAccessCollection
     /// the type of read write elements collection
     associatedtype MutableValues: RandomAccessCollection & MutableCollection
-
-
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
     /// A concrete type used in generics to return index results
@@ -84,20 +86,19 @@ public protocol TensorView: Logging {
     // initializers
     
     /// create an empty dense view
-    init(with extents: [Int])
+    init(like: Self, with extents: [Int])
     
     /// create a view with a single scalar value
-    init(with value: Element)
-    
-    /// create a repeating view of other
-    init(with extents: [Int], repeating other: Self)
+    init<T>(like: T, with value: Element) where
+        T: TensorView, Values.Element == T.Values.Element
     
     /// create a dense view where the elements from another are coalesced
     /// and potentially type converted when working with qtensors
     /// if `other` is already of the correct form, then a data reference is
     /// taken instead.
-    init<T>(realizing other: T) throws where T: TensorView, Element == T.Element
-    
+    init<T>(realizing other: T) throws where
+        T: TensorView, MutableValues.Element == T.Values.Element
+
     /// create a sub view
     func createView(at offset: [Int], with extents: [Int],
                     isReference: Bool) -> Self
@@ -114,6 +115,13 @@ public protocol TensorView: Logging {
     func flattened(axis: Int) -> Self
     
     //--------------------------------------------------------------------------
+    // for creation of shaped temporary result views
+    /// creates a new dense view
+    func createBoolView(with extents: [Int]?) -> BoolView
+//    func createDenseView(with extents: [Int]?, values: [Element]?) -> Self
+//    func createIndexView(with extents: [Int]?, values: [IndexElement]?) -> IndexView
+
+    //--------------------------------------------------------------------------
     // indexing
     /// returns a collection of viewed elements
     func values(using stream: DeviceStream?) throws -> Values
@@ -124,9 +132,9 @@ public protocol TensorView: Logging {
 }
 
 //==============================================================================
-/// IndexScalar
+/// IndexElement
 /// The data type used for tensors that contain tensor spatial index values
-public typealias IndexScalar = Int32
+public typealias IndexElement = Int32
 
 //==============================================================================
 /// traversal

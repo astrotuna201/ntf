@@ -17,49 +17,30 @@ public protocol QShapedTensorView: Quantizing {
          viewDataOffset: Int,
          isShared: Bool,
          quantizer: Q,
-         scalars: [Values.Element]?)
+         values: [Values.Element]?)
 }
+
 
 public extension QShapedTensorView {
     //--------------------------------------------------------------------------
-    /// init(with extents:
-    /// convenience initializer used by generics to create typed result
-    /// views of matching shape
-    init(with extents: [Int], quantizer: Q) {
+    /// DenseView
+    func createDenseView(with extents: [Int],
+                         values: [Values.Element]? = nil) -> Self
+    {
         let shape = DataShape(extents: extents)
-        self.init(shape: shape,
-                  dataShape: shape,
-                  name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: nil)
+        return Self(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false,
+            quantizer: quantizer,
+            values: values)
     }
-
-    //--------------------------------------------------------------------------
-    /// init(value:
-    /// convenience initializer used by generics
-    /// - Parameter value: the initial value to set
-    init(with value: Viewed, quantizer: Q) {
-        // create scalar version of the shaped view type
-        let shape = DataShape(extents: [1])
-        let elementValue = quantizer.convert(viewed: value)
-        self.init(shape: shape,
-                  dataShape: shape,
-                  name: nil,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: [elementValue])
-    }
-
+    
     //--------------------------------------------------------------------------
     /// repeated view
-    init(with extents: [Int], repeating other: Self, quantizer: Q) {
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape,
+    init(with extents: [Int], repeating other: Self) {
+        self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
                   name: other.name,
                   padding: nil,
@@ -67,27 +48,10 @@ public extension QShapedTensorView {
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
                   isShared: other.isShared,
-                  quantizer: quantizer,
-                  scalars: nil)
+                  quantizer: other.quantizer,
+                  values: nil)
     }
-
-    //--------------------------------------------------------------------------
-    // realizing init
-    init<T>(realizing other: T, quantizer: Q) throws where
-        T: TensorView,
-        MutableValues.Element == T.Values.Element
-    {
-        if let other = other as? Self,
-            other.isContiguous && other.traversal == .normal
-        {
-            self = other
-        } else {
-            var result = Self(with: other.extents, quantizer: quantizer)
-            Netlib.copy(view: other, result: &result)
-            self = result
-        }
-    }
-
+    
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
@@ -96,12 +60,12 @@ public extension QShapedTensorView {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
-
+        
         // the subview offset is the current plus the offset of index
         let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
         let name = "\(self.name).subview"
-
+        
         return Self(shape: subViewShape,
                     dataShape: subViewShape,
                     name: name,
@@ -111,9 +75,9 @@ public extension QShapedTensorView {
                     viewDataOffset: subViewOffset,
                     isShared: isReference,
                     quantizer: quantizer,
-                    scalars: nil)
+                    values: nil)
     }
-
+    
     //--------------------------------------------------------------------------
     /// reference
     /// creation of a reference is for the purpose of reshaped writes
@@ -125,7 +89,7 @@ public extension QShapedTensorView {
         // get the queue, if we reference it as a tensorArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
-
+        
         return try queue.sync {
             try copyIfMutates(using: stream)
             return Self(shape: shape,
@@ -137,10 +101,10 @@ public extension QShapedTensorView {
                         viewDataOffset: viewDataOffset,
                         isShared: true,
                         quantizer: quantizer,
-                        scalars: nil)
+                        values: nil)
         }
     }
-
+    
     //--------------------------------------------------------------------------
     /// flattened
     /// Returns a view with all dimensions higher than `axis` set to 1
@@ -150,7 +114,7 @@ public extension QShapedTensorView {
         guard self.isShared != isShared || axis != shape.rank - 1 else {
             return self
         }
-
+        
         // create flattened view
         let flatShape = shape.flattened()
         return Self(shape: flatShape,
@@ -162,7 +126,42 @@ public extension QShapedTensorView {
                     viewDataOffset: viewDataOffset,
                     isShared: isShared,
                     quantizer: quantizer,
-                    scalars: nil)
+                    values: nil)
+    }
+
+    //--------------------------------------------------------------------------
+    /// initTensorArray
+    /// a helper to correctly initialize the tensorArray object
+    mutating func initTensorArray(_ tensorData: TensorArray?,
+                                  _ name: String?,
+                                  _ quantizer: Q,
+                                  _ values: [Values.Element]?) {
+        if let tensorData = tensorData {
+            tensorArray = tensorData
+        } else {
+            assert(shape.isContiguous, "new views should have a dense shape")
+            let name = name ?? String(describing: Self.self)
+            
+            // allocate backing tensorArray
+            if let values = values {
+                assert(values.count == dataShape.elementCount,
+                       "number of values does not match tensor extents")
+                do {
+                    let v = quantizer.convert(viewed: values[0])
+//                    let elements = values.map { quantizer.convert(viewed: $0) }
+//                    tensorArray = try elements.withUnsafeBufferPointer {
+//                        try TensorArray(copying: $0, name: name)
+//                    }
+                } catch {
+                    tensorArray = TensorArray()
+                    _Streams.current.reportDevice(error: error)
+                }
+            } else {
+                tensorArray = TensorArray(type: Element.self,
+                                          count: dataShape.elementCount,
+                                          name: name)
+            }
+        }
     }
 }
 
@@ -185,15 +184,14 @@ public extension QShapedTensorView {
 
 //==============================================================================
 /// QVectorView
-public protocol QVectorView: QShapedTensorView
-where BoolView == Vector<Bool>, IndexView == Vector<IndexElement> { }
+public protocol QVectorView: QShapedTensorView { }
 
 //extension QVector: CustomStringConvertible where Element: AnyConvertable {
 //    public var description: String { return formatted() }
 //}
 
 //==============================================================================
-// VectorView extensions
+// QVectorView extensions
 public extension QVectorView {
     //--------------------------------------------------------------------------
     var endIndex: VectorIndex {
@@ -204,123 +202,134 @@ public extension QVectorView {
         return VectorIndex(view: self, at: 0)
     }
     
-    /// reserved space
-    init(count: Int,
-         quantizer: Q,
-         name: String? = nil)
-    {
+    //--------------------------------------------------------------------------
+    /// shaped initializers
+    /// with single value
+    init(_ value: Values.Element, quantizer: Q,
+         name: String? = nil) {
+        let shape = DataShape(extents: [1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false, quantizer: quantizer, values: [value])
+    }
+    
+    //-------------------------------------
+    /// empty array
+    init(count: Int, quantizer: Q, name: String? = nil) {
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
                   tensorArray: nil, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: nil)
+                  isShared: false, quantizer: quantizer, values: nil)
     }
-
+    
+    //-------------------------------------
+    /// with Array
+    init(name: String? = nil, quantizer: Q, values: [Values.Element]) {
+        let shape = DataShape(extents: [values.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false, quantizer: quantizer, values: values)
+    }
+    
+    //-------------------------------------
     /// with Sequence
-    init<Seq>(count: Int,
-              quantizer: Q,
-              name: String? = nil,
-              sequence: Seq) where
+    init<Seq>(name: String? = nil, quantizer: Q, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
+        Values.Element: AnyConvertable
     {
-        self.init(quantizer: quantizer, name: name,
-                  scalars: Self.sequence2ScalarArray(sequence))
+        let values = Self.sequence2ScalarArray(sequence)
+        let shape = DataShape(extents: [values.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  padding: nil, padValue: nil,
+                  tensorArray: nil, viewDataOffset: 0,
+                  isShared: false, quantizer: quantizer, values: values)
     }
-
+    
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(referenceTo buffer: UnsafeBufferPointer<Element>,
-         quantizer: Q,
-         name: String? = nil)
+         quantizer: Q, name: String? = nil)
     {
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
         let tensorArray = TensorArray(referenceTo: buffer, name: name)
-
+        
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
                   tensorArray: tensorArray, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: nil)
+                  isShared: false, quantizer: quantizer, values: nil)
     }
-
+    
     //--------------------------------------------------------------------------
-    /// initialize with scalar array
-    init(quantizer: Q,
-         name: String? = nil,
-         scalars: [Element])
-    {
-        let shape = DataShape(extents: [scalars.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: scalars)
+    /// BoolView
+    func createBoolView(with extents: [Int]) -> Vector<Bool> {
+        let shape = DataShape(extents: extents)
+        return Vector<Bool>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, values: nil)
     }
-
-    /// with Sequence
-    init<Seq>(quantizer: Q, name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
+    
+    //--------------------------------------------------------------------------
+    /// IndexView
+    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
+        -> Vector<IndexElement>
     {
-        let scalars = Self.sequence2ScalarArray(sequence)
-        let shape = DataShape(extents: [scalars.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  padding: nil, padValue: nil,
-                  tensorArray: nil, viewDataOffset: 0,
-                  isShared: false,
-                  quantizer: quantizer,
-                  scalars: scalars)
+        let shape = DataShape(extents: extents)
+        return Vector<IndexElement>(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, values: values)
     }
 }
 
-////==============================================================================
-///// Vector
-//public struct QVector<Element, Viewed, Q>: QVectorView where
-//    Element: DefaultInitializer,
-//    Q: Quantizer, Q.Element == Element, Q.Viewed == Viewed
-//{
-//    // properties
-//    public let dataShape: DataShape
-//    public let isShared: Bool
-//    public let padding: [Padding]?
-//    public let padValue: Element
-//    public let shape: DataShape
-//    public var tensorArray: TensorArray
-//    public let traversal: TensorTraversal
-//    public var viewDataOffset: Int
-//    public let quantizer: Q
-//
-//    public init(shape: DataShape,
-//                dataShape: DataShape,
-//                name: String?,
-//                padding: [Padding]?,
-//                padValue: Element?,
-//                tensorArray: TensorArray?,
-//                viewDataOffset: Int,
-//                isShared: Bool,
-//                quantizer: Q,
-//                scalars: [Element]?) {
-//
-//        assert(scalars == nil || scalars!.count == shape.elementCount,
-//               "tensor size and scalars count do not match")
-//        self.shape = shape
-//        self.dataShape = dataShape
-//        self.padding = padding
-//        self.padValue = padValue ?? Element()
-//        self.traversal = initTraversal(padding, shape != dataShape)
-//        self.isShared = isShared
-//        self.viewDataOffset = viewDataOffset
-//        self.quantizer = quantizer
-//        self.tensorArray = TensorArray()
-//        initTensorArray(tensorArray, name, scalars)
-//    }
-//}
+//==============================================================================
+/// Vector
+public struct QVector<Element, Viewed, Q>: QVectorView where
+    Element: DefaultInitializer,
+    Q: Quantizer, Q.Element == Element, Q.Viewed == Viewed
+{
+    // properties
+    public let dataShape: DataShape
+    public let isShared: Bool
+    public let padding: [Padding]?
+    public let padValue: Element
+    public let shape: DataShape
+    public var tensorArray: TensorArray
+    public let traversal: TensorTraversal
+    public var viewDataOffset: Int
+    public let quantizer: Q
+
+    public init(shape: DataShape,
+                dataShape: DataShape,
+                name: String?,
+                padding: [Padding]?,
+                padValue: Element?,
+                tensorArray: TensorArray?,
+                viewDataOffset: Int,
+                isShared: Bool,
+                quantizer: Q,
+                values: [Values.Element]?) {
+
+        assert(values == nil || values!.count == shape.elementCount,
+               "tensor size and scalars count do not match")
+        self.shape = shape
+        self.dataShape = dataShape
+        self.padding = padding
+        self.padValue = padValue ?? Element()
+        self.traversal = initTraversal(padding, shape != dataShape)
+        self.isShared = isShared
+        self.viewDataOffset = viewDataOffset
+        self.quantizer = quantizer
+        self.tensorArray = TensorArray()
+        initTensorArray(tensorArray, name, quantizer, values)
+    }
+}

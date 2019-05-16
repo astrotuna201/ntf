@@ -136,6 +136,38 @@ public extension ShapedTensorView {
                     isShared: isShared,
                     values: nil)
     }
+
+    //--------------------------------------------------------------------------
+    /// initTensorArray
+    /// a helper to correctly initialize the tensorArray object
+    mutating func initTensorArray(_ tensorData: TensorArray?,
+                                  _ name: String?,
+                                  _ values: [Values.Element]?) {
+        if let tensorData = tensorData {
+            tensorArray = tensorData
+        } else {
+            assert(shape.isContiguous, "new views should have a dense shape")
+            let name = name ?? String(describing: Self.self)
+            
+            // allocate backing tensorArray
+            if let values = values {
+                assert(values.count == dataShape.elementCount,
+                       "number of values does not match tensor extents")
+                do {
+                    tensorArray = try values.withUnsafeBufferPointer {
+                        try TensorArray(copying: $0, name: name)
+                    }
+                } catch {
+                    tensorArray = TensorArray()
+                    _Streams.current.reportDevice(error: error)
+                }
+            } else {
+                tensorArray = TensorArray(type: Element.self,
+                                          count: dataShape.elementCount,
+                                          name: name)
+            }
+        }
+    }
 }
 
 //==============================================================================

@@ -10,7 +10,7 @@ import Foundation
 public protocol Quantizing where
     Self: TensorView,
     Q.Element == Element,
-    Q.Viewed == Viewed
+    Q.Viewed == Values.Element
 {
     associatedtype Q: Quantizer
     associatedtype Viewed

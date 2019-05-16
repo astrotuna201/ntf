@@ -22,8 +22,8 @@ class test_Async: XCTestCase {
         do {
             Platform.log.level = .diagnostic
             
-            let scalars: [Float] = [0, -1.5, 2, -3, 4, 5]
-            let m1 = Matrix<Float>((2, 3), scalars: scalars)
+            let values: [Float] = [0, -1.5, 2, -3, 4, 5]
+            let m1 = Matrix<Float>((2, 3), values: values)
 //            var results = try m1.mutableValues()
 //            results[results.startIndex] = 7.5
 //            let a = [Float](results)

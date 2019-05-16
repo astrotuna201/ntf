@@ -45,7 +45,7 @@ infix operator .=
 // TODO: this complains, talk to the guys
 //@differentiable(vjp: _vjpAdd(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -57,14 +57,14 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     var result = lhs.createDenseView()
     add(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Element: Numeric {
+public extension TensorView where Values.Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -76,7 +76,9 @@ public extension TensorView where Element: Numeric {
     }
 }
 
-public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where
+    Values.Element: FloatingPoint & AnyFloatingPoint
+{
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -84,11 +86,11 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return add(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
-public extension TensorView where Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -96,7 +98,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return add(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
@@ -112,7 +114,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Element: TensorFlowFloatingPoint)
 public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     _Streams.current.subtract(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -124,14 +126,14 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     var result = lhs.createDenseView()
     subtract(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Element: Numeric {
+public extension TensorView where Values.Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -143,7 +145,7 @@ public extension TensorView where Element: Numeric {
     }
 }
 
-public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -151,11 +153,11 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return subtract(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
-public extension TensorView where Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -163,7 +165,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return subtract(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
@@ -178,7 +180,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     _Streams.current.mul(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -190,14 +192,14 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Element: Numeric
+    where T: TensorView, T.Values.Element: Numeric
 {
     var result = lhs.createDenseView()
     mul(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Element: Numeric {
+public extension TensorView where Values.Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -209,7 +211,7 @@ public extension TensorView where Element: Numeric {
     }
 }
 
-public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint & AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -217,11 +219,11 @@ public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return mul(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
-public extension TensorView where Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -229,7 +231,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, lhs.createDenseView(values: [Element(any: rhs)]))
+        return mul(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
     }
 }
 
@@ -244,7 +246,7 @@ public extension TensorView where Element: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Element: AnyFloatingPoint
+    where T: TensorView, T.Values.Element: AnyFloatingPoint
 {
     _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -256,14 +258,14 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Element: AnyFloatingPoint
+    where T: TensorView, T.Values.Element: AnyFloatingPoint
 {
     var result = lhs.createDenseView()
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Element: AnyFloatingPoint {
+public extension TensorView where Values.Element: AnyFloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -275,7 +277,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     }
 }
 
-public extension TensorView where Element: AnyFloatingPoint {
+public extension TensorView where Values.Element: AnyFloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
@@ -283,7 +285,7 @@ public extension TensorView where Element: AnyFloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = lhs.createDenseView(values: [Element(any: rhs)])
+        let scalarTensor = lhs.createDenseView(values: [Values.Element(any: rhs)])
         return div(lhs, scalarTensor)
     }
 }

@@ -102,7 +102,7 @@ public protocol TensorView: Logging where
     /// with the specified extents
     func createBoolView(with extents: [Int]) -> BoolView
     /// creates a new dense view of the same type with the specified extents
-    func createDenseView(with extents: [Int], values: [Element]?) -> Self
+    func createDenseView(with extents: [Int], values: [Values.Element]?) -> Self
     /// creates a new dense view where `Element` equals `IndexElement`
     /// with the specified extents and initial values
     func createIndexView(with extents: [Int],
@@ -148,7 +148,7 @@ public extension TensorView {
     // public property accessors
     /// the extents of the view
     var extents: [Int] { return shape.extents }
-    /// `true` if the scalars are contiguosly arranged in memory
+    /// `true` if the values are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
     /// `true` if the view projects padded data
     var isPadded: Bool { return padding != nil }
@@ -175,7 +175,7 @@ public extension TensorView {
 
     /// creates a view of the same type and shape as `self` initialized with
     /// the specified values
-    func createDenseView(values: [Element]? = nil) -> Self {
+    func createDenseView(values: [Values.Element]? = nil) -> Self {
         return createDenseView(with: extents, values: values)
     }
 
@@ -257,7 +257,7 @@ public extension TensorView {
                                  tensorArray: tensorArray,
                                  viewDataOffset: viewDataOffset,
                                  isShared: isShared,
-                                 scalars: nil)
+                                 values: nil)
     }
 
     //--------------------------------------------------------------------------
@@ -275,18 +275,18 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// sequence2ScalarArray
-    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Element] where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
+    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Values.Element]
+        where Seq: Sequence, Seq.Element: AnyConvertable,
+        Values.Element: AnyConvertable
     {
-        return sequence.map { Element(any: $0) }
+        return sequence.map { Values.Element(any: $0) }
     }
 
     //--------------------------------------------------------------------------
     /// initTensorArray
     /// a helper to correctly initialize the tensorArray object
     mutating func initTensorArray(_ tensorData: TensorArray?,
-                                  _ name: String?, _ scalars: [Element]?) {
+                                  _ name: String?, _ values: [Element]?) {
         if let tensorData = tensorData {
             tensorArray = tensorData
         } else {
@@ -294,11 +294,11 @@ public extension TensorView {
             let name = name ?? String(describing: Self.self)
 
             // allocate backing tensorArray
-            if let scalars = scalars {
-                assert(scalars.count == dataShape.elementCount,
-                       "number of scalars does not match tensor extents")
+            if let values = values {
+                assert(values.count == dataShape.elementCount,
+                       "number of values does not match tensor extents")
                 do {
-                    tensorArray = try scalars.withUnsafeBufferPointer {
+                    tensorArray = try values.withUnsafeBufferPointer {
                         try TensorArray(copying: $0, name: name)
                     }
                 } catch {

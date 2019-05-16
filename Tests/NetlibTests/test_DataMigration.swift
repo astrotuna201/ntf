@@ -412,7 +412,7 @@ class test_DataMigration: XCTestCase {
         do {
             let cmMatrix = Matrix<Int32>((3, 2),
                                          layout: .columnMajor,
-                                         scalars: [0, 2, 4, 1, 3, 5])
+                                         values: [0, 2, 4, 1, 3, 5])
             
             let expected = [Int32](0..<6)
             let values = try cmMatrix.array()

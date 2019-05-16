@@ -211,13 +211,13 @@ This example loads data arranged in column major order.
 //   4, 5
 let matrix = Matrix<Int32>((3, 2),
                            layout: .columnMajor,
-                           scalars: [0, 2, 4, 1, 3, 5])
+                           values: [0, 2, 4, 1, 3, 5])
 
 let expected = [Int32](0..<6)
 assert(matrix.array == expected, "values don't match")
 ```
 ### Zero Copy Structural Casting of Uniform Dense Scalars
-A tensor can store and manipulate structured scalars. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
+A tensor can store and manipulate structured values. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
 
 __<the formatted function needs to be rewritten to perform better type specific output!>__
 ```swift

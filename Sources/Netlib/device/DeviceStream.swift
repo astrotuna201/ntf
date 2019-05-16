@@ -90,22 +90,22 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Values.Element: FloatingPoint
     /// Adds two tensors and produces their sum.
     func add<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Element: Numeric
-    /// Returns `true` if all scalars are `true`. Otherwise, returns `false`.
+        where T: TensorView, T.Values.Element: Numeric
+    /// Returns `true` if all values are `true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func all<T>(x: T, along axes: Vector<IndexElement>?, result: inout T)
-        where T: TensorView, T.Element == Bool
-    /// Returns `true` if any scalars are`true`. Otherwise, returns `false`.
+        where T: TensorView, T.Values.Element == Bool
+    /// Returns `true` if any values are`true`. Otherwise, returns `false`.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func any<T>(x: T, along axes: Vector<IndexElement>?, result: inout T)
-        where T: TensorView, T.Element == Bool
+        where T: TensorView, T.Values.Element == Bool
     /// Performs a pointwise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
-                               tolerance: T.Element,
+                               tolerance: T.Values.Element,
                                result: inout T.BoolView) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Returns the indices of the maximum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter x: the tensor value
@@ -113,7 +113,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     func argmax<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Returns the indices of the minimum values along the specified axes. The
     /// reduced dimensions are removed.
     /// - Parameter x: the tensor value
@@ -121,21 +121,21 @@ public protocol StreamIntrinsicsProtocol {
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     func argmin<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Sums the absolute value of the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func asum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: FloatingPoint
+        T: TensorView, T.Values.Element: FloatingPoint
     /// cast scalar types
     /// - Parameter from: the input data
     /// - Parameter result: the output
     func cast<T, R>(from: T, to result: inout R) where
-        T: TensorView, T.Element: AnyConvertable,
+        T: TensorView, T.Values.Element: AnyConvertable,
         R: TensorView, R.Element: AnyConvertable
     /// Computes the ceiling of the specified TensorView element-wise.
     func ceil<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Concatenates tensors along the specified axis.
     /// - Precondition: The tensors must have the same dimensions, except for the
     ///                 specified axis.
@@ -148,111 +148,111 @@ public protocol StreamIntrinsicsProtocol {
         R.MutableValues.Element == T.Values.Element
     /// Computes the element-wise `cos`
     func cos<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `cosh`
     func cosh<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     func div<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Element: AnyFloatingPoint
+        where T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
-    /// scalars.
+    /// values.
     /// - Note: `.==` supports broadcasting.
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Element: Equatable
+        T: TensorView, T.Values.Element: Equatable
     /// Computes the element-wise `exp`
     func exp<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// fills the view with the scalar value
-    func fill<T>(_ result: inout T, with: T.Element) where T: TensorView
+    func fill<T>(_ result: inout T, with: T.Values.Element) where T: TensorView
     /// fills the view with the spatial sequential index
     func fillWithIndex<T>(_ result: inout T, startAt: Int) where
-        T: TensorView, T.Element: AnyNumeric
+        T: TensorView, T.Values.Element: AnyNumeric
     /// Computes the element-wise `floor`
     func floor<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
-    /// Computes `lhs > rhs` element-wise and returns a tensor of Bool scalars.
+        T: TensorView, T.Values.Element: AnyFloatingPoint
+    /// Computes `lhs > rhs` element-wise and returns a tensor of Bool values.
     func greater<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Element: Comparable
-    /// Computes `lhs >= rhs` element-wise and returns a tensor of Bool scalars.
+        where T: TensorView, T.Values.Element: Comparable
+    /// Computes `lhs >= rhs` element-wise and returns a tensor of Bool values.
     func greaterOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Element: Comparable
-    /// Computes `lhs < rhs` element-wise and returns a tensor of Bool scalars.
+        where T: TensorView, T.Values.Element: Comparable
+    /// Computes `lhs < rhs` element-wise and returns a tensor of Bool values.
     func less<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Element: Comparable
-    /// Computes `lhs <= rhs` element-wise and returns a tensor of Bool scalars.
+        where T: TensorView, T.Values.Element: Comparable
+    /// Computes `lhs <= rhs` element-wise and returns a tensor of Bool values.
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Element: Comparable
+        where T: TensorView, T.Values.Element: Comparable
     /// Computes the element-wise `log`
     func log<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `!x`
     func logicalNot<T>(x: T, result: inout T) where
-        T: TensorView, T.Element == Bool
+        T: TensorView, T.Values.Element == Bool
     /// Computes the element-wise `lhs && rhs`
     func logicalAnd<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element == Bool
+        T: TensorView, T.Values.Element == Bool
     /// Computes the element-wise `lhs || rhs`
     func logicalOr<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element == Bool
+        T: TensorView, T.Values.Element == Bool
     /// Computes the element-wise `logSoftmax`
     func logSoftmax<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Performs matrix multiplication with another TensorView and produces the
     /// result.
     func matmul<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Returns the maximum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     func max<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise maximum of two tensors.
     /// - Note: `max` supports broadcasting.
     func maximum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Comparable
+        T: TensorView, T.Values.Element: Comparable
     /// Returns the arithmetic mean along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
     func mean<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Returns the minimum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     func min<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise minimum of two tensors.
     /// - Note: `max` supports broadcasting.
     func minimum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Comparable
+        T: TensorView, T.Values.Element: Comparable
     /// Returns the remainder of dividing the first TensorView by the second.
     /// - Note: `%` supports broadcasting.
     func mod<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Element: AnyFloatingPoint
+        where T: TensorView, T.Values.Element: AnyFloatingPoint
     /// mul
     func mul<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Element: Numeric
+        where T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise negation
     func neg<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: SignedNumeric
+        T: TensorView, T.Values.Element: SignedNumeric
     /// Computes `lhs != rhs` element-wise and returns a tensor of Bools
     /// - Note: `.==` supports broadcasting.
     func notEqual<T>(lhs: T, rhs: T, result: inout T.BoolView)
-        where T: TensorView, T.Element: Numeric
+        where T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise `x**y`
     func pow<T>(x: T, y: T, result: inout T)
-        where T: TensorView, T.Element: AnyNumeric
+        where T: TensorView, T.Values.Element: AnyNumeric
     /// Product of the input elements to produce a scalar
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
     func prod<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: AnyNumeric
+        T: TensorView, T.Values.Element: AnyNumeric
     /// Replaces elements of `x` with `other` in the lanes where `mask` is`true`
     ///
     /// - Precondition: `x` and `other` must have the same shape. If
@@ -264,34 +264,34 @@ public protocol StreamIntrinsicsProtocol {
                       result: inout T) where T: TensorView
     /// Computes the element-wise `rsqrt`
     func rsqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `sin`
     func sin<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `sinh`
     func sinh<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `square`
     func square<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise `(lhs - rhs)**2`
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise `sqrt`
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Element: Numeric
+        where T: TensorView, T.Values.Element: Numeric
     /// Sums the input along the specified axes
     /// - Parameter x: the tensor value
     /// - Parameter axes: The axes to reduce
     func sum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Values.Element: Numeric
     /// Computes the element-wise `tan`
     func tan<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
     /// Computes the element-wise `tanh`
     func tanh<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: AnyFloatingPoint
 }

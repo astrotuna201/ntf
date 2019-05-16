@@ -101,8 +101,8 @@ class test_QConverter: XCTestCase {
 //    // test_matrixUInt8Float
 //    func test_matrixUInt8Float() {
 //        do {
-//            let scalars: [UInt8] = [0, 63, 127, 255]
-//            let matrix = QMatrix<UInt8, Float>((2, 2), scalars: scalars)
+//            let values: [UInt8] = [0, 63, 127, 255]
+//            let matrix = QMatrix<UInt8, Float>((2, 2), values: values)
 //            let values = try [Float](matrix.values())
 //            //            let values = try matrix.array()
 //            print(values)

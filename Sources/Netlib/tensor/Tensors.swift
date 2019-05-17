@@ -173,7 +173,7 @@ public extension ShapedTensorView {
 //==============================================================================
 // Indexing
 public extension ShapedTensorView {
-
+    /// returns a collection of read only values
     func values(using stream: DeviceStream?) throws
         -> TensorValueCollection<Self>
     {
@@ -181,6 +181,7 @@ public extension ShapedTensorView {
         return try TensorValueCollection(view: self, buffer: buffer)
     }
     
+    /// returns a collection of read write values
     mutating func mutableValues(using stream: DeviceStream?) throws
         -> TensorMutableValueCollection<Self>
     {
@@ -204,7 +205,7 @@ public extension ScalarView {
     }
 
     //--------------------------------------------------------------------------
-    /// shaped initializers
+    /// with single value
     init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -298,7 +299,6 @@ public extension VectorView {
     }
 
     //--------------------------------------------------------------------------
-    /// shaped initializers
     /// with single value
     init(_ value: Values.Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
@@ -443,9 +443,6 @@ public extension MatrixView {
     }
     
     //--------------------------------------------------------------------------
-    /// shaped initializers
-    
-    //-------------------------------------
     /// repeating
     init(_ extents: MatrixExtents, repeating other: Self) {
         let extents = [extents.rows, extents.cols]
@@ -615,9 +612,6 @@ public extension VolumeView {
     }
 
     //--------------------------------------------------------------------------
-    /// shaped initializers
-
-    //-------------------------------------
     /// repeating
     init(_ extents: VolumeExtents, repeating other: Self) {
         
@@ -763,7 +757,7 @@ public extension NDTensorView {
         return NDIndex(view: self, at: [0])
     }
 
-    //-------------------------------------
+    //--------------------------------------------------------------------------
     /// with Sequence
     init<Seq>(extents: [Int], name: String? = nil, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
@@ -889,9 +883,6 @@ public extension NCHWTensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// shaped initializers
-
-    //-------------------------------------
     /// repeating
     init(_ extents: NCHWExtents, repeating other: Self) {
         let extent = [extents.items, extents.channels,
@@ -1048,9 +1039,6 @@ public extension NHWCTensorView {
     }
 
     //--------------------------------------------------------------------------
-    /// shaped initializers
-
-    //-------------------------------------
     /// repeating
     init(_ extents: NHWCExtents, repeating other: Self) {
         let extents = [extents.items, extents.rows,

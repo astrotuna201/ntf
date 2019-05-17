@@ -191,25 +191,9 @@ public extension TensorView where Values.Element: AnyNumeric {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
-    func pow<S: AnyNumeric>(_ y: S) -> Self {
+    func pow(_ y: Values.Element) -> Self {
         var result = createDenseView()
-        let yTensor = createDenseView(values: [Values.Element(any: y)])
-        Netlib.pow(self, yTensor, result: &result)
-        return result
-    }
-}
-
-public extension TensorView where Values.Element: AnyNumeric {
-    /// returns new view
-    /// - Parameter y: exponent tensor. If the extents are smaller than `x` then
-    ///   broadcasting will be performed via repeated indexing.
-    /// - Returns: a new tensor containing the result
-    @inlinable @inline(__always)
-    //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
-    func pow<S: AnyInteger>(
-        _ y: S, using deviceStream: DeviceStream? = nil) -> Self {
-        var result = createDenseView()
-        let yTensor = createDenseView(values: [Values.Element(any: y)])
+        let yTensor = createDenseView(with: y)
         Netlib.pow(self, yTensor, result: &result)
         return result
     }

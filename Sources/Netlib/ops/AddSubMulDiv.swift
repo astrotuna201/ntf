@@ -85,20 +85,20 @@ public extension TensorView where
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +<S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func +(lhs: Self, rhs: Values.Element) -> Self {
+        return add(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +<S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return add(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func +(lhs: Self, rhs: Values.Element) -> Self {
+        return add(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
@@ -145,27 +145,27 @@ public extension TensorView where Values.Element: Numeric {
     }
 }
 
-public extension TensorView where Values.Element: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func - (lhs: Self, rhs: Values.Element) -> Self {
+        return subtract(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return subtract(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func - (lhs: Self, rhs: Values.Element) -> Self {
+        return subtract(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
@@ -211,27 +211,27 @@ public extension TensorView where Values.Element: Numeric {
     }
 }
 
-public extension TensorView where Values.Element: FloatingPoint & AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func * (lhs: Self, rhs: Values.Element) -> Self {
+        return mul(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
+public extension TensorView where Values.Element: BinaryInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * <S: AnyInteger>(lhs: Self, rhs: S) -> Self {
-        return mul(lhs, lhs.createDenseView(values: [Values.Element(any: rhs)]))
+    static func * (lhs: Self, rhs: Values.Element) -> Self {
+        return mul(lhs, lhs.createDenseView(with: rhs))
     }
 }
 
@@ -246,7 +246,7 @@ public extension TensorView where Values.Element: BinaryInteger & AnyInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Values.Element: AnyFloatingPoint
+    where T: TensorView, T.Values.Element: FloatingPoint
 {
     _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -258,14 +258,14 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Values.Element: AnyFloatingPoint
+    where T: TensorView, T.Values.Element: FloatingPoint
 {
     var result = lhs.createDenseView()
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Values.Element: AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -277,15 +277,15 @@ public extension TensorView where Values.Element: AnyFloatingPoint {
     }
 }
 
-public extension TensorView where Values.Element: AnyFloatingPoint {
+public extension TensorView where Values.Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func / <S: AnyNumeric>(lhs: Self, rhs: S) -> Self {
-        let scalarTensor = lhs.createDenseView(values: [Values.Element(any: rhs)])
+    static func / (lhs: Self, rhs: Values.Element) -> Self {
+        let scalarTensor = lhs.createDenseView(with: rhs)
         return div(lhs, scalarTensor)
     }
 }

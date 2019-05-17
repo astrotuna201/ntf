@@ -102,11 +102,12 @@ public protocol TensorView: Logging {
     /// with the specified extents
     func createBoolView(with extents: [Int]) -> BoolView
     /// creates a new dense view of the same type with the specified extents
-    func createDenseView(with extents: [Int], values: [Values.Element]?) -> Self
+    func createDenseView(with extents: [Int]) -> Self
+    /// creates a new dense view of the same type with the specified value
+    func createDenseView(with value: Values.Element) -> Self
     /// creates a new dense view where `Element` equals `IndexElement`
     /// with the specified extents and initial values
-    func createIndexView(with extents: [Int],
-                         values: [IndexElement]?) -> IndexView
+    func createIndexView(with extents: [Int]) -> IndexView
 
     //--------------------------------------------------------------------------
     // indexing
@@ -168,21 +169,15 @@ public extension TensorView {
         return createBoolView(with: extents)
     }
 
-    /// creates a view of the same type as `self` with the specified extents
-    func createDenseView(with extents: [Int]) -> Self {
-        return createDenseView(with: extents, values: nil)
-    }
-
-    /// creates a view of the same type and shape as `self` initialized with
-    /// the specified values
-    func createDenseView(values: [Values.Element]? = nil) -> Self {
-        return createDenseView(with: extents, values: values)
+    /// creates a view of the same type and shape as `self`
+    func createDenseView() -> Self {
+        return createDenseView(with: extents)
     }
 
     /// creates a view of the same shape as `self` with `Element`
-    /// equal to `IndexElement` and initialized with the specified values
-    func createIndexView(values: [IndexElement]? = nil) -> IndexView {
-        return createIndexView(with: extents, values: values)
+    /// equal to `IndexElement`
+    func createIndexView() -> IndexView {
+        return createIndexView(with: extents)
     }
 
     //--------------------------------------------------------------------------

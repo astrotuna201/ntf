@@ -155,7 +155,7 @@ public protocol StreamIntrinsicsProtocol {
     /// Returns the quotient of dividing the first TensorView by the second.
     /// - Note: `/` supports broadcasting.
     func div<T>(lhs: T, rhs: T, result: inout T)
-        where T: TensorView, T.Values.Element: AnyFloatingPoint
+        where T: TensorView, T.Values.Element: FloatingPoint
     /// Computes `lhs == rhs` element-wise and returns a `TensorView` of Boolean
     /// values.
     /// - Note: `.==` supports broadcasting.

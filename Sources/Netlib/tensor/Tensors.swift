@@ -38,15 +38,25 @@ public protocol ShapedTensorView: TensorView {
 public extension ShapedTensorView {
     //--------------------------------------------------------------------------
     /// DenseView
-    func createDenseView(with extents: [Int],
-                         values: [Values.Element]? = nil) -> Self
-    {
+    func createDenseView(with extents: [Int]) -> Self {
         let shape = DataShape(extents: extents)
         return Self(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
+    }
+    
+    //--------------------------------------------------------------------------
+    /// DenseView
+    func createDenseView(with value: Values.Element) -> Self {
+        let extents = [Int](repeating: 1, count: rank)
+        let shape = DataShape(extents: extents)
+        return Self(
+            shape: shape, dataShape: shape, name: name,
+            padding: nil, padValue: nil,
+            tensorArray: nil, viewDataOffset: 0,
+            isShared: false, values: [value])
     }
     
     //--------------------------------------------------------------------------
@@ -142,7 +152,7 @@ public extension ShapedTensorView {
     /// a helper to correctly initialize the tensorArray object
     mutating func initTensorArray(_ tensorData: TensorArray?,
                                   _ name: String?,
-                                  _ values: [Values.Element]?) {
+                                  _ values: [Element]?) {
         if let tensorData = tensorData {
             tensorArray = tensorData
         } else {
@@ -227,15 +237,13 @@ public extension ScalarView {
 
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> ScalarValue<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> ScalarValue<IndexElement> {
         let shape = DataShape(extents: extents)
         return ScalarValue<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 
@@ -372,15 +380,13 @@ public extension VectorView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> Vector<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> Vector<IndexElement> {
         let shape = DataShape(extents: extents)
         return Vector<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 
@@ -406,7 +412,7 @@ where Element: DefaultInitializer {
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                values: [Element]?) {
+                values: [Values.Element]?) {
 
         assert(values == nil || values!.count == shape.elementCount,
                "tensor size and values count do not match")
@@ -527,15 +533,13 @@ public extension MatrixView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> Matrix<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> Matrix<IndexElement> {
         let shape = DataShape(extents: extents)
         return Matrix<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 
     //--------------------------------------------------------------------------
@@ -687,15 +691,13 @@ public extension VolumeView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> Volume<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> Volume<IndexElement> {
         let shape = DataShape(extents: extents)
         return Volume<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 
@@ -805,15 +807,13 @@ public extension NDTensorView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> NDTensor<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> NDTensor<IndexElement> {
         let shape = DataShape(extents: extents)
         return NDTensor<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 
@@ -959,15 +959,13 @@ public extension NCHWTensorView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> NCHWTensor<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> NCHWTensor<IndexElement> {
         let shape = DataShape(extents: extents)
         return NCHWTensor<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 
@@ -1115,15 +1113,13 @@ public extension NHWCTensorView {
     
     //--------------------------------------------------------------------------
     /// IndexView
-    func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
-        -> NHWCTensor<IndexElement>
-    {
+    func createIndexView(with extents: [Int]) -> NHWCTensor<IndexElement> {
         let shape = DataShape(extents: extents)
         return NHWCTensor<IndexElement>(
             shape: shape, dataShape: shape, name: name,
             padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
-            isShared: false, values: values)
+            isShared: false, values: nil)
     }
 }
 

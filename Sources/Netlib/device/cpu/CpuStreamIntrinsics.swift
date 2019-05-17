@@ -155,11 +155,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// div
     func div<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Values.Element: FloatingPoint
     {
-//        queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
-//            zip($0.0, $0.1).map(to: &$1) { $0 / $1 }
-//        }
+        queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
+            zip($0.0, $0.1).map(to: &$1) { $0 / $1 }
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -264,11 +264,11 @@ public extension CpuStream {
     func log<T>(x: T, result: inout T) where
         T: TensorView, T.Values.Element: AnyFloatingPoint
     {
-//        queue(#function, { try x.values() }, &result) {
-//            $0.map(to: &$1) {
-//                T.Values.Element(any: Foundation.log($0.asFloat))
-//            }
-//        }
+        queue(#function, { try x.values() }, &result) {
+            $0.map(to: &$1) {
+                T.Values.Element(any: Foundation.log($0.asFloat))
+            }
+        }
     }
     
     //--------------------------------------------------------------------------

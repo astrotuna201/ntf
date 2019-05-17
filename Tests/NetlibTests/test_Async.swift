@@ -18,48 +18,6 @@ class test_Async: XCTestCase {
     //==========================================================================
     // test_defaultStreamOp
     // initializes two matrices and adds them together
-    func test_bug() {
-        let matrix = QMatrix<UInt8, Float>((2, 3), sequence: 0..<6)
-        let val = matrix.convert(viewed: 0.5)
-        print(val)
-//
-//        let pixv = QVector<RGBSample<UInt8>, RGBSample<Float>>(count: 1)
-//        let pval = pixv.quantizer.convert(viewed: RGBSample(r: 0, g: 0.5, b: 1.0))
-//        print(pval)
-//        do {
-//            Platform.log.level = .diagnostic
-//            
-//            let values: [Float] = [0, -1.5, 2, -3, 4, 5]
-//            let m1 = Matrix<Float>((2, 3), values: values)
-////            var results = try m1.mutableValues()
-////            results[results.startIndex] = 7.5
-////            let a = [Float](results)
-////            print(a)
-////            for i in results.indices {
-////                results[i] = 7
-////            }
-////            let a = [Float](results)
-////            print(a)
-//
-//            let result = abs(m1)
-//
-//            let values = try result.array()
-//            
-//            let expected: [Float] = [0, 1.5, 2, 3, 4, 5]
-//            XCTAssert(values == expected)
-//        } catch {
-//            XCTFail(String(describing: error))
-//        }
-//        
-//        if ObjectTracker.global.hasUnreleasedObjects {
-//            XCTFail(ObjectTracker.global.getActiveObjectReport())
-//        }
-    }
-    
-
-    //==========================================================================
-    // test_defaultStreamOp
-    // initializes two matrices and adds them together
     func test_defaultStreamOp() {
         do {
             Platform.log.level = .diagnostic

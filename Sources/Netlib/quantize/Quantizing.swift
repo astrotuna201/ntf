@@ -7,12 +7,8 @@ import Foundation
 //==============================================================================
 /// Quantizing
 /// performs quantized tensor indexing
-public protocol Quantizing where
-    Self: TensorView,
-    Element == Quant.Element,
-    Values.Element == Quant.Viewed
-{
-    associatedtype Quant: Quantizer
+public protocol Quantizing where Self: TensorView {
+    associatedtype Quant: Quantizer where Quant.Element == Self.Element, Quant.Viewed == Self.Values.Element
     var quantizer: Quant { get }
 }
 

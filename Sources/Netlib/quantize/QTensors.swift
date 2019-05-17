@@ -16,10 +16,9 @@ public protocol QShapedTensorView: Quantizing {
          tensorArray: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
-         quantizer: Q,
+         quantizer: Quant,
          values: [Values.Element]?)
 }
-
 
 public extension QShapedTensorView {
     //--------------------------------------------------------------------------
@@ -36,7 +35,7 @@ public extension QShapedTensorView {
             quantizer: quantizer,
             values: values)
     }
-    
+
     //--------------------------------------------------------------------------
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
@@ -51,7 +50,7 @@ public extension QShapedTensorView {
                   quantizer: other.quantizer,
                   values: nil)
     }
-    
+
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
@@ -60,12 +59,12 @@ public extension QShapedTensorView {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
-        
+
         // the subview offset is the current plus the offset of index
         let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
         let subViewShape = DataShape(extents: extents, strides: shape.strides)
         let name = "\(self.name).subview"
-        
+
         return Self(shape: subViewShape,
                     dataShape: subViewShape,
                     name: name,
@@ -77,7 +76,7 @@ public extension QShapedTensorView {
                     quantizer: quantizer,
                     values: nil)
     }
-    
+
     //--------------------------------------------------------------------------
     /// reference
     /// creation of a reference is for the purpose of reshaped writes
@@ -89,7 +88,7 @@ public extension QShapedTensorView {
         // get the queue, if we reference it as a tensorArray member it
         // it adds a ref count which messes things up
         let queue = tensorArray.accessQueue
-        
+
         return try queue.sync {
             try copyIfMutates(using: stream)
             return Self(shape: shape,
@@ -104,7 +103,7 @@ public extension QShapedTensorView {
                         values: nil)
         }
     }
-    
+
     //--------------------------------------------------------------------------
     /// flattened
     /// Returns a view with all dimensions higher than `axis` set to 1
@@ -114,7 +113,7 @@ public extension QShapedTensorView {
         guard self.isShared != isShared || axis != shape.rank - 1 else {
             return self
         }
-        
+
         // create flattened view
         let flatShape = shape.flattened()
         return Self(shape: flatShape,
@@ -134,24 +133,23 @@ public extension QShapedTensorView {
     /// a helper to correctly initialize the tensorArray object
     mutating func initTensorArray(_ tensorData: TensorArray?,
                                   _ name: String?,
-                                  _ quantizer: Q,
+                                  _ quantizer: Quant,
                                   _ values: [Values.Element]?) {
         if let tensorData = tensorData {
             tensorArray = tensorData
         } else {
             assert(shape.isContiguous, "new views should have a dense shape")
             let name = name ?? String(describing: Self.self)
-            
+
             // allocate backing tensorArray
             if let values = values {
                 assert(values.count == dataShape.elementCount,
                        "number of values does not match tensor extents")
                 do {
-                    let v = quantizer.convert(viewed: values[0])
-//                    let elements = values.map { quantizer.convert(viewed: $0) }
-//                    tensorArray = try elements.withUnsafeBufferPointer {
-//                        try TensorArray(copying: $0, name: name)
-//                    }
+                    let elements = values.map { quantizer.convert(viewed: $0) }
+                    tensorArray = try elements.withUnsafeBufferPointer {
+                        try TensorArray(copying: $0, name: name)
+                    }
                 } catch {
                     tensorArray = TensorArray()
                     _Streams.current.reportDevice(error: error)
@@ -197,15 +195,15 @@ public extension QVectorView {
     var endIndex: VectorIndex {
         return VectorIndex(endOf: self)
     }
-    
+
     var startIndex: VectorIndex {
         return VectorIndex(view: self, at: 0)
     }
-    
+
     //--------------------------------------------------------------------------
     /// shaped initializers
     /// with single value
-    init(_ value: Values.Element, quantizer: Q,
+    init(_ value: Values.Element, quantizer: Quant,
          name: String? = nil) {
         let shape = DataShape(extents: [1])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -213,30 +211,30 @@ public extension QVectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, quantizer: quantizer, values: [value])
     }
-    
+
     //-------------------------------------
     /// empty array
-    init(count: Int, quantizer: Q, name: String? = nil) {
+    init(count: Int, quantizer: Quant, name: String? = nil) {
         let shape = DataShape(extents: [count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, quantizer: quantizer, values: nil)
     }
-    
+
     //-------------------------------------
     /// with Array
-    init(name: String? = nil, quantizer: Q, values: [Values.Element]) {
+    init(name: String? = nil, quantizer: Quant, values: [Values.Element]) {
         let shape = DataShape(extents: [values.count])
         self.init(shape: shape, dataShape: shape, name: name,
                   padding: nil, padValue: nil,
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, quantizer: quantizer, values: values)
     }
-    
+
     //-------------------------------------
     /// with Sequence
-    init<Seq>(name: String? = nil, quantizer: Q, sequence: Seq) where
+    init<Seq>(name: String? = nil, quantizer: Quant, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable,
         Values.Element: AnyConvertable
     {
@@ -247,17 +245,17 @@ public extension QVectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   isShared: false, quantizer: quantizer, values: values)
     }
-    
+
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(referenceTo buffer: UnsafeBufferPointer<Element>,
-         quantizer: Q, name: String? = nil)
+         quantizer: Quant, name: String? = nil)
     {
         // create tensor data reference to buffer
         let name = name ?? String(describing: Self.self)
         let tensorArray = TensorArray(referenceTo: buffer, name: name)
-        
+
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
         self.init(shape: shape, dataShape: shape, name: name,
@@ -265,7 +263,7 @@ public extension QVectorView {
                   tensorArray: tensorArray, viewDataOffset: 0,
                   isShared: false, quantizer: quantizer, values: nil)
     }
-    
+
     //--------------------------------------------------------------------------
     /// BoolView
     func createBoolView(with extents: [Int]) -> Vector<Bool> {
@@ -276,7 +274,7 @@ public extension QVectorView {
             tensorArray: nil, viewDataOffset: 0,
             isShared: false, values: nil)
     }
-    
+
     //--------------------------------------------------------------------------
     /// IndexView
     func createIndexView(with extents: [Int], values: [IndexElement]? = nil)
@@ -293,10 +291,10 @@ public extension QVectorView {
 
 //==============================================================================
 /// Vector
-public struct QVector<Element, Viewed, Q>: QVectorView where
-    Element: DefaultInitializer,
-    Q: Quantizer, Q.Element == Element, Q.Viewed == Viewed
+public struct QVector<Quant>: QVectorView where Quant: Quantizer
 {
+    typealias Element = Quant.Element
+    
     // properties
     public let dataShape: DataShape
     public let isShared: Bool
@@ -306,7 +304,7 @@ public struct QVector<Element, Viewed, Q>: QVectorView where
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
     public var viewDataOffset: Int
-    public let quantizer: Q
+    public let quantizer: Quant
 
     public init(shape: DataShape,
                 dataShape: DataShape,
@@ -316,7 +314,7 @@ public struct QVector<Element, Viewed, Q>: QVectorView where
                 tensorArray: TensorArray?,
                 viewDataOffset: Int,
                 isShared: Bool,
-                quantizer: Q,
+                quantizer: Quant,
                 values: [Values.Element]?) {
 
         assert(values == nil || values!.count == shape.elementCount,

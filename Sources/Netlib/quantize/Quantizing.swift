@@ -9,13 +9,11 @@ import Foundation
 /// performs quantized tensor indexing
 public protocol Quantizing where
     Self: TensorView,
-    Q.Element == Element,
-    Q.Viewed == Values.Element
+    Element == Quant.Element,
+    Values.Element == Quant.Viewed
 {
-    associatedtype Q: Quantizer
-    associatedtype Viewed
-
-    var quantizer: Q { get }
+    associatedtype Quant: Quantizer
+    var quantizer: Quant { get }
 }
 
 //==============================================================================
@@ -29,7 +27,7 @@ public struct QTensorValueCollection<View>: RandomAccessCollection
     public let startIndex: View.Index
     public let endIndex: View.Index
     public let count: Int
-    public let padValue: View.Viewed
+    public let padValue: View.Values.Element
 
     // initializers
     public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
@@ -54,7 +52,7 @@ public struct QTensorValueCollection<View>: RandomAccessCollection
     }
 
     @inlinable @inline(__always)
-    public subscript(index: View.Index) -> View.Viewed {
+    public subscript(index: View.Index) -> View.Values.Element {
         return index.isPad ? padValue :
             view.quantizer.convert(element: buffer[index.dataIndex])
     }
@@ -71,7 +69,7 @@ public struct QTensorMutableValueCollection<View>: RandomAccessCollection,
     public let startIndex: View.Index
     public let endIndex: View.Index
     public let count: Int
-    public let padValue: View.Viewed
+    public let padValue: View.Values.Element
 
     // initializers
     public init(view: inout View,
@@ -97,7 +95,7 @@ public struct QTensorMutableValueCollection<View>: RandomAccessCollection,
     }
 
     @inlinable @inline(__always)
-    public subscript(index: View.Index) -> View.Viewed {
+    public subscript(index: View.Index) -> View.Values.Element {
         get {
             return index.isPad ? padValue :
                 view.quantizer.convert(element: buffer[index.dataIndex])

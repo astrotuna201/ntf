@@ -19,13 +19,13 @@ class test_Async: XCTestCase {
     // test_defaultStreamOp
     // initializes two matrices and adds them together
     func test_bug() {
-        let qv = QVector<UInt8, Float>(sequence: 0..<5)
-        let val = qv.quantizer.convert(viewed: 0.5)
-        print(val)
-
-        let pixv = QVector<RGBSample<UInt8>, RGBSample<Float>>(count: 1)
-        let pval = pixv.quantizer.convert(viewed: RGBSample(r: 0, g: 0.5, b: 1.0))
-        print(pval)
+//        let qv = QVector<UInt8, Float>(sequence: 0..<5)
+//        let val = qv.quantizer.convert(viewed: 0.5)
+//        print(val)
+//
+//        let pixv = QVector<RGBSample<UInt8>, RGBSample<Float>>(count: 1)
+//        let pval = pixv.quantizer.convert(viewed: RGBSample(r: 0, g: 0.5, b: 1.0))
+//        print(pval)
 //        do {
 //            Platform.log.level = .diagnostic
 //            

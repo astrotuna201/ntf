@@ -40,9 +40,9 @@ public extension CpuStream {
     func any<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
         T: TensorView, T.Values.Element == Bool
     {
-//        queue(#function, { try x.values() }, &result) {
-//            $1[$1.startIndex] = $0.first { $0 == true } != nil
-//        }
+        queue(#function, { try x.values() }, &result) {
+            $1[$1.startIndex] = $0.first { $0 == true } != nil
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -52,9 +52,9 @@ public extension CpuStream {
                                result: inout T.BoolView) where
         T: TensorView, T.Values.Element: AnyFloatingPoint
     {
-//        queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
-//            zip($0.0, $0.1).map(to: &$1) { $0.0 - $0.1 <= tolerance }
-//        }
+        queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
+            zip($0.0, $0.1).map(to: &$1) { $0.0 - $0.1 <= tolerance }
+        }
     }
     
     //--------------------------------------------------------------------------

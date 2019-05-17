@@ -28,11 +28,7 @@ import Foundation
 ///
 /// Data repeating (broadcasting) and padding are instrinsic features
 ///
-public protocol TensorView: Logging where
-    MutableValues.Element == Values.Element,
-    BoolView.Element == Bool,
-    IndexView.Element == IndexElement
-{
+public protocol TensorView: Logging {
     //--------------------------------------------------------------------------
     /// the type of element stored by the tensor
     associatedtype Element: DefaultInitializer
@@ -43,10 +39,14 @@ public protocol TensorView: Logging where
     associatedtype Values: RandomAccessCollection
     /// the type of read write elements collection
     associatedtype MutableValues: RandomAccessCollection & MutableCollection
+        where MutableValues.Element == Values.Element
     /// A concrete type used in generics to pass Boolean values
     associatedtype BoolView: TensorView
+        where BoolView.Element == Bool, BoolView.Values.Element == Bool
     /// A concrete type used in generics to return index results
-    associatedtype IndexView: TensorView
+    associatedtype IndexView: TensorView where
+        IndexView.Element == IndexElement,
+        IndexView.Values.Element == IndexElement
 
     //--------------------------------------------------------------------------
     // Properties that should be user readonly begin with _xyz, and accessor

@@ -23,46 +23,13 @@ public protocol Quantizing where Self: TensorView, Element: Quantizable {
 public extension Quantizing {
     /// converts the tensor element value type to the viewed value type
     func convert(element: Element) -> Viewed {
-        return Viewed(any: element)
+        return Viewed(value: element, scale: scale, bias: bias)
     }
     /// converts the tensor viewed value type to the element value type
     func convert(viewed: Viewed) -> Element {
-        return Element(any: viewed)
+        return Element(value: viewed, scale: scale, bias: bias)
     }
 }
-
-//==============================================================================
-/// Quantizable
-public protocol Quantizable: CVarArg {
-    init(any: Quantizable)
-    var qCVarArg: CVarArg { get }
-    var qUInt8  : UInt8   { get }
-    var qFloat  : Float   { get }
-}
-
-//------------------------------------------------------------------------------
-extension UInt8: Quantizable {
-    public init(any: Quantizable) { self = any.qUInt8 }
-    public var qCVarArg: CVarArg{ return self }
-    public var qUInt8  : UInt8  { return self }
-    public var qFloat  : Float  { return Float(self) }
-}
-
-//------------------------------------------------------------------------------
-extension Float: Quantizable {
-    public init(any: Quantizable) { self = any.qFloat }
-    public var qCVarArg: CVarArg{ return self }
-    public var qUInt8  : UInt8  { return UInt8(self) }
-    public var qFloat  : Float  { return self }
-}
-
-//------------------------------------------------------------------------------
-//extension RGB: Quantizable {
-//    public init(any: Quantizable) { self = any.qUInt8 }
-//    public var qCVarArg: CVarArg{ return self }
-//    public var qUInt8  : UInt8  { return self }
-//    public var qFloat  : Float  { return Float(self) }
-//}
 
 ////==============================================================================
 ///// QTensorValueCollection

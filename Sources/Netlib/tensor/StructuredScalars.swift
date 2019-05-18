@@ -7,8 +7,8 @@ import Foundation
 //==============================================================================
 /// conformance indicates that scalar components are of the same type and
 /// densely packed. This is necessary for zero copy view type casting of
-/// non numeric scalar types.
-/// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
+/// short vector Element types.
+/// For example: Matrix<RGBA<Float>> -> NHWCTensor<Float>
 ///
 public protocol UniformDenseScalar: Equatable {
     associatedtype Component
@@ -21,51 +21,11 @@ public extension UniformDenseScalar {
     }
 }
 
-public protocol UniformDenseScalar2: UniformDenseScalar {
-    var c0: Component { get }
-    var c1: Component { get }
-    init(c0: Component, c1: Component)
-}
-
-public protocol UniformDenseScalar3: UniformDenseScalar {
-    var c0: Component { get }
-    var c1: Component { get }
-    var c2: Component { get }
-    init(c0: Component, c1: Component, c2: Component)
-}
-
-public protocol UniformDenseScalar4: UniformDenseScalar {
-    var c0: Component { get }
-    var c1: Component { get }
-    var c2: Component { get }
-    var c3: Component { get }
-    init(c0: Component, c1: Component, c2: Component, c3: Component)
-}
-
 //==============================================================================
-// RGBImageSample
-public protocol RGBImageSample: UniformDenseScalar3
-    where Component: Numeric
-{
-    var r: Component { get set }
-    var g: Component { get set }
-    var b: Component { get set }
-    init(r: Component, g: Component, b: Component)
-}
+// RGB
+public protocol RGBProtocol: UniformDenseScalar {}
 
-public extension RGBImageSample {
-    var c0: Component { return r }
-    var c1: Component { return g }
-    var c2: Component { return b }
-
-    @inlinable @inline(__always)
-    init(c0: Component, c1: Component, c2: Component) {
-        self.init(r: c0, g: c1, b: c2)
-    }
-}
-
-public struct RGBSample<Component>: RGBImageSample
-where Component: Numeric {
+public struct RGB<Component>: RGBProtocol where Component: Numeric {
     public var r, g, b: Component
 
     @inlinable @inline(__always)
@@ -73,39 +33,15 @@ where Component: Numeric {
 
     @inlinable @inline(__always)
     public init(r: Component, g: Component, b: Component) {
-        self.r = r
-        self.g = g
-        self.b = b
+        self.r = r; self.g = g; self.b = b
     }
 }
 
 //==============================================================================
-// RGBAImageSample
-public protocol RGBAImageSample: UniformDenseScalar4
-    where Component: Numeric
-{
-    var r: Component { get set }
-    var g: Component { get set }
-    var b: Component { get set }
-    var a: Component { get set }
-    init(r: Component, g: Component, b: Component, a: Component)
-}
+// RGBA
+public protocol RGBAProtocol: UniformDenseScalar {}
 
-public extension RGBAImageSample {
-    var c0: Component { return r }
-    var c1: Component { return g }
-    var c2: Component { return b }
-    var c3: Component { return a }
-
-    @inlinable @inline(__always)
-    init(c0: Component, c1: Component, c2: Component, c3: Component) {
-        self.init(r: c0, g: c1, b: c2, a: c3)
-    }
-}
-
-public struct RGBASample<Component> : RGBAImageSample
-    where Component: Numeric
-{
+public struct RGBA<Component> : RGBAProtocol where Component: Numeric {
     public var r, g, b, a: Component
 
     @inlinable @inline(__always)
@@ -118,35 +54,15 @@ public struct RGBASample<Component> : RGBAImageSample
     
     @inlinable @inline(__always)
     public init(r: Component, g: Component, b: Component, a: Component) {
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
+        self.r = r; self.g = g; self.b = b; self.a = a
     }
 }
 
 //==============================================================================
-// Audio sample types
-public protocol StereoAudioSample: UniformDenseScalar2
-    where Component: Numeric
-{
-    var left: Component { get set }
-    var right: Component { get set }
-    init(left: Component, right: Component)
-}
+// Stereo
+public protocol StereoProtocol: UniformDenseScalar {}
 
-public extension StereoAudioSample {
-    var c0: Component { return left }
-    var c1: Component { return right }
-
-    @inlinable @inline(__always)
-    init(c0: Component, c1: Component) {
-        self.init(left: c0, right: c1)
-    }
-}
-
-public struct StereoSample<Component>: StereoAudioSample
-where Component: Numeric {
+public struct Stereo<Component>: StereoProtocol where Component: Numeric {
     public var left, right: Component
 
     @inlinable @inline(__always)
@@ -154,8 +70,7 @@ where Component: Numeric {
 
     @inlinable @inline(__always)
     public init(left: Component, right: Component) {
-        self.left = left
-        self.right = right
+        self.left = left; self.right = right
     }
 }
 

@@ -180,27 +180,6 @@ at index: [0, 0]
 3  3  3  3  3 
 4  4  4  4  4 
 ```
-Virtual padding can be specified for a view. Here one padding row is added before and after, and columns are padded 2 before and 3 after. A padding value of -1 is used here to make boundaries obvious. The default padding value is 0. Padding can also be added to sub views to aid windowed operations such as convolutions.
-```swift
-let padding = [
-    Padding(1),                   // row pad
-    Padding(before: 2, after: 3)  // col pad
-]
-
-let matrix = Matrix<Int32>((2, 3),
-                           padding: padding,
-                           padValue: -1,
-                           sequence: 0..<6)
-
-let expected: [Int32] = [
-    -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1,  0,  1,  2, -1, -1, -1,
-    -1, -1,  3,  4,  5, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1,
-]
-
-assert(matrix.array == expected, "values do not match")
-```
 ### Matrix Layout
 Packages such as Matlab, Octave, and CBLAS have column major memory layout. TensorViews by default are row major, but can work with column major data with zero copy.
 

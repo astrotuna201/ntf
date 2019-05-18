@@ -61,8 +61,8 @@ public extension TensorView {
         for dim in 0..<rank {
             bounds.append(ExtentBounds(viewExtent: shape.extents[dim],
                                        viewStride: shape.strides[dim],
-                                       dataExtent: shape.extents[dim],
-                                       dataStride: shape.strides[dim]))
+                                       dataExtent: dataShape.extents[dim],
+                                       dataStride: dataShape.strides[dim]))
         }
         return bounds
     }

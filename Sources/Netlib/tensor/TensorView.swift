@@ -49,7 +49,7 @@ public protocol TensorView: Logging {
         IndexView.Values.Element == IndexElement
 
     //--------------------------------------------------------------------------
-    // Properties that should be user readonly begin with _xyz, and accessor
+    // Readonly properties for the caller begin with an underscore. Accessor
     // functions with correct access are exposed as protocol extensions.
     // this gives full access to protocol default implementations.
 
@@ -60,6 +60,8 @@ public protocol TensorView: Logging {
     var dataShape: DataShape { get }
     /// returns an index one past the end of the tensor used for collections
     var endIndex: Index { get }
+    /// an adjustment to indexes to align properly when using repeated data
+    var indexAlignment: [Int] { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
@@ -82,23 +84,10 @@ public protocol TensorView: Logging {
          name: String?,
          tensorArray: TensorArray?,
          viewDataOffset: Int,
+         indexAlignment: [Int]?,
          isShared: Bool,
          values: [Element]?)
 
-    //--------------------------------------------------------------------------
-    /// create a sub view
-    func createView(at offset: [Int], extents: [Int], isReference: Bool) -> Self
-    /// create a reference view
-    /// creation of a reference is for the purpose of reshaped writes
-    /// and multi-threaded writes to prevent mutation.
-    /// The data will be copied before reference view creation if
-    /// not uniquely held. Reference views will not perform
-    /// copy-on-write when a write pointer is taken
-    mutating func reference(using stream: DeviceStream) throws -> Self
-    
-    /// creates a flattened view along the specified axis
-    func flattened(axis: Int) -> Self
-    
     //--------------------------------------------------------------------------
     /// creates a new dense view where `Element` equals `Bool`
     /// with the specified extents
@@ -125,6 +114,13 @@ public protocol TensorView: Logging {
 /// IndexElement
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexElement = Int32
+
+//--------------------------------------------------------------------------
+/// zeroIndexAlignment(_ shape:
+@inlinable @inline(__always)
+func zeroIndexAlignment(_ rank: Int) -> [Int] {
+    return [Int](repeating: 0, count: rank)
+}
 
 //==============================================================================
 /// traversal
@@ -173,6 +169,7 @@ public extension TensorView {
         return Self(
             shape: shape, dataShape: shape, name: name,
             tensorArray: nil, viewDataOffset: 0,
+            indexAlignment: zeroIndexAlignment(shape.rank),
             isShared: false, values: nil)
     }
     
@@ -184,6 +181,7 @@ public extension TensorView {
                   name: other.name,
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
+                  indexAlignment: zeroIndexAlignment(extents.count),
                   isShared: other.isShared,
                   values: nil)
     }
@@ -191,24 +189,39 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
-    func createView(at offset: [Int], extents: [Int],
-                    isReference: Bool = false) -> Self {
+    private func createView(at offset: [Int], extents: [Int],
+                            isReference: Bool) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
-        
-        // the subview offset is the current plus the offset of index
-        let subViewOffset = viewDataOffset + shape.linearIndex(of: offset)
-        let subViewShape = DataShape(extents: extents, strides: shape.strides)
         let name = "\(self.name).subview"
-        
-        return Self(shape: subViewShape,
-                    dataShape: subViewShape,
-                    name: name,
-                    tensorArray: tensorArray,
-                    viewDataOffset: subViewOffset,
-                    isShared: isReference,
-                    values: nil)
+        let viewShape = DataShape(extents: extents, strides: shape.strides)
+
+        switch traversal {
+        case .normal:
+            // the subview offset is the current plus the offset of index
+            let dataOffset = viewDataOffset + shape.linearIndex(of: offset)
+            return Self(shape: viewShape,
+                        dataShape: viewShape,
+                        name: name,
+                        tensorArray: tensorArray,
+                        viewDataOffset: dataOffset,
+                        indexAlignment: indexAlignment,
+                        isShared: isReference,
+                        values: nil)
+
+        case .repeated:
+            let alignment = zip(offset, dataShape.extents).map { $0 % $1 }
+            return Self(shape: viewShape,
+                        dataShape: dataShape,
+                        name: name,
+                        tensorArray: tensorArray,
+                        viewDataOffset: 0,
+                        indexAlignment: alignment,
+                        isShared: isReference,
+                        values: nil)
+        }
+
     }
     
     //--------------------------------------------------------------------------
@@ -230,6 +243,7 @@ public extension TensorView {
                         name: name,
                         tensorArray: tensorArray,
                         viewDataOffset: viewDataOffset,
+                        indexAlignment: indexAlignment,
                         isShared: true,
                         values: nil)
         }
@@ -246,16 +260,18 @@ public extension TensorView {
         }
         
         // create flattened view
+         // TODO: the flat alignment is wrong
         let flatShape = shape.flattened()
         return Self(shape: flatShape,
                     dataShape: flatShape,
                     name: name,
                     tensorArray: tensorArray,
                     viewDataOffset: viewDataOffset,
+                    indexAlignment: zeroIndexAlignment(flatShape.rank),
                     isShared: isShared,
                     values: nil)
     }
-    
+
     //--------------------------------------------------------------------------
     /// initTensorArray
     /// a helper to correctly initialize the tensorArray object
@@ -357,6 +373,7 @@ public extension TensorView {
                                  name: name,
                                  tensorArray: tensorArray,
                                  viewDataOffset: viewDataOffset,
+                                 indexAlignment: nil,
                                  isShared: isShared,
                                  values: nil)
     }

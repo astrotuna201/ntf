@@ -66,7 +66,7 @@ public struct VectorIndex: TensorIndexing {
         }
         
         func getRepeatedDataIndex(_ i: Int) -> Int {
-            return (i % bounds.dataExtent) * bounds.dataStride
+            return ((i + bounds.align) % bounds.dataExtent) * bounds.dataStride
         }
         
         //----------------------------------
@@ -147,8 +147,11 @@ public struct MatrixIndex: TensorIndexing {
         }
 
         func getRepeatedDataIndex(_ r: Int, _ c: Int) -> Int {
-            return (r % rowBounds.dataExtent) * rowBounds.dataStride +
-                (c % colBounds.dataExtent) * colBounds.dataStride
+            return
+                ((r + rowBounds.align) % rowBounds.dataExtent) *
+                    rowBounds.dataStride +
+                ((c + colBounds.align) % colBounds.dataExtent) *
+                    colBounds.dataStride
         }
         
         //----------------------------------
@@ -250,9 +253,13 @@ public struct VolumeIndex: TensorIndexing {
         }
         
         func getRepeatedDataIndex(_ d: Int, _ r: Int, _ c: Int) -> Int {
-            return (d % depBounds.dataExtent) * depBounds.dataStride +
-                (r % rowBounds.dataExtent) * rowBounds.dataStride +
-                (c % colBounds.dataExtent) * colBounds.dataStride
+            return
+                ((d + depBounds.align) % depBounds.dataExtent) *
+                    depBounds.dataStride +
+                ((r + rowBounds.align) % rowBounds.dataExtent) *
+                    rowBounds.dataStride +
+                ((c + colBounds.align) % colBounds.dataExtent) *
+                    colBounds.dataStride
         }
         
         //----------------------------------
@@ -357,7 +364,7 @@ public struct NDIndex: TensorIndexing {
         
         func getRepeatedDataIndex(_ p: [Int]) -> Int {
             return zip(p, bounds).reduce(0) {
-                $0 + ($1.0 % $1.1.dataExtent) * $1.1.viewStride
+                $0 + (($1.0 + $1.1.align) % $1.1.dataExtent) * $1.1.viewStride
             }
         }
         

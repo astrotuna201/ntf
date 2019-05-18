@@ -326,4 +326,37 @@ class test_IterateView: XCTestCase {
             XCTFail(String(describing: error))
         }
     }
+
+    //==========================================================================
+    // test_repeatingMatrixSubView
+    func test_repeatingMatrixSubView() {
+        do {
+            let pattern = Matrix<Int32>((2, 2), values: [
+                1, 0,
+                0, 1,
+            ])
+            
+            let matrix = Matrix<Int32>((3, 4), repeating: pattern)
+            let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+            ]
+
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+
+            let view = matrix.view(at: [1, 1], extents: [2, 3])
+            let viewExpected: [Int32] = [
+                1, 0, 1,
+                0, 1, 0,
+            ]
+
+            let viewValues = try view.array()
+            XCTAssert(viewValues == viewExpected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
 }

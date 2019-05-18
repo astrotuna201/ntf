@@ -45,6 +45,7 @@ public extension TensorIndexing {
 //==============================================================================
 /// ExtentBounds
 public struct ExtentBounds {
+    public let align: Int
     public let viewExtent: Int
     public let viewStride: Int
     public let dataExtent: Int
@@ -59,7 +60,8 @@ public extension TensorView {
     func createTensorBounds() -> TensorBounds {
         var bounds = TensorBounds()
         for dim in 0..<rank {
-            bounds.append(ExtentBounds(viewExtent: shape.extents[dim],
+            bounds.append(ExtentBounds(align: indexAlignment[dim],
+                                       viewExtent: shape.extents[dim],
                                        viewStride: shape.strides[dim],
                                        dataExtent: dataShape.extents[dim],
                                        dataStride: dataShape.strides[dim]))

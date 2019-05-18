@@ -4,21 +4,22 @@
 //
 import Foundation
 
-////==============================================================================
-//// ShapedTensorView
-//public protocol QShapedTensorView: TensorView { }
-//
-//public extension QShapedTensorView where  {
-//    //--------------------------------------------------------------------------
-//    /// DenseView
-//    func createDenseView(with value: Values.Element) -> Self {
-//        let extents = [Int](repeating: 1, count: rank)
-//        let shape = DataShape(extents: extents)
-//        return Self(shape: shape, dataShape: shape, name: name,
-//                    tensorArray: nil, viewDataOffset: 0,
-//                    indexAlignment: nil, isShared: false, values: [value])
-//    }
-//}
+//==============================================================================
+// ShapedTensorView
+//public protocol QShapedTensorView: Quantizing { }
+
+public extension TensorView where Self: Quantizing, Values.Element == Viewed {
+    //--------------------------------------------------------------------------
+    /// DenseView
+    func createDenseView(with value: Viewed) -> Self {
+        let value = convert(viewed: value)
+        let extents = [Int](repeating: 1, count: rank)
+        let shape = DataShape(extents: extents)
+        return Self(shape: shape, dataShape: shape, name: name,
+                    tensorArray: nil, viewDataOffset: 0,
+                    indexAlignment: nil, isShared: false, values: [value])
+    }
+}
 
 ////==============================================================================
 //// Indexing
@@ -45,16 +46,6 @@ import Foundation
 public struct QMatrix<Element, Viewed>: MatrixView, Quantizing where
     Element: Quantizable, Viewed: Quantizable
 {
-    public func createDenseView(with value: Viewed) -> QMatrix {
-        let value = convert(viewed: value)
-        let extents = [Int](repeating: 1, count: rank)
-        let shape = DataShape(extents: extents)
-        return QMatrix(shape: shape, dataShape: shape, name: name,
-                       tensorArray: nil, viewDataOffset: 0,
-                       indexAlignment: nil, isShared: false,
-                       values: [value])
-    }
-    
     // properties
     public let dataShape: DataShape
     public let indexAlignment: [Int]

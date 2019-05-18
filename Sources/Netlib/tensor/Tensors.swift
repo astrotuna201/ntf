@@ -22,9 +22,7 @@ public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
 
 //==============================================================================
 // ShapedTensorView
-public protocol ShapedTensorView: TensorView
-{
-}
+public protocol ShapedTensorView: TensorView { }
 
 public extension ShapedTensorView where Values.Element == Element {
     //--------------------------------------------------------------------------

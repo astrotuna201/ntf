@@ -136,7 +136,7 @@ class test_IterateView: XCTestCase {
         #if !DEBUG
         do {
             let count = 1024 * 1024
-            let vector = Vector<Int32>(count: count, sequence: 0..<count)
+            let vector = Vector<Int32>(sequence: 0..<count)
             //            print(matrix.formatted((2,0)))
             let values = try vector.values()
             

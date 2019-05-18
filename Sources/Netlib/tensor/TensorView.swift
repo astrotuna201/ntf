@@ -161,6 +161,19 @@ public extension TensorView {
     func createIndexView() -> IndexView {
         return createIndexView(with: extents)
     }
+
+    //--------------------------------------------------------------------------
+    /// empty
+    init() {
+        self.init(shape: DataShape(),
+                  dataShape: DataShape(),
+                  name: nil,
+                  tensorArray: TensorArray(),
+                  viewDataOffset: 0,
+                  indexAlignment: [0],
+                  isShared: false,
+                  values: nil)
+    }
     
     //--------------------------------------------------------------------------
     /// DenseView

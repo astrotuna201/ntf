@@ -10,6 +10,13 @@ import Foundation
 public protocol Quantizing where Self: TensorView, Element: Quantizable {
     /// the type presented by the Values and MutableValues collections
     associatedtype Viewed: Quantizable
+    /// the type of read only stored elements collection
+    associatedtype StoredValues: RandomAccessCollection
+    /// the type of read write stored elements collection
+    associatedtype MutableStoredValues:
+        RandomAccessCollection & MutableCollection
+        where MutableStoredValues.Element == StoredValues.Element
+
     /// bias applied to Viewed value
     var bias: Viewed { get set }
     /// scale applied to Viewed value
@@ -18,6 +25,13 @@ public protocol Quantizing where Self: TensorView, Element: Quantizable {
     func convert(element: Element) -> Viewed
     /// converts the tensor viewed value type to the element value type
     func convert(viewed: Viewed) -> Element
+    /// a collection of the stored quantized elements.
+    /// Primarily intended for serialization
+    func storedValues(using stream: DeviceStream?) throws -> StoredValues
+    /// a mutable collection of the stored quantized elements
+    /// Primarily intended for serialization
+    mutating func mutableStoredValues(using stream: DeviceStream?) throws
+        -> MutableStoredValues
 }
 
 public extension Quantizing {
@@ -28,6 +42,22 @@ public extension Quantizing {
     /// converts the tensor viewed value type to the element value type
     func convert(viewed: Viewed) -> Element {
         return Element(value: viewed, scale: scale, bias: bias)
+    }
+    
+    /// returns a collection of read only values
+    func storedValues(using stream: DeviceStream? = nil) throws
+        -> TensorValueCollection<Self>
+    {
+        let buffer = try readOnly(using: stream)
+        return try TensorValueCollection(view: self, buffer: buffer)
+    }
+
+    /// returns a collection of read write values
+    mutating func mutableStoredValues(using stream: DeviceStream? = nil) throws
+        -> TensorMutableValueCollection<Self>
+    {
+        let buffer = try readWrite(using: stream)
+        return try TensorMutableValueCollection(view: &self, buffer: buffer)
     }
 }
 
@@ -42,8 +72,7 @@ public struct QTensorValueCollection<View>: RandomAccessCollection
     public let startIndex: View.Index
     public let endIndex: View.Index
     public let count: Int
-
-    // initializers
+    
     public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
         self.view = view
         self.buffer = buffer
@@ -51,19 +80,19 @@ public struct QTensorValueCollection<View>: RandomAccessCollection
         endIndex = view.endIndex
         count = view.shape.elementCount
     }
-
+    
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
     public func index(before i: View.Index) -> View.Index {
         return i.advanced(by: -1)
     }
-
+    
     @inlinable @inline(__always)
     public func index(after i: View.Index) -> View.Index {
         return i.increment()
     }
-
+    
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Viewed {
         return view.convert(element: buffer[index.dataIndex])
@@ -81,8 +110,7 @@ public struct QTensorMutableValueCollection<View>: RandomAccessCollection,
     public let startIndex: View.Index
     public let endIndex: View.Index
     public let count: Int
-
-    // initializers
+    
     public init(view: inout View,
                 buffer: UnsafeMutableBufferPointer<View.Element>) throws {
         self.view = view
@@ -91,19 +119,19 @@ public struct QTensorMutableValueCollection<View>: RandomAccessCollection,
         endIndex = view.endIndex
         count = view.shape.elementCount
     }
-
+    
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
     public func index(before i: View.Index) -> View.Index {
         return i.advanced(by: -1)
     }
-
+    
     @inlinable @inline(__always)
     public func index(after i: View.Index) -> View.Index {
         return i.increment()
     }
-
+    
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Viewed {
         get {

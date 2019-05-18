@@ -10,34 +10,41 @@ import Foundation
 class test_QConverter: XCTestCase {
     //==========================================================================
     // support terminal test run
-//    static var allTests = [
-//        ("test_convertUInt8Float", test_convertUInt8Float),
-//    ]
-//
-//    //==========================================================================
-//    // test_convertUInt8Float
-//    func test_convertUInt8Float() {
-//        let matrix = QMatrix<UInt8, Float>()
-//        XCTAssert(matrix.convert(viewed: 0) == 0)
-//        XCTAssert(matrix.convert(stored: 0) == 0)
-//        XCTAssert(matrix.convert(stored: UInt8.max / 2) == 0.5)
-//        XCTAssert(matrix.convert(viewed: 0.5) == UInt8.max / 2)
-//        XCTAssert(matrix.convert(viewed: 1.0) == UInt8.max)
-//        XCTAssert(matrix.convert(stored: UInt8.max) == 1.0)
-//    }
-//
+    static var allTests = [
+        ("test_convertUInt8Float", test_convertUInt8Float),
+    ]
+
+    //==========================================================================
+    // test_convertUInt8Float
+    func test_convertUInt8Float() {
+        do {
+            let qv = UInt8.max / 4
+            let hv = UInt8.max / 2
+            let fv = UInt8.max
+            let matrix = QMatrix<UInt8, Float>((1, 4), values: [0, qv, hv, fv])
+            let values = try matrix.array()
+            for val in values {
+                print(val)
+            }
+            let expected: [Float] = [0, 0.25, 0.5, 1.0]
+            XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
 //    //==========================================================================
 //    // test_convertInt8Float
 //    func test_convertInt8Float() {
 //        let matrix = QMatrix<Int8, Float>()
 //        XCTAssert(matrix.convert(viewed: 0) == 0)
-//        XCTAssert(matrix.convert(stored: 0) == 0)
-//        XCTAssert(matrix.convert(stored: Int8.max / 2) == 0.5)
+//        XCTAssert(matrix.convert(element: 0) == 0)
+//        XCTAssert(matrix.convert(element: Int8.max / 2) == 0.5)
 //        XCTAssert(matrix.convert(viewed: 0.5) == Int8.max / 2)
 //        XCTAssert(matrix.convert(viewed: 1.0) == Int8.max)
-//        XCTAssert(matrix.convert(stored: Int8.max) == 1.0)
+//        XCTAssert(matrix.convert(element: Int8.max) == 1.0)
 //        XCTAssert(matrix.convert(viewed: -1.0) == Int8.min)
-//        XCTAssert(matrix.convert(stored: Int8.min) == -1.0)
+//        XCTAssert(matrix.convert(element: Int8.min) == -1.0)
 //    }
 //    
 //    //==========================================================================
@@ -46,14 +53,14 @@ class test_QConverter: XCTestCase {
 //        let bias: Float = 0.5
 //        var matrix = QMatrix<Int8, Float>()
 //        matrix.bias = bias
-//        XCTAssert(matrix.convert(stored: 0) == bias)
+//        XCTAssert(matrix.convert(element: 0) == bias)
 //        XCTAssert(matrix.convert(viewed: bias) == 0)
-//        XCTAssert(matrix.convert(stored: Int8.max / 2) == 0.5 + bias)
+//        XCTAssert(matrix.convert(element: Int8.max / 2) == 0.5 + bias)
 //        XCTAssert(matrix.convert(viewed: 0.5 + bias) == Int8.max / 2)
 //        XCTAssert(matrix.convert(viewed: 1.0 + bias) == Int8.max)
-//        XCTAssert(matrix.convert(stored: Int8.max) == 1.0 + bias)
+//        XCTAssert(matrix.convert(element: Int8.max) == 1.0 + bias)
 //        XCTAssert(matrix.convert(viewed: -1.0 + bias) == Int8.min)
-//        XCTAssert(matrix.convert(stored: Int8.min) == -1.0 + bias)
+//        XCTAssert(matrix.convert(element: Int8.min) == -1.0 + bias)
 //    }
 //    
 //    //==========================================================================
@@ -61,11 +68,11 @@ class test_QConverter: XCTestCase {
 //    func test_convertUInt16Float() {
 //        let matrix = QMatrix<UInt16, Float>()
 //        XCTAssert(matrix.convert(viewed: 0) == 0)
-//        XCTAssert(matrix.convert(stored: 0) == 0)
-//        XCTAssert(matrix.convert(stored: UInt16.max / 2) == 0.5)
+//        XCTAssert(matrix.convert(element: 0) == 0)
+//        XCTAssert(matrix.convert(element: UInt16.max / 2) == 0.5)
 //        XCTAssert(matrix.convert(viewed: 0.5) == UInt16.max / 2)
 //        XCTAssert(matrix.convert(viewed: 1.0) == UInt16.max)
-//        XCTAssert(matrix.convert(stored: UInt16.max) == 1.0)
+//        XCTAssert(matrix.convert(element: UInt16.max) == 1.0)
 //    }
 //
 ////    //==========================================================================
@@ -76,10 +83,10 @@ class test_QConverter: XCTestCase {
 ////        let fv = UInt8.max
 ////        // pixel quantizer
 ////        let quantizer = QMatrix<RGBASample<UInt8>, RGBASample<Float>>()
-////        let stored = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
+////        let element = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
 ////        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-////        XCTAssert(quantizer.convert(viewed: viewed) == stored)
-////        XCTAssert(quantizer.convert(stored: stored) == viewed)
+////        XCTAssert(quantizer.convert(viewed: viewed) == element)
+////        XCTAssert(quantizer.convert(element: element) == viewed)
 ////    }
 //
 ////    //==========================================================================
@@ -90,11 +97,11 @@ class test_QConverter: XCTestCase {
 ////        let fv = UInt16.max
 ////        // pixel quantizer
 ////        let quantizer = QMatrix<RGBASample<UInt16>, RGBASample<Float>>()
-////        let stored = RGBASample<UInt16>(r: 0, g: qv, b: hv, a: fv)
+////        let element = RGBASample<UInt16>(r: 0, g: qv, b: hv, a: fv)
 ////        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
 ////
-////        XCTAssert(quantizer.convert(viewed: viewed) == stored)
-////        XCTAssert(quantizer.convert(stored: stored) == viewed)
+////        XCTAssert(quantizer.convert(viewed: viewed) == element)
+////        XCTAssert(quantizer.convert(element: element) == viewed)
 ////    }
 //
 //    //==========================================================================
@@ -122,12 +129,12 @@ class test_QConverter: XCTestCase {
 ////            let qv = UInt8.max / 4
 ////            let hv = UInt8.max / 2
 ////            let fv = UInt8.max
-////            let stored = Element(r: 0, g: qv, b: hv, a: fv)
+////            let element = Element(r: 0, g: qv, b: hv, a: fv)
 ////            let matrix = QMatrix<Element, Element>((2, 3),
-////                                                 repeating: QMatrix(stored))
+////                                                 repeating: QMatrix(element))
 ////
 //////            let viewed = Element(r: 0, g: 0.25, b: 0.5, a: 1)
-//////            let value = matrix.quantizer.convert(stored: stored)
+//////            let value = matrix.quantizer.convert(element: element)
 //////            XCTAssert(value == viewed)
 ////
 ////            let values = try [Element](matrix.values())

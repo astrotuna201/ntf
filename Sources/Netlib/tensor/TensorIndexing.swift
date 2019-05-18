@@ -71,23 +71,18 @@ public extension TensorView {
 }
 
 //==============================================================================
-/// TensorValueCollection
-public struct TensorValueCollection<View>: RandomAccessCollection
-    where View: TensorView
-{
+/// TensorValueCollectionProtocol
+public protocol TensorValueCollectionProtocol: RandomAccessCollection {
+    associatedtype View: TensorView
     // properties
-    public let buffer: UnsafeBufferPointer<View.Element>
-    public let startIndex: View.Index
-    public let endIndex: View.Index
-    public let count: Int
+    var view: View { get }
+    var buffer: UnsafeBufferPointer<View.Element> { get }
+    var startIndex: View.Index { get }
+    var endIndex: View.Index { get }
+    var count: Int { get }
+}
 
-    public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
-        self.buffer = buffer
-        startIndex = view.startIndex
-        endIndex = view.endIndex
-        count = view.shape.elementCount
-    }
-
+extension TensorValueCollectionProtocol {
     //--------------------------------------------------------------------------
     // Collection
     @inlinable @inline(__always)
@@ -103,6 +98,34 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Element {
         return buffer[index.dataIndex]
+    }
+}
+
+extension TensorValueCollectionProtocol where View: Quantizing {
+    @inlinable @inline(__always)
+    public subscript(index: View.Index) -> View.Viewed {
+        return view.convert(element: buffer[index.dataIndex])
+    }
+}
+
+//==============================================================================
+/// TensorValueCollection
+public struct TensorValueCollection<View>: TensorValueCollectionProtocol
+    where View: TensorView
+{
+    // properties
+    public let view: View
+    public let buffer: UnsafeBufferPointer<View.Element>
+    public let startIndex: View.Index
+    public let endIndex: View.Index
+    public let count: Int
+
+    public init(view: View, buffer: UnsafeBufferPointer<View.Element>) throws {
+        self.view = view
+        self.buffer = buffer
+        startIndex = view.startIndex
+        endIndex = view.endIndex
+        count = view.shape.elementCount
     }
 }
 

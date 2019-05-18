@@ -389,7 +389,6 @@ public extension MatrixView {
     }
 }
 
-
 //==============================================================================
 // Matrix
 public struct Matrix<Element>: MatrixView {

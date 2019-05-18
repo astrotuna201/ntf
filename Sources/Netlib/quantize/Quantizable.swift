@@ -9,6 +9,7 @@ import Foundation
 public protocol Quantizable {
     static var normalScale: Float { get }
     static var normalInverseScale: Float { get }
+    init(value: Quantizable)
     init(value: Quantizable, scale: Quantizable, bias: Quantizable)
     
     //--------------------------------------------------------------------------
@@ -28,6 +29,8 @@ public protocol Quantizable {
     func toRGBFloat(_ scale: Quantizable, _ bias: Quantizable) -> RGB<Float>
 }
 
+//==============================================================================
+/// Quantizable extensions
 public extension Quantizable {
     /// converts a scalar value Int --> Float
     @inlinable @inline(__always)
@@ -87,7 +90,10 @@ extension UInt8: Quantizable {
     public static var normalScale: Float { return 1 / normalInverseScale }
     public static var normalInverseScale: Float { return Float(UInt8.max) + 1 }
 
-    // initializer
+    // initializers
+    @inlinable @inline(__always)
+    public init(value: Quantizable) { self = value.asUInt8 }
+
     @inlinable @inline(__always)
     public init(value: Quantizable, scale: Quantizable, bias: Quantizable) {
         self = value.toUInt8(scale, bias)
@@ -114,7 +120,10 @@ extension Float: Quantizable {
     public static var normalScale: Float { return 1  }
     public static var normalInverseScale: Float { return 1 }
 
-    // initializer
+    // initializers
+    @inlinable @inline(__always)
+    public init(value: Quantizable) { self = value.asFloat }
+    
     @inlinable @inline(__always)
     public init(value: Quantizable, scale: Quantizable, bias: Quantizable) {
         self = value.toFloat(scale, bias)
@@ -141,7 +150,10 @@ extension RGB: Quantizable where Component == UInt8 {
     public static var normalScale: Float { return 1 }
     public static var normalInverseScale: Float { return 1 }
 
-    // initializer
+    // initializers
+    @inlinable @inline(__always)
+    public init(value: Quantizable) { self = value.asRGBUInt8 }
+    
     @inlinable @inline(__always)
     public init(value: Quantizable, scale: Quantizable, bias: Quantizable) {
         self = value.toRGBUInt8(scale, bias)

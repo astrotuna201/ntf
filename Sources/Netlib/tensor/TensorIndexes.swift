@@ -11,7 +11,6 @@ public struct ScalarIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
-    public var isPad: Bool = false
     
     //--------------------------------------------------------------------------
     // initializers
@@ -38,7 +37,6 @@ public struct VectorIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
-    public var isPad: Bool = false
     
     // local properties
     public let traversal: TensorTraversal
@@ -56,7 +54,7 @@ public struct VectorIndex: TensorIndexing {
     public init<T>(endOf view: T) where T: TensorView {
         bounds = view.createTensorBounds()[0]
         traversal = view.traversal
-        viewIndex = view.shape.padded(with: view.padding).elementCount
+        viewIndex = view.shape.elementCount
     }
     
     //--------------------------------------------------------------------------
@@ -71,30 +69,11 @@ public struct VectorIndex: TensorIndexing {
             return (i % bounds.dataExtent) * bounds.dataStride
         }
         
-        func testIsPad() -> Bool {
-            return viewIndex < bounds.before || viewIndex >= bounds.after
-        }
-        
         //----------------------------------
         // calculate dataIndex
         switch traversal {
-        case .normal:
-            dataIndex = getDataIndex(viewIndex)
-            
-        case .padded:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getDataIndex(viewIndex - bounds.before)
-            }
-            
-        case .repeated:
-            dataIndex = getRepeatedDataIndex(viewIndex)
-            
-        case .paddedRepeated:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getRepeatedDataIndex(viewIndex - bounds.before)
-            }
+        case .normal: dataIndex = getDataIndex(viewIndex)
+        case .repeated: dataIndex = getRepeatedDataIndex(viewIndex)
         }
     }
     
@@ -128,7 +107,6 @@ public struct MatrixIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
-    public var isPad: Bool = false
     
     // local properties
     public let traversal: TensorTraversal
@@ -157,7 +135,7 @@ public struct MatrixIndex: TensorIndexing {
         row = 0
         col = 0
         traversal = view.traversal
-        viewIndex = view.shape.padded(with: view.padding).elementCount
+        viewIndex = view.shape.elementCount
     }
     
     //--------------------------------------------------------------------------
@@ -173,34 +151,11 @@ public struct MatrixIndex: TensorIndexing {
                 (c % colBounds.dataExtent) * colBounds.dataStride
         }
         
-        func testIsPad() -> Bool {
-            return
-                row < rowBounds.before || row >= rowBounds.after ||
-                col < colBounds.before || col >= colBounds.after
-        }
-
         //----------------------------------
         // calculate dataIndex
         switch traversal {
-        case .normal:
-            dataIndex = getDataIndex(row, col)
-
-        case .padded:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getDataIndex(row - rowBounds.before,
-                                         col - colBounds.before)
-            }
-
-        case .repeated:
-            dataIndex = getRepeatedDataIndex(row, col)
-
-        case .paddedRepeated:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getRepeatedDataIndex(row - rowBounds.before,
-                                                 col - colBounds.before)
-            }
+        case .normal: dataIndex = getDataIndex(row, col)
+        case .repeated: dataIndex = getRepeatedDataIndex(row, col)
         }
     }
 
@@ -245,7 +200,6 @@ public struct VolumeIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
-    public var isPad: Bool = false
     
     // local properties
     public let traversal: TensorTraversal
@@ -283,7 +237,7 @@ public struct VolumeIndex: TensorIndexing {
         row = 0
         col = 0
         traversal = view.traversal
-        viewIndex = view.shape.padded(with: view.padding).elementCount
+        viewIndex = view.shape.elementCount
     }
     
     //--------------------------------------------------------------------------
@@ -301,36 +255,11 @@ public struct VolumeIndex: TensorIndexing {
                 (c % colBounds.dataExtent) * colBounds.dataStride
         }
         
-        func testIsPad() -> Bool {
-            return dep < depBounds.before || dep >= depBounds.after ||
-                row < rowBounds.before || row >= rowBounds.after ||
-                col < colBounds.before || col >= colBounds.after
-        }
-        
         //----------------------------------
         // calculate dataIndex
         switch traversal {
-        case .normal:
-            dataIndex = getDataIndex(dep, row, col)
-            
-        case .padded:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getDataIndex(dep - depBounds.before,
-                                         row - rowBounds.before,
-                                         col - colBounds.before)
-            }
-            
-        case .repeated:
-            dataIndex = getRepeatedDataIndex(dep, row, col)
-            
-        case .paddedRepeated:
-            isPad = testIsPad()
-            if !isPad {
-                dataIndex = getRepeatedDataIndex(dep - depBounds.before,
-                                                 row - rowBounds.before,
-                                                 col - colBounds.before)
-            }
+        case .normal: dataIndex = getDataIndex(dep, row, col)
+        case .repeated: dataIndex = getRepeatedDataIndex(dep, row, col)
         }
     }
     
@@ -383,7 +312,6 @@ public struct NDIndex: TensorIndexing {
     // properties
     public var viewIndex: Int = 0
     public var dataIndex: Int = 0
-    public var isPad: Bool = false
     
     // local properties
     public let traversal: TensorTraversal
@@ -414,7 +342,7 @@ public struct NDIndex: TensorIndexing {
         bounds = view.createTensorBounds()
         position = [Int](repeating: 0, count: bounds.count)
         traversal = view.traversal
-        viewIndex = view.shape.padded(with: view.padding).elementCount
+        viewIndex = view.shape.elementCount
     }
     
     //--------------------------------------------------------------------------
@@ -433,38 +361,11 @@ public struct NDIndex: TensorIndexing {
             }
         }
         
-        func testIsPad() -> Bool {
-            for dim in 0..<bounds.count {
-                if position[dim] < bounds[dim].before ||
-                    position[dim] >= bounds[dim].after {
-                    return true
-                }
-            }
-            return false
-        }
-        
         //----------------------------------
         // calculate dataIndex
         switch traversal {
-        case .normal:
-            dataIndex = getDataIndex(position)
-            
-        case .padded:
-            isPad = testIsPad()
-            if !isPad {
-                let padPos = zip(position, bounds).map { $0.0 - $0.1.before }
-                dataIndex = getDataIndex(padPos)
-            }
-            
-        case .repeated:
-            dataIndex = getRepeatedDataIndex(position)
-            
-        case .paddedRepeated:
-            isPad = testIsPad()
-            if !isPad {
-                let padPos = zip(position, bounds).map { $0.0 - $0.1.before }
-                dataIndex = getRepeatedDataIndex(padPos)
-            }
+        case .normal: dataIndex = getDataIndex(position)
+        case .repeated: dataIndex = getRepeatedDataIndex(position)
         }
     }
     

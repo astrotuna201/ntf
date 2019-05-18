@@ -20,9 +20,11 @@ public enum DataType: Int {
 
 //==============================================================================
 /// AnyScalar
-//public protocol AnyScalar { }
+public protocol AnyScalar {
+    init()
+}
 
-public protocol AnyFixedSizeScalar: DefaultInitializer { }
+public protocol AnyFixedSizeScalar: AnyScalar { }
 
 //==============================================================================
 /// AnyConvertable

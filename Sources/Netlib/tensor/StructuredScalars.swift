@@ -10,9 +10,7 @@ import Foundation
 /// non numeric scalar types.
 /// For example: Matrix<RGBASample<Float>> -> NHWCTensor<Float>
 ///
-public protocol UniformDenseScalar:
-    DefaultInitializer, Equatable
-{
+public protocol UniformDenseScalar: Equatable {
     associatedtype Component
     static var componentCount: Int { get }
 }

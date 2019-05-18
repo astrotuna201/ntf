@@ -26,12 +26,12 @@ import Foundation
 /// TensorViews are references to data and respect copy on write semantics,
 /// locally and on device. Many operations can be performed with zero copy.
 ///
-/// Data repeating (broadcasting) and padding are instrinsic features
+/// Data repeating (broadcasting) is an instrinsic feature
 ///
 public protocol TensorView: Logging {
     //--------------------------------------------------------------------------
     /// the type of element stored by the tensor
-    associatedtype Element: DefaultInitializer
+    associatedtype Element
     /// A tensor shape specific indexer used to calculate a data buffer
     /// index based on a view's spatial position
     associatedtype Index: TensorIndexing
@@ -63,13 +63,6 @@ public protocol TensorView: Logging {
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
-    /// specifies an amount of padding before and after each dimension used
-    /// only during indexing and iteration. It is not reflected in the `shape`
-    /// of the view or part of subview creation. It is passed
-    /// as a parameter to iterators. It is not inherited by subviews.
-    var padding: [Padding]? { get }
-    /// the scalar value to be returned for indexes with padding regions
-    var padValue: Element { get }
     /// the virtual shape of the view used for indexing
     /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
     var shape: DataShape { get }
@@ -87,8 +80,6 @@ public protocol TensorView: Logging {
     init(shape: DataShape,
          dataShape: DataShape,
          name: String?,
-         padding: [Padding]?,
-         padValue: Element?,
          tensorArray: TensorArray?,
          viewDataOffset: Int,
          isShared: Bool,
@@ -96,8 +87,7 @@ public protocol TensorView: Logging {
 
     //--------------------------------------------------------------------------
     /// create a sub view
-    func createView(at offset: [Int], with extents: [Int],
-                    isReference: Bool) -> Self
+    func createView(at offset: [Int], extents: [Int], isReference: Bool) -> Self
     /// create a reference view
     /// creation of a reference is for the purpose of reshaped writes
     /// and multi-threaded writes to prevent mutation.
@@ -138,21 +128,7 @@ public typealias IndexElement = Int32
 
 //==============================================================================
 /// traversal
-public enum TensorTraversal: Int32 {
-    case normal, padded, repeated, paddedRepeated
-}
-
-public func initTraversal(_ padding: [Padding]?, _ isRepeated: Bool)
-    -> TensorTraversal
-{
-    if padding != nil {
-        return isRepeated ? .paddedRepeated : .padded
-    } else if isRepeated {
-        return .repeated
-    } else {
-        return .normal
-    }
-}
+public enum TensorTraversal: Int32 { case normal, repeated }
 
 //==============================================================================
 // TensorView default implementation
@@ -163,8 +139,6 @@ public extension TensorView {
     var extents: [Int] { return shape.extents }
     /// `true` if the values are contiguosly arranged in memory
     var isContiguous: Bool { return dataShape.isContiguous }
-    /// `true` if the view projects padded data
-    var isPadded: Bool { return padding != nil }
     /// is `true` if the last data access caused the view's underlying
     /// tensorArray object to be copied.
     /// Used primarily for debugging and unit testing
@@ -198,7 +172,6 @@ public extension TensorView {
         let shape = DataShape(extents: extents)
         return Self(
             shape: shape, dataShape: shape, name: name,
-            padding: nil, padValue: nil,
             tensorArray: nil, viewDataOffset: 0,
             isShared: false, values: nil)
     }
@@ -209,8 +182,6 @@ public extension TensorView {
         self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
                   name: other.name,
-                  padding: nil,
-                  padValue: other.padValue,
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
                   isShared: other.isShared,
@@ -220,8 +191,8 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
-    func createView(at offset: [Int], with extents: [Int],
-                    isReference: Bool) -> Self {
+    func createView(at offset: [Int], extents: [Int],
+                    isReference: Bool = false) -> Self {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
@@ -234,8 +205,6 @@ public extension TensorView {
         return Self(shape: subViewShape,
                     dataShape: subViewShape,
                     name: name,
-                    padding: padding,
-                    padValue: padValue,
                     tensorArray: tensorArray,
                     viewDataOffset: subViewOffset,
                     isShared: isReference,
@@ -259,8 +228,6 @@ public extension TensorView {
             return Self(shape: shape,
                         dataShape: dataShape,
                         name: name,
-                        padding: padding,
-                        padValue: padValue,
                         tensorArray: tensorArray,
                         viewDataOffset: viewDataOffset,
                         isShared: true,
@@ -283,8 +250,6 @@ public extension TensorView {
         return Self(shape: flatShape,
                     dataShape: flatShape,
                     name: name,
-                    padding: padding,
-                    padValue: padValue,
                     tensorArray: tensorArray,
                     viewDataOffset: viewDataOffset,
                     isShared: isShared,
@@ -367,7 +332,7 @@ public extension TensorView {
     func value(at position: Index.Position) throws -> Element {
         let buffer = try readOnly()
         let index = Index(view: self, at: position)
-        return index.isPad ? padValue : buffer[index.dataIndex]
+        return buffer[index.dataIndex]
     }
     
     //--------------------------------------------------------------------------
@@ -390,25 +355,10 @@ public extension TensorView {
         return NDTensor<Element>(shape: squeezedShape,
                                  dataShape: squeezedShape,
                                  name: name,
-                                 padding: padding,
-                                 padValue: padValue,
                                  tensorArray: tensorArray,
                                  viewDataOffset: viewDataOffset,
                                  isShared: isShared,
                                  values: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// elementCount
-    var elementCount: Int {
-        return isPadded ? shape.padded(with: padding!).elementCount :
-            shape.elementCount
-    }
-    
-    //--------------------------------------------------------------------------
-    /// getPadding(for dim:
-    func getPadding(for dim: Int) -> Padding {
-        return padding?[dim % padding!.count] ?? Padding(0)
     }
     
     //--------------------------------------------------------------------------
@@ -579,7 +529,7 @@ public extension TensorView {
     /// Create a sub view of the tensorArray relative to this view
     func view(at offset: [Int], extents: [Int]) -> Self {
         // the view created will have the same isShared state as the parent
-        return createView(at: offset, with: extents, isReference: isShared)
+        return createView(at: offset, extents: extents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -597,7 +547,7 @@ public extension TensorView {
             viewExtents = [count] + shape.extents.suffix(from: 1)
         }
         
-        return createView(at: index, with: viewExtents, isReference: isShared)
+        return createView(at: index, extents: viewExtents, isReference: isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -773,20 +723,3 @@ public extension Sequence {
         result[result.startIndex] = partial
     }
 }
-
-//==============================================================================
-/// DefaultInitializer
-public protocol DefaultInitializer {
-    init()
-}
-
-extension Int8 : DefaultInitializer {}
-extension UInt8 : DefaultInitializer {}
-extension UInt16 : DefaultInitializer {}
-extension Int16 : DefaultInitializer {}
-extension UInt32 : DefaultInitializer {}
-extension Int32 : DefaultInitializer {}
-extension UInt : DefaultInitializer {}
-extension Float : DefaultInitializer {}
-extension Double : DefaultInitializer {}
-extension Bool : DefaultInitializer {}

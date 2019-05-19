@@ -392,15 +392,6 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// sequence2ScalarArray
-    static func sequence2ScalarArray<Seq>(_ sequence: Seq) -> [Element]
-        where Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
-    {
-        return sequence.map { Element(any: $0) }
-    }
-
-    //--------------------------------------------------------------------------
     /// scalarValue
     /// - Returns: the single value in the tensor as a scalar
     func scalarValue() throws -> Element {

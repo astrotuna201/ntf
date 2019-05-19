@@ -21,10 +21,8 @@ public typealias NHWCPosition = (i: Int, r: Int, c: Int, ch: Int)
 public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
 
 //==============================================================================
-// ShapedTensorView
-public protocol ShapedTensorView: TensorView { }
-
-public extension ShapedTensorView where Values.Element == Element {
+// TensorView extensions
+public extension TensorView where Values.Element == Element {
     //--------------------------------------------------------------------------
     /// DenseView
     func createDenseView(with value: Values.Element) -> Self {
@@ -34,11 +32,7 @@ public extension ShapedTensorView where Values.Element == Element {
                     tensorArray: nil, viewDataOffset: 0,
                     indexAlignment: nil, isShared: false, values: [value])
     }
-}
 
-//==============================================================================
-// Indexing
-public extension ShapedTensorView {
     /// returns a collection of read only values
     func values(using stream: DeviceStream?) throws
         -> TensorValueCollection<Self>
@@ -58,27 +52,13 @@ public extension ShapedTensorView {
 
 //==============================================================================
 // ScalarView
-public protocol ScalarView: ShapedTensorView {}
+public protocol ScalarView: TensorView {}
 
 public extension ScalarView {
     //--------------------------------------------------------------------------
-    var endIndex: ScalarIndex {
-        return ScalarIndex(view: self, at: 0)
-    }
-    
-    var startIndex: ScalarIndex {
-        return ScalarIndex(endOf: self)
-    }
+    var startIndex: ScalarIndex { return ScalarIndex(endOf: self) }
+    var endIndex: ScalarIndex { return ScalarIndex(view: self, at: 0) }
 
-    //--------------------------------------------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-    
     //--------------------------------------------------------------------------
     /// BoolView
     func createBoolView(with extents: [Int]) -> ScalarValue<Bool> {
@@ -97,6 +77,17 @@ public extension ScalarView {
             shape: shape, dataShape: shape, name: name,
             tensorArray: nil, viewDataOffset: 0,
             indexAlignment: nil, isShared: false, values: nil)
+    }
+}
+
+public extension ScalarView where Values.Element == Element {
+    //--------------------------------------------------------------------------
+    /// with single value
+    init(_ value: Element, name: String? = nil) {
+        let shape = DataShape(extents: [1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: [value])
     }
 }
 
@@ -137,7 +128,7 @@ extension ScalarValue: CustomStringConvertible where Element: AnyConvertable {
 
 //==============================================================================
 // VectorView
-public protocol VectorView: ShapedTensorView { }
+public protocol VectorView: TensorView { }
 
 extension Vector: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -147,23 +138,9 @@ extension Vector: CustomStringConvertible where Element: AnyConvertable {
 // VectorView extensions
 public extension VectorView {
     //--------------------------------------------------------------------------
-    var endIndex: VectorIndex {
-        return VectorIndex(endOf: self)
-    }
-    
-    var startIndex: VectorIndex {
-        return VectorIndex(view: self, at: 0)
-    }
+    var startIndex: VectorIndex { return VectorIndex(view: self, at: 0) }
+    var endIndex: VectorIndex { return VectorIndex(endOf: self) }
 
-    //--------------------------------------------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-    
     //-------------------------------------
     /// empty array
     init(count: Int, name: String? = nil) {
@@ -172,28 +149,6 @@ public extension VectorView {
                   tensorArray: nil, viewDataOffset: 0,
                   indexAlignment: zeroIndexAlignment(shape.rank),
                   isShared: false, values: nil)
-    }
-
-    //-------------------------------------
-    /// with Array
-    init(name: String? = nil, values: [Element]) {
-        let shape = DataShape(extents: [values.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
-    {
-        let values = Self.sequence2ScalarArray(sequence)
-        let shape = DataShape(extents: [values.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
     }
 
     //-------------------------------------
@@ -232,7 +187,40 @@ public extension VectorView {
     }
 }
 
-//------------------------------------------------------------------------------
+//==============================================================================
+public extension VectorView where Values.Element == Element {
+    //-------------------------------------
+    /// with single value
+    init(_ value: Element, name: String? = nil) {
+        let shape = DataShape(extents: [1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: [value])
+    }
+    
+    //-------------------------------------
+    /// with Array
+    init(name: String? = nil, values: [Element]) {
+        let shape = DataShape(extents: [values.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: values)
+    }
+
+    //-------------------------------------
+    /// with Sequence
+    init<Seq>(name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+    {
+        let values = sequence.map { Element(any: $0) }
+        let shape = DataShape(extents: [values.count])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: values)
+    }
+}
+
+//==============================================================================
 // Vector
 public struct Vector<Element>: VectorView {
     // properties
@@ -268,7 +256,7 @@ public struct Vector<Element>: VectorView {
 
 //==============================================================================
 // MatrixView
-public protocol MatrixView: ShapedTensorView {}
+public protocol MatrixView: TensorView {}
 
 extension Matrix: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -277,15 +265,9 @@ extension Matrix: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 // MatrixView extensions
 public extension MatrixView {
-    //--------------------------------------------------------------------------
-    var endIndex: MatrixIndex {
-        return MatrixIndex(endOf: self)
-    }
-    
-    var startIndex: MatrixIndex {
-        return MatrixIndex(view: self, at: (0, 0))
-    }
-    
+    var startIndex: MatrixIndex { return MatrixIndex(view: self, at: (0, 0)) }
+    var endIndex: MatrixIndex { return MatrixIndex(endOf: self) }
+
     //--------------------------------------------------------------------------
     /// repeating
     init(_ extents: MatrixExtents, repeating other: Self) {
@@ -293,43 +275,6 @@ public extension MatrixView {
         self.init(with: extents, repeating: other)
     }
     
-    //-------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-    
-    //-------------------------------------
-    /// with Array
-    init(_ extents: MatrixExtents,
-         name: String? = nil,
-         layout: MatrixLayout = .rowMajor,
-         values: [Element]? = nil)
-    {
-        let extents = [extents.rows, extents.cols]
-        let shape = layout == .rowMajor ?
-            DataShape(extents: extents) :
-            DataShape(extents: extents).columnMajor()
-        
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: MatrixExtents, name: String? = nil,
-              layout: MatrixLayout = .rowMajor, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
-    {
-        self.init(extents, name: name, layout: layout,
-                  values: Self.sequence2ScalarArray(sequence))
-    }
-
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
@@ -388,6 +333,47 @@ public extension MatrixView {
 }
 
 //==============================================================================
+// MatrixView data initialization extensions
+public extension MatrixView {
+    //-------------------------------------
+    /// with single value
+    init(_ value: Element, name: String? = nil) {
+        let shape = DataShape(extents: [1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: [value])
+    }
+    
+    //-------------------------------------
+    /// with Array
+    init(_ extents: MatrixExtents,
+         name: String? = nil,
+         layout: MatrixLayout = .rowMajor,
+         values: [Element]? = nil)
+    {
+        let extents = [extents.rows, extents.cols]
+        let shape = layout == .rowMajor ?
+            DataShape(extents: extents) :
+            DataShape(extents: extents).columnMajor()
+        
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: values)
+    }
+    
+    //-------------------------------------
+    /// with Sequence
+    init<Seq>(_ extents: MatrixExtents, name: String? = nil,
+              layout: MatrixLayout = .rowMajor, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable,
+        Element: AnyConvertable
+    {
+        self.init(extents, name: name, layout: layout,
+                  values: sequence.map { Element(any: $0) })
+    }
+}
+
+//==============================================================================
 // Matrix
 public struct Matrix<Element>: MatrixView {
     // properties
@@ -423,7 +409,7 @@ public struct Matrix<Element>: MatrixView {
 
 //==============================================================================
 // VolumeView
-public protocol VolumeView: ShapedTensorView { }
+public protocol VolumeView: TensorView { }
 
 extension Volume: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -432,51 +418,14 @@ extension Volume: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 // VolumeView extension
 public extension VolumeView {
-    //--------------------------------------------------------------------------
-    var endIndex: VolumeIndex {
-        return VolumeIndex(endOf: self)
-    }
-
-    var startIndex: VolumeIndex {
-        return VolumeIndex(view: self, at: (0, 0, 0))
-    }
+    var startIndex: VolumeIndex { return VolumeIndex(view: self, at: (0, 0, 0))}
+    var endIndex: VolumeIndex { return VolumeIndex(endOf: self) }
 
     //--------------------------------------------------------------------------
     /// repeating
     init(_ extents: VolumeExtents, repeating other: Self) {
-        
         let extents = [extents.depths, extents.rows, extents.cols]
         self.init(with: extents, repeating: other)
-    }
-    
-    //-------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1, 1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-
-    //-------------------------------------
-    /// with Array
-    init(_ extents: VolumeExtents, name: String? = nil,
-         values: [Element]? = nil)
-    {
-        let extents = [extents.depths, extents.rows, extents.cols]
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: VolumeExtents, name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
-    {
-        self.init(extents, name: name,
-                  values: Self.sequence2ScalarArray(sequence))
     }
     
     //-------------------------------------
@@ -521,6 +470,39 @@ public extension VolumeView {
 }
 
 //==============================================================================
+// VolumeView extension
+public extension VolumeView where Values.Element == Element {
+    //-------------------------------------
+    /// with single value
+    init(_ value: Element, name: String? = nil) {
+        let shape = DataShape(extents: [1, 1, 1])
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: [value])
+    }
+    
+    //-------------------------------------
+    /// with Array
+    init(_ extents: VolumeExtents, name: String? = nil,
+         values: [Element]? = nil)
+    {
+        let extents = [extents.depths, extents.rows, extents.cols]
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false, values: values)
+    }
+    
+    //-------------------------------------
+    /// with Sequence
+    init<Seq>(_ extents: VolumeExtents, name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+    {
+        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
+    }
+}
+
+//==============================================================================
 /// Volume
 public struct Volume<Element>: VolumeView {
     // properties
@@ -556,7 +538,7 @@ public struct Volume<Element>: VolumeView {
 
 //==============================================================================
 // NDTensorView
-public protocol NDTensorView: ShapedTensorView { }
+public protocol NDTensorView: TensorView { }
 
 extension NDTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -565,27 +547,9 @@ extension NDTensor: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 // NDTensorView extensions
 public extension NDTensorView {
-    //--------------------------------------------------------------------------
-    var endIndex: NDIndex {
-        return NDIndex(endOf: self)
-    }
-    
-    var startIndex: NDIndex {
-        return NDIndex(view: self, at: [0])
-    }
+    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
+    var endIndex: NDIndex { return NDIndex(endOf: self) }
 
-    //--------------------------------------------------------------------------
-    /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
-    {
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false,
-                  values: Self.sequence2ScalarArray(sequence))
-    }
-    
     //-------------------------------------
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
@@ -624,6 +588,22 @@ public extension NDTensorView {
             shape: shape, dataShape: shape, name: name,
             tensorArray: nil, viewDataOffset: 0,
             indexAlignment: nil, isShared: false, values: nil)
+    }
+}
+
+//==============================================================================
+// NDTensorView extensions
+public extension NDTensorView {
+    //--------------------------------------------------------------------------
+    /// with Sequence
+    init<Seq>(extents: [Int], name: String? = nil, sequence: Seq) where
+        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+    {
+        let shape = DataShape(extents: extents)
+        self.init(shape: shape, dataShape: shape, name: name,
+                  tensorArray: nil, viewDataOffset: 0,
+                  indexAlignment: nil, isShared: false,
+                  values: sequence.map { Element(any: $0) })
     }
 }
 
@@ -670,7 +650,7 @@ public struct NDTensor<Element>: NDTensorView {
 /// c: channels
 /// h: rows
 /// w: cols
-public protocol NCHWTensorView: ShapedTensorView { }
+public protocol NCHWTensorView: TensorView { }
 
 extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -679,14 +659,8 @@ extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 /// NCHWTensorView extensions
 public extension NCHWTensorView {
-    //--------------------------------------------------------------------------
-    var endIndex: NDIndex {
-        return NDIndex(endOf: self)
-    }
-    
-    var startIndex: NDIndex {
-        return NDIndex(view: self, at: [0])
-    }
+    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
+    var endIndex: NDIndex { return NDIndex(endOf: self) }
 
     //--------------------------------------------------------------------------
     /// repeating
@@ -723,8 +697,7 @@ public extension NCHWTensorView {
     init<Seq>(_ extents: NCHWExtents, name: String? = nil, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name,
-                  values: Self.sequence2ScalarArray(sequence))
+        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
     }
 
     //-------------------------------------
@@ -811,7 +784,7 @@ public struct NCHWTensor<Element>: NCHWTensorView {
 /// h: rows
 /// w: cols
 /// c: channels
-public protocol NHWCTensorView: ShapedTensorView { }
+public protocol NHWCTensorView: TensorView { }
 
 extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
     public var description: String { return formatted() }
@@ -820,14 +793,8 @@ extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
 //==============================================================================
 /// NHWCTensorView extensions
 public extension NHWCTensorView {
-    //--------------------------------------------------------------------------
-    var endIndex: NDIndex {
-        return NDIndex(endOf: self)
-    }
-    
-    var startIndex: NDIndex {
-        return NDIndex(view: self, at: [0])
-    }
+    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
+    var endIndex: NDIndex { return NDIndex(endOf: self) }
 
     //--------------------------------------------------------------------------
     /// repeating
@@ -864,8 +831,7 @@ public extension NHWCTensorView {
     init<Seq>(_ extents: NHWCExtents, name: String? = nil, sequence: Seq) where
         Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name,
-                  values: Self.sequence2ScalarArray(sequence))
+        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
     }
 
     //-------------------------------------

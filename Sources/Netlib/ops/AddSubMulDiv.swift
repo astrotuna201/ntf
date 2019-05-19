@@ -86,7 +86,7 @@ public extension TensorView where
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +(lhs: Self, rhs: Values.Element) -> Self {
-        return add(lhs, lhs.createDenseView(with: rhs))
+        return add(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -98,7 +98,7 @@ public extension TensorView where Values.Element: BinaryInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func +(lhs: Self, rhs: Values.Element) -> Self {
-        return add(lhs, lhs.createDenseView(with: rhs))
+        return add(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -153,7 +153,7 @@ public extension TensorView where Values.Element: FloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - (lhs: Self, rhs: Values.Element) -> Self {
-        return subtract(lhs, lhs.createDenseView(with: rhs))
+        return subtract(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -165,7 +165,7 @@ public extension TensorView where Values.Element: BinaryInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func - (lhs: Self, rhs: Values.Element) -> Self {
-        return subtract(lhs, lhs.createDenseView(with: rhs))
+        return subtract(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -219,7 +219,7 @@ public extension TensorView where Values.Element: FloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * (lhs: Self, rhs: Values.Element) -> Self {
-        return mul(lhs, lhs.createDenseView(with: rhs))
+        return mul(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -231,7 +231,7 @@ public extension TensorView where Values.Element: BinaryInteger {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func * (lhs: Self, rhs: Values.Element) -> Self {
-        return mul(lhs, lhs.createDenseView(with: rhs))
+        return mul(lhs, lhs.createValueView(rhs))
     }
 }
 
@@ -285,7 +285,7 @@ public extension TensorView where Values.Element: FloatingPoint {
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
     static func / (lhs: Self, rhs: Values.Element) -> Self {
-        let scalarTensor = lhs.createDenseView(with: rhs)
+        let scalarTensor = lhs.createValueView(rhs)
         return div(lhs, scalarTensor)
     }
 }

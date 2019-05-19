@@ -193,8 +193,7 @@ public extension TensorView where Values.Element: AnyNumeric {
     //@differentiable(vjp: _vjpPow(_:_:) where T: TensorFlowFloatingPoint)
     func pow(_ y: Values.Element) -> Self {
         var result = createDenseView()
-        let yTensor = createDenseView(with: y)
-        Netlib.pow(self, yTensor, result: &result)
+        Netlib.pow(self, createValueView(y), result: &result)
         return result
     }
 }

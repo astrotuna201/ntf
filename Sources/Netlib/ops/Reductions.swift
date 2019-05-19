@@ -30,14 +30,11 @@ public func all<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
 public extension TensorView where Values.Element == Bool {
     @inlinable @inline(__always)
     func all(alongAxes: Int...) -> Self {
-        // make sure to handle negative axes
-        let axes = shape.makePositive(indices: alongAxes).map {
-            IndexElement($0)
-        }
         // turn into a vector
-        let axesVec = Vector<IndexElement>(values: axes)
+        let axes = Vector<IndexElement>(
+            any: shape.makePositive(indices: alongAxes))
         var result = createDenseView()
-        Netlib.all(self, alongAxes: axesVec, result: &result)
+        Netlib.all(self, alongAxes: axes, result: &result)
         return result
     }
     
@@ -56,7 +53,7 @@ public extension TensorView where Values.Element == Bool {
     @inlinable @inline(__always)
     func all(squeezing: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: squeezing)
-        let axesVec = Vector<IndexElement>(values: axes.map { IndexElement($0) })
+        let axesVec = Vector<IndexElement>(any: axes)
         var result = createDenseView()
         Netlib.all(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)
@@ -104,14 +101,11 @@ public func sum<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
 public extension TensorView where Values.Element: Numeric {
     @inlinable @inline(__always)
     func sum(alongAxes: Int...) -> Self {
-        // make sure to handle negative axes
-        let axes = shape.makePositive(indices: alongAxes).map {
-            IndexElement($0)
-        }
         // turn into a vector
-        let axesVec = Vector<IndexElement>(values: axes)
+        let axes = Vector<IndexElement>(
+            any: shape.makePositive(indices: alongAxes))
         var result = createDenseView()
-        Netlib.sum(self, alongAxes: axesVec, result: &result)
+        Netlib.sum(self, alongAxes: axes, result: &result)
         return result
     }
     
@@ -130,7 +124,7 @@ public extension TensorView where Values.Element: Numeric {
     @inlinable @inline(__always)
     func sum(alongAxes: Int...) -> NDTensor<Element> {
         let axes = shape.makePositive(indices: alongAxes)
-        let axesVec = Vector<IndexElement>(values: axes.map { IndexElement($0) })
+        let axesVec = Vector<IndexElement>(any: axes)
         var result = createDenseView()
         Netlib.sum(self, alongAxes: axesVec, result: &result)
         return result.squeezed(axes: axes)

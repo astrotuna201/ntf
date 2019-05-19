@@ -46,7 +46,7 @@ final public class TensorArray: ObjectTracking, Logging {
     public var writeCompletionEvent: StreamEvent?
 
     //--------------------------------------------------------------------------
-    // initializers
+    // empty
     public init() {
         byteCount = 0
         isReadOnly = false
@@ -54,7 +54,7 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     //----------------------------------------
-    // create new array based on scalar size
+    // create a new array based on scalar size and count
     public init<Element>(type: Element.Type, count: Int, name: String) {
         self.name = name
         isReadOnly = false
@@ -71,7 +71,7 @@ final public class TensorArray: ObjectTracking, Logging {
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
     public init<Element>(referenceTo buffer: UnsafeBufferPointer<Element>,
-                        name: String) {
+                         name: String) {
         self.name = name
         masterVersion = 0
         isReadOnly = true
@@ -96,8 +96,10 @@ final public class TensorArray: ObjectTracking, Logging {
     // All initializers retain the data except this one
     // which creates a read only reference to avoid unnecessary copying from
     // a read only data object
-    public init<Element>(referenceTo buffer: UnsafeMutableBufferPointer<Element>,
-                        name: String) {
+    public init<Element>(
+        referenceTo buffer: UnsafeMutableBufferPointer<Element>,
+        name: String)
+    {
         self.name = name
         masterVersion = 0
         isReadOnly = false
@@ -119,30 +121,32 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     //----------------------------------------
-    // copy from buffer
-    public init<Element>(copying buffer: UnsafeBufferPointer<Element>,
-                        name: String) throws {
+    // copy from sequence
+    public init<C>(copying collection: C, name: String,
+                   using stream: DeviceStream) throws where C: Collection
+    {
         self.name = name
         masterVersion = 0
         isReadOnly = false
-        byteCount = buffer.count * MemoryLayout<Element>.size
-        register(type: Element.self, count: buffer.count)
+        byteCount = collection.count * MemoryLayout<C.Element>.size
+        register(type: C.Element.self, count: collection.count)
 
         diagnostic("\(createString) \(name)(\(trackingId)) " +
-            "\(String(describing: Element.self))[\(buffer.count)]",
+            "\(String(describing: C.Element.self))[\(collection.count)]",
             categories: .dataAlloc)
 
         // initialize
-        let stream = _Streams.current
-        _ = try readWrite(type: Element.self,
-                          using: stream).initialize(from: buffer)
+        let buffer = try readWrite(type: C.Element.self, using: stream)
+        for i in zip(buffer.indices, collection.indices) {
+            buffer[i.0] = collection[i.1]
+        }
     }
     
     //----------------------------------------
     // init from other TensorArray
     public init<Element>(type: Element.Type,
-                        copying other: TensorArray,
-                        using stream: DeviceStream) throws {
+                         copying other: TensorArray,
+                         using stream: DeviceStream) throws {
         // initialize members
         isReadOnly = other.isReadOnly
         byteCount = other.byteCount

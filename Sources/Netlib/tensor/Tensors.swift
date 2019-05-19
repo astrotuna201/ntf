@@ -22,17 +22,24 @@ public typealias NHWCExtents = (items: Int, rows: Int, cols: Int, channels: Int)
 
 //==============================================================================
 // TensorView extensions
-public extension TensorView where Values.Element == Element {
+public extension TensorView {
     //--------------------------------------------------------------------------
-    /// DenseView
-    func createDenseView(with value: Values.Element) -> Self {
+    /// createValueView
+    func createValueView(_ value: Values.Element, name: String? = nil) -> Self {
         let extents = [Int](repeating: 1, count: rank)
         let shape = DataShape(extents: extents)
-        return Self(shape: shape, dataShape: shape, name: name,
-                    tensorArray: nil, viewDataOffset: 0,
-                    indexAlignment: nil, isShared: false, values: [value])
+        let array = try! TensorArray(copying: [value],
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        return Self(shape: shape, dataShape: shape,
+                    tensorArray: array, viewDataOffset: 0,
+                    indexAlignment: zeroAlignment(shape.rank),
+                    traversal: .normal, isShared: false)
     }
+}
 
+public extension TensorView where Values.Element == Element {
+    //--------------------------------------------------------------------------
     /// returns a collection of read only values
     func values(using stream: DeviceStream?) throws
         -> TensorValueCollection<Self>
@@ -41,6 +48,7 @@ public extension TensorView where Values.Element == Element {
         return try TensorValueCollection(view: self, buffer: buffer)
     }
     
+    //--------------------------------------------------------------------------
     /// returns a collection of read write values
     mutating func mutableValues(using stream: DeviceStream?) throws
         -> TensorMutableValueCollection<Self>
@@ -63,31 +71,42 @@ public extension ScalarView {
     /// BoolView
     func createBoolView(with extents: [Int]) -> ScalarValue<Bool> {
         let shape = DataShape(extents: extents)
+        let array = TensorArray(type: Bool.self, count: shape.elementCount,
+                                name: String(describing: Self.self))
         return ScalarValue<Bool>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
+            shape: shape, dataShape: shape,
+            tensorArray: array, viewDataOffset: 0,
+            indexAlignment: zeroAlignment(shape.rank),
+            traversal: .normal, isShared: false)
     }
 
     //--------------------------------------------------------------------------
     /// IndexView
     func createIndexView(with extents: [Int]) -> ScalarValue<IndexElement> {
         let shape = DataShape(extents: extents)
+        let array = TensorArray(type: IndexElement.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
         return ScalarValue<IndexElement>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
+            shape: shape, dataShape: shape,
+            tensorArray: array, viewDataOffset: 0,
+            indexAlignment: zeroAlignment(shape.rank),
+            traversal: .normal, isShared: false)
     }
 }
 
-public extension ScalarView where Values.Element == Element {
+public extension ScalarView {
     //--------------------------------------------------------------------------
     /// with single value
-    init(_ value: Element, name: String? = nil) {
+    init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
+        let array = try! TensorArray(copying: [element],
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 }
 
@@ -95,30 +114,29 @@ public extension ScalarView where Values.Element == Element {
 // ScalarValue
 public struct ScalarValue<Element>: ScalarView {
     // properties
+    public let shape: DataShape
     public let dataShape: DataShape
     public let indexAlignment: [Int]
     public let isShared: Bool
-    public let shape: DataShape
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
                 dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
+                tensorArray: TensorArray,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
+                indexAlignment: [Int],
+                traversal: TensorTraversal,
+                isShared: Bool)
+    {
         self.shape = shape
         self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
+        self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
+        self.indexAlignment = indexAlignment
+        self.isShared = isShared
+        self.traversal = traversal
     }
 }
 
@@ -145,10 +163,12 @@ public extension VectorView {
     /// empty array
     init(count: Int, name: String? = nil) {
         let shape = DataShape(extents: [count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: zeroIndexAlignment(shape.rank),
-                  isShared: false, values: nil)
+        let array = TensorArray(type: Element.self, count: shape.elementCount,
+                                name: name ?? String(describing: Self.self))
+        self.init(shape: shape, dataShape: shape,
+                    tensorArray: array, viewDataOffset: 0,
+                    indexAlignment: zeroAlignment(shape.rank),
+                    traversal: .normal, isShared: false)
     }
 
     //-------------------------------------
@@ -157,33 +177,41 @@ public extension VectorView {
     init(referenceTo buffer: UnsafeBufferPointer<Element>, name: String? = nil)
     {
         // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+        let array = TensorArray(referenceTo: buffer,
+                                name: name ?? String(describing: Self.self))
         
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 
     //--------------------------------------------------------------------------
     /// BoolView
     func createBoolView(with extents: [Int]) -> Vector<Bool> {
         let shape = DataShape(extents: extents)
-        return Vector<Bool>(shape: shape, dataShape: shape, name: name,
-                            tensorArray: nil, viewDataOffset: 0,
-                            indexAlignment: nil, isShared: false, values: nil)
+        let array = TensorArray(type: Bool.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return Vector<Bool>(shape: shape, dataShape: shape,
+                            tensorArray: array, viewDataOffset: 0,
+                            indexAlignment: zeroAlignment(shape.rank),
+                            traversal: .normal, isShared: false)
     }
     
     //--------------------------------------------------------------------------
     /// IndexView
     func createIndexView(with extents: [Int]) -> Vector<IndexElement> {
         let shape = DataShape(extents: extents)
-        return Vector<IndexElement>(shape: shape, dataShape: shape, name: name,
-                                    tensorArray: nil, viewDataOffset: 0,
-                                    indexAlignment: nil,
-                                    isShared: false, values: nil)
+        let array = TensorArray(type: IndexElement.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return Vector<IndexElement>(shape: shape, dataShape: shape,
+                            tensorArray: array, viewDataOffset: 0,
+                            indexAlignment: zeroAlignment(shape.rank),
+                            traversal: .normal, isShared: false)
     }
 }
 
@@ -191,32 +219,39 @@ public extension VectorView {
 public extension VectorView where Values.Element == Element {
     //-------------------------------------
     /// with single value
-    init(_ value: Element, name: String? = nil) {
+    init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-    
-    //-------------------------------------
-    /// with Array
-    init(name: String? = nil, values: [Element]) {
-        let shape = DataShape(extents: [values.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
+        let array = try! TensorArray(copying: [element],
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 
     //-------------------------------------
-    /// with Sequence
-    init<Seq>(name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+    /// with convertable collection
+    /// TODO: should the collection be lazy??
+    init<C>(name: String? = nil, any: C) where
+        C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        let values = sequence.map { Element(any: $0) }
-        let shape = DataShape(extents: [values.count])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
+        self.init(name: name, elements: any.map { Element(any: $0) })
+    }
+
+    //-------------------------------------
+    /// with an element collection
+    init<C>(name: String? = nil, elements: C) where
+        C: Collection, C.Element == Element
+    {
+        let shape = DataShape(extents: [elements.count])
+        let array = try! TensorArray(copying: elements,
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 }
 
@@ -234,23 +269,19 @@ public struct Vector<Element>: VectorView {
     
     public init(shape: DataShape,
                 dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
+                tensorArray: TensorArray,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
+                indexAlignment: [Int],
+                traversal: TensorTraversal,
+                isShared: Bool)
+    {
         self.shape = shape
         self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
+        self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
+        self.indexAlignment = indexAlignment
+        self.isShared = isShared
+        self.traversal = traversal
     }
 }
 
@@ -284,8 +315,7 @@ public extension MatrixView {
          name: String? = nil)
     {
         // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+        let array = TensorArray(referenceTo: buffer, name: name ?? String(describing: Self.self))
 
         // create shape considering column major
         let extents = [extents.rows, extents.cols]
@@ -295,81 +325,98 @@ public extension MatrixView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 
     //--------------------------------------------------------------------------
     /// BoolView
     func createBoolView(with extents: [Int]) -> Matrix<Bool> {
         let shape = DataShape(extents: extents)
-        return Matrix<Bool>(shape: shape, dataShape: shape, name: name,
-                            tensorArray: nil, viewDataOffset: 0,
-                            indexAlignment: nil, isShared: false, values: nil)
+        let array = TensorArray(type: Bool.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return Matrix<Bool>(shape: shape, dataShape: shape,
+                            tensorArray: array, viewDataOffset: 0,
+                            indexAlignment: zeroAlignment(shape.rank),
+                            traversal: .normal, isShared: false)
     }
     
     //--------------------------------------------------------------------------
     /// IndexView
     func createIndexView(with extents: [Int]) -> Matrix<IndexElement> {
         let shape = DataShape(extents: extents)
-        return Matrix<IndexElement>(shape: shape, dataShape: shape, name: name,
-                                    tensorArray: nil, viewDataOffset: 0,
-                                    indexAlignment: nil,
-                                    isShared: false, values: nil)
+        let array = TensorArray(type: IndexElement.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return Matrix<IndexElement>(shape: shape, dataShape: shape,
+                                    tensorArray: array, viewDataOffset: 0,
+                                    indexAlignment: zeroAlignment(shape.rank),
+                                    traversal: .normal, isShared: false)
     }
 
     //--------------------------------------------------------------------------
     // transpose
     var t: Self {
+        let tAlign = [indexAlignment[1], indexAlignment[0]]
         return Self.init(shape: shape.transposed(),
                          dataShape: dataShape.transposed(),
-                         name: name,
                          tensorArray: tensorArray,
                          viewDataOffset: viewDataOffset,
-                         indexAlignment: nil, isShared: isShared,
-                         values: nil)
+                         indexAlignment: tAlign,
+                         traversal: traversal,
+                         isShared: isShared)
     }
 }
 
 //==============================================================================
 // MatrixView data initialization extensions
-public extension MatrixView {
+public extension MatrixView where Values.Element == Element {
     //-------------------------------------
     /// with single value
-    init(_ value: Element, name: String? = nil) {
+    init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
+        let array = try! TensorArray(copying: [element],
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
     
     //-------------------------------------
-    /// with Array
-    init(_ extents: MatrixExtents,
-         name: String? = nil,
-         layout: MatrixLayout = .rowMajor,
-         values: [Element]? = nil)
+    /// with convertable collection
+    /// TODO: should the collection be lazy??
+    init<C>(_ extents: MatrixExtents, name: String? = nil,
+            layout: MatrixLayout = .rowMajor, any: C) where
+        C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
+    {
+        self.init(extents, name: name, layout: layout,
+                  elements: any.map { Element(any: $0) })
+    }
+    
+    //-------------------------------------
+    /// with an element collection
+    init<C>(_ extents: MatrixExtents, name: String? = nil,
+            layout: MatrixLayout = .rowMajor, elements: C) where
+        C: Collection, C.Element == Element
     {
         let extents = [extents.rows, extents.cols]
         let shape = layout == .rowMajor ?
             DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
-        
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: MatrixExtents, name: String? = nil,
-              layout: MatrixLayout = .rowMajor, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable,
-        Element: AnyConvertable
-    {
-        self.init(extents, name: name, layout: layout,
-                  values: sequence.map { Element(any: $0) })
+
+        let array = try! TensorArray(copying: elements,
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 }
 
@@ -387,155 +434,147 @@ public struct Matrix<Element>: MatrixView {
     
     public init(shape: DataShape,
                 dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
+                tensorArray: TensorArray,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
+                indexAlignment: [Int],
+                traversal: TensorTraversal,
+                isShared: Bool)
+    {
         self.shape = shape
         self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
+        self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
-    }
-}
-
-//==============================================================================
-// VolumeView
-public protocol VolumeView: TensorView { }
-
-extension Volume: CustomStringConvertible where Element: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
-//==============================================================================
-// VolumeView extension
-public extension VolumeView {
-    var startIndex: VolumeIndex { return VolumeIndex(view: self, at: (0, 0, 0))}
-    var endIndex: VolumeIndex { return VolumeIndex(endOf: self) }
-
-    //--------------------------------------------------------------------------
-    /// repeating
-    init(_ extents: VolumeExtents, repeating other: Self) {
-        let extents = [extents.depths, extents.rows, extents.cols]
-        self.init(with: extents, repeating: other)
-    }
-    
-    //-------------------------------------
-    /// with reference to read only buffer
-    /// useful for memory mapped databases, or hardware device buffers
-    init(_ extents: VolumeExtents, name: String? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Element>) {
-
-        // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
-
-        let extents = [extents.depths, extents.rows, extents.cols]
-        let shape = DataShape(extents: extents)
-        assert(shape.elementCount == buffer.count,
-               "shape count does not match buffer count")
-        
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// BoolView
-    func createBoolView(with extents: [Int]) -> Volume<Bool> {
-        let shape = DataShape(extents: extents)
-        return Volume<Bool>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// IndexView
-    func createIndexView(with extents: [Int]) -> Volume<IndexElement> {
-        let shape = DataShape(extents: extents)
-        return Volume<IndexElement>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-}
-
-//==============================================================================
-// VolumeView extension
-public extension VolumeView where Values.Element == Element {
-    //-------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1, 1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-    
-    //-------------------------------------
-    /// with Array
-    init(_ extents: VolumeExtents, name: String? = nil,
-         values: [Element]? = nil)
-    {
-        let extents = [extents.depths, extents.rows, extents.cols]
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: VolumeExtents, name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
-    {
-        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
-    }
-}
-
-//==============================================================================
-/// Volume
-public struct Volume<Element>: VolumeView {
-    // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]
-    public let isShared: Bool
-    public let shape: DataShape
-    public var tensorArray: TensorArray
-    public let traversal: TensorTraversal
-    public var viewDataOffset: Int
-    
-    public init(shape: DataShape,
-                dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
-                viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
-        self.shape = shape
-        self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
+        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
+        self.traversal = traversal
     }
 }
-
+//
+////==============================================================================
+//// VolumeView
+//public protocol VolumeView: TensorView { }
+//
+//extension Volume: CustomStringConvertible where Element: AnyConvertable {
+//    public var description: String { return formatted() }
+//}
+//
+////==============================================================================
+//// VolumeView extension
+//public extension VolumeView {
+//    var startIndex: VolumeIndex { return VolumeIndex(view: self, at: (0, 0, 0))}
+//    var endIndex: VolumeIndex { return VolumeIndex(endOf: self) }
+//
+//    //--------------------------------------------------------------------------
+//    /// repeating
+//    init(_ extents: VolumeExtents, repeating other: Self) {
+//        let extents = [extents.depths, extents.rows, extents.cols]
+//        self.init(with: extents, repeating: other)
+//    }
+//
+//    //-------------------------------------
+//    /// with reference to read only buffer
+//    /// useful for memory mapped databases, or hardware device buffers
+//    init(_ extents: VolumeExtents, name: String? = nil,
+//         referenceTo buffer: UnsafeBufferPointer<Element>) {
+//
+//        // create tensor data reference to buffer
+//        let name = name ?? String(describing: Self.self)
+//        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+//
+//        let extents = [extents.depths, extents.rows, extents.cols]
+//        let shape = DataShape(extents: extents)
+//        assert(shape.elementCount == buffer.count,
+//               "shape count does not match buffer count")
+//
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: tensorArray, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// BoolView
+//    func createBoolView(with extents: [Int]) -> Volume<Bool> {
+//        let shape = DataShape(extents: extents)
+//        return Volume<Bool>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// IndexView
+//    func createIndexView(with extents: [Int]) -> Volume<IndexElement> {
+//        let shape = DataShape(extents: extents)
+//        return Volume<IndexElement>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//}
+//
+////==============================================================================
+//// VolumeView extension
+//public extension VolumeView where Values.Element == Element {
+//    //-------------------------------------
+//    /// with single value
+//    init(_ value: Element, name: String? = nil) {
+//        let shape = DataShape(extents: [1, 1, 1])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: [value])
+//    }
+//
+//    //-------------------------------------
+//    /// with Array
+//    init(_ extents: VolumeExtents, name: String? = nil,
+//         values: [Element]? = nil)
+//    {
+//        let extents = [extents.depths, extents.rows, extents.cols]
+//        let shape = DataShape(extents: extents)
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: values)
+//    }
+//
+//    //-------------------------------------
+//    /// with Sequence
+//    init<Seq>(_ extents: VolumeExtents, name: String? = nil, sequence: Seq) where
+//        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+//    {
+//        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
+//    }
+//}
+//
+////==============================================================================
+///// Volume
+//public struct Volume<Element>: VolumeView {
+//    // properties
+//    public let dataShape: DataShape
+//    public let indexAlignment: [Int]
+//    public let isShared: Bool
+//    public let shape: DataShape
+//    public var tensorArray: TensorArray
+//    public let traversal: TensorTraversal
+//    public var viewDataOffset: Int
+//
+//    public init(shape: DataShape,
+//                dataShape: DataShape,
+//                tensorArray: TensorArray,
+//                viewDataOffset: Int,
+//                indexAlignment: [Int],
+//                traversal: TensorTraversal,
+//                isShared: Bool)
+//    {
+//        self.shape = shape
+//        self.dataShape = dataShape
+//        self.tensorArray = tensorArray
+//        self.viewDataOffset = viewDataOffset
+//        self.indexAlignment = indexAlignment
+//        self.isShared = isShared
+//        self.traversal = traversal
+//    }
+//}
+//
 //==============================================================================
 // NDTensorView
 public protocol NDTensorView: TensorView { }
@@ -554,56 +593,76 @@ public extension NDTensorView {
     /// with reference to read only buffer
     /// useful for memory mapped databases, or hardware device buffers
     init(extents: [Int], name: String? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Element>) {
-
+         referenceTo buffer: UnsafeBufferPointer<Element>)
+    {
         // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+        let array = TensorArray(referenceTo: buffer,
+                                name: name ?? String(describing: Self.self))
 
         // create shape considering column major
         let shape = DataShape(extents: extents)
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
-    
+
     //--------------------------------------------------------------------------
     /// BoolView
     func createBoolView(with extents: [Int]) -> NDTensor<Bool> {
         let shape = DataShape(extents: extents)
-        return NDTensor<Bool>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
+        let array = TensorArray(type: Bool.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return NDTensor<Bool>(shape: shape, dataShape: shape,
+                              tensorArray: array, viewDataOffset: 0,
+                              indexAlignment: zeroAlignment(shape.rank),
+                              traversal: .normal, isShared: false)
     }
     
     //--------------------------------------------------------------------------
     /// IndexView
     func createIndexView(with extents: [Int]) -> NDTensor<IndexElement> {
         let shape = DataShape(extents: extents)
-        return NDTensor<IndexElement>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
+        let array = TensorArray(type: IndexElement.self,
+                                count: shape.elementCount,
+                                name: String(describing: Self.self))
+        return NDTensor<IndexElement>(shape: shape, dataShape: shape,
+                                      tensorArray: array, viewDataOffset: 0,
+                                      indexAlignment: zeroAlignment(shape.rank),
+                                      traversal: .normal, isShared: false)
     }
 }
 
 //==============================================================================
 // NDTensorView extensions
 public extension NDTensorView {
-    //--------------------------------------------------------------------------
-    /// with Sequence
-    init<Seq>(extents: [Int], name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+    //-------------------------------------
+    /// with convertable collection
+    /// TODO: should the collection be lazy??
+    init<C>(_ extents: [Int], name: String? = nil, any: C) where
+        C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
+    {
+        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+    }
+    
+    //-------------------------------------
+    /// with an element collection
+    init<C>(_ extents: [Int], name: String? = nil, elements: C) where
+        C: Collection, C.Element == Element
     {
         let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false,
-                  values: sequence.map { Element(any: $0) })
+        let array = try! TensorArray(copying: elements,
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
     }
 }
 
@@ -619,322 +678,310 @@ public struct NDTensor<Element>: NDTensorView {
     public var tensorArray: TensorArray
     public let traversal: TensorTraversal
     public var viewDataOffset: Int
-    
+
     public init(shape: DataShape,
                 dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
+                tensorArray: TensorArray,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
-        self.shape = shape
-        self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
-        self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
-    }
-}
-
-//==============================================================================
-/// NCHWTensorView
-/// An NCHW tensor is a standard layout for use with cuDNN.
-/// It has a layout of numerics organized as:
-/// n: items
-/// c: channels
-/// h: rows
-/// w: cols
-public protocol NCHWTensorView: TensorView { }
-
-extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
-//==============================================================================
-/// NCHWTensorView extensions
-public extension NCHWTensorView {
-    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
-    var endIndex: NDIndex { return NDIndex(endOf: self) }
-
-    //--------------------------------------------------------------------------
-    /// repeating
-    init(_ extents: NCHWExtents, repeating other: Self) {
-        let extent = [extents.items, extents.channels,
-                      extents.rows, extents.cols]
-        self.init(with: extent, repeating: other)
-    }
-    
-    //-------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1, 1, 1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-
-    //-------------------------------------
-    /// with Array
-    init(_ extents: NCHWExtents, name: String? = nil,
-         values: [Element]? = nil) {
-
-        let extent = [extents.items, extents.channels,
-                      extents.rows, extents.cols]
-        let shape = DataShape(extents: extent)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-    
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: NCHWExtents, name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+                indexAlignment: [Int],
+                traversal: TensorTraversal,
+                isShared: Bool)
     {
-        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
-    }
-
-    //-------------------------------------
-    /// with reference to read only buffer
-    /// useful for memory mapped databases, or hardware device buffers
-    init(_ extents: NCHWExtents, name: String? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Element>) {
-
-        // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
-
-        let extents = [extents.items, extents.channels,
-                       extents.rows, extents.cols]
-        let shape = DataShape(extents: extents)
-        assert(shape.elementCount == buffer.count,
-               "shape count does not match buffer count")
-        
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// BoolView
-    func createBoolView(with extents: [Int]) -> NCHWTensor<Bool> {
-        let shape = DataShape(extents: extents)
-        return NCHWTensor<Bool>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// IndexView
-    func createIndexView(with extents: [Int]) -> NCHWTensor<IndexElement> {
-        let shape = DataShape(extents: extents)
-        return NCHWTensor<IndexElement>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-}
-
-//==============================================================================
-// NCHWTensor
-public struct NCHWTensor<Element>: NCHWTensorView {
-    // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]
-    public let isShared: Bool
-    public let shape: DataShape
-    public var tensorArray: TensorArray
-    public let traversal: TensorTraversal
-    public var viewDataOffset: Int
-    
-    public init(shape: DataShape,
-                dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
-                viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
         self.shape = shape
         self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
+        self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
-    }
-}
-
-//==============================================================================
-/// NHWCTensorView
-/// An NHWC tensor is a standard layout for use with cuDNN.
-/// It has a layout of numerics organized as:
-/// n: items
-/// h: rows
-/// w: cols
-/// c: channels
-public protocol NHWCTensorView: TensorView { }
-
-extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
-    public var description: String { return formatted() }
-}
-
-//==============================================================================
-/// NHWCTensorView extensions
-public extension NHWCTensorView {
-    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
-    var endIndex: NDIndex { return NDIndex(endOf: self) }
-
-    //--------------------------------------------------------------------------
-    /// repeating
-    init(_ extents: NHWCExtents, repeating other: Self) {
-        let extents = [extents.items, extents.rows,
-                       extents.cols, extents.channels]
-        self.init(with: extents, repeating: other)
-    }
-    
-    //-------------------------------------
-    /// with single value
-    init(_ value: Element, name: String? = nil) {
-        let shape = DataShape(extents: [1, 1, 1, 1])
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: [value])
-    }
-
-    //-------------------------------------
-    /// with Array
-    init(_ extents: NHWCExtents, name: String? = nil,
-         values: [Element]? = nil) {
-        
-        let extents = [extents.items, extents.rows,
-                       extents.cols, extents.channels]
-        let shape = DataShape(extents: extents)
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: nil, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: values)
-    }
-
-    //-------------------------------------
-    /// with Sequence
-    init<Seq>(_ extents: NHWCExtents, name: String? = nil, sequence: Seq) where
-        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
-    {
-        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
-    }
-
-    //-------------------------------------
-    /// with reference to read only buffer
-    /// useful for memory mapped databases, or hardware device buffers
-    init(_ extents: NHWCExtents, name: String? = nil,
-         referenceTo buffer: UnsafeBufferPointer<Element>) {
-
-        // create tensor data reference to buffer
-        let name = name ?? String(describing: Self.self)
-        let tensorArray = TensorArray(referenceTo: buffer, name: name)
-
-        let extents = [extents.items, extents.rows,
-                       extents.cols, extents.channels]
-        let shape = DataShape(extents: extents)
-        assert(shape.elementCount == buffer.count,
-               "shape count does not match buffer count")
-        
-        self.init(shape: shape, dataShape: shape, name: name,
-                  tensorArray: tensorArray, viewDataOffset: 0,
-                  indexAlignment: nil, isShared: false, values: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// BoolView
-    func createBoolView(with extents: [Int]) -> NHWCTensor<Bool> {
-        let shape = DataShape(extents: extents)
-        return NHWCTensor<Bool>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// IndexView
-    func createIndexView(with extents: [Int]) -> NHWCTensor<IndexElement> {
-        let shape = DataShape(extents: extents)
-        return NHWCTensor<IndexElement>(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: nil, isShared: false, values: nil)
-    }
-}
-
-//==============================================================================
-/// NHWCTensor
-public struct NHWCTensor<Element>: NHWCTensorView {
-    // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]
-    public let isShared: Bool
-    public let shape: DataShape
-    public var tensorArray: TensorArray
-    public let traversal: TensorTraversal
-    public var viewDataOffset: Int
-    
-    public init(shape: DataShape,
-                dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
-                viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
-        self.shape = shape
-        self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
+        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
+        self.traversal = traversal
     }
 }
 
-//==============================================================================
-/// NHWCTensor cast
-public extension NHWCTensor {
-    /// zero copy cast of a matrix of dense uniform values to NHWC
-    init<M>(_ matrix: M, name: String? = nil) where
-        M: MatrixView,
-        M.Element: UniformDenseScalar,
-        M.Element.Component == Element {
-            let viewExtents = [1,
-                               matrix.shape.extents[0],
-                               matrix.shape.extents[1],
-                               M.Element.componentCount]
-            let dataExtents = [1,
-                               matrix.dataShape.extents[0],
-                               matrix.dataShape.extents[1],
-                               M.Element.componentCount]
-            let alignment = matrix.indexAlignment + [0]
-            
-            self.init(shape: DataShape(extents: viewExtents),
-                      dataShape: DataShape(extents: dataExtents),
-                      name: name,
-                      tensorArray: matrix.tensorArray,
-                      viewDataOffset: matrix.viewDataOffset,
-                      indexAlignment: alignment,
-                      isShared: matrix.isShared,
-                      values: nil)
-    }
-}
+////==============================================================================
+///// NCHWTensorView
+///// An NCHW tensor is a standard layout for use with cuDNN.
+///// It has a layout of numerics organized as:
+///// n: items
+///// c: channels
+///// h: rows
+///// w: cols
+//public protocol NCHWTensorView: TensorView { }
+//
+//extension NCHWTensor: CustomStringConvertible where Element: AnyConvertable {
+//    public var description: String { return formatted() }
+//}
+//
+////==============================================================================
+///// NCHWTensorView extensions
+//public extension NCHWTensorView {
+//    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
+//    var endIndex: NDIndex { return NDIndex(endOf: self) }
+//
+//    //--------------------------------------------------------------------------
+//    /// repeating
+//    init(_ extents: NCHWExtents, repeating other: Self) {
+//        let extent = [extents.items, extents.channels,
+//                      extents.rows, extents.cols]
+//        self.init(with: extent, repeating: other)
+//    }
+//
+//    //-------------------------------------
+//    /// with single value
+//    init(_ value: Element, name: String? = nil) {
+//        let shape = DataShape(extents: [1, 1, 1, 1])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: [value])
+//    }
+//
+//    //-------------------------------------
+//    /// with Array
+//    init(_ extents: NCHWExtents, name: String? = nil,
+//         values: [Element]? = nil) {
+//
+//        let extent = [extents.items, extents.channels,
+//                      extents.rows, extents.cols]
+//        let shape = DataShape(extents: extent)
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: values)
+//    }
+//
+//    //-------------------------------------
+//    /// with Sequence
+//    init<Seq>(_ extents: NCHWExtents, name: String? = nil, sequence: Seq) where
+//        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+//    {
+//        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
+//    }
+//
+//    //-------------------------------------
+//    /// with reference to read only buffer
+//    /// useful for memory mapped databases, or hardware device buffers
+//    init(_ extents: NCHWExtents, name: String? = nil,
+//         referenceTo buffer: UnsafeBufferPointer<Element>) {
+//
+//        // create tensor data reference to buffer
+//        let name = name ?? String(describing: Self.self)
+//        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+//
+//        let extents = [extents.items, extents.channels,
+//                       extents.rows, extents.cols]
+//        let shape = DataShape(extents: extents)
+//        assert(shape.elementCount == buffer.count,
+//               "shape count does not match buffer count")
+//
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: tensorArray, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// BoolView
+//    func createBoolView(with extents: [Int]) -> NCHWTensor<Bool> {
+//        let shape = DataShape(extents: extents)
+//        return NCHWTensor<Bool>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// IndexView
+//    func createIndexView(with extents: [Int]) -> NCHWTensor<IndexElement> {
+//        let shape = DataShape(extents: extents)
+//        return NCHWTensor<IndexElement>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//}
+//
+////==============================================================================
+//// NCHWTensor
+//public struct NCHWTensor<Element>: NCHWTensorView {
+//    // properties
+//    public let dataShape: DataShape
+//    public let indexAlignment: [Int]
+//    public let isShared: Bool
+//    public let shape: DataShape
+//    public var tensorArray: TensorArray
+//    public let traversal: TensorTraversal
+//    public var viewDataOffset: Int
+//
+//    public init(shape: DataShape,
+//                dataShape: DataShape,
+//                tensorArray: TensorArray,
+//                viewDataOffset: Int,
+//                indexAlignment: [Int],
+//                traversal: TensorTraversal,
+//                isShared: Bool)
+//    {
+//        self.shape = shape
+//        self.dataShape = dataShape
+//        self.tensorArray = tensorArray
+//        self.viewDataOffset = viewDataOffset
+//        self.indexAlignment = indexAlignment
+//        self.isShared = isShared
+//        self.traversal = traversal
+//    }
+//}
+//
+////==============================================================================
+///// NHWCTensorView
+///// An NHWC tensor is a standard layout for use with cuDNN.
+///// It has a layout of numerics organized as:
+///// n: items
+///// h: rows
+///// w: cols
+///// c: channels
+//public protocol NHWCTensorView: TensorView { }
+//
+//extension NHWCTensor: CustomStringConvertible where Element: AnyConvertable {
+//    public var description: String { return formatted() }
+//}
+//
+////==============================================================================
+///// NHWCTensorView extensions
+//public extension NHWCTensorView {
+//    var startIndex: NDIndex { return NDIndex(view: self, at: [0]) }
+//    var endIndex: NDIndex { return NDIndex(endOf: self) }
+//
+//    //--------------------------------------------------------------------------
+//    /// repeating
+//    init(_ extents: NHWCExtents, repeating other: Self) {
+//        let extents = [extents.items, extents.rows,
+//                       extents.cols, extents.channels]
+//        self.init(with: extents, repeating: other)
+//    }
+//
+//    //-------------------------------------
+//    /// with single value
+//    init(_ value: Element, name: String? = nil) {
+//        let shape = DataShape(extents: [1, 1, 1, 1])
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: [value])
+//    }
+//
+//    //-------------------------------------
+//    /// with Array
+//    init(_ extents: NHWCExtents, name: String? = nil,
+//         values: [Element]? = nil) {
+//
+//        let extents = [extents.items, extents.rows,
+//                       extents.cols, extents.channels]
+//        let shape = DataShape(extents: extents)
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: nil, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: values)
+//    }
+//
+//    //-------------------------------------
+//    /// with Sequence
+//    init<Seq>(_ extents: NHWCExtents, name: String? = nil, sequence: Seq) where
+//        Seq: Sequence, Seq.Element: AnyConvertable, Element: AnyConvertable
+//    {
+//        self.init(extents, name: name, values: sequence.map { Element(any: $0)})
+//    }
+//
+//    //-------------------------------------
+//    /// with reference to read only buffer
+//    /// useful for memory mapped databases, or hardware device buffers
+//    init(_ extents: NHWCExtents, name: String? = nil,
+//         referenceTo buffer: UnsafeBufferPointer<Element>) {
+//
+//        // create tensor data reference to buffer
+//        let name = name ?? String(describing: Self.self)
+//        let tensorArray = TensorArray(referenceTo: buffer, name: name)
+//
+//        let extents = [extents.items, extents.rows,
+//                       extents.cols, extents.channels]
+//        let shape = DataShape(extents: extents)
+//        assert(shape.elementCount == buffer.count,
+//               "shape count does not match buffer count")
+//
+//        self.init(shape: shape, dataShape: shape, name: name,
+//                  tensorArray: tensorArray, viewDataOffset: 0,
+//                  indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// BoolView
+//    func createBoolView(with extents: [Int]) -> NHWCTensor<Bool> {
+//        let shape = DataShape(extents: extents)
+//        return NHWCTensor<Bool>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//
+//    //--------------------------------------------------------------------------
+//    /// IndexView
+//    func createIndexView(with extents: [Int]) -> NHWCTensor<IndexElement> {
+//        let shape = DataShape(extents: extents)
+//        return NHWCTensor<IndexElement>(
+//            shape: shape, dataShape: shape, name: name,
+//            tensorArray: nil, viewDataOffset: 0,
+//            indexAlignment: nil, isShared: false, values: nil)
+//    }
+//}
+//
+////==============================================================================
+///// NHWCTensor
+//public struct NHWCTensor<Element>: NHWCTensorView {
+//    // properties
+//    public let dataShape: DataShape
+//    public let indexAlignment: [Int]
+//    public let isShared: Bool
+//    public let shape: DataShape
+//    public var tensorArray: TensorArray
+//    public let traversal: TensorTraversal
+//    public var viewDataOffset: Int
+//
+//    public init(shape: DataShape,
+//                dataShape: DataShape,
+//                tensorArray: TensorArray,
+//                viewDataOffset: Int,
+//                indexAlignment: [Int],
+//                traversal: TensorTraversal,
+//                isShared: Bool)
+//    {
+//        self.shape = shape
+//        self.dataShape = dataShape
+//        self.tensorArray = tensorArray
+//        self.viewDataOffset = viewDataOffset
+//        self.indexAlignment = indexAlignment
+//        self.isShared = isShared
+//        self.traversal = traversal
+//    }
+//}
+//
+////==============================================================================
+///// NHWCTensor cast
+//public extension NHWCTensor {
+//    /// zero copy cast of a matrix of dense uniform values to NHWC
+//    init<M>(_ matrix: M, name: String? = nil) where
+//        M: MatrixView,
+//        M.Element: UniformDenseScalar,
+//        M.Element.Component == Element {
+//            let viewExtents = [1,
+//                               matrix.shape.extents[0],
+//                               matrix.shape.extents[1],
+//                               M.Element.componentCount]
+//            let dataExtents = [1,
+//                               matrix.dataShape.extents[0],
+//                               matrix.dataShape.extents[1],
+//                               M.Element.componentCount]
+//            let alignment = matrix.indexAlignment + [0]
+//
+//            self.init(shape: DataShape(extents: viewExtents),
+//                      dataShape: DataShape(extents: dataExtents),
+//                      name: name,
+//                      tensorArray: matrix.tensorArray,
+//                      viewDataOffset: matrix.viewDataOffset,
+//                      indexAlignment: alignment,
+//                      isShared: matrix.isShared,
+//                      values: nil)
+//    }
+//}

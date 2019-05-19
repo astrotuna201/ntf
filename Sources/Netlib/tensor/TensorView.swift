@@ -81,24 +81,23 @@ public protocol TensorView: Logging {
     /// fully specified used for creating views
     init(shape: DataShape,
          dataShape: DataShape,
-         name: String?,
-         tensorArray: TensorArray?,
+         tensorArray: TensorArray,
          viewDataOffset: Int,
-         indexAlignment: [Int]?,
-         isShared: Bool,
-         values: [Element]?)
+         indexAlignment: [Int],
+         traversal: TensorTraversal,
+         isShared: Bool)
 
     //--------------------------------------------------------------------------
     /// creates a new dense view where `Element` equals `Bool`
     /// with the specified extents
     func createBoolView(with extents: [Int]) -> BoolView
     /// creates a new dense view of the same type with the specified extents
-    func createDenseView(with extents: [Int]) -> Self
-    /// creates a new dense view of the same type with the specified value
-    func createDenseView(with value: Values.Element) -> Self
+    func createDenseView(with extents: [Int], name: String?) -> Self
     /// creates a new dense view where `Element` equals `IndexElement`
     /// with the specified extents and initial values
     func createIndexView(with extents: [Int]) -> IndexView
+    /// creates a new dense view of the same type with the specified value
+    func createValueView(_ value: Values.Element, name: String?) -> Self
 
     //--------------------------------------------------------------------------
     // indexing
@@ -116,9 +115,9 @@ public protocol TensorView: Logging {
 public typealias IndexElement = Int32
 
 //--------------------------------------------------------------------------
-/// zeroIndexAlignment(_ shape:
+/// zeroAlignment(_ rank:
 @inlinable @inline(__always)
-func zeroIndexAlignment(_ rank: Int) -> [Int] {
+func zeroAlignment(_ rank: Int) -> [Int] {
     return [Int](repeating: 0, count: rank)
 }
 
@@ -130,7 +129,6 @@ public enum TensorTraversal: Int32 { case normal, repeated }
 // TensorView default implementation
 public extension TensorView {
     //--------------------------------------------------------------------------
-    // public property accessors
     /// the extents of the view
     var extents: [Int] { return shape.extents }
     /// `true` if the values are contiguosly arranged in memory
@@ -167,36 +165,34 @@ public extension TensorView {
     init() {
         self.init(shape: DataShape(),
                   dataShape: DataShape(),
-                  name: nil,
                   tensorArray: TensorArray(),
                   viewDataOffset: 0,
                   indexAlignment: [0],
-                  isShared: false,
-                  values: nil)
+                  traversal: .normal,
+                  isShared: false)
     }
     
     //--------------------------------------------------------------------------
     /// DenseView
-    func createDenseView(with extents: [Int]) -> Self {
+    func createDenseView(with extents: [Int], name: String? = nil) -> Self {
         let shape = DataShape(extents: extents)
-        return Self(
-            shape: shape, dataShape: shape, name: name,
-            tensorArray: nil, viewDataOffset: 0,
-            indexAlignment: zeroIndexAlignment(shape.rank),
-            isShared: false, values: nil)
+        let array = TensorArray(type: Element.self, count: shape.elementCount,
+                                name: name ?? String(describing: Self.self))
+        return Self(shape: shape, dataShape: shape,
+                    tensorArray: array, viewDataOffset: 0,
+                    indexAlignment: zeroAlignment(shape.rank),
+                    traversal: .normal, isShared: false)
     }
-    
+
     //--------------------------------------------------------------------------
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
         self.init(shape: DataShape(extents: extents),
                   dataShape: other.shape,
-                  name: other.name,
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
-                  indexAlignment: zeroIndexAlignment(extents.count),
-                  isShared: other.isShared,
-                  values: nil)
+                  indexAlignment: zeroAlignment(extents.count),
+                  traversal: .repeated, isShared: other.isShared)
     }
     
     //--------------------------------------------------------------------------
@@ -207,7 +203,6 @@ public extension TensorView {
         // validate
         assert(offset.count == shape.rank && extents.count == shape.rank)
         assert(shape.contains(offset: offset, extents: extents))
-        let name = "\(self.name).subview"
         let viewShape = DataShape(extents: extents, strides: shape.strides)
 
         switch traversal {
@@ -216,25 +211,22 @@ public extension TensorView {
             let dataOffset = viewDataOffset + shape.linearIndex(of: offset)
             return Self(shape: viewShape,
                         dataShape: viewShape,
-                        name: name,
                         tensorArray: tensorArray,
                         viewDataOffset: dataOffset,
                         indexAlignment: indexAlignment,
-                        isShared: isReference,
-                        values: nil)
+                        traversal: traversal,
+                        isShared: isReference)
 
         case .repeated:
             let alignment = zip(offset, dataShape.extents).map { $0 % $1 }
             return Self(shape: viewShape,
                         dataShape: dataShape,
-                        name: name,
                         tensorArray: tensorArray,
                         viewDataOffset: 0,
                         indexAlignment: alignment,
-                        isShared: isReference,
-                        values: nil)
+                        traversal: traversal,
+                        isShared: isReference)
         }
-
     }
     
     //--------------------------------------------------------------------------
@@ -253,12 +245,10 @@ public extension TensorView {
             try copyIfMutates(using: stream)
             return Self(shape: shape,
                         dataShape: dataShape,
-                        name: name,
                         tensorArray: tensorArray,
                         viewDataOffset: viewDataOffset,
                         indexAlignment: indexAlignment,
-                        isShared: true,
-                        values: nil)
+                        traversal: traversal, isShared: true)
         }
     }
     
@@ -277,44 +267,10 @@ public extension TensorView {
         let flatShape = shape.flattened()
         return Self(shape: flatShape,
                     dataShape: flatShape,
-                    name: name,
                     tensorArray: tensorArray,
                     viewDataOffset: viewDataOffset,
-                    indexAlignment: zeroIndexAlignment(flatShape.rank),
-                    isShared: isShared,
-                    values: nil)
-    }
-
-    //--------------------------------------------------------------------------
-    /// initTensorArray
-    /// a helper to correctly initialize the tensorArray object
-    mutating func initTensorArray(_ tensorData: TensorArray?,
-                                  _ name: String?,
-                                  _ values: [Element]?) {
-        if let tensorData = tensorData {
-            tensorArray = tensorData
-        } else {
-            assert(shape.isContiguous, "new views should have a dense shape")
-            let name = name ?? String(describing: Self.self)
-            
-            // allocate backing tensorArray
-            if let values = values {
-                assert(values.count == dataShape.elementCount,
-                       "number of values does not match tensor extents")
-                do {
-                    tensorArray = try values.withUnsafeBufferPointer {
-                        try TensorArray(copying: $0, name: name)
-                    }
-                } catch {
-                    tensorArray = TensorArray()
-                    _Streams.current.reportDevice(error: error)
-                }
-            } else {
-                tensorArray = TensorArray(type: Element.self,
-                                          count: dataShape.elementCount,
-                                          name: name)
-            }
-        }
+                    indexAlignment: zeroAlignment(flatShape.rank),
+                    traversal: traversal, isShared: isShared)
     }
 
     //--------------------------------------------------------------------------
@@ -380,15 +336,19 @@ public extension TensorView {
     /// - Returns: the new data shape
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
     func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
+        // TODO: test this
+        var align = [Int]()
+        for i in 0..<rank where shape.extents[i] != 1 {
+            align.append(indexAlignment[i])
+        }
         let squeezedShape = shape.squeezed(axes: axes)
         return NDTensor<Element>(shape: squeezedShape,
                                  dataShape: squeezedShape,
-                                 name: name,
                                  tensorArray: tensorArray,
                                  viewDataOffset: viewDataOffset,
-                                 indexAlignment: nil,
-                                 isShared: isShared,
-                                 values: nil)
+                                 indexAlignment: align,
+                                 traversal: traversal,
+                                 isShared: isShared)
     }
     
     //--------------------------------------------------------------------------

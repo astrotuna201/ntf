@@ -5,19 +5,21 @@
 import Foundation
 
 //==============================================================================
-// ShapedTensorView
-//public protocol QShapedTensorView: Quantizing { }
-
+// Quantizing TensorView common extensions
 public extension TensorView where Self: Quantizing, Values.Element == Viewed {
     //--------------------------------------------------------------------------
     /// DenseView
-    func createDenseView(with value: Viewed) -> Self {
+    func createDenseView(_ value: Values.Element, name: String? = nil) -> Self {
         let extents = [Int](repeating: 1, count: rank)
         let shape = DataShape(extents: extents)
-        return Self(shape: shape, dataShape: shape, name: name,
-                    tensorArray: nil, viewDataOffset: 0,
-                    indexAlignment: nil, isShared: false,
-                    values: [convert(viewed: value)])
+        let elements = [convert(viewed: value)]
+        let array = try! TensorArray(copying: elements,
+                                     name: name ?? String(describing: Self.self),
+                                     using: _Streams.hostStream)
+        return Self(shape: shape, dataShape: shape,
+                    tensorArray: array, viewDataOffset: 0,
+                    indexAlignment: zeroAlignment(shape.rank),
+                    traversal: .normal, isShared: false)
     }
 }
 
@@ -39,23 +41,19 @@ public struct QMatrix<Element, Viewed>: MatrixView, Quantizing where
 
     public init(shape: DataShape,
                 dataShape: DataShape,
-                name: String?,
-                tensorArray: TensorArray?,
+                tensorArray: TensorArray,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                isShared: Bool,
-                values: [Element]?) {
-        
-        assert(values == nil || values!.count == shape.elementCount,
-               "tensor size and values count do not match")
+                indexAlignment: [Int],
+                traversal: TensorTraversal,
+                isShared: Bool)
+    {
         self.shape = shape
         self.dataShape = dataShape
-        self.traversal = shape == dataShape ? .normal : .repeated
-        self.indexAlignment = indexAlignment ?? zeroIndexAlignment(shape.rank)
-        self.isShared = isShared
+        self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.tensorArray = TensorArray()
-        initTensorArray(tensorArray, name, values)
+        self.indexAlignment = indexAlignment
+        self.isShared = isShared
+        self.traversal = traversal
     }
     
     /// returns a collection of read only values

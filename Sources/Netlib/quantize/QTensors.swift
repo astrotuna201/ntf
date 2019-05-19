@@ -24,6 +24,60 @@ public extension TensorView where Self: Quantizing, Values.Element == Viewed {
 }
 
 //==============================================================================
+// MatrixView data initialization extensions
+public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
+    //-------------------------------------
+    /// with single value
+    init(_ value: Viewed, name: String? = nil) {
+        let shape = DataShape(extents: [1, 1])
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: TensorArray(),
+                  viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
+
+        let element = convert(viewed: value)
+        tensorArray =
+            try! TensorArray(copying: [element],
+                             name: name ?? String(describing: Self.self),
+                             using: _Streams.hostStream)
+    }
+    
+    //-------------------------------------
+    /// with convertable collection
+    /// TODO: should the collection be lazy??
+    init<C>(_ extents: MatrixExtents, name: String? = nil,
+            layout: MatrixLayout = .rowMajor, any: C) where
+        C: Collection, C.Element: AnyConvertable, Viewed: AnyConvertable
+    {
+        self.init(extents, name: name, layout: layout,
+                  values: any.map { Viewed(any: $0) })
+    }
+    
+    //-------------------------------------
+    /// with an element collection
+    init<C>(_ extents: MatrixExtents, name: String? = nil,
+            layout: MatrixLayout = .rowMajor, values: C) where
+        C: Collection, C.Element == Viewed
+    {
+        let extents = [extents.rows, extents.cols]
+        let shape = layout == .rowMajor ?
+            DataShape(extents: extents) :
+            DataShape(extents: extents).columnMajor()
+        
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: TensorArray(), viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
+
+        tensorArray =
+            try! TensorArray(copying: values.map { convert(viewed: $0) },
+                             name: name ?? String(describing: Self.self),
+                             using: _Streams.hostStream)
+    }
+}
+
+//==============================================================================
 // QMatrix
 public struct QMatrix<Element, Viewed>: MatrixView, Quantizing where
     Element: Quantizable, Viewed: Quantizable

@@ -216,7 +216,7 @@ public extension VectorView {
 }
 
 //==============================================================================
-public extension VectorView where Values.Element == Element {
+public extension VectorView {
     //-------------------------------------
     /// with single value
     init(_ element: Element, name: String? = nil) {
@@ -373,7 +373,7 @@ public extension MatrixView {
 
 //==============================================================================
 // MatrixView data initialization extensions
-public extension MatrixView where Values.Element == Element {
+public extension MatrixView {
     //-------------------------------------
     /// with single value
     init(_ element: Element, name: String? = nil) {

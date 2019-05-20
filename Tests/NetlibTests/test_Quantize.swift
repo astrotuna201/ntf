@@ -15,6 +15,20 @@ class test_QConverter: XCTestCase {
     ]
 
     //==========================================================================
+    // test_UInt8FloatAdd
+    func test_UInt8FloatAdd() {
+        do {
+            let matrix = QMatrix<UInt8, Float>((1, 4), any: 0..<4)
+            let result = matrix + 1
+            let values = try result.array()
+            print(values)
+//            XCTAssert(qvalues == qexpected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
     // test_UInt8Float
     func test_UInt8Float() {
         do {

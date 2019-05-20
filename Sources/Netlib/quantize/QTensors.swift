@@ -12,14 +12,14 @@ public extension TensorView where Self: Quantizing, Values.Element == Viewed {
     func createDenseView(_ value: Values.Element, name: String? = nil) -> Self {
         let extents = [Int](repeating: 1, count: rank)
         let shape = DataShape(extents: extents)
-        let elements = [convert(viewed: value)]
-        let array = try! TensorArray(copying: elements,
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
-        return Self(shape: shape, dataShape: shape,
-                    tensorArray: array, viewDataOffset: 0,
-                    indexAlignment: zeroAlignment(shape.rank),
-                    traversal: .normal, isShared: false)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
+        var view = Self(shape: shape, dataShape: shape,
+                        tensorArray: array, viewDataOffset: 0,
+                        indexAlignment: zeroAlignment(shape.rank),
+                        traversal: .normal, isShared: false)
+        try! view.readWrite()[0] = view.convert(viewed: value)
+        return view
     }
 }
 
@@ -30,17 +30,13 @@ public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
     /// with single value
     init(_ value: Viewed, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
-                  tensorArray: TensorArray(),
-                  viewDataOffset: 0,
+                  tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
-
-        let element = convert(viewed: value)
-        tensorArray =
-            try! TensorArray(copying: [element],
-                             name: name ?? String(describing: Self.self),
-                             using: _Streams.hostStream)
+        try! readWrite()[0] = convert(viewed: value)
     }
     
     //-------------------------------------
@@ -64,16 +60,22 @@ public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
         let shape = layout == .rowMajor ?
             DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
-        
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
-                  tensorArray: TensorArray(), viewDataOffset: 0,
+                  tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
-
-        tensorArray =
-            try! TensorArray(copying: values.map { convert(viewed: $0) },
-                             name: name ?? String(describing: Self.self),
-                             using: _Streams.hostStream)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, values.indices) {
+            buffer[i.0] = convert(viewed: values[i.1])
+        }
+    }
+    
+    func elementArray() throws -> [Element] {
+        return [Element](try elementValues())
     }
 }
 
@@ -108,21 +110,5 @@ public struct QMatrix<Element, Viewed>: MatrixView, Quantizing where
         self.indexAlignment = indexAlignment
         self.isShared = isShared
         self.traversal = traversal
-    }
-    
-    /// returns a collection of read only values
-    public func values(using stream: DeviceStream?) throws
-        -> QTensorValueCollection<QMatrix>
-    {
-        let buffer = try readOnly(using: stream)
-        return try QTensorValueCollection(view: self, buffer: buffer)
-    }
-    
-    /// returns a collection of read write values
-    public mutating func mutableValues(using stream: DeviceStream?) throws
-        -> QTensorMutableValueCollection<QMatrix>
-    {
-        let buffer = try readWrite(using: stream)
-        return try QTensorMutableValueCollection(view: &self, buffer: buffer)
     }
 }

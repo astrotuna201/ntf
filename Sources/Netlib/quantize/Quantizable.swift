@@ -175,13 +175,13 @@ extension Float: Quantizable {
     // scalar conversion
     @inlinable @inline(__always)
     public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
-        let transformScale = Int8.normalScale * scale.asFloat
+        let transformScale = Int8.normalInverseScale * scale.asFloat
         return convert(floating: self, transformScale, bias.asFloat)
     }
     
     @inlinable @inline(__always)
     public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
-        let transformScale = UInt8.normalScale * scale.asFloat
+        let transformScale = UInt8.normalInverseScale * scale.asFloat
         return convert(floating: self, transformScale, bias.asFloat)
     }
     

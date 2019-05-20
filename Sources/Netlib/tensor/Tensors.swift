@@ -28,9 +28,8 @@ public extension TensorView {
     func createValueView(_ value: Values.Element, name: String? = nil) -> Self {
         let extents = [Int](repeating: 1, count: rank)
         let shape = DataShape(extents: extents)
-        let array = try! TensorArray(copying: [value],
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         return Self(shape: shape, dataShape: shape,
                     tensorArray: array, viewDataOffset: 0,
                     indexAlignment: zeroAlignment(shape.rank),
@@ -100,13 +99,13 @@ public extension ScalarView {
     /// with single value
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
-        let array = try! TensorArray(copying: [element],
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
     }
 }
 
@@ -221,13 +220,13 @@ public extension VectorView {
     /// with single value
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
-        let array = try! TensorArray(copying: [element],
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
     }
 
     //-------------------------------------
@@ -245,9 +244,9 @@ public extension VectorView {
         C: Collection, C.Element == Element
     {
         let shape = DataShape(extents: [elements.count])
-        let array = try! TensorArray(copying: elements,
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self,
+                                count: elements.count, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
@@ -393,13 +392,13 @@ public extension MatrixView {
     /// with single value
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
-        let array = try! TensorArray(copying: [element],
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
     }
     
     //-------------------------------------
@@ -423,15 +422,18 @@ public extension MatrixView {
         let shape = layout == .rowMajor ?
             DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
-
-        let array = try! TensorArray(copying: elements,
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
-
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 
@@ -557,13 +559,12 @@ public extension VolumeView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = try! TensorArray(copying: [element], name: name,
-                                     using: _Streams.hostStream)
-        
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
     }
 
     //-------------------------------------
@@ -583,13 +584,17 @@ public extension VolumeView {
         let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = try! TensorArray(copying: elements, name: name,
-                                     using: _Streams.hostStream)
-        
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 
@@ -717,14 +722,18 @@ public extension NDTensorView {
         C: Collection, C.Element == Element
     {
         let shape = DataShape(extents: extents)
-        let array = try! TensorArray(copying: elements,
-                                     name: name ?? String(describing: Self.self),
-                                     using: _Streams.hostStream)
-        
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 
@@ -861,13 +870,12 @@ public extension NCHWTensorView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = try! TensorArray(copying: [element], name: name,
-                                     using: _Streams.hostStream)
-        
+        let array = TensorArray(type: Element.self, count: 1, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
     }
     
     //-------------------------------------
@@ -888,13 +896,17 @@ public extension NCHWTensorView {
                        extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = try! TensorArray(copying: elements, name: name,
-                                     using: _Streams.hostStream)
-        
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 
@@ -1019,6 +1031,54 @@ public extension NHWCTensorView {
             tensorArray: array, viewDataOffset: 0,
             indexAlignment: zeroAlignment(shape.rank),
             traversal: .normal, isShared: false)
+    }
+}
+
+//==============================================================================
+/// NHWCTensorView extensions for data initialization
+public extension NHWCTensorView {
+    //-------------------------------------
+    /// with single value
+    init(_ element: Element, name: String? = nil) {
+        let shape = DataShape(extents: [1, 1, 1, 1])
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
+        try! readWrite()[0] = element
+    }
+    
+    //-------------------------------------
+    /// with convertable collection
+    /// TODO: should the collection be lazy??
+    init<C>(_ extents: NHWCExtents, name: String? = nil, any: C) where
+        C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
+    {
+        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+    }
+    
+    //-------------------------------------
+    /// with an element collection
+    init<C>(_ extents: NHWCExtents, name: String? = nil, elements: C) where
+        C: Collection, C.Element == Element
+    {
+        let extents = [extents.items, extents.rows,
+                       extents.cols, extents.channels]
+        let shape = DataShape(extents: extents)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self,
+                                count: shape.elementCount, name: name)
+        self.init(shape: shape, dataShape: shape,
+                  tensorArray: array, viewDataOffset: 0,
+                  indexAlignment: zeroAlignment(shape.rank),
+                  traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 

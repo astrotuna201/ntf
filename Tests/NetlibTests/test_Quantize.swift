@@ -74,20 +74,20 @@ class test_QConverter: XCTestCase {
         let elements = [mv, zv, qv, hv, fv]
         
         do {
-            var qmatrix = QMatrix<Int8, Float>((1, 5), elements: elements)
-            qmatrix.bias = bias
-            let qvalues = try qmatrix.array()
-            let qexpected: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
-            XCTAssert(qvalues == qexpected)
+            var matrix = QMatrix<Int8, Float>((1, 5), elements: elements)
+            matrix.bias = bias
+            let values = try matrix.array()
+            let expected: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
+            XCTAssert(values == expected)
         } catch {
             XCTFail(String(describing: error))
         }
 
         do {
             let values: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
-            var qmatrix = QMatrix<Int8, Float>((1, 5), values: values)
-            qmatrix.bias = bias
-            let array = try qmatrix.elementArray()
+            var matrix = QMatrix<Int8, Float>((1, 5), values: values)
+            matrix.bias = bias
+            let array = try matrix.elementArray()
             XCTAssert(array == elements)
         } catch {
             XCTFail(String(describing: error))

@@ -121,28 +121,6 @@ final public class TensorArray: ObjectTracking, Logging {
     }
     
     //----------------------------------------
-    // copy from sequence
-    public init<C>(copying collection: C, name: String,
-                   using stream: DeviceStream) throws where C: Collection
-    {
-        self.name = name
-        masterVersion = 0
-        isReadOnly = false
-        byteCount = collection.count * MemoryLayout<C.Element>.size
-        register(type: C.Element.self, count: collection.count)
-
-        diagnostic("\(createString) \(name)(\(trackingId)) " +
-            "\(String(describing: C.Element.self))[\(collection.count)]",
-            categories: .dataAlloc)
-
-        // initialize
-        let buffer = try readWrite(type: C.Element.self, using: stream)
-        for i in zip(buffer.indices, collection.indices) {
-            buffer[i.0] = collection[i.1]
-        }
-    }
-    
-    //----------------------------------------
     // init from other TensorArray
     public init<Element>(type: Element.Type,
                          copying other: TensorArray,

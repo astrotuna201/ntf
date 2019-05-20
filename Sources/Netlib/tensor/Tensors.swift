@@ -251,6 +251,11 @@ public extension VectorView {
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        // store values
+        let buffer = try! readWrite()
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
     }
 }
 
@@ -1128,7 +1133,8 @@ public extension NHWCTensor {
                                matrix.dataShape.extents[0],
                                matrix.dataShape.extents[1],
                                M.Element.componentCount]
-            let alignment = matrix.indexAlignment + [0]
+            let alignment = [0, matrix.indexAlignment[0],
+                             matrix.indexAlignment[1], 0]
 
             self.init(shape: DataShape(extents: viewExtents),
                       dataShape: DataShape(extents: dataExtents),

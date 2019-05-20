@@ -28,7 +28,7 @@ public extension TensorView where Self: Quantizing, Values.Element == Viewed {
 public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
     //-------------------------------------
     /// with single value
-    init(_ value: Viewed, name: String? = nil) {
+    init(_ value: Viewed, scale: Viewed, bias: Viewed, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray(type: Element.self, count: 1, name: name)
@@ -36,23 +36,30 @@ public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        self.scale = scale
+        self.bias = bias
         try! readWrite()[0] = convert(viewed: value)
     }
     
     //-------------------------------------
     /// with convertable collection
     /// TODO: should the collection be lazy??
-    init<C>(_ extents: MatrixExtents, name: String? = nil,
+    init<C>(_ extents: MatrixExtents,
+            scale: Viewed, bias: Viewed,
+            name: String? = nil,
             layout: MatrixLayout = .rowMajor, any: C) where
         C: Collection, C.Element: AnyConvertable, Viewed: AnyConvertable
     {
-        self.init(extents, name: name, layout: layout,
+        self.init(extents, scale: scale, bias: bias,
+                  name: name, layout: layout,
                   values: any.map { Viewed(any: $0) })
     }
     
     //-------------------------------------
     /// with an element collection
-    init<C>(_ extents: MatrixExtents, name: String? = nil,
+    init<C>(_ extents: MatrixExtents,
+            scale: Viewed, bias: Viewed,
+            name: String? = nil,
             layout: MatrixLayout = .rowMajor, values: C) where
         C: Collection, C.Element == Viewed
     {
@@ -67,6 +74,9 @@ public extension MatrixView where Self: Quantizing, Values.Element == Viewed {
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: zeroAlignment(shape.rank),
                   traversal: .normal, isShared: false)
+        self.scale = scale
+        self.bias = bias
+
         // store values
         let buffer = try! readWrite()
         for i in zip(buffer.indices, values.indices) {

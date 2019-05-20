@@ -11,12 +11,12 @@ class test_QConverter: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
-        ("test_convertUInt8Float", test_convertUInt8Float),
+        ("test_UInt8Float", test_UInt8Float),
     ]
 
     //==========================================================================
-    // test_convertUInt8Float
-    func test_convertUInt8Float() {
+    // test_UInt8Float
+    func test_UInt8Float() {
         do {
             let qv = UInt8.max / 4
             let hv = UInt8.max / 2
@@ -38,8 +38,8 @@ class test_QConverter: XCTestCase {
     }
 
     //==========================================================================
-    // test_convertInt8Float
-    func test_convertInt8Float() {
+    // test_Int8Float
+    func test_Int8Float() {
         do {
             let mv = Int8.min
             let zv = Int8.zero
@@ -63,8 +63,8 @@ class test_QConverter: XCTestCase {
     }
     
     //==========================================================================
-    // test_convertInt8FloatBias
-    func test_convertInt8FloatBias() {
+    // test_Int8FloatWithBias
+    func test_Int8FloatWithBias() {
         let bias: Float = 0.5
         let mv = Int8.min
         let zv = Int8.zero
@@ -85,8 +85,8 @@ class test_QConverter: XCTestCase {
 
         do {
             let values: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
-            var matrix = QMatrix<Int8, Float>((1, 5), values: values)
-            matrix.bias = bias
+            let matrix = QMatrix<Int8, Float>((1, 5), scale: 1,
+                                              bias: bias, values: values)
             let array = try matrix.elementArray()
             XCTAssert(array == elements)
         } catch {
@@ -106,20 +106,25 @@ class test_QConverter: XCTestCase {
 //        XCTAssert(matrix.convert(element: UInt16.max) == 1.0)
 //    }
 //
-////    //==========================================================================
-////    // test_PixelQuantizing8
-////    func test_PixelQuantizing8() {
-////        let qv = UInt8.max / 4
-////        let hv = UInt8.max / 2
-////        let fv = UInt8.max
-////        // pixel quantizer
-////        let quantizer = QMatrix<RGBASample<UInt8>, RGBASample<Float>>()
-////        let element = RGBASample<UInt8>(r: 0, g: qv, b: hv, a: fv)
-////        let viewed = RGBASample<Float>(r: 0, g: 0.25, b: 0.5, a: 1)
-////        XCTAssert(quantizer.convert(viewed: viewed) == element)
-////        XCTAssert(quantizer.convert(element: element) == viewed)
-////    }
+//    //==========================================================================
+//    // test_RGBAUInt8_RGBAFloat
+//    func test_RGBUInt8_RGBFloat() {
+//        typealias Image = QMatrix<RGB<UInt8>, RGB<Float>>
+//        let zv = UInt8.zero
+//        let hv = UInt8.max / 2
+//        let fv = UInt8.max
+//        let elements = [RGB<UInt8>(r: zv, g: hv, b: fv)]
 //
+//        do {
+//            var image = Image((1, 1), elements: elements)
+//            let values = try image.array()
+//            let expected: [Float] = [0, 0.5, 1.0]
+//            XCTAssert(values == expected)
+//        } catch {
+//            XCTFail(String(describing: error))
+//        }
+//    }
+
 ////    //==========================================================================
 ////    // test_PixelQuantizing16
 ////    func test_PixelQuantizing16() {

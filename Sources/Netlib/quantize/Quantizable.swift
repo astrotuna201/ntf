@@ -21,14 +21,6 @@ public protocol Quantizable {
     func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8
     func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8
     func toFloat(_ scale: Quantizable, _ bias: Quantizable) -> Float
-    
-    //--------------------------------------------------------------------------
-    // short vector types
-    var asRGBUInt8: RGB<UInt8> { get }
-    var asRGBFloat: RGB<Float> { get }
-    
-    func toRGBUInt8(_ scale: Quantizable, _ bias: Quantizable) -> RGB<UInt8>
-    func toRGBFloat(_ scale: Quantizable, _ bias: Quantizable) -> RGB<Float>
 }
 
 //==============================================================================
@@ -89,9 +81,9 @@ public extension Quantizable {
 // Int8
 extension Int8: Quantizable {
     // properties
-    public static var normalScale: Float { return 1 / normalInverseScale }
-    public static var normalInverseScale: Float { return Float(Int8.max) + 1 }
-    
+    public static let normalScale = 1 / normalInverseScale
+    public static let normalInverseScale = Float(Int8.max) + 1
+
     // initializers
     @inlinable @inline(__always)
     public init(value: Quantizable) { self = value.asInt8 }
@@ -124,8 +116,8 @@ extension Int8: Quantizable {
 // UInt8
 extension UInt8: Quantizable {
     // properties
-    public static var normalScale: Float { return 1 / normalInverseScale }
-    public static var normalInverseScale: Float { return Float(UInt8.max) + 1 }
+    public static let normalScale = 1 / normalInverseScale
+    public static let normalInverseScale = Float(UInt8.max) + 1
 
     // initializers
     @inlinable @inline(__always)
@@ -159,8 +151,8 @@ extension UInt8: Quantizable {
 // Float
 extension Float: Quantizable {
     // properties
-    public static var normalScale: Float { return 1  }
-    public static var normalInverseScale: Float { return 1 }
+    public static let normalScale: Float = 1
+    public static let normalInverseScale: Float = 1
 
     // initializers
     @inlinable @inline(__always)
@@ -187,88 +179,8 @@ extension Float: Quantizable {
     
     @inlinable @inline(__always)
     public func toFloat(_ scale: Quantizable, _ bias: Quantizable) -> Float {
-        return self
+        // TODO: this behavior needs to be examined for what is the right
+        // thing to do
+        return self * scale.asFloat + bias.asFloat
     }
 }
-
-//==============================================================================
-// RGB
-extension RGB: Quantizable where Component == UInt8 {
-    // the scales are unused
-    public static var normalScale: Float { return 1 }
-    public static var normalInverseScale: Float { return 1 }
-
-    // initializers
-    @inlinable @inline(__always)
-    public init(value: Quantizable) { self = value.asRGBUInt8 }
-    
-    @inlinable @inline(__always)
-    public init(value: Quantizable, scale: Quantizable, bias: Quantizable) {
-        self = value.toRGBUInt8(scale, bias)
-    }
-    
-    public var asInt8: Int8 {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    public var asUInt8: UInt8 {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    public var asFloat: Float {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    //--------------------------------------------------------------------------
-    // scalar conversion
-    @inlinable @inline(__always)
-    public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    @inlinable @inline(__always)
-    public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    @inlinable @inline(__always)
-    public func toFloat(_ scale: Quantizable, _ bias: Quantizable) -> Float {
-        // TODO: grayscale convert
-        fatalError("not implemented yet")
-    }
-    
-    //--------------------------------------------------------------------------
-    // short vector conversion
-    @inlinable @inline(__always)
-    public var asRGBUInt8: RGB<UInt8> {
-        return self
-    }
-    
-    @inlinable @inline(__always)
-    public var asRGBFloat: RGB<Float> {
-        return RGB<Float>(r: r.asFloat, g: g.asFloat, b: b.asFloat)
-    }
-    
-    @inlinable @inline(__always)
-    public func toRGBUInt8(_ scale: Quantizable,
-                           _ bias: Quantizable) -> RGB<UInt8> {
-        return RGB<UInt8>(r: r.toUInt8(scale, bias),
-                          g: g.toUInt8(scale, bias),
-                          b: b.toUInt8(scale, bias))
-    }
-    
-    @inlinable @inline(__always)
-    public func toRGBFloat(_ scale: Quantizable,
-                           _ bias: Quantizable) -> RGB<Float> {
-        return RGB<Float>(r: r.toFloat(scale, bias),
-                          g: g.toFloat(scale, bias),
-                          b: b.toFloat(scale, bias))
-    }
-
-}
-

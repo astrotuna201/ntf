@@ -21,48 +21,79 @@ class test_QConverter: XCTestCase {
             let qv = UInt8.max / 4
             let hv = UInt8.max / 2
             let fv = UInt8.max
-            let matrix = QMatrix<UInt8, Float>((1, 4), values: [0, qv, hv, fv])
+            let elements = [0, qv, hv, fv]
+            
+            let matrix = Matrix<UInt8>((1, 4), elements: elements)
             let values = try matrix.array()
-            for val in values {
-                print(val)
-            }
-            let expected: [Float] = [0, 0.25, 0.5, 1.0]
+            let expected: [UInt8] = [0, 63, 127, 255]
             XCTAssert(values == expected)
+            
+            let qmatrix = QMatrix<UInt8, Float>((1, 4), elements: elements)
+            let qvalues = try qmatrix.array()
+            let qexpected: [Float] = [0, 0.25, 0.5, 1.0]
+            XCTAssert(qvalues == qexpected)
         } catch {
             XCTFail(String(describing: error))
         }
     }
 
-//    //==========================================================================
-//    // test_convertInt8Float
-//    func test_convertInt8Float() {
-//        let matrix = QMatrix<Int8, Float>()
-//        XCTAssert(matrix.convert(viewed: 0) == 0)
-//        XCTAssert(matrix.convert(element: 0) == 0)
-//        XCTAssert(matrix.convert(element: Int8.max / 2) == 0.5)
-//        XCTAssert(matrix.convert(viewed: 0.5) == Int8.max / 2)
-//        XCTAssert(matrix.convert(viewed: 1.0) == Int8.max)
-//        XCTAssert(matrix.convert(element: Int8.max) == 1.0)
-//        XCTAssert(matrix.convert(viewed: -1.0) == Int8.min)
-//        XCTAssert(matrix.convert(element: Int8.min) == -1.0)
-//    }
-//    
-//    //==========================================================================
-//    // test_convertInt8FloatBias
-//    func test_convertInt8FloatBias() {
-//        let bias: Float = 0.5
-//        var matrix = QMatrix<Int8, Float>()
-//        matrix.bias = bias
-//        XCTAssert(matrix.convert(element: 0) == bias)
-//        XCTAssert(matrix.convert(viewed: bias) == 0)
-//        XCTAssert(matrix.convert(element: Int8.max / 2) == 0.5 + bias)
-//        XCTAssert(matrix.convert(viewed: 0.5 + bias) == Int8.max / 2)
-//        XCTAssert(matrix.convert(viewed: 1.0 + bias) == Int8.max)
-//        XCTAssert(matrix.convert(element: Int8.max) == 1.0 + bias)
-//        XCTAssert(matrix.convert(viewed: -1.0 + bias) == Int8.min)
-//        XCTAssert(matrix.convert(element: Int8.min) == -1.0 + bias)
-//    }
-//    
+    //==========================================================================
+    // test_convertInt8Float
+    func test_convertInt8Float() {
+        do {
+            let mv = Int8.min
+            let zv = Int8.zero
+            let qv = Int8.max / 4
+            let hv = Int8.max / 2
+            let fv = Int8.max
+            let elements = [mv, zv, qv, hv, fv]
+            
+            let matrix = Matrix<Int8>((1, 5), elements: elements)
+            let values = try matrix.array()
+            let expected = [mv, zv, qv, hv, fv]
+            XCTAssert(values == expected)
+            
+            let qmatrix = QMatrix<Int8, Float>((1, 5), elements: elements)
+            let qvalues = try qmatrix.array()
+            let qexpected: [Float] = [-1.0, 0, 0.25, 0.5, 1.0]
+            XCTAssert(qvalues == qexpected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
+    // test_convertInt8FloatBias
+    func test_convertInt8FloatBias() {
+        let bias: Float = 0.5
+        let mv = Int8.min
+        let zv = Int8.zero
+        let qv = Int8.max / 4
+        let hv = Int8.max / 2
+        let fv = Int8.max
+        let elements = [mv, zv, qv, hv, fv]
+        
+        do {
+            var qmatrix = QMatrix<Int8, Float>((1, 5), elements: elements)
+            qmatrix.bias = bias
+            let qvalues = try qmatrix.array()
+            let qexpected: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
+            XCTAssert(qvalues == qexpected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+
+        do {
+            let values: [Float] = [-0.5, 0.5, 0.75, 1.0, 1.5]
+            var qmatrix = QMatrix<Int8, Float>((1, 5), values: values)
+            qmatrix.bias = bias
+            let array = try qmatrix.elementArray()
+            XCTAssert(array == elements)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
 //    //==========================================================================
 //    // test_convertUInt16Float
 //    func test_convertUInt16Float() {

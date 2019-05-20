@@ -14,9 +14,11 @@ public protocol Quantizable {
     
     //--------------------------------------------------------------------------
     // scalar types
+    var asInt8: Int8 { get }
     var asUInt8: UInt8 { get }
     var asFloat: Float { get }
     
+    func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8
     func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8
     func toFloat(_ scale: Quantizable, _ bias: Quantizable) -> Float
     
@@ -84,6 +86,41 @@ public extension Quantizable {
 }
 
 //==============================================================================
+// Int8
+extension Int8: Quantizable {
+    // properties
+    public static var normalScale: Float { return 1 / normalInverseScale }
+    public static var normalInverseScale: Float { return Float(Int8.max) + 1 }
+    
+    // initializers
+    @inlinable @inline(__always)
+    public init(value: Quantizable) { self = value.asInt8 }
+    
+    @inlinable @inline(__always)
+    public init(value: Quantizable, scale: Quantizable, bias: Quantizable) {
+        self = value.toInt8(scale, bias)
+    }
+    
+    //--------------------------------------------------------------------------
+    // scalar conversion to normal range
+    @inlinable @inline(__always)
+    public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
+        return self
+    }
+    
+    @inlinable @inline(__always)
+    public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
+        return UInt8(self) * 2
+    }
+    
+    @inlinable @inline(__always)
+    public func toFloat(_ scale: Quantizable, _ bias: Quantizable) -> Float {
+        let transformScale = Int8.normalScale * scale.asFloat
+        return convert(integer: self, transformScale, bias.asFloat)
+    }
+}
+
+//==============================================================================
 // UInt8
 extension UInt8: Quantizable {
     // properties
@@ -100,7 +137,12 @@ extension UInt8: Quantizable {
     }
     
     //--------------------------------------------------------------------------
-    // scalar conversion
+    // scalar conversion to normal range
+    @inlinable @inline(__always)
+    public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
+        return Int8(self / 2)
+    }
+
     @inlinable @inline(__always)
     public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
         return self
@@ -132,6 +174,12 @@ extension Float: Quantizable {
     //--------------------------------------------------------------------------
     // scalar conversion
     @inlinable @inline(__always)
+    public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
+        let transformScale = Int8.normalScale * scale.asFloat
+        return convert(floating: self, transformScale, bias.asFloat)
+    }
+    
+    @inlinable @inline(__always)
     public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
         let transformScale = UInt8.normalScale * scale.asFloat
         return convert(floating: self, transformScale, bias.asFloat)
@@ -159,6 +207,11 @@ extension RGB: Quantizable where Component == UInt8 {
         self = value.toRGBUInt8(scale, bias)
     }
     
+    public var asInt8: Int8 {
+        // TODO: grayscale convert
+        fatalError("not implemented yet")
+    }
+    
     public var asUInt8: UInt8 {
         // TODO: grayscale convert
         fatalError("not implemented yet")
@@ -171,6 +224,12 @@ extension RGB: Quantizable where Component == UInt8 {
     
     //--------------------------------------------------------------------------
     // scalar conversion
+    @inlinable @inline(__always)
+    public func toInt8(_ scale: Quantizable, _ bias: Quantizable) -> Int8 {
+        // TODO: grayscale convert
+        fatalError("not implemented yet")
+    }
+    
     @inlinable @inline(__always)
     public func toUInt8(_ scale: Quantizable, _ bias: Quantizable) -> UInt8 {
         // TODO: grayscale convert

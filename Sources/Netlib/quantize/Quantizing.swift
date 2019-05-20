@@ -11,11 +11,12 @@ public protocol Quantizing where Self: TensorView, Element: Quantizable {
     /// the type presented by the Values and MutableValues collections
     associatedtype Viewed: Quantizable
     /// the type of read only stored elements collection
-    associatedtype StoredValues: RandomAccessCollection
+    associatedtype ElementValues: RandomAccessCollection
+        where ElementValues.Element == Element
     /// the type of read write stored elements collection
-    associatedtype MutableStoredValues:
+    associatedtype MutableElementValues:
         RandomAccessCollection & MutableCollection
-        where MutableStoredValues.Element == StoredValues.Element
+        where MutableElementValues.Element == Element
 
     /// bias applied to Viewed value
     var bias: Viewed { get set }
@@ -27,37 +28,48 @@ public protocol Quantizing where Self: TensorView, Element: Quantizable {
     func convert(viewed: Viewed) -> Element
     /// a collection of the stored quantized elements.
     /// Primarily intended for serialization
-    func storedValues(using stream: DeviceStream?) throws -> StoredValues
+    func elementValues(using stream: DeviceStream?) throws -> ElementValues
     /// a mutable collection of the stored quantized elements
     /// Primarily intended for serialization
-    mutating func mutableStoredValues(using stream: DeviceStream?) throws
-        -> MutableStoredValues
+    mutating func elementMutableValues(using stream: DeviceStream?) throws
+        -> MutableElementValues
 }
 
 public extension Quantizing {
+    //--------------------------------------------------------------------------
     /// converts the tensor element value type to the viewed value type
     func convert(element: Element) -> Viewed {
         return Viewed(value: element, scale: scale, bias: bias)
     }
+
+    //--------------------------------------------------------------------------
     /// converts the tensor viewed value type to the element value type
     func convert(viewed: Viewed) -> Element {
         return Element(value: viewed, scale: scale, bias: bias)
     }
     
+    //--------------------------------------------------------------------------
     /// returns a collection of read only values
-    func storedValues(using stream: DeviceStream? = nil) throws
+    func elementValues(using stream: DeviceStream? = nil) throws
         -> TensorValueCollection<Self>
     {
         let buffer = try readOnly(using: stream)
         return try TensorValueCollection(view: self, buffer: buffer)
     }
 
+    //--------------------------------------------------------------------------
     /// returns a collection of read write values
-    mutating func mutableStoredValues(using stream: DeviceStream? = nil) throws
+    mutating func elementMutableValues(using stream: DeviceStream? = nil) throws
         -> TensorMutableValueCollection<Self>
     {
         let buffer = try readWrite(using: stream)
         return try TensorMutableValueCollection(view: &self, buffer: buffer)
+    }
+
+    //--------------------------------------------------------------------------
+    /// an array of viewed elements
+    func elementArray() throws -> [Element] {
+        return [Element](try elementValues())
     }
 }
 

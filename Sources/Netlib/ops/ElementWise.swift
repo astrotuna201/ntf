@@ -5,7 +5,7 @@
 import Foundation
 
 //==============================================================================
-/// realize
+/// copy
 /// copies the elements from `view` to `result`
 
 /// with placement
@@ -253,3 +253,114 @@ public extension TensorView where Element: Equatable
         return result
     }
 }
+
+//==============================================================================
+/// square(x)
+/// computes the square value of `x`
+
+/// with placement
+/// - Parameter x: value tensor
+/// - Parameter result: the tensor where the result will be written
+@inlinable @inline(__always)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
+public func square<T>(_ x: T, result: inout T)
+    where T: TensorView, T.Element: FloatingPoint
+{
+    _Streams.current.square(x: x, result: &result)
+}
+
+/// returns new view
+/// - Parameter x: value tensor
+/// - Returns: a new tensor containing the result
+@inlinable @inline(__always)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
+public func square<T>(_ x: T) -> T
+    where T: TensorView, T.Element: FloatingPoint
+{
+    var result = x.createDense()
+    square(x, result: &result)
+    return result
+}
+
+public extension TensorView where Element: FloatingPoint {
+    /// returns new view
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    //@differentiable(vjp: _vjpAbs(_:) where T: TensorFlowFloatingPoint)
+    func squared() -> Self {
+        var result = createDense()
+        Netlib.square(self, result: &result)
+        return result
+    }
+}
+
+//==============================================================================
+/// squaredDifference tensors
+/// (lhs - rhs)**2
+
+/// in place
+/// - Parameter lhs: left hand tensor
+/// - Parameter rhs: right hand tensor.
+/// - Parameter result: the tensor where the result will be written
+@inlinable @inline(__always)
+// TODO: this complains, talk to the guys
+//@differentiable(vjp: _vjpAdd(lhs:rhs:) where Element : TensorFlowFloatingPoint)
+public func squaredDifference<T>(_ lhs: T, _ rhs: T, result: inout T)
+    where T: TensorView, T.Element: FloatingPoint
+{
+    _Streams.current.squaredDifference(lhs: lhs, rhs: rhs, result: &result)
+}
+
+/// returns new view
+/// - Parameter lhs: left hand tensor
+/// - Parameter rhs: right hand tensor.
+/// - Returns: a new tensor containing the result
+@inlinable @inline(__always)
+public func squaredDifference<T>(_ lhs: T, _ rhs: T) -> T
+    where T: TensorView, T.Element: FloatingPoint
+{
+    var result = lhs.createDense()
+    squaredDifference(lhs, rhs, result: &result)
+    return result
+}
+
+//==============================================================================
+/// sqrt(x)
+/// computes the element wise square root value of `x`
+
+/// with placement
+/// - Parameter x: value tensor
+/// - Parameter result: the tensor where the result will be written
+@inlinable @inline(__always)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
+public func sqrt<T>(_ x: T, result: inout T)
+    where T: TensorView, T.Element: FloatingPoint
+{
+    _Streams.current.sqrt(x: x, result: &result)
+}
+
+/// returns new view
+/// - Parameter x: value tensor
+/// - Returns: a new tensor containing the result
+@inlinable @inline(__always)
+//@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
+public func sqrt<T>(_ x: T) -> T
+    where T: TensorView, T.Element: FloatingPoint
+{
+    var result = x.createDense()
+    sqrt(x, result: &result)
+    return result
+}
+
+public extension TensorView where Element: FloatingPoint {
+    /// returns new view
+    /// - Returns: a new tensor containing the result
+    @inlinable @inline(__always)
+    //@differentiable(vjp: _vjpAbs(_:) where T: TensorFlowFloatingPoint)
+    func sqrt() -> Self {
+        var result = createDense()
+        Netlib.sqrt(self, result: &result)
+        return result
+    }
+}
+

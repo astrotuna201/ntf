@@ -217,7 +217,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter axes: The axes to reduce
     /// - Precondition: Each value in `axes` must be in the range `-rank...rank`.
     func mean<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     /// Returns the minimum values along the specified axes. The reduced
     /// dimensions are removed.
     /// - Parameter axes: The dimensions to reduce.
@@ -271,13 +271,13 @@ public protocol StreamIntrinsicsProtocol {
         T: TensorView, T.Element: AnyFloatingPoint
     /// Computes the element-wise `square`
     func square<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     /// Computes the element-wise `(lhs - rhs)**2`
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     /// Computes the element-wise `sqrt`
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Element: FloatingPoint
     /// subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T)
         where T: TensorView, T.Element: Numeric

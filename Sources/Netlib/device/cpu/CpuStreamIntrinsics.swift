@@ -333,9 +333,21 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// mean
     func mean<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     {
-        
+        if let axes = axes, axes.shape.extents[0] > 0 {
+            fatalError("not implemented yet")
+//            assert(axes.rank <= x.rank, "rank mismatch")
+//            queue(#function, { try (x.values(), axes.values()) }, &result) { _, _ in
+//
+//            }
+        } else {
+            let count = T.Element(x.shape.elementCount)
+            queue(#function, { try x.values() }, &result) {
+                let value = $0.reduce(T.Element.zero) { $0 + $1 } / count
+                $1[$1.startIndex] = value
+            }
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -472,7 +484,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // square
     func square<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { $0 * $0 }
@@ -482,7 +494,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // squaredDifference
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Element: Numeric
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
@@ -495,7 +507,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sqrt
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Element: AnyFloatingPoint
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { Foundation.sqrt($0) }

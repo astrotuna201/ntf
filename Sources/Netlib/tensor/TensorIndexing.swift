@@ -60,7 +60,7 @@ public extension TensorView {
     func createTensorBounds() -> TensorBounds {
         var bounds = TensorBounds()
         for dim in 0..<rank {
-            bounds.append(ExtentBounds(align: indexAlignment[dim],
+            bounds.append(ExtentBounds(align: indexAlignment?[dim] ?? 0,
                                        viewExtent: shape.extents[dim],
                                        viewStride: shape.strides[dim],
                                        dataExtent: dataShape.extents[dim],
@@ -71,46 +71,8 @@ public extension TensorView {
 }
 
 //==============================================================================
-/// TensorValueCollectionProtocol
-public protocol TensorValueCollectionProtocol: RandomAccessCollection {
-    associatedtype View: TensorView
-    // properties
-    var view: View { get }
-    var buffer: UnsafeBufferPointer<View.Element> { get }
-    var startIndex: View.Index { get }
-    var endIndex: View.Index { get }
-    var count: Int { get }
-}
-
-extension TensorValueCollectionProtocol {
-    //--------------------------------------------------------------------------
-    // Collection
-    @inlinable @inline(__always)
-    public func index(before i: View.Index) -> View.Index {
-        return i.advanced(by: -1)
-    }
-    
-    @inlinable @inline(__always)
-    public func index(after i: View.Index) -> View.Index {
-        return i.increment()
-    }
-    
-    @inlinable @inline(__always)
-    public subscript(index: View.Index) -> View.Element {
-        return buffer[index.dataIndex]
-    }
-}
-
-extension TensorValueCollectionProtocol where View: Quantizing {
-    @inlinable @inline(__always)
-    public subscript(index: View.Index) -> View.Viewed {
-        return view.convert(element: buffer[index.dataIndex])
-    }
-}
-
-//==============================================================================
 /// TensorValueCollection
-public struct TensorValueCollection<View>: TensorValueCollectionProtocol
+public struct TensorValueCollection<View>: RandomAccessCollection
     where View: TensorView
 {
     // properties
@@ -126,6 +88,23 @@ public struct TensorValueCollection<View>: TensorValueCollectionProtocol
         startIndex = view.startIndex
         endIndex = view.endIndex
         count = view.shape.elementCount
+    }
+
+    //--------------------------------------------------------------------------
+    // Collection
+    @inlinable @inline(__always)
+    public func index(before i: View.Index) -> View.Index {
+        return i.advanced(by: -1)
+    }
+    
+    @inlinable @inline(__always)
+    public func index(after i: View.Index) -> View.Index {
+        return i.increment()
+    }
+    
+    @inlinable @inline(__always)
+    public subscript(index: View.Index) -> View.Element {
+        return buffer[index.dataIndex]
     }
 }
 

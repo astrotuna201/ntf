@@ -45,7 +45,7 @@ infix operator .=
 // TODO: this complains, talk to the guys
 //@differentiable(vjp: _vjpAdd(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
     _Streams.current.add(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -57,14 +57,14 @@ public func add<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func add<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
-    var result = lhs.createDenseView()
+    var result = lhs.createDense()
     add(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Values.Element: Numeric {
+public extension TensorView where Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -76,29 +76,27 @@ public extension TensorView where Values.Element: Numeric {
     }
 }
 
-public extension TensorView where
-    Values.Element: FloatingPoint & AnyFloatingPoint
-{
-    /// operator (Self + scalar)
+public extension TensorView where Element: FloatingPoint & AnyFloatingPoint {
+    /// operator (Self + element)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +(lhs: Self, rhs: Values.Element) -> Self {
-        return add(lhs, lhs.createValueView(rhs))
+    static func +(lhs: Self, rhs: Element) -> Self {
+        return add(lhs, lhs.create(value: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger {
+public extension TensorView where Element: BinaryInteger {
     /// operator (Self + scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func +(lhs: Self, rhs: Values.Element) -> Self {
-        return add(lhs, lhs.createValueView(rhs))
+    static func +(lhs: Self, rhs: Element) -> Self {
+        return add(lhs, lhs.create(value: rhs))
     }
 }
 
@@ -114,7 +112,7 @@ public extension TensorView where Values.Element: BinaryInteger {
 @inlinable @inline(__always)
 //    @differentiable(vjp: _vjpSubtract(lhs:rhs:) where Element: TensorFlowFloatingPoint)
 public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
     _Streams.current.subtract(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -126,14 +124,14 @@ public func subtract<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func subtract<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
-    var result = lhs.createDenseView()
+    var result = lhs.createDense()
     subtract(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Values.Element: Numeric {
+public extension TensorView where Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -145,27 +143,27 @@ public extension TensorView where Values.Element: Numeric {
     }
 }
 
-public extension TensorView where Values.Element: FloatingPoint {
+public extension TensorView where Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - (lhs: Self, rhs: Values.Element) -> Self {
-        return subtract(lhs, lhs.createValueView(rhs))
+    static func - (lhs: Self, rhs: Element) -> Self {
+        return subtract(lhs, lhs.create(value: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger {
+public extension TensorView where Element: BinaryInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func - (lhs: Self, rhs: Values.Element) -> Self {
-        return subtract(lhs, lhs.createValueView(rhs))
+    static func - (lhs: Self, rhs: Element) -> Self {
+        return subtract(lhs, lhs.create(value: rhs))
     }
 }
 
@@ -180,7 +178,7 @@ public extension TensorView where Values.Element: BinaryInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpMultiply(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
     _Streams.current.mul(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -192,14 +190,14 @@ public func mul<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func mul<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Values.Element: Numeric
+    where T: TensorView, T.Element: Numeric
 {
-    var result = lhs.createDenseView()
+    var result = lhs.createDense()
     mul(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Values.Element: Numeric {
+public extension TensorView where Element: Numeric {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -211,27 +209,27 @@ public extension TensorView where Values.Element: Numeric {
     }
 }
 
-public extension TensorView where Values.Element: FloatingPoint {
+public extension TensorView where Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * (lhs: Self, rhs: Values.Element) -> Self {
-        return mul(lhs, lhs.createValueView(rhs))
+    static func * (lhs: Self, rhs: Element) -> Self {
+        return mul(lhs, lhs.create(value: rhs))
     }
 }
 
-public extension TensorView where Values.Element: BinaryInteger {
+public extension TensorView where Element: BinaryInteger {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func * (lhs: Self, rhs: Values.Element) -> Self {
-        return mul(lhs, lhs.createValueView(rhs))
+    static func * (lhs: Self, rhs: Element) -> Self {
+        return mul(lhs, lhs.create(value: rhs))
     }
 }
 
@@ -246,7 +244,7 @@ public extension TensorView where Values.Element: BinaryInteger {
 @inlinable @inline(__always)
 //@differentiable(vjp: _vjpDivide(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
-    where T: TensorView, T.Values.Element: FloatingPoint
+    where T: TensorView, T.Element: FloatingPoint
 {
     _Streams.current.div(lhs: lhs, rhs: rhs, result: &result)
 }
@@ -258,14 +256,14 @@ public func div<T>(_ lhs: T, _ rhs: T, result: inout T)
 /// - Returns: a new tensor containing the result
 @inlinable @inline(__always)
 public func div<T>(_ lhs: T, _ rhs: T) -> T
-    where T: TensorView, T.Values.Element: FloatingPoint
+    where T: TensorView, T.Element: FloatingPoint
 {
-    var result = lhs.createDenseView()
+    var result = lhs.createDense()
     div(lhs, rhs, result: &result)
     return result
 }
 
-public extension TensorView where Values.Element: FloatingPoint {
+public extension TensorView where Element: FloatingPoint {
     /// operator
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand tensor. If the extents are smaller than
@@ -277,15 +275,15 @@ public extension TensorView where Values.Element: FloatingPoint {
     }
 }
 
-public extension TensorView where Values.Element: FloatingPoint {
+public extension TensorView where Element: FloatingPoint {
     /// operator (Self - scalar)
     /// - Parameter lhs: left hand tensor
     /// - Parameter rhs: right hand scalar. If the extents are smaller than
     ///   `lhs` then broadcasting is performed via repeated indexing.
     /// - Returns: a new tensor containing the result
     @inlinable @inline(__always)
-    static func / (lhs: Self, rhs: Values.Element) -> Self {
-        let scalarTensor = lhs.createValueView(rhs)
+    static func / (lhs: Self, rhs: Element) -> Self {
+        let scalarTensor = lhs.create(value: rhs)
         return div(lhs, scalarTensor)
     }
 }

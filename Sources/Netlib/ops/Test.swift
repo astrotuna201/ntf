@@ -30,7 +30,7 @@ public func simulateWork<T>(_ x: T, timePerElement: TimeInterval,
 public func simulateWork<T>(_ x: T, timePerElement: TimeInterval) -> T
     where T: TensorView
 {
-    var result = x.createDenseView()
+    var result = x.createDense()
     simulateWork(x, timePerElement: timePerElement, result: &result)
     return result
 }
@@ -41,7 +41,7 @@ public extension TensorView {
     @inlinable @inline(__always)
     //@differentiable(vjp: _vjpLog(_:) where T: TensorFlowFloatingPoint)
     func simulateWork(timePerElement: TimeInterval = 0.0000001) -> Self {
-        var result = createDenseView()
+        var result = createDense()
         Netlib.simulateWork(self, timePerElement: timePerElement,
                             result: &result)
         return result

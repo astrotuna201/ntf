@@ -16,10 +16,10 @@ import Foundation
 public func approximatelyEqual<T>(_ lhs: T, _ rhs: T,
                                   result: inout T.BoolView,
                                   tolerance: Double = 0.00001) where
-    T: TensorView, T.Values.Element: AnyFloatingPoint
+    T: TensorView, T.Element: AnyFloatingPoint
 {
     _Streams.current.approximatelyEqual(lhs: lhs, rhs: rhs,
-                                        tolerance: T.Values.Element(any: tolerance),
+                                        tolerance: T.Element(any: tolerance),
                                         result: &result)
 }
 
@@ -27,13 +27,13 @@ public func approximatelyEqual<T>(_ lhs: T, _ rhs: T,
 /// - Parameter rhs: right hand tensor
 /// - Returns: a new tensor containing the result
 public extension TensorView where
-    Values.Element: AnyFloatingPoint
+    Element: AnyFloatingPoint
 {
     @inlinable @inline(__always)
     func approximatelyEqual(to rhs: Self,
                             tolerance: Double = 0.00001) -> BoolView
     {
-        var result = createBoolView()
+        var result = createBoolTensor()
         Netlib.approximatelyEqual(self, rhs, result: &result,
                                   tolerance: tolerance)
         return result

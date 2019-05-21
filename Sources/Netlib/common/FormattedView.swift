@@ -6,7 +6,7 @@ import Foundation
 
 //==============================================================================
 // TensorView default implementation
-public extension TensorView where Values.Element: AnyConvertable & CVarArg {
+public extension TensorView where Element: AnyConvertable & CVarArg {
     //--------------------------------------------------------------------------
     // formatted
     func formatted(
@@ -21,7 +21,7 @@ public extension TensorView where Values.Element: AnyConvertable & CVarArg {
         let indentSize = "  "
         let extents = shape.extents
         let lastDimension = shape.lastDimension
-        let values: Values
+        let values: TensorValueCollection<Self>
         do {
             values = try self.values()
         } catch {
@@ -38,8 +38,8 @@ public extension TensorView where Values.Element: AnyConvertable & CVarArg {
         string += "\nTensorView extents: \(shape.extents.description)" +
         " paddedExtents: \(extents.description)\n"
 
-        func appendFormatted(value: Values.Element) {
-            let str = String(format: Values.Element.formatString(scalarFormat), value)
+        func appendFormatted(value: Element) {
+            let str = String(format: Element.formatString(scalarFormat), value)
             string += "\(str) "
         }
 

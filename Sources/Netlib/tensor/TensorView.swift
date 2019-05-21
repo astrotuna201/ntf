@@ -37,16 +37,14 @@ public protocol TensorView: Logging {
     associatedtype Index: TensorIndexing
     /// the type of read only elements collection
     associatedtype Values: RandomAccessCollection
+        where Values.Element == Element
     /// the type of read write elements collection
     associatedtype MutableValues: RandomAccessCollection & MutableCollection
-        where MutableValues.Element == Values.Element
+        where MutableValues.Element == Element
     /// A concrete type used in generics to pass Boolean values
-    associatedtype BoolView: TensorView
-        where BoolView.Element == Bool, BoolView.Values.Element == Bool
+    associatedtype BoolView: TensorView where BoolView.Element == Bool
     /// A concrete type used in generics to return index results
-    associatedtype IndexView: TensorView where
-        IndexView.Element == IndexElement,
-        IndexView.Values.Element == IndexElement
+    associatedtype IndexView: TensorView where IndexView.Element == IndexElement
 
     //--------------------------------------------------------------------------
     // Readonly properties for the caller begin with an underscore. Accessor
@@ -61,7 +59,7 @@ public protocol TensorView: Logging {
     /// returns an index one past the end of the tensor used for collections
     var endIndex: Index { get }
     /// an adjustment to indexes to align properly when using repeated data
-    var indexAlignment: [Int] { get }
+    var indexAlignment: [Int]? { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
@@ -83,24 +81,23 @@ public protocol TensorView: Logging {
          dataShape: DataShape,
          tensorArray: TensorArray,
          viewDataOffset: Int,
-         indexAlignment: [Int],
+         indexAlignment: [Int]?,
          traversal: TensorTraversal,
          isShared: Bool)
 
     //--------------------------------------------------------------------------
-    /// creates a new dense view where `Element` equals `Bool`
+    /// creates a new dense tensor of the same type with the specified extents
+    func createDense(with extents: [Int], name: String?) -> Self
+    /// creates a new dense tensor of the same type with the specified value
+    func create(value: Element, name: String?) -> Self
+    /// creates a new dense tensor where `Element` equals `Bool`
     /// with the specified extents
-    func createBoolView(with extents: [Int]) -> BoolView
-    /// creates a new dense view of the same type with the specified extents
-    func createDenseView(with extents: [Int], name: String?) -> Self
-    /// creates a new dense view where `Element` equals `IndexElement`
+    func createBoolTensor(with extents: [Int]) -> BoolView
+    /// creates a new dense tensor where `Element` equals `IndexElement`
     /// with the specified extents and initial values
-    func createIndexView(with extents: [Int]) -> IndexView
-    /// creates a new dense view of the same type with the specified value
-    func createValueView(_ value: Values.Element, name: String?) -> Self
+    func createIndexTensor(with extents: [Int]) -> IndexView
 
     //--------------------------------------------------------------------------
-    // indexing
     /// returns a collection of viewed elements
     func values(using stream: DeviceStream?) throws -> Values
 
@@ -143,21 +140,18 @@ public extension TensorView {
     var rank: Int { return shape.rank }
     
     //--------------------------------------------------------------------------
-    /// creates a view of the same type and shape as `self` with `Element`
+    /// creates a tensor of the same type and shape as `self` with `Element`
     /// equal to `Bool`
-    func createBoolView() -> BoolView {
-        return createBoolView(with: extents)
+    func createBoolTensor() -> BoolView {
+        return createBoolTensor(with: extents)
     }
 
-    /// creates a view of the same type and shape as `self`
-    func createDenseView() -> Self {
-        return createDenseView(with: extents)
-    }
+    /// creates a tensor of the same type and shape as `self`
 
-    /// creates a view of the same shape as `self` with `Element`
+    /// creates a tensor of the same shape as `self` with `Element`
     /// equal to `IndexElement`
-    func createIndexView() -> IndexView {
-        return createIndexView(with: extents)
+    func createIndexTensor() -> IndexView {
+        return createIndexTensor(with: extents)
     }
 
     //--------------------------------------------------------------------------
@@ -173,18 +167,6 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// DenseView
-    func createDenseView(with extents: [Int], name: String? = nil) -> Self {
-        let shape = DataShape(extents: extents)
-        let array = TensorArray(type: Element.self, count: shape.elementCount,
-                                name: name ?? String(describing: Self.self))
-        return Self(shape: shape, dataShape: shape,
-                    tensorArray: array, viewDataOffset: 0,
-                    indexAlignment: zeroAlignment(shape.rank),
-                    traversal: .normal, isShared: false)
-    }
-
-    //--------------------------------------------------------------------------
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
         self.init(shape: DataShape(extents: extents),
@@ -194,7 +176,36 @@ public extension TensorView {
                   indexAlignment: zeroAlignment(extents.count),
                   traversal: .repeated, isShared: other.isShared)
     }
+
+    //--------------------------------------------------------------------------
+    /// createDense
+    func createDense(with extents: [Int], name: String? = nil) -> Self {
+        let shape = DataShape(extents: extents)
+        let array = TensorArray(type: Element.self, count: shape.elementCount,
+                                name: name ?? String(describing: Self.self))
+        return Self(shape: shape, dataShape: shape,
+                    tensorArray: array, viewDataOffset: 0,
+                    indexAlignment: nil, traversal: .normal, isShared: false)
+    }
     
+    func createDense() -> Self { return createDense(with: self.extents) }
+    
+    //--------------------------------------------------------------------------
+    /// create(value:
+    func create(value: Element, name: String? = nil) -> Self {
+        let dataExtents = [Int](repeating: 1, count: rank)
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray(type: Element.self, count: 1, name: name)
+        var view = Self(shape: self.shape.dense,
+                        dataShape: DataShape(extents: dataExtents),
+                        tensorArray: array, viewDataOffset: 0,
+                        indexAlignment: zeroAlignment(rank),
+                        traversal: .repeated,
+                        isShared: false)
+        try! view.readWrite()[0] = value
+        return view
+    }
+
     //--------------------------------------------------------------------------
     /// createSubView
     /// Returns a view of the tensorArray relative to this view
@@ -282,33 +293,17 @@ public extension TensorView {
         if shape.isContiguous && shape == dataShape {
             return self
         } else {
-            var result = createDenseView()
+            var result = createDense()
             Netlib.copy(view: self, result: &result)
             return result
         }
-    }
-
-    //--------------------------------------------------------------------------
-    /// a collection of viewed elements
-    @inlinable @inline(__always)
-    func values(using stream: DeviceStream? = nil) throws -> Values {
-        return try values(using: stream)
-    }
-    
-    //--------------------------------------------------------------------------
-    /// a collection of mutable viewed elements
-    @inlinable @inline(__always)
-    mutating func mutableValues(using stream: DeviceStream? = nil) throws
-        -> MutableValues
-    {
-        return try mutableValues(using: stream)
     }
     
     //--------------------------------------------------------------------------
     /// an array of viewed elements
     @inlinable @inline(__always)
-    func array() throws -> [Values.Element] {
-        return [Values.Element](try values())
+    func array() throws -> [Element] {
+        return [Element](try values())
     }
 
     //--------------------------------------------------------------------------
@@ -337,10 +332,13 @@ public extension TensorView {
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
     func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
         // TODO: test this
-        var align = [Int]()
-        for i in 0..<rank where shape.extents[i] != 1 {
-            align.append(indexAlignment[i])
+        var align = indexAlignment
+        if traversal == .repeated {
+            for i in 0..<rank where shape.extents[i] != 1 {
+                align!.append(indexAlignment![i])
+            }
         }
+        
         let squeezedShape = shape.squeezed(axes: axes)
         return NDTensor<Element>(shape: squeezedShape,
                                  dataShape: squeezedShape,
@@ -665,7 +663,7 @@ public extension Zip3Sequence {
 //==============================================================================
 // zip
 public func zip<T1, T2>(_ t1: T1, _ t2: T2) throws ->
-    Zip2Sequence<T1.Values, T2.Values>
+    Zip2Sequence<TensorValueCollection<T1>, TensorValueCollection<T2>>
     where T1: TensorView, T2: TensorView
 {
     return try zip(t1.values(), t2.values())
@@ -679,7 +677,7 @@ public extension Sequence {
         to result: inout T,
         _ initialResult: Element,
         _ nextPartialResult: (Element, Element) throws -> Element) throws
-        where T: TensorView, Element == T.MutableValues.Element
+        where T: TensorView, Element == T.Element
     {
         var results = try result.mutableValues()
         var partial = initialResult
@@ -691,11 +689,11 @@ public extension Sequence {
 
     /// reduce to a mutable collection
     @inlinable
-    func reduce<Result>(
-        to result: inout Result,
+    func reduce<T>(
+        to result: inout T,
         _ initialResult: Element,
-        _ nextPartialResult: (Element, Element) throws -> Result.Element) rethrows
-        where Result: MutableCollection, Element == Result.Element
+        _ nextPartialResult: (Element, Element) throws -> Element) rethrows
+        where T: MutableCollection, Element == T.Element
     {
         var partial = initialResult
         for value in self {

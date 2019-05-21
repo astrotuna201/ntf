@@ -8,7 +8,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// abs
     func abs<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: FloatingPoint
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { $0.magnitude }
@@ -18,7 +18,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// add
     func add<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 + $1 }
@@ -28,7 +28,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// all
     func all<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element == Bool
+        T: TensorView, T.Element == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == false } != nil
@@ -38,7 +38,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// any
     func any<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element == Bool
+        T: TensorView, T.Element == Bool
     {
         queue(#function, { try x.values() }, &result) {
             $1[$1.startIndex] = $0.first { $0 == true } != nil
@@ -48,9 +48,9 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// approximatelyEqual
     func approximatelyEqual<T>(lhs: T, rhs: T,
-                               tolerance: T.Values.Element,
+                               tolerance: T.Element,
                                result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0.0 - $0.1 <= tolerance }
@@ -61,7 +61,7 @@ public extension CpuStream {
     /// argmax
     func argmax<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -70,7 +70,7 @@ public extension CpuStream {
     /// argmin
     func argmin<T>(x: T, along axes: Vector<IndexElement>?,
                    result: inout T.IndexView) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -78,10 +78,10 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// asum
     func asum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element: FloatingPoint
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
-            $0.reduce(to: &$1, T.Values.Element.zero) {
+            $0.reduce(to: &$1, T.Element.zero) {
                 $0 + $1.magnitude
             }
         }
@@ -90,7 +90,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cast
     func cast<T, R>(from: T, to result: inout R) where
-        T: TensorView, R: TensorView, T.Values.Element: AnyConvertable,
+        T: TensorView, R: TensorView, T.Element: AnyConvertable,
         R.Element : AnyConvertable
     {
         
@@ -99,11 +99,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// ceil
     func ceil<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.ceilf($0.asFloat))
+                T.Element(any: Foundation.ceilf($0.asFloat))
             }
         }
     }
@@ -119,9 +119,7 @@ public extension CpuStream {
     
     //--------------------------------------------------------------------------
     /// copies the elements from view to result
-    func copy<T, R>(view: T, result: inout R) where
-        T: TensorView, R: TensorView,
-        R.MutableValues.Element == T.Values.Element
+    func copy<T>(view: T, result: inout T) where T: TensorView
     {
         queue(#function, { try view.values() }, &result) {
             $0.map(to: &$1) { $0 }
@@ -131,11 +129,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cos
     func cos<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.cos($0.asFloat))
+                T.Element(any: Foundation.cos($0.asFloat))
             }
         }
     }
@@ -143,11 +141,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// cosh
     func cosh<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.cosh($0.asFloat))
+                T.Element(any: Foundation.cosh($0.asFloat))
             }
         }
     }
@@ -155,7 +153,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// div
     func div<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: FloatingPoint
+        T: TensorView, T.Element: FloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 / $1 }
@@ -165,7 +163,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// equal
     func equal<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Equatable
+        T: TensorView, T.Element: Equatable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 == $1 }
@@ -175,11 +173,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// exp
     func exp<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.log($0.asFloat))
+                T.Element(any: Foundation.log($0.asFloat))
             }
         }
     }
@@ -187,7 +185,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// fill(result:with:
     /// NOTE: this can be much faster, doesn't need to be ordered access
-    func fill<T>(_ result: inout T, with value: T.Values.Element) where T: TensorView {
+    func fill<T>(_ result: inout T, with value: T.Element) where T: TensorView {
         queue(#function, {}, &result) {
             for index in $1.indices { $1[index] = value }
         }
@@ -196,12 +194,12 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// fillWithIndex(x:startAt:
     func fillWithIndex<T>(_ result: inout T, startAt: Int) where
-        T: TensorView, T.Values.Element: AnyNumeric
+        T: TensorView, T.Element: AnyNumeric
     {
         queue(#function, {}, &result) {
             var value = startAt
             for index in $1.indices {
-                $1[index] = T.Values.Element(any: value)
+                $1[index] = T.Element(any: value)
                 value += 1
             }
         }
@@ -210,11 +208,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// floor
     func floor<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.floorf($0.asFloat))
+                T.Element(any: Foundation.floorf($0.asFloat))
             }
         }
     }
@@ -222,7 +220,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// greater
     func greater<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 > $1 }
@@ -232,7 +230,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// greaterOrEqual
     func greaterOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 >= $1 }
@@ -242,7 +240,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// less
     func less<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 < $1 }
@@ -252,7 +250,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// lessOrEqual
     func lessOrEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 <= $1 }
@@ -262,11 +260,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// log(x:result:
     func log<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.log($0.asFloat))
+                T.Element(any: Foundation.log($0.asFloat))
             }
         }
     }
@@ -274,7 +272,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalNot(x:result:
     func logicalNot<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element == Bool
+        T: TensorView, T.Element == Bool
     {
         queue(#function, { try x.values() }, &result) { $0.map(to: &$1) { !$0 } }
     }
@@ -282,7 +280,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalAnd(x:result:
     func logicalAnd<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element == Bool
+        T: TensorView, T.Element == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 && $1 }
@@ -292,7 +290,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logicalOr(x:result:
     func logicalOr<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element == Bool
+        T: TensorView, T.Element == Bool
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 || $1 }
@@ -302,14 +300,14 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// logSoftmax(x:result:
     func logSoftmax<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
     }
 
     //--------------------------------------------------------------------------
     /// matmul(lhs:rhs:result:
     func matmul<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -317,7 +315,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// max
     func max<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -325,7 +323,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// maximum(lhs:rhs:result:
     func maximum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 >= $1 ? $0 : $1 }
@@ -335,7 +333,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// mean
     func mean<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -343,7 +341,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// min
     func min<T>(x: T, along axes: [Int], result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         
     }
@@ -351,7 +349,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     /// minimum(lhs:rhs:result:
     func minimum<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Comparable
+        T: TensorView, T.Element: Comparable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 <= $1 ? $0 : $1 }
@@ -361,11 +359,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // mod
     func mod<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
-                T.Values.Element(any: fmodf($0.asFloat, $1.asFloat))
+                T.Element(any: fmodf($0.asFloat, $1.asFloat))
             }
         }
     }
@@ -373,7 +371,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // mul
     func mul<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 * $1 }
@@ -383,7 +381,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // neg
     func neg<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: SignedNumeric
+        T: TensorView, T.Element: SignedNumeric
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { -$0 }
@@ -393,7 +391,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // notEqual
     func notEqual<T>(lhs: T, rhs: T, result: inout T.BoolView) where
-        T: TensorView, T.Values.Element: Equatable
+        T: TensorView, T.Element: Equatable
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 != $1 }
@@ -404,11 +402,11 @@ public extension CpuStream {
     // pow
     // TODO there needs to be a generic math library!
     func pow<T>(x: T, y: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyNumeric
+        T: TensorView, T.Element: AnyNumeric
     {
         queue(#function, { try (x.values(), y.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
-                T.Values.Element(any: Foundation.pow($0.asDouble, $1.asDouble))
+                T.Element(any: Foundation.pow($0.asDouble, $1.asDouble))
             }
         }
     }
@@ -416,9 +414,9 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // prod
     func prod<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element: AnyNumeric
+        T: TensorView, T.Element: AnyNumeric
     {
-        let one = T.Values.Element(any: 1)
+        let one = T.Element(any: 1)
         queue(#function, { try x.values() }, &result) {
             $0.reduce(to: &$1, one) { $0 * $1 }
         }
@@ -427,7 +425,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // rsqrt
     func rsqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { 1 / Foundation.sqrt($0) }
@@ -449,11 +447,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sin
     func sin<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.sinf($0.asFloat))
+                T.Element(any: Foundation.sinf($0.asFloat))
             }
         }
     }
@@ -462,11 +460,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sinh
     func sinh<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.sinhf($0.asFloat))
+                T.Element(any: Foundation.sinhf($0.asFloat))
             }
         }
     }
@@ -474,7 +472,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // square
     func square<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { $0 * $0 }
@@ -484,7 +482,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // squaredDifference
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) {
@@ -497,7 +495,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sqrt
     func sqrt<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) { Foundation.sqrt($0) }
@@ -507,7 +505,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // subtract
     func subtract<T>(lhs: T, rhs: T, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
             zip($0.0, $0.1).map(to: &$1) { $0 - $1 }
@@ -517,7 +515,7 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // sum
     func sum<T>(x: T, along axes: Vector<IndexElement>?, result: inout T) where
-        T: TensorView, T.Values.Element: Numeric
+        T: TensorView, T.Element: Numeric
     {
         if let axes = axes, axes.shape.extents[0] > 0 {
             assert(axes.rank <= x.rank, "rank mismatch")
@@ -526,7 +524,7 @@ public extension CpuStream {
             }
         } else {
             queue(#function, { try x.values() }, &result) {
-                $0.reduce(to: &$1, T.Values.Element.zero) { $0 + $1 }
+                $0.reduce(to: &$1, T.Element.zero) { $0 + $1 }
             }
         }
     }
@@ -534,11 +532,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // tan
     func tan<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.tanf($0.asFloat))
+                T.Element(any: Foundation.tanf($0.asFloat))
             }
         }
     }
@@ -546,11 +544,11 @@ public extension CpuStream {
     //--------------------------------------------------------------------------
     // tanh
     func tanh<T>(x: T, result: inout T) where
-        T: TensorView, T.Values.Element: AnyFloatingPoint
+        T: TensorView, T.Element: AnyFloatingPoint
     {
         queue(#function, { try x.values() }, &result) {
             $0.map(to: &$1) {
-                T.Values.Element(any: Foundation.tanhf($0.asFloat))
+                T.Element(any: Foundation.tanhf($0.asFloat))
             }
         }
     }

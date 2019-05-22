@@ -193,15 +193,16 @@ let matrix = Matrix<Int32>((3, 2),
                            values: [0, 2, 4, 1, 3, 5])
 
 let expected = [Int32](0..<6)
-assert(matrix.array == expected, "values don't match")
+let values = try matrix.array()
+assert(values == expected, "values don't match")
 ```
 ### Zero Copy Structural Casting of Uniform Dense Scalars
 A tensor can store and manipulate structured values. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
 
 __<the formatted function needs to be rewritten to perform better type specific output!>__
 ```swift
-let sample = RGBASample<UInt8>(r: 0, g: 1, b: 2, a: 3)
-let matrix = Matrix<RGBASample<UInt8>>((2, 3), repeating: Matrix(sample))
+let sample = RGBA<UInt8>(r: 0, g: 1, b: 2, a: 3)
+let matrix = Matrix<RGBA<UInt8>>((2, 3), repeating: Matrix(sample))
 let nhwc = NHWCTensor<UInt8>(matrix)
 print(nhwc.formatted((2, 0)))
 ```

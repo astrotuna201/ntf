@@ -196,8 +196,8 @@ let expected = [Int32](0..<6)
 let values = try matrix.array()
 assert(values == expected, "values don't match")
 ```
-### Zero Copy Structural Casting of Uniform Dense Scalars
-A tensor can store and manipulate structured values. If they are a uniform dense type, they can be structurally recast to other types such as an NHWC tensor used by Cuda.
+### Zero Copy Structural Casting of Vector Elements
+A tensor can store and manipulate vector elements. A vector Element can be structurally recast to other types such as an NHWC tensor used by Cuda.
 
 __<the formatted function needs to be rewritten to perform better type specific output!>__
 ```swift

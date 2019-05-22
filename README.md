@@ -68,17 +68,17 @@ Tensor views manage both shared and copy-on-write semantics. Multiple concurrent
 
 
 ## Simple Use Examples
-The following is a complete program. It initializes a matrix with a sequence then takes the sum using the current default device. It doesn't require the user to setup or configure anything.
+The following is a complete program. It initializes a matrix with a any then takes the sum using the current default device. It doesn't require the user to setup or configure anything.
 ```swift
-let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+let matrix = Matrix<Float>((3, 5), any: 0..<15)
 let sum = matrix.sum().scalarValue()
 assert(sum == 105.0)
 ```
 This is a simple example of using tensors on the app thread doing normal zip, map, reduce operations.
 ```swift
 // create two tensors and fill with indexes
-let a = Matrix<Float>((2, 3), sequence: 0..<6)
-let b = Matrix<Float>((2, 3), sequence: 6..<12)
+let a = Matrix<Float>((2, 3), any: 0..<6)
+let b = Matrix<Float>((2, 3), any: 6..<12)
 
 let absum = zip(a, b).map { $0 + $1 }
 
@@ -153,11 +153,11 @@ The extents of repeated data are not required to match any extent of the Tensor 
 These examples repeat row and column vectors.
 No matter the extents, `matrix` only uses the shared storage from `rowVector` and repeats it through indexing.
 ```swift
-let rowVector = Matrix<Int32>((1, 5), sequence: 0..<5)
+let rowVector = Matrix<Int32>((1, 5), any: 0..<5)
 let rmatrix = Matrix((5, 5), repeating: rowVector)
 print(rmatrix.formatted((2,0)))
 
-let colVector = Matrix<Int32>((5, 1), sequence: 0..<5)
+let colVector = Matrix<Int32>((5, 1), any: 0..<5)
 let cmatrix = Matrix((5, 5), repeating: colVector)
 print(cmatrix.formatted((2,0)))
 ```
@@ -223,7 +223,7 @@ at index: [0, 1, 0, 0]
 ### Matrix Zero Copy Transpose
 Accessing the MatrixView `t` member variable returns a transposed view of Self with zero copy by manipulating strides.
 ```swift
-let matrix = Matrix<Float>((3, 5), sequence: 0..<15)
+let matrix = Matrix<Float>((3, 5), any: 0..<15)
 print(matrix.formatted((2,0)))
 
 let tmatrix = matrix.t
@@ -358,8 +358,8 @@ Platform.log.categories = [.dataAlloc, .dataCopy, .scheduling, .streamSync]
 
 do {
     let stream1 = Platform.local.createStream(deviceId: 1, serviceName: "cpuUnitTest")
-    let m1 = Matrix<Int32>((2, 5), name: "m1", sequence: 0..<10)
-    let m2 = Matrix<Int32>((2, 5), name: "m2", sequence: 0..<10)
+    let m1 = Matrix<Int32>((2, 5), name: "m1", any: 0..<10)
+    let m2 = Matrix<Int32>((2, 5), name: "m2", any: 0..<10)
 
     // perform on user provided discreet memory stream
     let result = using(stream1) { m1 + m2 }

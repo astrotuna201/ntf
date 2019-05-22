@@ -74,7 +74,7 @@ public extension TensorView where Element == Bool {
 @inlinable @inline(__always)
 public func mean<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
                     result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     _Streams.current.mean(x: x, along: axes, result: &result)
 }
@@ -86,7 +86,7 @@ public func mean<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
 public func mean<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     let extents = [Int](repeating: 1, count: x.rank)
     var result = x.createDense(with: extents)
@@ -98,7 +98,7 @@ public func mean<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
 /// - Parameter alongAxes: the axes to operate on
 /// - Returns: a new tensor containing the result
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-public extension TensorView where Element: FloatingPoint {
+public extension TensorView where Element: BinaryFloatingPoint {
     @inlinable @inline(__always)
     func mean(alongAxes axes: Vector<IndexElement>? = nil) -> Self {
         var result = createDense()
@@ -227,7 +227,7 @@ public extension TensorView where Element: Numeric {
 @inlinable @inline(__always)
 public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
                         mean: inout T, result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     _Streams.current.mean(x: x, along: axes, result: &mean)
     _Streams.current.mean(x: squaredDifference(x, mean),
@@ -242,7 +242,7 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
 @inlinable @inline(__always)
 public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil)
     -> (mean: T, variance: T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
     var result = meanX
@@ -254,7 +254,7 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil)
 /// - Parameter alongAxes: the axes to operate on
 /// - Returns: a new tensor containing the result
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-public extension TensorView where Element: FloatingPoint {
+public extension TensorView where Element: BinaryFloatingPoint {
     @inlinable @inline(__always)
     func variance(alongAxes: [Int]) -> (mean: Self, variance: Self) {
         // turn into a vector
@@ -307,7 +307,7 @@ public extension TensorView where Element: FloatingPoint {
 public func standardDeviation<T>(_ x: T,
                                  alongAxes axes: Vector<IndexElement>? = nil,
                                  mean: inout T, result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     var _variance = x.createDense()
     Netlib.variance(x, alongAxes: axes, mean: &mean, result: &_variance)
@@ -323,7 +323,7 @@ public func standardDeviation<T>(_ x: T,
 public func standardDeviation<T>(_ x: T,
                                  alongAxes axes: Vector<IndexElement>? = nil)
     -> (mean: T, variance: T)
-    where T: TensorView, T.Element: FloatingPoint
+    where T: TensorView, T.Element: BinaryFloatingPoint
 {
     var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
     var result = meanX
@@ -335,7 +335,7 @@ public func standardDeviation<T>(_ x: T,
 /// - Parameter alongAxes: the axes to operate on
 /// - Returns: a new tensor containing the result
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-public extension TensorView where Element: FloatingPoint {
+public extension TensorView where Element: BinaryFloatingPoint {
     @inlinable @inline(__always)
     func standardDeviation(alongAxes: [Int]) -> (mean: Self, variance: Self) {
         // turn into a vector

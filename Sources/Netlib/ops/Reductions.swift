@@ -221,31 +221,17 @@ public extension TensorView where Element: Numeric {
 /// to result
 /// - Parameter x: value tensor
 /// - Parameter alongAxes: the axes to operate on
-/// - Parameter result: the scalar tensor where the result will be written
-/// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-@inlinable @inline(__always)
-public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
-                        result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
-{
-    let sqdiff = squaredDifference(x, x.mean(alongAxes: axes))
-    _Streams.current.mean(x: sqdiff, along: axes, result: &result)
-}
-
-/// to result
-/// - Parameter x: value tensor
-/// - Parameter alongAxes: the axes to operate on
 /// - Parameter meanValue: the tensor where the mean will be written
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
 public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
-                        meanValue: inout T, result: inout T)
+                        mean: inout T, result: inout T)
     where T: TensorView, T.Element: FloatingPoint
 {
-    _Streams.current.mean(x: x, along: axes, result: &meanValue)
-    let sqdiff = squaredDifference(x, meanValue)
-    _Streams.current.mean(x: sqdiff, along: axes, result: &result)
+    _Streams.current.mean(x: x, along: axes, result: &mean)
+    _Streams.current.mean(x: squaredDifference(x, mean),
+                          along: axes, result: &result)
 }
 
 /// return result
@@ -254,12 +240,14 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
+public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil)
+    -> (mean: T, variance: T)
     where T: TensorView, T.Element: FloatingPoint
 {
-    var result = x.createDense(with: [Int](repeating: 1, count: x.rank))
-    Netlib.variance(x, alongAxes: axes, result: &result)
-    return result
+    var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
+    var result = meanX
+    Netlib.variance(x, alongAxes: axes, mean: &meanX, result: &result)
+    return (meanX, result)
 }
 
 /// returns new view
@@ -268,23 +256,24 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> 
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 public extension TensorView where Element: FloatingPoint {
     @inlinable @inline(__always)
-    func variance(alongAxes: [Int]) -> Self {
+    func variance(alongAxes: [Int]) -> (mean: Self, variance: Self) {
         // turn into a vector
-        let axes = Vector<IndexElement>(
-            any: shape.makePositive(indices: alongAxes))
-        var result = createDense()
-        Netlib.variance(self, alongAxes: axes, result: &result)
-        return result
+        let positiveAxes = shape.makePositive(indices: alongAxes)
+        let axes = Vector<IndexElement>(any: positiveAxes)
+        var meanVal = createDense()
+        var result = meanVal
+        Netlib.variance(self, alongAxes: axes, mean: &meanVal, result: &result)
+        return (meanVal, result)
     }
 
     @inlinable @inline(__always)
-    func variance(alongAxes: Int...) -> Self {
+    func variance(alongAxes: Int...) -> (mean: Self, variance: Self) {
         return variance(alongAxes: alongAxes)
     }
     
     @inlinable @inline(__always)
-    func variance() -> Self {
-        return squaredDifference(self, self.mean()).mean()
+    func variance() -> (mean: Self, variance: Self) {
+        return Netlib.variance(self)
     }
     
     /// returns new view
@@ -292,9 +281,13 @@ public extension TensorView where Element: FloatingPoint {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func variance(squeezingAxes: Int...) -> NDTensor<Element> {
+    func variance(squeezingAxes: Int...) ->
+        (mean: NDTensor<Element>, variance: NDTensor<Element>)
+    {
         let axes = shape.makePositive(indices: squeezingAxes)
-        return variance(alongAxes: squeezingAxes).squeezed(axes: axes)
+        let varianceVal = variance(alongAxes: squeezingAxes)
+        return (varianceVal.mean.squeezed(axes: axes),
+                varianceVal.variance.squeezed(axes: axes))
     }
 }
 
@@ -307,33 +300,18 @@ public extension TensorView where Element: FloatingPoint {
 /// to result
 /// - Parameter x: value tensor
 /// - Parameter alongAxes: the axes to operate on
-/// - Parameter result: the scalar tensor where the result will be written
-/// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
-@inlinable @inline(__always)
-public func standardDeviation<T>(_ x: T,
-                                 alongAxes axes: Vector<IndexElement>? = nil,
-                                 result: inout T)
-    where T: TensorView, T.Element: FloatingPoint
-{
-    _Streams.current.sqrt(x: variance(x, alongAxes: axes), result: &result)
-}
-
-/// to result
-/// - Parameter x: value tensor
-/// - Parameter alongAxes: the axes to operate on
 /// - Parameter meanValue: the tensor where the mean will be written
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
 public func standardDeviation<T>(_ x: T,
                                  alongAxes axes: Vector<IndexElement>? = nil,
-                                 meanValue: inout T, result: inout T)
+                                 mean: inout T, result: inout T)
     where T: TensorView, T.Element: FloatingPoint
 {
-    _Streams.current.mean(x: x, along: axes, result: &meanValue)
-    var varianceX = result.createDense()
-    variance(x, alongAxes: axes, meanValue: &meanValue, result: &varianceX)
-    _Streams.current.sqrt(x: varianceX, result: &result)
+    var _variance = x.createDense()
+    Netlib.variance(x, alongAxes: axes, mean: &mean, result: &_variance)
+    _Streams.current.sqrt(x: _variance, result: &result)
 }
 
 /// return result
@@ -342,13 +320,15 @@ public func standardDeviation<T>(_ x: T,
 /// - Parameter result: the scalar tensor where the result will be written
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 @inlinable @inline(__always)
-public func standardDeviation<T>(
-    _ x: T, alongAxes axes: Vector<IndexElement>? = nil) -> T
+public func standardDeviation<T>(_ x: T,
+                                 alongAxes axes: Vector<IndexElement>? = nil)
+    -> (mean: T, variance: T)
     where T: TensorView, T.Element: FloatingPoint
 {
-    var result = x.createDense(with: [Int](repeating: 1, count: x.rank))
-    Netlib.standardDeviation(x, alongAxes: axes, result: &result)
-    return result
+    var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
+    var result = meanX
+    Netlib.standardDeviation(x, alongAxes: axes, mean: &meanX, result: &result)
+    return (meanX, result)
 }
 
 /// returns new view
@@ -357,22 +337,20 @@ public func standardDeviation<T>(
 /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
 public extension TensorView where Element: FloatingPoint {
     @inlinable @inline(__always)
-    func standardDeviation(alongAxes: [Int]) -> Self {
+    func standardDeviation(alongAxes: [Int]) -> (mean: Self, variance: Self) {
         // turn into a vector
-        let axes = Vector<IndexElement>(
-            any: shape.makePositive(indices: alongAxes))
-        var result = createDense()
-        Netlib.standardDeviation(self, alongAxes: axes, result: &result)
-        return result
+        let positiveAxes = shape.makePositive(indices: alongAxes)
+        let axes = Vector<IndexElement>(any: positiveAxes)
+        return Netlib.standardDeviation(self, alongAxes: axes)
     }
     
     @inlinable @inline(__always)
-    func standardDeviation(alongAxes: Int...) -> Self {
-        return standardDeviation(alongAxes: alongAxes)
+    func standardDeviation(alongAxes: Int...) -> (mean: Self, variance: Self) {
+        return variance(alongAxes: alongAxes)
     }
     
     @inlinable @inline(__always)
-    func standardDeviation() -> Self {
+    func standardDeviation() -> (mean: Self, variance: Self) {
         return Netlib.standardDeviation(self)
     }
     
@@ -381,9 +359,12 @@ public extension TensorView where Element: FloatingPoint {
     /// - Returns: a new NDTensor containing the result
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`.
     @inlinable @inline(__always)
-    func standardDeviation(squeezingAxes: Int...) -> NDTensor<Element> {
+    func standardDeviation(squeezingAxes: Int...) ->
+        (mean: NDTensor<Element>, variance: NDTensor<Element>)
+    {
         let axes = shape.makePositive(indices: squeezingAxes)
-        return standardDeviation(alongAxes: squeezingAxes).squeezed(axes: axes)
+        let varianceVal = variance(alongAxes: squeezingAxes)
+        return (varianceVal.mean.squeezed(axes: axes),
+                varianceVal.variance.squeezed(axes: axes))
     }
 }
-

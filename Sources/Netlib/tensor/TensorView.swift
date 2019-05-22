@@ -350,9 +350,9 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// scalarValue
+    /// elementValue
     /// - Returns: the single value in the tensor as a scalar
-    func scalarValue() throws -> Element {
+    func elementValue() throws -> Element {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
     }

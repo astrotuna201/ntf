@@ -54,15 +54,16 @@ public extension TensorView where Element: FixedWidthInteger {
             let values = try x.values()
             var results = try self.mutableValues()
             for (i, j) in zip(results.indices, values.indices) {
-                let value = values[j]
-                if value == bias {
-                    results[i] = 0
+                let value = values[j] - bias
+                let fvalue: T.Element
+                if value == 0 {
+                    fvalue = 0
                 } else if value > 0 {
-                    results[i] = Element((value - bias) * inverseTransformScale - 1)
+                    fvalue = value * inverseTransformScale - 1
                 } else {
-                    results[i] = Element((value - bias) * inverseTransformScale)
+                    fvalue = value * inverseTransformScale
                 }
-                results[i] = Element()
+                results[i] = Element(fvalue)
             }
         } catch {
             print(String(describing: error))

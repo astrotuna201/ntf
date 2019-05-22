@@ -4,6 +4,10 @@
 //
 import Foundation
 
+public func NotImplemented() {
+    fatalError("not implemented yet")
+}
+
 //==============================================================================
 // Memory sizes
 extension Int {

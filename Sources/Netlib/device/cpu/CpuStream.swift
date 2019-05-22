@@ -12,7 +12,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	public let name: String
     public var logInfo: LogInfo
     public var timeout: TimeInterval = 0
-    public var executeSynchronously: Bool = false
+    public var executeSynchronously: Bool = true
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
     public var _errorMutex: Mutex = Mutex()

@@ -496,7 +496,10 @@ public extension CpuStream {
     func squaredDifference<T>(lhs: T, rhs: T, result: inout T) where
         T: TensorView, T.Element: FloatingPoint
     {
+        assert(lhs.shape.elementCount == rhs.shape.elementCount,
+               "tensors must have equal element counts")
         queue(#function, { try (lhs.values(), rhs.values()) }, &result) {
+            print($0.0.count, $0.1.count, $1.count)
             zip($0.0, $0.1).map(to: &$1) {
                 let diff = $0 - $1
                 return diff * diff

@@ -229,9 +229,13 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil,
                         mean: inout T, result: inout T)
     where T: TensorView, T.Element: BinaryFloatingPoint
 {
+//    if let axes = axes {
+//    } else {
     _Streams.current.mean(x: x, along: axes, result: &mean)
-    _Streams.current.mean(x: squaredDifference(x, mean),
+    let meanVec = T(with: x.extents, repeating: mean)
+    _Streams.current.mean(x: squaredDifference(x, meanVec),
                           along: axes, result: &result)
+//    }
 }
 
 /// return result
@@ -244,7 +248,7 @@ public func variance<T>(_ x: T, alongAxes axes: Vector<IndexElement>? = nil)
     -> (mean: T, variance: T)
     where T: TensorView, T.Element: BinaryFloatingPoint
 {
-    var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
+    var meanX = x.createDense(with: [1])
     var result = meanX
     Netlib.variance(x, alongAxes: axes, mean: &meanX, result: &result)
     return (meanX, result)
@@ -260,10 +264,7 @@ public extension TensorView where Element: BinaryFloatingPoint {
         // turn into a vector
         let positiveAxes = shape.makePositive(indices: alongAxes)
         let axes = Vector<IndexElement>(any: positiveAxes)
-        var meanVal = createDense()
-        var result = meanVal
-        Netlib.variance(self, alongAxes: axes, mean: &meanVal, result: &result)
-        return (meanVal, result)
+        return Netlib.variance(self, alongAxes: axes)
     }
 
     @inlinable @inline(__always)
@@ -309,7 +310,7 @@ public func standardDeviation<T>(_ x: T,
                                  mean: inout T, result: inout T)
     where T: TensorView, T.Element: BinaryFloatingPoint
 {
-    var _variance = x.createDense()
+    var _variance = x.createDense(with: [1])
     Netlib.variance(x, alongAxes: axes, mean: &mean, result: &_variance)
     _Streams.current.sqrt(x: _variance, result: &result)
 }
@@ -325,7 +326,7 @@ public func standardDeviation<T>(_ x: T,
     -> (mean: T, variance: T)
     where T: TensorView, T.Element: BinaryFloatingPoint
 {
-    var meanX = x.createDense(with: [Int](repeating: 1, count: x.rank))
+    var meanX = x.createDense(with: [1])
     var result = meanX
     Netlib.standardDeviation(x, alongAxes: axes, mean: &meanX, result: &result)
     return (meanX, result)

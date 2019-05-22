@@ -114,7 +114,7 @@ class test_IterateView: XCTestCase {
         do {
             let volume = Volume<Int32>((3, 3, 4), any: 0..<36)
             let view = volume.view(at: [1, 1, 1], extents: [2, 2, 3])
-            //            print(subView.formatted((2,0)))
+//            print(view.formatted((2,0)))
             
             let expected: [Int32] = [
                 17, 18, 19,
@@ -136,7 +136,7 @@ class test_IterateView: XCTestCase {
         #if !DEBUG
         do {
             let count = 1024 * 1024
-            let vector = Vector<Int32>(sequence: 0..<count)
+            let vector = Vector<Int32>(any: 0..<count)
             //            print(matrix.formatted((2,0)))
             let values = try vector.values()
             
@@ -157,7 +157,7 @@ class test_IterateView: XCTestCase {
             let rows = 1024
             let cols = 1024
 
-            let matrix = Matrix<Int32>((rows, cols), sequence: 0..<(rows * cols))
+            let matrix = Matrix<Int32>((rows, cols), any: 0..<(rows * cols))
             //            print(matrix.formatted((2,0)))
             
             let values = try matrix.values()
@@ -181,7 +181,7 @@ class test_IterateView: XCTestCase {
             let cols = 512
             
             let matrix = Volume<Int32>((depths, rows, cols),
-                                       sequence: 0..<(depths * rows * cols))
+                                       any: 0..<(depths * rows * cols))
             //            print(matrix.formatted((2,0)))
             
             let values = try matrix.values()

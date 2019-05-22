@@ -1106,16 +1106,16 @@ public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform values to NHWC
     init<M>(_ matrix: M, name: String? = nil) where
         M: MatrixView,
-        M.Element: UniformDenseScalar,
-        M.Element.Component == Element {
+        M.Element: FixedSizeVector,
+        M.Element.Scalar == Element {
             let viewExtents = [1,
                                matrix.shape.extents[0],
                                matrix.shape.extents[1],
-                               M.Element.componentCount]
+                               M.Element.count]
             let dataExtents = [1,
                                matrix.dataShape.extents[0],
                                matrix.dataShape.extents[1],
-                               M.Element.componentCount]
+                               M.Element.count]
             var alignment: [Int]?
             if let align = matrix.indexAlignment {
                 alignment = [0, align[0], align[1], 0]

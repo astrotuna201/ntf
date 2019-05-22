@@ -10,66 +10,66 @@ import Foundation
 /// short vector Element types.
 /// For example: Matrix<RGBA<Float>> -> NHWCTensor<Float>
 ///
-public protocol UniformDenseScalar: Equatable {
-    associatedtype Component
-    static var componentCount: Int { get }
+public protocol FixedSizeVector: Equatable {
+    associatedtype Scalar
+    static var count: Int { get }
 }
 
-public extension UniformDenseScalar {
-    static var componentCount: Int {
-        return MemoryLayout<Self>.size / MemoryLayout<Component>.size
+public extension FixedSizeVector {
+    static var count: Int {
+        return MemoryLayout<Self>.size / MemoryLayout<Scalar>.size
     }
 }
 
 //==============================================================================
 // RGB
-public protocol RGBProtocol: UniformDenseScalar {}
+public protocol RGBProtocol: FixedSizeVector {}
 
-public struct RGB<Component>: RGBProtocol where Component: Numeric {
-    public var r, g, b: Component
-
-    @inlinable @inline(__always)
-    public init() { r = Component.zero; g = Component.zero; b = Component.zero }
+public struct RGB<Scalar>: RGBProtocol where Scalar: Numeric {
+    public var r, g, b: Scalar
 
     @inlinable @inline(__always)
-    public init(r: Component, g: Component, b: Component) {
+    public init() { r = Scalar.zero; g = Scalar.zero; b = Scalar.zero }
+
+    @inlinable @inline(__always)
+    public init(r: Scalar, g: Scalar, b: Scalar) {
         self.r = r; self.g = g; self.b = b
     }
 }
 
 //==============================================================================
 // RGBA
-public protocol RGBAProtocol: UniformDenseScalar {}
+public protocol RGBAProtocol: FixedSizeVector {}
 
-public struct RGBA<Component> : RGBAProtocol where Component: Numeric {
-    public var r, g, b, a: Component
+public struct RGBA<Scalar> : RGBAProtocol where Scalar: Numeric {
+    public var r, g, b, a: Scalar
 
     @inlinable @inline(__always)
     public init() {
-        r = Component.zero
-        g = Component.zero
-        b = Component.zero
-        a = Component.zero
+        r = Scalar.zero
+        g = Scalar.zero
+        b = Scalar.zero
+        a = Scalar.zero
     }
     
     @inlinable @inline(__always)
-    public init(r: Component, g: Component, b: Component, a: Component) {
+    public init(r: Scalar, g: Scalar, b: Scalar, a: Scalar) {
         self.r = r; self.g = g; self.b = b; self.a = a
     }
 }
 
 //==============================================================================
 // Stereo
-public protocol StereoProtocol: UniformDenseScalar {}
+public protocol StereoProtocol: FixedSizeVector {}
 
-public struct Stereo<Component>: StereoProtocol where Component: Numeric {
-    public var left, right: Component
-
-    @inlinable @inline(__always)
-    public init() { left = Component.zero; right = Component.zero }
+public struct Stereo<Scalar>: StereoProtocol where Scalar: Numeric {
+    public var left, right: Scalar
 
     @inlinable @inline(__always)
-    public init(left: Component, right: Component) {
+    public init() { left = Scalar.zero; right = Scalar.zero }
+
+    @inlinable @inline(__always)
+    public init(left: Scalar, right: Scalar) {
         self.left = left; self.right = right
     }
 }

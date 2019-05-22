@@ -34,7 +34,7 @@ class test_IterateView: XCTestCase {
             let count: Int32 = 10
             let expected = [Int32](0..<count)
             let vector = Vector<Int32>(elements: expected)
-//            print(vector.formatted((2,0)))
+            print(vector.formatted((2,0)))
             
             let values = try vector.array()
             XCTAssert(values == expected, "values do not match")

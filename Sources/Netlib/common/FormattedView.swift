@@ -35,8 +35,7 @@ public extension TensorView where Element: AnyConvertable & CVarArg {
         } ?? extents
 
         // set header
-        string += "\nTensorView extents: \(shape.extents.description)" +
-        " paddedExtents: \(extents.description)\n"
+        string += "\nTensor extents: \(shape.extents.description)\n"
 
         func appendFormatted(value: Element) {
             let str = String(format: Element.formatString(scalarFormat), value)

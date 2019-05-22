@@ -105,7 +105,7 @@ If we print with formatting
 print(volume.formatted((2,0)))
 ```
 ```
-TensorView extents: [3, 4, 5] paddedExtents: [3, 4, 5]
+Tensor extents: [3, 4, 5]
   at index: [0, 0, 0]
   -------------------
    0  1  2  3  4 
@@ -131,7 +131,7 @@ TensorView extents: [3, 4, 5] paddedExtents: [3, 4, 5]
 print(subView.formatted((2,0)))
 ```
 ```
-TensorView extents: [2, 2, 2] paddedExtents: [2, 2, 2]
+Tensor extents: [2, 2, 2]
   at index: [0, 0, 0]
   -------------------
   26 27 
@@ -162,7 +162,7 @@ let cmatrix = Matrix((5, 5), repeating: colVector)
 print(cmatrix.formatted((2,0)))
 ```
 ```
-TensorView extents: [5, 5] paddedExtents: [5, 5]
+Tensor extents: [5, 5]
 at index: [0, 0]
 ----------------
 0  1  2  3  4 
@@ -171,7 +171,7 @@ at index: [0, 0]
 0  1  2  3  4 
 0  1  2  3  4 
 
-TensorView extents: [5, 5] paddedExtents: [5, 5]
+Tensor extents: [5, 5]
 at index: [0, 0]
 ----------------
 0  0  0  0  0 
@@ -206,7 +206,7 @@ let nhwc = NHWCTensor<UInt8>(matrix)
 print(nhwc.formatted((2, 0)))
 ```
 ```
-TensorView extents: [1, 2, 3, 4] paddedExtents: [1, 2, 3, 4]
+Tensor extents: [1, 2, 3, 4]
 at index: [0, 0, 0, 0]
 ----------------------
 0  1  2  3 
@@ -230,14 +230,14 @@ let tmatrix = matrix.t
 print(tmatrix.formatted((2,0)))
 ```
 ```
-TensorView extents: [3, 5] paddedExtents: [3, 5]
+Tensor extents: [3, 5]
 at index: [0, 0]
 ----------------
 0  1  2  3  4 
 5  6  7  8  9 
 10 11 12 13 14 
 
-TensorView extents: [5, 3] paddedExtents: [5, 3]
+Tensor extents: [5, 3]
 at index: [0, 0]
 ----------------
 0  5  10 

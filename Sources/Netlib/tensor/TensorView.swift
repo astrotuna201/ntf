@@ -69,7 +69,7 @@ public protocol TensorView: Logging {
     /// returns the first tensor index used for collections
     var startIndex: Index { get }
     /// class reference to the underlying byte buffer
-    var tensorArray: TensorArray { get set }
+    var tensorArray: TensorArray<Element> { get set }
     /// the indexing traversal procedure to use
     var traversal: TensorTraversal { get }
     /// the linear element offset where the view begins
@@ -79,7 +79,7 @@ public protocol TensorView: Logging {
     /// fully specified used for creating views
     init(shape: DataShape,
          dataShape: DataShape,
-         tensorArray: TensorArray,
+         tensorArray: TensorArray<Element>,
          viewDataOffset: Int,
          indexAlignment: [Int]?,
          traversal: TensorTraversal,
@@ -183,8 +183,8 @@ public extension TensorView {
     /// createDense
     func createDense(with extents: [Int], name: String? = nil) -> Self {
         let shape = DataShape(extents: extents)
-        let array = TensorArray(type: Element.self, count: shape.elementCount,
-                                name: name ?? String(describing: Self.self))
+        let name = name ?? String(describing: Self.self)
+        let array = TensorArray<Element>(count: shape.elementCount, name: name)
         return Self(shape: shape, dataShape: shape,
                     tensorArray: array, viewDataOffset: 0,
                     indexAlignment: nil, traversal: .normal, isShared: false)
@@ -197,7 +197,7 @@ public extension TensorView {
     func create(value: Element, name: String? = nil) -> Self {
         let dataExtents = [Int](repeating: 1, count: rank)
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray(type: Element.self, count: 1, name: name)
+        let array = TensorArray<Element>(count: 1, name: name)
         var view = Self(shape: self.shape.dense,
                         dataShape: DataShape(extents: dataExtents),
                         tensorArray: array, viewDataOffset: 0,
@@ -381,9 +381,8 @@ public extension TensorView {
             "\(String(describing: Element.self))[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
-        tensorArray = try TensorArray(type: Element.self,
-                                      copying: tensorArray,
-                                      using: stream)
+        tensorArray = try TensorArray<Element>(copying: tensorArray,
+                                               using: stream)
         tensorArray.lastAccessMutatedView = true
     }
     

@@ -63,8 +63,7 @@ class test_Codable: XCTestCase {
         do {
             typealias Image = Matrix<RGB<Float>>
             let jsonEncoder = JSONEncoder()
-            let pixels = [RGB<Float>(r: 0, g: 0.5, b: 1.0),
-                          RGB<Float>(r: 0.25, g: 0.5, b: 0.75)]
+            let pixels = [RGB<Float>(0, 0.5, 1), RGB<Float>(0.25, 0.5, 0.75)]
             let image = Image((1, 2), name: "pixels", elements: pixels)
             let jsonData = try jsonEncoder.encode(image)
             //            let jsonVectorString = String(data: jsonData, encoding: .utf8)!

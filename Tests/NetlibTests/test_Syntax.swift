@@ -196,7 +196,7 @@ class test_Syntax: XCTestCase {
     // create a named stream on two different discreet devices
     // <cpu devices 1 and 2 are discreet memory versions for testing>
     func test_structuredScalar() {
-        let sample = RGBA<UInt8>(r: 0, g: 1, b: 2, a: 3)
+        let sample = RGBA<UInt8>(0, 1, 2, 3)
         let matrix = Matrix<RGBA<UInt8>>((2, 3), repeating: Matrix(sample))
         let nhwc = NHWCTensor<UInt8>(matrix)
         print(nhwc.formatted((2, 0)))
@@ -256,8 +256,7 @@ class test_Syntax: XCTestCase {
         do {
             Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
-            let pixels = [RGB<Float>(r: 0, g: 0.5, b: 1.0),
-                          RGB<Float>(r: 0.25, g: 0.5, b: 0.75)]
+            let pixels = [RGB<Float>(0, 0.5, 1),RGB<Float>(0.25, 0.5, 0.75)]
             let vector = Vector<RGB<Float>>(name: "pixels", elements: pixels)
             let nhwc = NHWCTensor<Float>(vector: vector)
             let values = try nhwc.array()

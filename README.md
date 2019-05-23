@@ -33,7 +33,9 @@ The idea of a stream of commands going to a local or remote device across the ne
 
 ***
 # Tensor Representation
-A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers and helper functions. The types currently defined are:
+A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers, helper functions, and optimized indexing. Tensors conform to _Codable_ when _Element_ conforms to _Codable_ for serialization.
+
+The types currently defined are:
 * ScalarValue
 * Vector
 * Matrix

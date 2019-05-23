@@ -41,6 +41,16 @@ public extension TensorView {
 }
 
 //==============================================================================
+// Codable extensions
+extension ScalarValue: Codable where Element: Codable {}
+extension Vector: Codable where Element: Codable {}
+extension Matrix: Codable where Element: Codable {}
+extension Volume: Codable where Element: Codable {}
+extension NDTensor: Codable where Element: Codable {}
+extension NHWCTensor: Codable where Element: Codable {}
+extension NCHWTensor: Codable where Element: Codable {}
+
+//==============================================================================
 // ScalarView
 public protocol ScalarView: TensorView {}
 
@@ -228,7 +238,7 @@ public extension VectorView {
 
 //==============================================================================
 // Vector
-public struct Vector<Element>: VectorView, Codable where Element: Codable {
+public struct Vector<Element>: VectorView {
     // properties
     public let dataShape: DataShape
     public let indexAlignment: [Int]?

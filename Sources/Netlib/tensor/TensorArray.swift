@@ -374,19 +374,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     }
 }
 
-extension UnsafeBufferPointer: Codable where Element: Codable {
-    /// encodes the contents of the array
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.unkeyedContainer()
-        try container.encode(contentsOf: self)
-    }
-    
-    public init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-        self = try container.decode(UnsafeBufferPointer.self)
-    }
-}
-
 // TODO: is there anyway to do this without copying the data??
 extension TensorArray: Codable where Element: Codable {
     enum CodingKeys: String, CodingKey { case name, data }

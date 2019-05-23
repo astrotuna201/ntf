@@ -13,11 +13,12 @@ class test_Codable: XCTestCase {
     static var allTests = [
         ("test_vector", test_vector),
         ("test_matrix", test_matrix),
+        ("test_RGBImage", test_RGBImage),
     ]
     
     //==========================================================================
     // test_vector
-    // initializes two matrices and adds them together
+    // encodes and decodes
     func test_vector() {
         do {
             let jsonEncoder = JSONEncoder()
@@ -37,7 +38,7 @@ class test_Codable: XCTestCase {
 
     //==========================================================================
     // test_matrix
-    // initializes two matrices and adds them together
+    // encodes and decodes
     func test_matrix() {
         do {
             let jsonEncoder = JSONEncoder()
@@ -50,6 +51,28 @@ class test_Codable: XCTestCase {
             let matrix2 = try decoder.decode(Matrix<Float>.self, from: jsonData)
             let values = try matrix2.array()
             XCTAssert(values == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+
+    //==========================================================================
+    // test_RGBImage
+    // encodes and decodes
+    func test_RGBImage() {
+        do {
+            typealias Image = Matrix<RGB<Float>>
+            let jsonEncoder = JSONEncoder()
+            let pixels = [RGB<Float>(r: 0, g: 0.5, b: 1.0),
+                          RGB<Float>(r: 0.25, g: 0.5, b: 0.75)]
+            let image = Image((1, 2), name: "pixels", elements: pixels)
+            let jsonData = try jsonEncoder.encode(image)
+            //            let jsonVectorString = String(data: jsonData, encoding: .utf8)!
+            //            print(jsonVectorString)
+            let decoder = JSONDecoder()
+            let image2 = try decoder.decode(Image.self, from: jsonData)
+            let values = try image2.array()
+            XCTAssert(values == pixels)
         } catch {
             XCTFail(String(describing: error))
         }

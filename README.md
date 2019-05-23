@@ -33,7 +33,7 @@ The idea of a stream of commands going to a local or remote device across the ne
 
 ***
 # Tensor Representation
-A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers, helper functions, and optimized indexing. Tensors conform to _Codable_ when _Element_ conforms to _Codable_ for serialization.
+A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers, helper functions, and optimized indexing.
 
 The types currently defined are:
 * ScalarValue
@@ -46,6 +46,9 @@ The types currently defined are:
 
 All of these types are just constrained variations of a _Tensor_ which conforms to the _TensorView_ protocol. All underlying operators and driver functions require conformance to _TensorView_ and not to shaped types. Operator arguments are handled as n-dimensional data sets.
 
+### Codable Serialization
+ Tensors conform to _Codable_  for serialization when _TensorView.Element_ conforms to _Codable_.
+ 
 ## Tensor Structure
 ### TensorArray
 A _TensorArray_ is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.

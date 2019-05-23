@@ -213,6 +213,12 @@ public protocol DeviceArray: ObjectTracking {
 public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
+    /// the last time the event was recorded
+    var recordedTime: Date? { get }
+    /// measure elapsed time since another event
+    func elapsedTime(since event: StreamEvent) -> TimeInterval
+    /// tells the event it is being recorded
+    func recordNow()
     /// signals that the event has occurred
     func signal()
     /// will block the caller until the timeout has elapsed, or
@@ -224,9 +230,8 @@ public struct StreamEventOptions: OptionSet {
     public init() { self.rawValue = 0 }
     public init(rawValue: Int) { self.rawValue = rawValue }
     public let rawValue: Int
-    public static let hostSync     = StreamEventOptions(rawValue: 1 << 0)
-    public static let timing       = StreamEventOptions(rawValue: 1 << 1)
-    public static let interprocess = StreamEventOptions(rawValue: 1 << 2)
+    public static let timing       = StreamEventOptions(rawValue: 1 << 0)
+    public static let interprocess = StreamEventOptions(rawValue: 1 << 1)
 }
 
 public enum StreamEventError: Error {

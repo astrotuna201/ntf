@@ -7,6 +7,7 @@ import Foundation
 public final class CpuStream: LocalDeviceStream, StreamGradients {
 	// protocol properties
 	public private(set) var trackingId = 0
+    public var defaultStreamEventOptions = StreamEventOptions()
 	public let device: ComputeDevice
     public let id: Int
 	public let name: String
@@ -24,11 +25,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(logInfo: LogInfo,
-                device: ComputeDevice,
-                name: String,
-                id: Int) {
-        
+    public init(logInfo: LogInfo, device: ComputeDevice, name: String, id: Int){
         // create serial command queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         
@@ -167,6 +164,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         guard lastError == nil else { throw lastError! }
         diagnostic("\(recordString) StreamEvent(\(event.trackingId)) on " +
             "\(device.name)_\(name)", categories: .streamSync)
+        
+        // tell the event it is being recorded so it can set the time
+        event.recordNow()
         queue {
             event.signal()
         }

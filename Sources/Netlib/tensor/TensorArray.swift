@@ -185,7 +185,7 @@ final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     /// readOnly
     public func readOnly<Element>(type: Element.Type,
-                                 using stream: DeviceStream) throws
+                                  using stream: DeviceStream) throws
         -> UnsafeBufferPointer<Element>
     {
         let buffer = try migrate(type: type, readOnly: true, using: stream)
@@ -195,7 +195,7 @@ final public class TensorArray: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     /// readWrite
     public func readWrite<Element>(type: Element.Type,
-                                  using stream: DeviceStream) throws ->
+                                   using stream: DeviceStream) throws ->
         UnsafeMutableBufferPointer<Element>
     {
         assert(!isReadOnly, "the TensorArray is read only")
@@ -207,8 +207,8 @@ final public class TensorArray: ObjectTracking, Logging {
     /// This migrates the master version of the data from wherever it is to
     /// the device associated with `stream` and returns a pointer to the data
     private func migrate<Element>(type: Element.Type,
-                                 readOnly: Bool,
-                                 using stream: DeviceStream) throws
+                                  readOnly: Bool,
+                                  using stream: DeviceStream) throws
         -> UnsafeMutableBufferPointer<Element>
     {
         // get the array replica for `stream`
@@ -238,9 +238,9 @@ final public class TensorArray: ObjectTracking, Logging {
     // copyCrossService
     // copies from an array in one service to another
     private func copyCrossService<Element>(type: Element.Type,
-                                          from master: DeviceArray,
-                                          to other: DeviceArray,
-                                          using stream: DeviceStream) throws
+                                           from master: DeviceArray,
+                                           to other: DeviceArray,
+                                           using stream: DeviceStream) throws
     {
         lastAccessCopiedBuffer = true
         
@@ -304,9 +304,9 @@ final public class TensorArray: ObjectTracking, Logging {
     // copyCrossDevice
     // copies from one discreet memory device to the other
     private func copyCrossDevice<Element>(type: Element.Type,
-                                         from master: DeviceArray,
-                                         to other: DeviceArray,
-                                         using stream: DeviceStream) throws
+                                          from master: DeviceArray,
+                                          to other: DeviceArray,
+                                          using stream: DeviceStream) throws
     {
         // only copy if the devices have discreet memory
         guard master.device.memoryAddressing == .discreet else { return }
@@ -350,5 +350,29 @@ final public class TensorArray: ObjectTracking, Logging {
             replicas[key] = array
             return array
         }
+    }
+}
+
+extension TensorArray: Codable {
+    enum CodingKeys: String, CodingKey { case name, data }
+
+    /// encodes the contents of the array
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        // TODO: we create an Array from the buffer assuming it will take
+        // a reference and not copy the data
+        let buffer = try readOnly(type: UInt8.self, using: _Streams.hostStream)
+        try container.encode(ContiguousArray(buffer), forKey: .data)
+    }
+    
+    public convenience init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let name = try container.decode(String.self, forKey: .name)
+        var data = try container.decode(ContiguousArray<UInt8>.self,
+                                        forKey: .data)
+        // TODO: make sure this is safe for ref counting
+        let buffer = data.withUnsafeMutableBufferPointer { $0 }
+        self.init(referenceTo: buffer, name: name)
     }
 }

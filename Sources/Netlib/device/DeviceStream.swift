@@ -17,6 +17,8 @@ public protocol DeviceStream:
     StreamGradientsProtocol
 {
     //--------------------------------------------------------------------------
+    /// options to use when creating stream events
+    var defaultStreamEventOptions: StreamEventOptions { get }
     /// the device the stream is associated with
     var device: ComputeDevice { get }
     /// if `true` the stream will execute functions synchronous with the app
@@ -59,7 +61,7 @@ public protocol DeviceStream:
 
 public extension DeviceStream {
     func createEvent() throws -> StreamEvent {
-        return try createEvent(options: StreamEventOptions())
+        return try createEvent(options: defaultStreamEventOptions)
     }
 }
 

@@ -120,7 +120,9 @@ func zeroAlignment(_ rank: Int) -> [Int] {
 
 //==============================================================================
 /// traversal
-public enum TensorTraversal: Int32 { case normal, repeated }
+public enum TensorTraversal: Int32 {
+    case normal, repeated
+}
 
 //==============================================================================
 // TensorView default implementation

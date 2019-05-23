@@ -1,6 +1,6 @@
 //******************************************************************************
 //  Created by Edward Connell on 4/26/19
-//  Copyright © 2016 Connell Research. All rights reserved.
+//  Copyright © 2019 Connell Research. All rights reserved.
 //
 import XCTest
 import Foundation

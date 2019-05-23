@@ -120,9 +120,7 @@ func zeroAlignment(_ rank: Int) -> [Int] {
 
 //==============================================================================
 /// traversal
-public enum TensorTraversal: Int32 {
-    case normal, repeated
-}
+public enum TensorTraversal: Int32, Codable { case normal, repeated }
 
 //==============================================================================
 // TensorView default implementation
@@ -426,8 +424,7 @@ public extension TensorView {
             try waitForCompletion(on: deviceStream)
 
             // get the buffer
-            let buffer = try tensorArray.readOnly(type: Element.self,
-                                                  using: deviceStream)
+            let buffer = try tensorArray.readOnly(using: deviceStream)
             
             // if no stream is specified then wait for completion
             // which will sync for host access
@@ -464,8 +461,7 @@ public extension TensorView {
             try copyIfMutates(using: deviceStream)
             
             // get the buffer
-            let buffer = try tensorArray.readWrite(type: Element.self,
-                                                   using: deviceStream)
+            let buffer = try tensorArray.readWrite(using: deviceStream)
             
             // if no stream is specified then wait for completion
             // which will sync for host access

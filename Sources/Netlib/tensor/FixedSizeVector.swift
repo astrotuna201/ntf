@@ -23,9 +23,9 @@ public extension FixedSizeVector {
 
 //==============================================================================
 // RGB
-public protocol RGBProtocol: FixedSizeVector {}
+public protocol RGBProtocol: FixedSizeVector, Codable {}
 
-public struct RGB<Scalar>: RGBProtocol where Scalar: Numeric {
+public struct RGB<Scalar>: RGBProtocol where Scalar: Numeric & Codable {
     public var r, g, b: Scalar
 
     @inlinable @inline(__always)
@@ -39,9 +39,9 @@ public struct RGB<Scalar>: RGBProtocol where Scalar: Numeric {
 
 //==============================================================================
 // RGBA
-public protocol RGBAProtocol: FixedSizeVector {}
+public protocol RGBAProtocol: FixedSizeVector, Codable {}
 
-public struct RGBA<Scalar> : RGBAProtocol where Scalar: Numeric {
+public struct RGBA<Scalar> : RGBAProtocol where Scalar: Numeric & Codable {
     public var r, g, b, a: Scalar
 
     @inlinable @inline(__always)
@@ -60,9 +60,9 @@ public struct RGBA<Scalar> : RGBAProtocol where Scalar: Numeric {
 
 //==============================================================================
 // Stereo
-public protocol StereoProtocol: FixedSizeVector {}
+public protocol StereoProtocol: FixedSizeVector, Codable {}
 
-public struct Stereo<Scalar>: StereoProtocol where Scalar: Numeric {
+public struct Stereo<Scalar>: StereoProtocol where Scalar: Numeric & Codable {
     public var left, right: Scalar
 
     @inlinable @inline(__always)

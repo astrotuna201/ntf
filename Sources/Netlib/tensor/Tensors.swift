@@ -81,11 +81,10 @@ public extension ScalarView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
 }
 
@@ -146,8 +145,7 @@ public extension VectorView {
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
         self.init(shape: shape, dataShape: shape,
                     tensorArray: array, viewDataOffset: 0,
-                    indexAlignment: nil,
-                    traversal: .normal, isShared: false)
+                    indexAlignment: nil, traversal: .normal, isShared: false)
     }
 
     //-------------------------------------
@@ -199,11 +197,10 @@ public extension VectorView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
 
     //-------------------------------------
@@ -222,21 +219,16 @@ public extension VectorView {
     {
         let shape = DataShape(extents: [elements.count])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: elements.count, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
 //==============================================================================
 // Vector
-public struct Vector<Element>: VectorView {
+public struct Vector<Element>: VectorView, Codable where Element: Codable {
     // properties
     public let dataShape: DataShape
     public let indexAlignment: [Int]?
@@ -371,11 +363,10 @@ public extension MatrixView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
     
     //-------------------------------------
@@ -400,16 +391,10 @@ public extension MatrixView {
             DataShape(extents: extents) :
             DataShape(extents: extents).columnMajor()
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: shape.elementCount, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
@@ -529,11 +514,10 @@ public extension VolumeView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
 
     //-------------------------------------
@@ -553,15 +537,10 @@ public extension VolumeView {
         let extents = [extents.depths, extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: shape.elementCount, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
@@ -685,15 +664,10 @@ public extension NDTensorView {
     {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: shape.elementCount, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
@@ -826,11 +800,10 @@ public extension NCHWTensorView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
     
     //-------------------------------------
@@ -851,15 +824,10 @@ public extension NCHWTensorView {
                        extents.rows, extents.cols]
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: shape.elementCount, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
@@ -990,11 +958,10 @@ public extension NHWCTensorView {
     init(_ element: Element, name: String? = nil) {
         let shape = DataShape(extents: [1, 1, 1, 1])
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: 1, name: name)
+        let array = TensorArray<Element>(elements: [element], name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        try! readWrite()[0] = element
     }
     
     //-------------------------------------
@@ -1015,15 +982,10 @@ public extension NHWCTensorView {
                        extents.cols, extents.channels]
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
-        let array = TensorArray<Element>(count: shape.elementCount, name: name)
+        let array = TensorArray<Element>(elements: elements, name: name)
         self.init(shape: shape, dataShape: shape,
                   tensorArray: array, viewDataOffset: 0,
                   indexAlignment: nil, traversal: .normal, isShared: false)
-        // store values
-        let buffer = try! readWrite()
-        for i in zip(buffer.indices, elements.indices) {
-            buffer[i.0] = elements[i.1]
-        }
     }
 }
 
@@ -1061,29 +1023,49 @@ public struct NHWCTensor<Element>: NHWCTensorView {
 /// NHWCTensor cast
 public extension NHWCTensor {
     /// zero copy cast of a matrix of dense uniform values to NHWC
-    init<M>(_ matrix: M, name: String? = nil) where
-        M: MatrixView,
-        M.Element: FixedSizeVector,
-        M.Element.Scalar == Element {
-            let viewExtents = [1,
-                               matrix.shape.extents[0],
-                               matrix.shape.extents[1],
-                               M.Element.count]
-            let dataExtents = [1,
-                               matrix.dataShape.extents[0],
-                               matrix.dataShape.extents[1],
-                               M.Element.count]
-            var alignment: [Int]?
-            if let align = matrix.indexAlignment {
-                alignment = [0, align[0], align[1], 0]
-            }
-            let array = TensorArray<Element>(matrix.tensorArray)
-            self.init(shape: DataShape(extents: viewExtents),
-                      dataShape: DataShape(extents: dataExtents),
-                      tensorArray: array,
-                      viewDataOffset: matrix.viewDataOffset,
-                      indexAlignment: alignment,
-                      traversal: matrix.traversal,
-                      isShared: matrix.isShared)
+    init<T>(vector: T, name: String? = nil) where
+        T: VectorView, T.Element: FixedSizeVector, T.Element.Scalar == Element
+    {
+        let viewExtents = [1, 1, vector.shape.extents[0], T.Element.count]
+        let dataExtents = [1, 1, vector.dataShape.extents[0],
+                           T.Element.count]
+        var alignment: [Int]?
+        if let align = vector.indexAlignment {
+            alignment = [0, 0, align[0], 0]
+        }
+        let array = TensorArray<Element>(vector.tensorArray)
+        self.init(shape: DataShape(extents: viewExtents),
+                  dataShape: DataShape(extents: dataExtents),
+                  tensorArray: array,
+                  viewDataOffset: vector.viewDataOffset,
+                  indexAlignment: alignment,
+                  traversal: vector.traversal,
+                  isShared: vector.isShared)
+    }
+
+    /// zero copy cast of a matrix of dense uniform values to NHWC
+    init<T>(_ matrix: T, name: String? = nil) where
+        T: MatrixView, T.Element: FixedSizeVector, T.Element.Scalar == Element
+    {
+        let viewExtents = [1,
+                           matrix.shape.extents[0],
+                           matrix.shape.extents[1],
+                           T.Element.count]
+        let dataExtents = [1,
+                           matrix.dataShape.extents[0],
+                           matrix.dataShape.extents[1],
+                           T.Element.count]
+        var alignment: [Int]?
+        if let align = matrix.indexAlignment {
+            alignment = [0, align[0], align[1], 0]
+        }
+        let array = TensorArray<Element>(matrix.tensorArray)
+        self.init(shape: DataShape(extents: viewExtents),
+                  dataShape: DataShape(extents: dataExtents),
+                  tensorArray: array,
+                  viewDataOffset: matrix.viewDataOffset,
+                  indexAlignment: alignment,
+                  traversal: matrix.traversal,
+                  isShared: matrix.isShared)
     }
 }

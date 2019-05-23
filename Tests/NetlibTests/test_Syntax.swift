@@ -249,4 +249,23 @@ class test_Syntax: XCTestCase {
             XCTFail(String(describing: error))
         }
     }
+
+    //==========================================================================
+    // test_zeroCopyFixedSizeVectorCast
+    func test_zeroCopyFixedSizeVectorCast() {
+        do {
+            Platform.log.level = .diagnostic
+            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
+            let pixels = [RGB<Float>(r: 0, g: 0.5, b: 1.0),
+                          RGB<Float>(r: 0.25, g: 0.5, b: 0.75)]
+            let vector = Vector<RGB<Float>>(name: "pixels", elements: pixels)
+            let nhwc = NHWCTensor<Float>(vector: vector)
+            let values = try nhwc.array()
+            let expected: [Float] = [0, 0.5, 1.0, 0.25, 0.5, 0.75]
+            XCTAssert(values == expected)
+            
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
 }

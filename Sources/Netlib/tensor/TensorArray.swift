@@ -83,6 +83,27 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     }
 
     //--------------------------------------------------------------------------
+    // create a new element array initialized with values
+    public init<C>(elements: C, name: String) where
+        C: Collection, C.Element == Element
+    {
+        self.name = name
+        self.count = elements.count
+        isReadOnly = false
+        register()
+        
+        diagnostic("\(createString) \(name)(\(trackingId)) " +
+            "initializing with \(String(describing: Element.self))[\(count)]",
+            categories: .dataAlloc)
+        // this should never fail since it is copying from
+        // host buffer to host buffer
+        let buffer = try! readWrite(using: _Streams.hostStream)
+        for i in zip(buffer.indices, elements.indices) {
+            buffer[i.0] = elements[i.1]
+        }
+    }
+    
+    //--------------------------------------------------------------------------
     // All initializers copy the data except this one which creates a
     // read only reference to avoid unnecessary copying from the source
     public init(referenceTo buffer: UnsafeBufferPointer<Element>, name: String){
@@ -107,9 +128,8 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     }
     
     //--------------------------------------------------------------------------
-    // All initializers retain the data except this one
-    // which creates a read only reference to avoid unnecessary copying from
-    // a read only data object
+    /// uses the specified UnsafeMutableBufferPointer as the host
+    /// backing stored
     public init(referenceTo buffer: UnsafeMutableBufferPointer<Element>,
                 name: String) {
         self.name = name
@@ -144,8 +164,8 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         
         // report
         diagnostic("\(createString) \(name)(\(trackingId)) init" +
-            "\(setText(" copying ", color: .blue))" +
-            "TensorArray(\(other.trackingId)) " +
+            "\(setText(" copying", color: .blue)) from " +
+            "\(name)(\(other.trackingId)) " +
             "\(String(describing: Element.self))[\(count)]",
             categories: [.dataAlloc, .dataCopy])
 
@@ -192,24 +212,24 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
 
     //--------------------------------------------------------------------------
     /// readOnly
-    /// - Parameter type: the cast Element type of the buffer returned
-    /// - Parameter stream: the stream to use
-    /// - Returns: an Element buffer of type T
-    public func readOnly<T>(type: T.Type, using stream: DeviceStream) throws
-        -> UnsafeBufferPointer<T>
+    /// - Parameter stream: the stream to use for synchronizatoin and locality
+    /// - Returns: an Element buffer
+    public func readOnly(using stream: DeviceStream) throws
+        -> UnsafeBufferPointer<Element>
     {
         let buffer = try migrate(readOnly: true, using: stream)
-        return buffer.withMemoryRebound(to: T.self) { UnsafeBufferPointer($0) }
+        return UnsafeBufferPointer(buffer)
     }
     
     //--------------------------------------------------------------------------
     /// readWrite
-    public func readWrite<T>(type: T.Type, using stream: DeviceStream) throws ->
-        UnsafeMutableBufferPointer<T>
+    /// - Parameter stream: the stream to use for synchronizatoin and locality
+    /// - Returns: an Element buffer
+    public func readWrite(using stream: DeviceStream) throws ->
+        UnsafeMutableBufferPointer<Element>
     {
         assert(!isReadOnly, "the TensorArray is read only")
-        let buffer = try migrate(readOnly: false, using: stream)
-        return buffer.withMemoryRebound(to: T.self) { $0 }
+        return try migrate(readOnly: false, using: stream)
     }
     
     //--------------------------------------------------------------------------
@@ -354,6 +374,20 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     }
 }
 
+extension UnsafeBufferPointer: Codable where Element: Codable {
+    /// encodes the contents of the array
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(contentsOf: self)
+    }
+    
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        self = try container.decode(UnsafeBufferPointer.self)
+    }
+}
+
+// TODO: is there anyway to do this without copying the data??
 extension TensorArray: Codable where Element: Codable {
     enum CodingKeys: String, CodingKey { case name, data }
 
@@ -361,19 +395,15 @@ extension TensorArray: Codable where Element: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
-        // TODO: we create an Array from the buffer assuming it will take
-        // a reference and not copy the data
-        let buffer = try readOnly(type: Element.self, using: _Streams.hostStream)
+        let buffer = try readOnly(using: _Streams.hostStream)
         try container.encode(ContiguousArray(buffer), forKey: .data)
     }
     
     public convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(String.self, forKey: .name)
-        var data = try container.decode(ContiguousArray<Element>.self,
+        let data = try container.decode(ContiguousArray<Element>.self,
                                         forKey: .data)
-        // TODO: make sure this is safe for ref counting
-        let buffer = data.withUnsafeMutableBufferPointer { $0 }
-        self.init(referenceTo: buffer, name: name)
+        self.init(elements: data, name: name)
     }
 }

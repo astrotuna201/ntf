@@ -56,7 +56,10 @@ stream.record(event: stream.createEvent())
 
 ![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/StreamRecordedEvents.png)
 
+## Tensors and Streams
+A tensor is an n-dimensional data array, which is used by stream operations for input and output. A stream operation executes on the associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Memory management and synchronization are transparently managed for the user.
 
+![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/TensorStructure.png)
 
 
 

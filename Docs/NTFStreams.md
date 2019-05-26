@@ -32,8 +32,20 @@ A device stream is an interface to a set of tensor operations that are executed 
 
 ![Device Stream](https://github.com/ewconnell/NetlibTF/blob/master/Docs/DeviceStreamQueue.png)
 
-NTF DeviceStream functions
+### DeviceStream Functions and Drivers 
+Device stream implementations also conform to the _StreamIntrinsicsProtocol_ which will queue a broad set of basic functions that operate on tensors for the user. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly with virtually no work, because all functions can start with the default cpu implementation. Then the driver developer can carefully one by one substitute hardware specific implementations. 
 
+### StreamEvents
+A stream event is a synchronization object with barrier semantics that is:
+- created by a `DeviceStream`
+- recorded on a stream to create a barrier
+- waited on by one or more threads for group synchronization
+The application can request the _DeviceStream_ to create a _StreamEvent_ by calling
+```swift
+func createEvent(options: StreamEventOptions) throws -> StreamEvent
+// or for default options
+func createEvent() throws -> StreamEvent
+```
 
 
 # Platform protocols
@@ -239,7 +251,7 @@ public protocol DeviceArray: ObjectTracking {
 ### StreamEvent
 A stream event implements the _StreamEvent_ protocol and is used to synchronize device streams.
 A stream event is a synchronization object with barrier semantics, which is:
-- created by a `ComputeDevice`
+- created by a `DeviceStream`
 - recorded on a stream to create a barrier
 - waited on by one or more threads for group synchronization
 

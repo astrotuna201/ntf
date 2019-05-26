@@ -35,17 +35,24 @@ A device stream is an interface to a set of tensor operations that are executed 
 ### DeviceStream Functions and Drivers 
 Device stream implementations also conform to the _StreamIntrinsicsProtocol_ which will queue a broad set of basic functions that operate on tensors for the user. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly with virtually no work, because all functions can start with the default cpu implementation. Then the driver developer can carefully one by one substitute hardware specific implementations. 
 
-### StreamEvents
-A stream event is a synchronization object with barrier semantics that is:
+### StreamEvent
+A stream event is a synchronization object with barrier semantics. Stream events are:
 - created by a `DeviceStream`
 - recorded on a stream to create a barrier
 - waited on by one or more threads for group synchronization
+
 The application can request the _DeviceStream_ to create a _StreamEvent_ by calling
 ```swift
 func createEvent(options: StreamEventOptions) throws -> StreamEvent
 // or for default options
 func createEvent() throws -> StreamEvent
 ```
+The cost measured on a 2.3 ghz i5 MacBook Pro is 1 million events created and destroyed in 0.7 seconds. This seems reasonably cheap, with 1 event created per tensor write operation. The discussion of how they are used in a write operation
+
+After an event is created, it can be manually signaled or recorded on a stream to be signaled when the stream head reaches that point.
+
+
+
 
 
 # Platform protocols

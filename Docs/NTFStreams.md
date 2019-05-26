@@ -49,7 +49,13 @@ func createEvent() throws -> StreamEvent
 ```
 The cost measured on a 2.3 ghz i5 MacBook Pro is 1 million events created and destroyed in 0.7 seconds. This seems reasonably cheap, with 1 event created per tensor write operation. The discussion of how they are used in a write operation
 
-After an event is created, it can be manually signaled or recorded on a stream to be signaled when the stream head reaches that point.
+After an event is created, it can be manually signaled or recorded on a stream to be signaled when the stream head reaches that point. To create and record an event onto a stream
+```swift
+stream.record(event: stream.createEvent())
+```
+
+![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/StreamRecordedEvents.png)
+
 
 
 

@@ -61,8 +61,20 @@ A tensor is an n-dimensional data array, which is used by stream operations for 
 
 ![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/TensorStructure.png)
 
+### TensorArray writeCompletionEvent
+The TensorArray class has the `var writeCompletionEvent: StreamEvent` property. Anytime read write access is requested, the caller will wait on this event to ensure the previous operation has completed it's write. Then in the case of readWrite access, a new completion event is created and set. It is the responsibility of the NTF framework developer to `record` the completion event on the stream after the operation has been queued. The user does not need to be aware of this requirement.
 
 
+
+### Tensor Initialization
+Shaped tensors such as Vector and Matrix and just constrained variations of _TensorView_ which is a generalized n-dimensional tensor. Almost all functions will operate on data objects that generically conform to _TensorView_ and not one of the shaped types. The shaped types are for the purpose of application clarity, and optimized indexing in the application space. The user is unaware of the underlying _TensorArray_ and _DeviceArray_ objects. Shaped tensors provide shape specific _init_ functions, that create and initialize a _TensorArray_ then call a uniform view initializer. TensorViews are structs, and TensorArrays are class objects shared by views.
+
+A TensorArray can be created:
+- empty with no space
+- specifying size without initial values. This variation is lazily allocated the first time data access is attempted.
+- specifying size with initial values
+
+In the first two cases, no synchronization is required since there is no data access. 
 
 # Platform protocols
 ## ComputePlatform

@@ -11,12 +11,17 @@ class test_Syntax: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
-        ("test_appThreadZipMapReduce", test_appThreadZipMapReduce),
         ("test_simple", test_simple),
+        ("test_appThreadZipMapReduce", test_appThreadZipMapReduce),
+        ("test_repeatVector", test_repeatVector),
+        ("test_repeatValue", test_repeatValue),
+        ("test_sumView", test_sumView),
+        ("test_transpose", test_transpose),
         ("test_streams", test_streams),
         ("test_structuredScalar", test_structuredScalar),
         ("test_withResultPlacement", test_withResultPlacement),
         ("test_logging", test_logging),
+        ("test_zeroCopyFixedSizeVectorCast", test_zeroCopyFixedSizeVectorCast),
     ]
     
     //==========================================================================
@@ -115,13 +120,13 @@ class test_Syntax: XCTestCase {
     }
     
     //==========================================================================
-    // sumView
+    // test_sumView
     // Select and sum a 3D sub region
     // - initialize a volume using explicit extents
     // - fill with indexes on the default device
     // - create a sub view and take the sum on the device
     // - return the scalar value back to the app thread
-    func sumView() {
+    func test_sumView() {
         do {
             let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
             print(volume.formatted((2,0)))
@@ -170,7 +175,7 @@ class test_Syntax: XCTestCase {
             let stream1 = Platform.local.createStream(deviceId: 1,
                                                       serviceName: "cpuUnitTest")
             let stream2 = Platform.local.createStream(deviceId: 2,
-                                                      serviceName: "cpuUnitTest")            
+                                                      serviceName: "cpuUnitTest")
             let volume = using(stream1) {
                 Volume<Int32>((3, 4, 5)).filledWithIndex()
             }

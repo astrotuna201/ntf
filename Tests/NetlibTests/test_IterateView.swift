@@ -25,6 +25,7 @@ class test_IterateView: XCTestCase {
         ("test_repeatingCol", test_repeatingCol),
         ("test_repeatingMatrix", test_repeatingMatrix),
         ("test_repeatingVolume", test_repeatingVolume),
+        ("test_repeatingMatrixSubView", test_repeatingMatrixSubView),
     ]
     
     //==========================================================================

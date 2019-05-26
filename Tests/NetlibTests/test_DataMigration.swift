@@ -15,8 +15,8 @@ class test_DataMigration: XCTestCase {
         ("test_viewMutateOnWrite", test_viewMutateOnWrite),
         ("test_tensorDataMigration", test_tensorDataMigration),
         ("test_mutateOnDevice", test_mutateOnDevice),
-        ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
         ("test_copyOnWriteDevice", test_copyOnWriteDevice),
+        ("test_copyOnWriteCrossDevice", test_copyOnWriteCrossDevice),
         ("test_copyOnWrite", test_copyOnWrite),
         ("test_columnMajorDataView", test_columnMajorDataView),
     ]

@@ -30,7 +30,7 @@ ComputePlatform         // local, remote
 ## Device Stream
 A device stream is an interface to a set of tensor operations that are executed via a serial asynchronous FIFO queue. Each compute service will have a unique `DeviceStream` hardware specific implementation. The `CpuStream` class will be optimized for the host cpu, and the CudaStream implementation efficiently wraps Cuda streams.
 
-
+![Device Stream](https://github.com/ewconnell/NetlibTF/blob/master/Docs/DeviceStreamQueue.png)
 
 NTF DeviceStream functions
 

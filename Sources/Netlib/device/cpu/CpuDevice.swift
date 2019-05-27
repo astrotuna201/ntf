@@ -26,7 +26,7 @@ public class CpuDevice: LocalComputeDevice {
 
     // TODO this should be currently available and not physicalMemory
     public lazy var availableMemory: UInt64 = {
-        return ProcessInfo().physicalMemory
+        return ProcessInfo.processInfo.physicalMemory
     }()
 
     //--------------------------------------------------------------------------

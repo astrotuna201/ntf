@@ -23,9 +23,10 @@ let package = Package(
         .systemLibrary(name: "ZLib", path: "Libraries/ZLib"),
         .target(
             name: "Netlib",
-            dependencies: ["Jpeg", "Png", "ZLib"]),
+            dependencies: ["Jpeg", "Png", "ZLib"],
+                exclude: ["device/cuda"]),
         .testTarget(
             name: "NetlibTests",
-            dependencies: [])
+            dependencies: ["Netlib"])
     ]
 )

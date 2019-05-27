@@ -56,8 +56,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         // release
         ObjectTracker.global.remove(trackingId: trackingId)
 
-        // try to wait for the command queue to complete before shutting
-        // down.
+        // wait for the command queue to complete before shutting down
         do {
             try waitUntilStreamIsComplete()
         } catch {
@@ -109,9 +108,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                         errorDevice.reportDevice(error: error)
                     }
                 }
-                // queue signaling of the completion event after the work
-                // is complete
+                // queue signaling of the write completion event
                 try record(event: completionEvent)
+                
                 diagnostic("\(schedulingString): \(functionName()) complete",
                     categories: .scheduling)
             }

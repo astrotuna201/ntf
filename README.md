@@ -76,7 +76,7 @@ Tensor views manage both shared and copy-on-write semantics. Multiple concurrent
 The following is a complete program. It initializes a matrix with a any then takes the sum using the current default device. It doesn't require the user to setup or configure anything.
 ```swift
 let matrix = Matrix<Float>((3, 5), any: 0..<15)
-let sum = matrix.sum().asElement()
+let sum = matrix.sum().asValue()
 assert(sum == 105.0)
 ```
 This is a simple example of using tensors on the app thread doing normal zip, map, reduce operations.
@@ -98,11 +98,11 @@ This selects and sums a 3D sub region on the default device
 - initialize a volume with extents (3, 4, 5)
 - fill with indexes on device
 - on the device create a sub view and take the sum 
-- the `asElement` function returns the value back to the app thread
+- the `asValue` function returns the value back to the app thread
 ```swift
 let volume = Volume<Int32>((3, 4, 5)).filledWithIndex()
 let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
-let viewSum = sum(view).asElement()
+let viewSum = sum(view).asValue()
 assert(viewSum == 312)
 ```
 If we print with formatting
@@ -260,7 +260,7 @@ let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
 var viewSum = Volume<Int32>((1, 1, 1))
 sum(view, result: &viewSum)
-assert(viewSum.asElement() == 312)
+assert(viewSum.asValue() == 312)
 ```
 ### Synchronized Tensor References to Application Buffers 
 Tensor constructors are provided to create synchronized references to memory buffers. This is useful to access data from a variety of sources without copying.  The associated _TensorArray_ is initialized with an _UnsafeBufferPointer\<Element\>_ or _UnsafeMutableBufferPointer\<Element\>_ to the data.
@@ -314,7 +314,7 @@ let volume = using(stream1) {
 let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
 let viewSum = using(stream2) {
-    sum(view).asElement()
+    sum(view).asValue()
 }
 assert(viewSum == 312)
 ```
@@ -337,7 +337,7 @@ let volume = using(stream1) {
 let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
 let viewSum = using(stream2) {
-    sum(view).asElement()
+    sum(view).asValue()
 }
 assert(viewSum == 312)
 ```
@@ -428,7 +428,7 @@ do {
     let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
 
     let viewSum = using(stream2) {
-        sum(view).asElement()
+        sum(view).asValue()
     }
     assert(viewSum == 312)
 }

@@ -181,6 +181,9 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         // copy the other master array
         try replica.copyAsync(from: otherMaster, using: stream)
 
+        // record async copy completion event
+        writeCompletionEvent = try stream.record(event: stream.createEvent())
+
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.device.name)" +
             "\(setText(" --> ", color: .blue))" +
@@ -199,6 +202,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     deinit {
+        _ = try? writeCompletionEvent?.wait()
         ObjectTracker.global.remove(trackingId: trackingId)
         if count > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) ",
@@ -245,9 +249,15 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             // cross service?
             if replica.device.service.id != master.device.service.id {
                 try copyCrossService(from: master, to: replica, using: stream)
-                
+                // record async copy completion event
+                writeCompletionEvent = try stream
+                    .record(event: stream.createEvent())
+
             } else if replica.device.id != master.device.id {
                 try copyCrossDevice(from: master, to: replica, using: stream)
+                // record async copy completion event
+                writeCompletionEvent = try stream
+                    .record(event: stream.createEvent())
             }
         }
         

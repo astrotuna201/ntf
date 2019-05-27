@@ -11,7 +11,7 @@ class test_DataMigration: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
-        ("test_fastCopyOnWriteDevice", test_fastCopyOnWriteDevice),
+        ("test_stressCopyOnWriteDevice", test_stressCopyOnWriteDevice),
         ("test_viewMutateOnWrite", test_viewMutateOnWrite),
         ("test_tensorDataMigration", test_tensorDataMigration),
         ("test_mutateOnDevice", test_mutateOnDevice),
@@ -22,9 +22,9 @@ class test_DataMigration: XCTestCase {
     ]
 	
     //--------------------------------------------------------------------------
-    // test_fastCopyOnWriteDevice
+    // test_stressCopyOnWriteDevice
     // stresses view mutation and async copies on device
-    func test_fastCopyOnWriteDevice() {
+    func test_stressCopyOnWriteDevice() {
         do {
 //            Platform.log.level = .diagnostic
 //            Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
@@ -217,12 +217,12 @@ class test_DataMigration: XCTestCase {
 
             // sum device 1 copy, which should equal 15.
             // This `sum` syntax creates a temporary result on device 1,
-            // then `asElement` causes the temporary to be transferred to
+            // then `asValue` causes the temporary to be transferred to
             // the host, the value is retrieved, and the temp is released.
             // This syntax is good for experiments, but should not be used
             // for repetitive actions
             var sum = try using(stream1) {
-                try matrix.sum().asElement()
+                try matrix.sum().asValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -243,11 +243,11 @@ class test_DataMigration: XCTestCase {
             // sum device 1 copy should be 15
             // `sum` creates a temp result tensor, allocates an array on
             // device 2, and performs the reduction.
-            // Then `asElement` causes a host array to be allocated, and the
+            // Then `asValue` causes a host array to be allocated, and the
             // the data is copied from device 2 to host, the value is returned
             // and the temporary tensor is released.
             sum = try using(stream2) {
-                try matrix.sum().asElement()
+                try matrix.sum().asValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -260,11 +260,11 @@ class test_DataMigration: XCTestCase {
             // `sum` creates a temporary result tensor on device 2
             // a device array for `matrix` is allocated on device 2 and
             // the matrix data is copied from device 1 to device 2
-            // then `asElement` creates a host array and the result is
+            // then `asValue` creates a host array and the result is
             // copied from device 2 to the host array, and then the tensor
             // is released.
             sum = try using(stream2) {
-                try matrix.sum().asElement()
+                try matrix.sum().asValue()
             }
             XCTAssert(sum == 15.0)
 
@@ -352,7 +352,7 @@ class test_DataMigration: XCTestCase {
 
             // sum device 1 copy should be 15
             let sum1 = try using(stream1) {
-                try matrix1.sum().asElement()
+                try matrix1.sum().asValue()
             }
             XCTAssert(sum1 == 15.0)
 
@@ -364,7 +364,7 @@ class test_DataMigration: XCTestCase {
             // sum device 1 copy should now also be 0
             // sum device 1 copy should be 15
             let sum2 = try using(stream2) {
-                try matrix1.sum().asElement()
+                try matrix1.sum().asValue()
             }
             XCTAssert(sum2 == 0)
             

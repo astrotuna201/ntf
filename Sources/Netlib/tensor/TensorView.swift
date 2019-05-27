@@ -350,9 +350,9 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// asElement
-    /// - Returns: the single value in the tensor as a scalar
-    func asElement() throws -> Element {
+    /// asValue
+    /// - Returns: the first element in the tensor as a value
+    func asValue() throws -> Element {
         assert(shape.elementCount == 1)
         return try readOnly()[0]
     }
@@ -366,9 +366,7 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// copyIfMutates
-    /// Creates a copy of the tensorArray if read-write access
-    /// will cause mutation
-    ///
+    /// Creates a copy of the tensorArray if read-write access causes mutation
     /// NOTE: this must be called from inside the accessQueue.sync block
     mutating func copyIfMutates(using stream: DeviceStream) throws {
         // for unit tests
@@ -379,6 +377,7 @@ public extension TensorView {
             "\(String(describing: Element.self))[\(dataShape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
+        // create the new array and copy the values
         tensorArray = try TensorArray<Element>(copying: tensorArray,
                                                using: stream)
         tensorArray.lastAccessMutatedView = true
@@ -411,6 +410,7 @@ public extension TensorView {
     func readOnly(using stream: DeviceStream? = nil) throws
         -> UnsafeBufferPointer<Element>
     {
+        // if no stream is specified then use the hostStream
         let deviceStream = stream ?? _Streams.hostStream
         if let lastError = deviceStream.lastError { throw lastError }
 
@@ -420,7 +420,19 @@ public extension TensorView {
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
+            // queue wait for pending writes in case they are
+            // happening on a different stream
+            try waitForCompletion(on: deviceStream)
+
+            // get the buffer
             let buffer = try tensorArray.readOnly(using: deviceStream)
+
+            // if `stream` is nil then wait for completion on
+            // the hostStream which will synchronize with the calling thread
+            if let event = tensorArray.writeCompletionEvent, stream == nil {
+                try event.wait(until: deviceStream.timeout)
+            }
+
             return UnsafeBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
@@ -444,9 +456,22 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
+            // queue wait for pending writes in case they are
+            // happening on a different stream
+            try waitForCompletion(on: deviceStream)
+
             // mutating write?
             try copyIfMutates(using: deviceStream)
+
+            // get the buffer
             let buffer = try tensorArray.readWrite(using: deviceStream)
+
+            // if `stream` is nil then wait for completion on
+            // the hostStream which will synchronize with the calling thread
+            if let event = tensorArray.writeCompletionEvent, stream == nil {
+                try event.wait(until: deviceStream.timeout)
+            }
+
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
@@ -456,6 +481,8 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// createAndSetCompletionEvent
     /// creates a new completion event and sets it on the tensor
+    /// Note: this should not be called from inside a sync block
+    ///       it is for external use
     func createAndSetCompletionEvent(using stream: DeviceStream) throws
         -> StreamEvent
     {
@@ -464,18 +491,25 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            // create a new event
-            let event = try stream.createEvent()
-            tensorArray.writeCompletionEvent = event
-            
-            diagnostic("\(stream.device.name)_\(stream.name) will signal " +
-                "StreamEvent(\(event.trackingId))" +
-                " when \(name)(\(tensorArray.trackingId)) " +
-                "\(String(describing: Element.self))" +
-                "[\(dataShape.elementCount)] is complete",
-                categories: .scheduling)
-            return event
+            try setCompletionEvent(using: stream)
+            return tensorArray.writeCompletionEvent!
         }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// setCompletionEvent
+    /// creates a new completion event and sets it on the tensor
+    private func setCompletionEvent(using stream: DeviceStream) throws {
+        // create a new event
+        let event = try stream.createEvent()
+        tensorArray.writeCompletionEvent = event
+        
+        diagnostic("\(stream.device.name)_\(stream.name) will signal " +
+            "StreamEvent(\(event.trackingId))" +
+            " when \(name)(\(tensorArray.trackingId)) " +
+            "\(String(describing: Element.self))" +
+            "[\(dataShape.elementCount)] is complete",
+            categories: .scheduling)
     }
     
     //--------------------------------------------------------------------------

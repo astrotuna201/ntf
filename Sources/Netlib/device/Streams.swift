@@ -33,7 +33,7 @@ public func using<R>(_ stream: DeviceStream,
 class _Streams {
     /// a utility stream to enable calling readOnly and readWrite from
     /// within the Cpu stream implementation and within HostMultiWrite
-    var _dataSyncStream: DeviceStream
+    var _auxHostStream: DeviceStream
     /// stream that creates arrays unified with the app address space
     var _hostStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
@@ -81,9 +81,9 @@ class _Streams {
     }
     
     //--------------------------------------------------------------------------
-    /// dataSyncStream
-    public static var dataSyncStream: DeviceStream {
-        return _Streams.local._dataSyncStream
+    /// auxHostStream
+    public static var auxHostStream: DeviceStream {
+        return _Streams.local._auxHostStream
     }
     
     //--------------------------------------------------------------------------
@@ -102,7 +102,7 @@ class _Streams {
     private init() {
         // create dedicated stream for data transfer when accessing
         // within a stream closure or within HostMultiWrite
-        _dataSyncStream = Platform.local.createStream(
+        _auxHostStream = Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "dataSync")
 
         // create dedicated stream for app data transfer
@@ -117,6 +117,7 @@ class _Streams {
         // so it won't show up in leak reports
         ObjectTracker.global.markStatic(trackingId: stream.trackingId)
         ObjectTracker.global.markStatic(trackingId: _hostStream.trackingId)
+        ObjectTracker.global.markStatic(trackingId: _auxHostStream.trackingId)
     }
     
     //--------------------------------------------------------------------------

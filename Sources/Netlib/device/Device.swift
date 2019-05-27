@@ -94,6 +94,14 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
 }
 
 //==============================================================================
+/// ServiceError
+/// errors thrown from a ComputeService
+public enum ServiceError : Error {
+    case serviceIsUnavailable
+    case functionFailure(location: String, message: String)
+}
+
+//==============================================================================
 /// LocalComputeService
 public protocol LocalComputeService: ComputeService { }
 

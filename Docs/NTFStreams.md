@@ -293,10 +293,10 @@ public protocol StreamEvent: ObjectTracking {
     /// measure elapsed time since another event
     func elapsedTime(since event: StreamEvent) -> TimeInterval
     /// tells the event it is being recorded
-    func recordNow()
+    func record()
     /// signals that the event has occurred
     func signal()
-    /// will block the caller until the event has occurred
-    func wait()
+    /// will block the caller until the timeout has elapsed
+    func wait(until timeout: TimeInterval) throws
 }
 ```

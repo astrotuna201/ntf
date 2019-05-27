@@ -31,6 +31,9 @@ public func using<R>(_ stream: DeviceStream,
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
+    /// a utility stream to enable calling readOnly and readWrite from
+    /// within the Cpu stream implementation and within HostMultiWrite
+    var _dataSyncStream: DeviceStream
     /// stream that creates arrays unified with the app address space
     var _hostStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
@@ -78,6 +81,12 @@ class _Streams {
     }
     
     //--------------------------------------------------------------------------
+    /// dataSyncStream
+    public static var dataSyncStream: DeviceStream {
+        return _Streams.local._dataSyncStream
+    }
+    
+    //--------------------------------------------------------------------------
     /// logInfo
     // there will always be the platform default stream and logInfo
     public var logInfo: LogInfo { return streamStack.last!.logInfo }
@@ -91,6 +100,11 @@ class _Streams {
     //--------------------------------------------------------------------------
     // initializers
     private init() {
+        // create dedicated stream for data transfer when accessing
+        // within a stream closure or within HostMultiWrite
+        _dataSyncStream = Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "dataSync")
+
         // create dedicated stream for app data transfer
         _hostStream = Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "host")

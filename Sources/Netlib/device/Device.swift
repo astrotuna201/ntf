@@ -218,12 +218,11 @@ public protocol StreamEvent: ObjectTracking {
     /// measure elapsed time since another event
     func elapsedTime(since event: StreamEvent) -> TimeInterval
     /// tells the event it is being recorded
-    func recordNow()
+    func record()
     /// signals that the event has occurred
     func signal()
-    /// will block the caller until the timeout has elapsed, or
-    /// if `timeout` is 0 it will wait forever
-    func wait()
+    /// will block the caller until the timeout has elapsed
+    func wait(until timeout: TimeInterval) throws
 }
 
 public struct StreamEventOptions: OptionSet {
@@ -232,6 +231,17 @@ public struct StreamEventOptions: OptionSet {
     public let rawValue: Int
     public static let timing       = StreamEventOptions(rawValue: 1 << 0)
     public static let interprocess = StreamEventOptions(rawValue: 1 << 1)
+}
+
+public extension StreamEvent {
+    func wait() throws {
+        try wait(until: TimeInterval.forever)
+    }
+}
+public extension TimeInterval {
+    static var forever: TimeInterval {
+        return TimeInterval.greatestFiniteMagnitude
+    }
 }
 
 public enum StreamEventError: Error {

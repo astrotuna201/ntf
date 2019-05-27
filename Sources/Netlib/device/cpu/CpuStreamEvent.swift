@@ -47,7 +47,7 @@ final public class CpuStreamEvent : StreamEvent {
 
     //--------------------------------------------------------------------------
     /// tells the event it is being recorded
-    public func recordNow() {
+    public func record() {
         recordedTime = Date()
     }
 
@@ -63,10 +63,16 @@ final public class CpuStreamEvent : StreamEvent {
     /// the first thread goes through the barrier.sync and waits on the
     /// semaphore. When it is signaled `occurred` is set to `true` and all
     /// future threads will pass through without waiting
-    public func wait() {
-        barrier.sync {
+    public func wait(until timeout: TimeInterval) throws {
+        try barrier.sync {
             guard !occurred else { return }
-            semaphore.wait()
+            if timeout > 0 {
+                if semaphore.wait(timeout: .now() + timeout) == .timedOut {
+                    throw StreamEventError.timedOut
+                }
+            } else {
+                semaphore.wait()
+            }
             occurred = true
         }
     }

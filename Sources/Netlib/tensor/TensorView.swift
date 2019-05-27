@@ -407,6 +407,7 @@ public extension TensorView {
     /// readOnly(using stream:
     /// Returns a read only device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
+    /// Note: pending write completion is handled by the TensorArray
     func readOnly(using stream: DeviceStream? = nil) throws
         -> UnsafeBufferPointer<Element>
     {
@@ -419,19 +420,7 @@ public extension TensorView {
         
         return try queue.sync {
             tensorArray.lastAccessMutatedView = false
-
-            // queue a wait for pending writes
-            try waitForCompletion(on: deviceStream)
-
-            // get the buffer
             let buffer = try tensorArray.readOnly(using: deviceStream)
-            
-            // if no stream is specified then wait for completion
-            // which will sync for host access
-            if let event = tensorArray.writeCompletionEvent, stream == nil {
-                event.wait()
-            }
-
             return UnsafeBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
@@ -442,6 +431,7 @@ public extension TensorView {
     /// readWrite(using stream:
     /// Returns a read write device memory pointer synced with the specified
     /// stream. This version is used by accelerator APIs
+    /// Note: pending write completion is handled by the TensorArray
     mutating func readWrite(using stream: DeviceStream? = nil) throws
         -> UnsafeMutableBufferPointer<Element>
     {
@@ -454,21 +444,9 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            // queue a wait for pending writes
-            try waitForCompletion(on: deviceStream)
-
             // mutating write?
             try copyIfMutates(using: deviceStream)
-            
-            // get the buffer
             let buffer = try tensorArray.readWrite(using: deviceStream)
-            
-            // if no stream is specified then wait for completion
-            // which will sync for host access
-            if let event = tensorArray.writeCompletionEvent, stream == nil {
-                event.wait()
-            }
-            
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)

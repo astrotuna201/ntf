@@ -95,8 +95,10 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         diagnostic("\(createString) \(name)(\(trackingId)) " +
             "initializing with \(String(describing: Element.self))[\(count)]",
             categories: .dataAlloc)
-        // this should never fail since it is copying from
-        // host buffer to host buffer
+
+        // this should never fail since it is copying from host buffer to
+        // host buffer. It is synchronous, so we don't need to create or
+        // record a completion event.
         let buffer = try! readWrite(using: _Streams.hostStream)
         for i in zip(buffer.indices, elements.indices) {
             buffer[i.0] = elements[i.1]
@@ -178,9 +180,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         
         // copy the other master array
         try replica.copyAsync(from: otherMaster, using: stream)
-        
-        // record async copy completion event
-        writeCompletionEvent = try stream.record(event: stream.createEvent())
 
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.device.name)" +
@@ -200,10 +199,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     deinit {
-        // make sure any pending write operations are complete
-        writeCompletionEvent?.wait()
         ObjectTracker.global.remove(trackingId: trackingId)
-
         if count > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) ",
                 categories: .dataAlloc)
@@ -240,6 +236,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         -> UnsafeMutableBufferPointer<Element>
     {
         // get the array replica for `stream`
+        // this is a synchronous operation independent of streams
         let replica = try getArray(for: stream)
         lastAccessCopiedBuffer = false
 
@@ -319,9 +316,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
                 "[\(other.buffer.bindMemory(to: Element.self).count)]",
                 categories: .dataCopy)
         }
-        
-        // record async copy completion event
-        writeCompletionEvent = try stream.record(event: stream.createEvent())
     }
     
     //--------------------------------------------------------------------------
@@ -337,7 +331,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         
         // async copy and record completion event
         try other.copyAsync(from: master, using: stream)
-        writeCompletionEvent = try stream.record(event: stream.createEvent())
 
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(master.device.name)" +

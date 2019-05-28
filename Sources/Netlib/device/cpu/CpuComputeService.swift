@@ -31,7 +31,7 @@ public class CpuComputeService : LocalComputeService {
     public required init(platform: ComputePlatform,
                          id: Int,
                          logInfo: LogInfo,
-                         name: String?) throws {
+                         name: String? = nil) throws {
         self.platform = platform
         self.id = id
         self.name = name ?? "cpu"

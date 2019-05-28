@@ -46,8 +46,7 @@ public extension LocalPlatform {
         do {
             // add required cpu service
             let cpuService = try CpuComputeService(platform: Platform.local,
-                                                   id: loadedServices.count,
-                                                   logInfo: logInfo, name: nil)
+                                                   id: 0, logInfo: logInfo)
             loadedServices[cpuService.name] = cpuService
             
             // add cpu unit test service
@@ -57,10 +56,14 @@ public extension LocalPlatform {
                                               logInfo: logInfo,
                                               name: "cpuUnitTest")
             loadedServices[cpuUnitTestService.name] = cpuUnitTestService
-            
-            //            #if os(Linux)
-            //            try add(service: CudaComputeService(logging: logging))
-            //            #endif
+
+            #if os(Linux)
+            let cudaService = try CudaComputeService(platform: Platform.local,
+                                                     id: loadedServices.count,
+                                                     logInfo: logInfo)
+            loadedServices[cudaService.name] = cudaService
+            #endif
+
             //-------------------------------------
             // dynamically load installed services
             let bundles = getPlugInBundles()

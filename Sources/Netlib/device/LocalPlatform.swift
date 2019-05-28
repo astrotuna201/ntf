@@ -17,7 +17,7 @@ public extension LocalPlatform {
     //--------------------------------------------------------------------------
     /// log
     /// the caller can specify a root log which will be inherited by the
-    /// device stream hierarchy, but can be overriden at any point down
+    /// device stream hierarchy, but can be overridden at any point down
     /// the tree
     static var log: Log {
         get { return Platform.local.logInfo.log }
@@ -155,15 +155,16 @@ public extension LocalPlatform {
     /// - Parameter name: a text label assigned to the stream for logging
     func createStream(deviceId id: Int = 0,
                       serviceName: String? = nil,
-                      name: String = "stream") -> DeviceStream {
+                      name: String = "stream") throws -> DeviceStream {
         
         let serviceName = serviceName ?? defaultDevice.service.name
         if let device = requestDevice(serviceName: serviceName, deviceId: id) {
-            return device.createStream(name: name)
+            return try device.createStream(name: name)
         } else {
             writeLog("CPU substituted. Service `\(serviceName)` not found.",
                 level: .warning)
-            return requestDevice(serviceName: "cpu")!.createStream(name: name)
+            let device = requestDevice(serviceName: "cpu")!
+            return try device.createStream(name: name)
         }
     }
     
@@ -228,6 +229,6 @@ final public class Platform: LocalPlatform {
                           nestingLevel: 0)
 
         // mark because it is going to be statically held
-        ObjectTracker.global.markStatic(trackingId: logInfo.log.trackingId)
+        ObjectTracker.global.markStatic(logInfo.log.trackingId)
     }
 }

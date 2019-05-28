@@ -100,24 +100,27 @@ class _Streams {
     //--------------------------------------------------------------------------
     // initializers
     private init() {
-        // create dedicated stream for data transfer when accessing
-        // within a stream closure or within HostMultiWrite
-        _auxHostStream = Platform.local.createStream(
-            deviceId: 0, serviceName: "cpu", name: "dataSync")
+        do {
+            // create dedicated stream for data transfer when accessing
+            // within a stream closure or within HostMultiWrite
+            _auxHostStream = try Platform.local.createStream(
+                    deviceId: 0, serviceName: "cpu", name: "dataSync")
+            ObjectTracker.global.markStatic(_auxHostStream.trackingId)
 
-        // create dedicated stream for app data transfer
-        _hostStream = Platform.local.createStream(
-            deviceId: 0, serviceName: "cpu", name: "host")
+            // create dedicated stream for app data transfer
+            _hostStream = try Platform.local.createStream(
+                    deviceId: 0, serviceName: "cpu", name: "host")
+            ObjectTracker.global.markStatic(_hostStream.trackingId)
 
-        // create the default stream based on service and device priority.
-        let stream = Platform.local.defaultDevice.createStream(name: "default")
-        streamStack = [stream]
-        
-        // _Streams is a static object, so mark the default stream as static
-        // so it won't show up in leak reports
-        ObjectTracker.global.markStatic(trackingId: stream.trackingId)
-        ObjectTracker.global.markStatic(trackingId: _hostStream.trackingId)
-        ObjectTracker.global.markStatic(trackingId: _auxHostStream.trackingId)
+            // create the default stream based on service and device priority.
+            let stream = try Platform.local.defaultDevice.createStream(
+                    name: "default")
+            streamStack = [stream]
+            ObjectTracker.global.markStatic(stream.trackingId)
+        } catch {
+            print("Failed to create default streams")
+            exit(1)
+        }
     }
     
     //--------------------------------------------------------------------------

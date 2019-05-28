@@ -214,7 +214,7 @@ public extension VectorView {
     }
 
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
@@ -380,7 +380,7 @@ public extension MatrixView {
     }
     
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(_ extents: MatrixExtents, name: String? = nil,
             layout: MatrixLayout = .rowMajor, any: C) where
@@ -531,7 +531,7 @@ public extension VolumeView {
     }
 
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(_ extents: VolumeExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
@@ -659,7 +659,7 @@ public extension NDTensorView {
 // NDTensorView extensions
 public extension NDTensorView {
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(_ extents: [Int], name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
@@ -817,7 +817,7 @@ public extension NCHWTensorView {
     }
     
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(_ extents: NCHWExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
@@ -975,7 +975,7 @@ public extension NHWCTensorView {
     }
     
     //-------------------------------------
-    /// with convertable collection
+    /// with convertible collection
     /// TODO: should the collection be lazy??
     init<C>(_ extents: NHWCExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable

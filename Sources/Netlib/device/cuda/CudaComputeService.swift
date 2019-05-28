@@ -57,16 +57,14 @@ public final class CudaComputeService : LocalComputeService {
             throw ServiceError.serviceIsUnavailable
         }
 
-//        // add device object for each id reported
-//        for i in 0..<Int(deviceCount) {
-//            try devices.append(CudaDevice(log: log, service: self, id: i))
-//        }
-
-//        // add cpu device
-//        devices.append(CpuDevice(service: self, deviceId: 0,
-//                logInfo: logInfo.flat("cpu:0"),
-//                memoryAddressing: .unified,
-//                timeout: timeout))
+        // add device object for each id reported
+        for i in 0..<Int(deviceCount) {
+            let device = try CudaDevice(service: self, deviceId: i,
+                                        logInfo: logInfo.flat("gpu:\(i)"),
+                                        memoryAddressing: .unified,
+                                        timeout: timeout)
+            devices.append(device)
+        }
     }
     deinit { ObjectTracker.global.remove(trackingId: trackingId) }
 }

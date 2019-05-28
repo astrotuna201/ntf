@@ -7,12 +7,12 @@ public class CpuDeviceArray : DeviceArray {
     // properties
     public private(set) var trackingId = 0
     public var buffer: UnsafeMutableRawBufferPointer
-    public var device: ComputeDevice
+    public let device: ComputeDevice
     public var version = 0
     private let isReadOnly: Bool
     
     //--------------------------------------------------------------------------
-	// initializers
+	/// with count
 	public init(device: ComputeDevice, count: Int) {
         self.device = device
         buffer = UnsafeMutableRawBufferPointer.allocate(
@@ -21,6 +21,7 @@ public class CpuDeviceArray : DeviceArray {
         self.trackingId = ObjectTracker.global.register(self)
 	}
 
+    //--------------------------------------------------------------------------
     /// readOnly uma buffer
     public init(device: ComputeDevice, buffer: UnsafeRawBufferPointer) {
         assert(buffer.baseAddress != nil)
@@ -32,6 +33,7 @@ public class CpuDeviceArray : DeviceArray {
         self.trackingId = ObjectTracker.global.register(self)
     }
 
+    //--------------------------------------------------------------------------
     /// readWrite uma buffer
     public init(device: ComputeDevice, buffer: UnsafeMutableRawBufferPointer) {
         self.isReadOnly = false
@@ -52,6 +54,7 @@ public class CpuDeviceArray : DeviceArray {
         }
 	}
 
+    //--------------------------------------------------------------------------
 	// copyAsync(from deviceArray
 	public func copyAsync(from other: DeviceArray,
                           using stream: DeviceStream) throws {
@@ -63,6 +66,7 @@ public class CpuDeviceArray : DeviceArray {
         }
 	}
 
+    //--------------------------------------------------------------------------
 	// copyAsync(from buffer
 	public func copyAsync(from buffer: UnsafeRawBufferPointer,
                           using stream: DeviceStream) throws {
@@ -75,6 +79,7 @@ public class CpuDeviceArray : DeviceArray {
         }
 	}
 
+    //--------------------------------------------------------------------------
 	// copyAsync(to buffer
     /// copies the contents of the device array to the host buffer
     /// asynchronously. It does not wait for the app thread.

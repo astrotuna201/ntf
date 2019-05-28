@@ -53,7 +53,7 @@ public protocol ComputePlatform: DeviceErrorHandling, ObjectTracking, Logger {
     /// - Parameter name: a text label assigned to the stream for logging
     func createStream(deviceId: Int,
                       serviceName: String?,
-                      name: String) -> DeviceStream
+                      name: String) throws -> DeviceStream
     
     //--------------------------------------------------------------------------
     /// requestDevices
@@ -148,7 +148,7 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// creates a device array from a uma buffer.
     func createReferenceArray(buffer: UnsafeRawBufferPointer) -> DeviceArray
     /// creates a named command stream for this device
-    func createStream(name: String) -> DeviceStream
+    func createStream(name: String) throws -> DeviceStream
 }
 
 public enum MemoryAddressing { case unified, discreet }

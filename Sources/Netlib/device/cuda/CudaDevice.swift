@@ -10,7 +10,7 @@ public class CudaDevice : LocalComputeDevice {
     // properties
     public private(set) var trackingId = 0
     public private (set) weak var service: ComputeService!
-    public let attributes = [String : String]()
+    public let attributes: [String : String]
     public var deviceArrayReplicaKey: DeviceArrayReplicaKey
     public let id: Int
     public var logInfo: LogInfo
@@ -38,7 +38,6 @@ public class CudaDevice : LocalComputeDevice {
                 logInfo: LogInfo,
                 memoryAddressing: MemoryAddressing,
                 timeout: TimeInterval?) throws {
-        self.name = "cpu:\(deviceId)"
         self.logInfo = logInfo
         self.id = deviceId
         self.service = service

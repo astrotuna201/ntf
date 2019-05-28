@@ -18,7 +18,8 @@ public class CudaDeviceArray : DeviceArray {
     // initializers
 	public init(device: CudaDevice, count: Int) throws {
         cudaDevice = device
-		try cudaDevice.select()
+        self.isReadOnly = false
+        try cudaDevice.select()
 		var pointer: UnsafeMutableRawPointer?
 		try cudaCheck(status: cudaMalloc(&pointer, count))
         buffer = UnsafeMutableRawBufferPointer(start: pointer, count: count)
@@ -65,7 +66,7 @@ public class CudaDeviceArray : DeviceArray {
 	// zero
 	public func zero(using stream: DeviceStream) throws {
         let cudaStream = (stream as! CudaStream).handle
-        try cudaCheck(status: cudaMemsetAsync(buffer, Int32(0),
+        try cudaCheck(status: cudaMemsetAsync(buffer.baseAddress!, Int32(0),
                                               buffer.count, cudaStream))
 	}
 
@@ -77,7 +78,7 @@ public class CudaDeviceArray : DeviceArray {
         assert(buffer.count == other.buffer.count, "buffer sizes don't match")
 		assert(other is CudaDeviceArray)
 		let stream = stream as! CudaStream
-		try stream.device.select()
+		try stream.cudaDevice.select()
 
 		// copy
         try cudaCheck(status: cudaMemcpyAsync(
@@ -95,7 +96,7 @@ public class CudaDeviceArray : DeviceArray {
         assert(otherBuffer.baseAddress != nil)
         assert(self.buffer.count == otherBuffer.count, "buffer sizes don't match")
 		let stream = stream as! CudaStream
-		try stream.device.select()
+		try stream.cudaDevice.select()
 
 		try cudaCheck(status: cudaMemcpyAsync(
                 buffer.baseAddress!,
@@ -111,7 +112,7 @@ public class CudaDeviceArray : DeviceArray {
         assert(otherBuffer.baseAddress != nil)
         assert(otherBuffer.count == buffer.count, "buffer sizes don't match")
 		let stream = stream as! CudaStream
-		try stream.device.select()
+		try stream.cudaDevice.select()
 
         try cudaCheck(status: cudaMemcpyAsync(
                 otherBuffer.baseAddress!,

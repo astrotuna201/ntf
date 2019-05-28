@@ -49,7 +49,7 @@ class test_Async: XCTestCase {
 
             // create a named stream on a discreet device
             // cpuUnitTest device 1 is a discreet memory versions for testing
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
             let m1 = Matrix<Int32>((2, 5), name: "m1", any: 0..<10)
@@ -80,9 +80,9 @@ class test_Async: XCTestCase {
             
             // create named streams on two discreet devices
             // cpuUnitTest device 1 and 2 are discreet memory versions
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
-            let stream2 = Platform.local
+            let stream2 = try Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
             let m1 = Matrix<Int32>((2, 3), name: "m1", any: 0..<6)
@@ -132,7 +132,7 @@ class test_Async: XCTestCase {
                 // create a stream just for this closure
                 // it will probably try to deinit before `fillWithIndex` is
                 // complete
-                using(Platform.local.createStream()) {
+                using(try Platform.local.createStream()) {
                     fillWithIndex(&matrix)
                 }
                 
@@ -156,7 +156,8 @@ class test_Async: XCTestCase {
             Platform.log.level = .diagnostic
             Platform.local.log.categories = [.streamSync]
             
-            let stream = Platform.local.createStream(serviceName: "cpuUnitTest")
+            let stream = try Platform.local
+                    .createStream(serviceName: "cpuUnitTest")
             let event = try stream.createEvent()
             stream.delayStream(atLeast: 0.001)
             try stream.record(event: event).wait()
@@ -175,15 +176,19 @@ class test_Async: XCTestCase {
     // measures the event overhead of creating 10,000 events
     func test_perfCreateStreamEvent() {
         #if !DEBUG
-        let stream = Platform.local.createStream()
-        self.measure {
-            do {
-                for _ in 0..<10000 {
-                    _ = try stream.createEvent()
+        do {
+            let stream = try Platform.local.createStream()
+            self.measure {
+                do {
+                    for _ in 0..<10000 {
+                        _ = try stream.createEvent()
+                    }
+                } catch {
+                    XCTFail(String(describing: error))
                 }
-            } catch {
-                XCTFail(String(describing: error))
             }
+        } catch {
+            XCTFail(String(describing: error))
         }
         #endif
     }
@@ -193,16 +198,20 @@ class test_Async: XCTestCase {
     // measures the event overhead of processing 10,000 tensors
     func test_perfRecordStreamEvent() {
         #if !DEBUG
-        let stream = Platform.local.createStream()
-        self.measure {
-            do {
-                for _ in 0..<10000 {
-                    _ = try stream.record(event: stream.createEvent())
+        do {
+            let stream = try Platform.local.createStream()
+            self.measure {
+                do {
+                    for _ in 0..<10000 {
+                        _ = try stream.record(event: stream.createEvent())
+                    }
+                    try stream.waitUntilStreamIsComplete()
+                } catch {
+                    XCTFail(String(describing: error))
                 }
-                try stream.waitUntilStreamIsComplete()
-            } catch {
-                XCTFail(String(describing: error))
             }
+        } catch {
+            XCTFail(String(describing: error))
         }
         #endif
     }

@@ -161,6 +161,9 @@ public enum ReductionOp { case add, mul, min, max, amax, avg, norm1, norm2 }
 /// NanPropagation
 public enum NanPropagation { case propagate, noPropagate }
 
+//==============================================================================
+/// ReductionContext
+public protocol ReductionContext {}
 
 ////------------------------------------------------------------------------------
 //// TransposeOp
@@ -489,64 +492,64 @@ public final class CublasHandle : ObjectTracking {
 //	let desc: cudnnLRNDescriptor_t
 //}
 //
-////==============================================================================
-//// TensorDescriptor
-//public final class TensorDescriptor : ObjectTracking {
-//	// initializers
-//	public init(shape: DataShape, dataType: DataType) throws {
-//		// create the descriptor
-//		var temp: cudnnTensorDescriptor_t?
-//		try cudaCheck(status: cudnnCreateTensorDescriptor(&temp))
-//		desc = temp!
-//
-//		// initialize
-//		try cudaCheck(status: cudnnSetTensorNdDescriptor(
-//			desc, dataType.cudnn,
-//			Int32(shape.extents.count),
-//			shape.extents.map { Int32($0)},
-//			shape.strides.map { Int32($0)}))
-//
-//		trackingId = ObjectTracker.global.register(self)
-//	}
-//
-//	public init(owning desc: cudnnTensorDescriptor_t) {
-//		self.desc = desc
-//		trackingId = ObjectTracker.global.register(self)
-//	}
-//
-//	deinit {
-//		try! cudaCheck(status: cudnnDestroyTensorDescriptor(desc))
-//		ObjectTracker.global.remove(trackingId: trackingId)
-//	}
-//
-//	// properties
-//	public private (set) var trackingId = 0
-//	let desc: cudnnTensorDescriptor_t
-//
-//	// getInfo
-//	public func getInfo() throws -> (extent: [Int], strides: [Int], DataType) {
-//		let reqDims = Int(CUDNN_DIM_MAX)
-//		var dims = [Int32](repeating: 0, count: reqDims)
-//		var strides = [Int32](repeating: 0, count: reqDims)
-//		var type = cudnnDataType_t(0)
-//		var numDims: Int32 = 0
-//
-//		try cudaCheck(status: cudnnGetTensorNdDescriptor(
-//			desc,
-//            Int32(reqDims),
-//			&type,
-//			&numDims,
-//			&dims,
-//			&strides
-//		))
-//
-//		return (
-//			dims[0..<Int(numDims)].map { Int($0) },
-//			strides[0..<Int(numDims)].map { Int($0) },
-//			DataType(cudnn: type))
-//	}
-//}
-//
+//==============================================================================
+// TensorDescriptor
+public final class TensorDescriptor: ObjectTracking {
+	// initializers
+	public init(shape: DataShape, dataType: DataType) throws {
+		// create the descriptor
+		var temp: cudnnTensorDescriptor_t?
+		try cudaCheck(status: cudnnCreateTensorDescriptor(&temp))
+		desc = temp!
+
+		// initialize
+		try cudaCheck(status: cudnnSetTensorNdDescriptor(
+			desc, dataType.cudnn,
+			Int32(shape.extents.count),
+			shape.extents.map { Int32($0)},
+			shape.strides.map { Int32($0)}))
+
+		trackingId = ObjectTracker.global.register(self)
+	}
+
+	public init(owning desc: cudnnTensorDescriptor_t) {
+		self.desc = desc
+		trackingId = ObjectTracker.global.register(self)
+	}
+
+	deinit {
+		try! cudaCheck(status: cudnnDestroyTensorDescriptor(desc))
+		ObjectTracker.global.remove(trackingId: trackingId)
+	}
+
+	// properties
+	public private (set) var trackingId = 0
+	let desc: cudnnTensorDescriptor_t
+
+	// getInfo
+	public func getInfo() throws -> (extent: [Int], strides: [Int], DataType) {
+		let reqDims = Int(CUDNN_DIM_MAX)
+		var dims = [Int32](repeating: 0, count: reqDims)
+		var strides = [Int32](repeating: 0, count: reqDims)
+		var type = cudnnDataType_t(0)
+		var numDims: Int32 = 0
+
+		try cudaCheck(status: cudnnGetTensorNdDescriptor(
+			desc,
+            Int32(reqDims),
+			&type,
+			&numDims,
+			&dims,
+			&strides
+		))
+
+		return (
+			dims[0..<Int(numDims)].map { Int($0) },
+			strides[0..<Int(numDims)].map { Int($0) },
+			DataType(cudnn: type))
+	}
+}
+
 ////==============================================================================
 //// createTensorDescriptor
 //extension TensorView {

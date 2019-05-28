@@ -111,10 +111,10 @@ class test_DataMigration: XCTestCase {
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
-            let stream2 = Platform.local
+            let stream2 = try Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
             // create a tensor and validate migration
@@ -191,10 +191,10 @@ class test_DataMigration: XCTestCase {
 
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
-            let stream2 = Platform.local
+            let stream2 = try Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
             // create a Matrix on device 1 and fill with indexes
@@ -284,7 +284,7 @@ class test_DataMigration: XCTestCase {
             
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
             // fill with index on device 1
@@ -324,10 +324,10 @@ class test_DataMigration: XCTestCase {
             
             // create a named stream on two different discreet devices
             // cpu devices 1 and 2 are discreet memory versions for testing
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
-            let stream2 = Platform.local
+            let stream2 = try Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
 
             let index = (1, 1)

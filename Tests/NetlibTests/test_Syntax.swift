@@ -172,10 +172,11 @@ class test_Syntax: XCTestCase {
             Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
-            let stream1 = Platform.local.createStream(deviceId: 1,
-                                                      serviceName: "cpuUnitTest")
-            let stream2 = Platform.local.createStream(deviceId: 2,
-                                                      serviceName: "cpuUnitTest")
+            let stream1 = try Platform.local
+                    .createStream(deviceId: 1, serviceName: "cpuUnitTest")
+            let stream2 = try Platform.local
+                    .createStream(deviceId: 2, serviceName: "cpuUnitTest")
+
             let volume = using(stream1) {
                 Volume<Int32>((3, 4, 5)).filledWithIndex()
             }
@@ -234,10 +235,10 @@ class test_Syntax: XCTestCase {
             Platform.log.level = .diagnostic
             Platform.log.categories = [.dataAlloc, .dataCopy, .dataMutation]
             
-            let stream1 = Platform.local
+            let stream1 = try Platform.local
                 .createStream(deviceId: 1, serviceName: "cpuUnitTest")
             
-            let stream2 = Platform.local
+            let stream2 = try Platform.local
                 .createStream(deviceId: 2, serviceName: "cpuUnitTest")
             
             let volume = using(stream1) {

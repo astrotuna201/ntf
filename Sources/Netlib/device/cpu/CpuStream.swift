@@ -39,7 +39,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         trackingId = ObjectTracker.global.register(self, namePath: path)
         
         diagnostic("\(createString) DeviceStream(\(trackingId)) " +
-            "\(device.name)_\(name)", categories: [.streamAlloc])
+            "\(device.name)_\(name)", categories: .streamAlloc)
     }
     
     //--------------------------------------------------------------------------

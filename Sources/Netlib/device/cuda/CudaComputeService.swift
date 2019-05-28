@@ -21,7 +21,7 @@ public final class CudaComputeService : LocalComputeService {
 
     //--------------------------------------------------------------------------
     // timeout
-    public var timeout: TimeInterval = TimeInterval.greatestFiniteMagnitude {
+    public var timeout: TimeInterval? {
         didSet {
             devices.forEach { $0.timeout = timeout }
         }

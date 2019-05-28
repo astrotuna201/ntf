@@ -18,13 +18,7 @@ import Foundation
 /// this represents the root for managing all services, devices, and streams
 /// on a platform. There is one local instance per process, and possibly
 /// many remote instances.
-public protocol ComputePlatform:
-    DeviceErrorHandling,
-    ObjectTracking,
-    Logger
-{
-    //--------------------------------------------------------------------------
-    // class members
+public protocol ComputePlatform: DeviceErrorHandling, ObjectTracking, Logger {
     /// global shared instance
     static var local: Platform { get }
     /// the root log
@@ -86,7 +80,7 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     var platform: ComputePlatform! { get }
     /// the default maximum amount of time allowed for an operation to complete
     /// this is inherited by devices and streams when they are created
-    var timeout: TimeInterval { get set }
+    var timeout: TimeInterval? { get set }
 
     /// required initializer to support dynamically loaded services
     init(platform: ComputePlatform, id: Int,
@@ -138,7 +132,7 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// the service this device belongs to
     var service: ComputeService! { get }
     /// the maximum amount of time allowed for an operation to complete
-    var timeout: TimeInterval { get set }
+    var timeout: TimeInterval? { get set }
     /// the type of memory addressing this device uses
     var memoryAddressing: MemoryAddressing { get }
     /// current percent of the device utilized
@@ -223,15 +217,20 @@ public protocol StreamEvent: ObjectTracking {
     /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
     /// the last time the event was recorded
-    var recordedTime: Date? { get }
+    var recordedTime: Date? { get set }
     /// measure elapsed time since another event
-    func elapsedTime(since event: StreamEvent) -> TimeInterval
-    /// tells the event it is being recorded
-    func record()
-    /// signals that the event has occurred
-    func signal()
-    /// will block the caller until the timeout has elapsed
-    func wait(until timeout: TimeInterval) throws
+    func elapsedTime(since other: StreamEvent) -> TimeInterval?
+    /// will block the caller until the timeout has elapsed if one
+    /// was specified during init, otherwise it will block forever
+    func wait() throws
+}
+
+public extension StreamEvent {
+    func elapsedTime(since other: StreamEvent) -> TimeInterval? {
+        guard let time = recordedTime,
+              let other = other.recordedTime else { return nil }
+        return time.timeIntervalSince(other)
+    }
 }
 
 public struct StreamEventOptions: OptionSet {
@@ -240,17 +239,6 @@ public struct StreamEventOptions: OptionSet {
     public let rawValue: Int
     public static let timing       = StreamEventOptions(rawValue: 1 << 0)
     public static let interprocess = StreamEventOptions(rawValue: 1 << 1)
-}
-
-public extension StreamEvent {
-    func wait() throws {
-        try wait(until: TimeInterval.forever)
-    }
-}
-public extension TimeInterval {
-    static var forever: TimeInterval {
-        return TimeInterval.greatestFiniteMagnitude
-    }
 }
 
 public enum StreamEventError: Error {

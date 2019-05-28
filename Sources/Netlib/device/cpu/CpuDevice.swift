@@ -17,7 +17,7 @@ public class CpuDevice: LocalComputeDevice {
     public let name: String
     public weak var service: ComputeService!
     private let streamId = AtomicCounter(value: -1)
-    public var timeout: TimeInterval
+    public var timeout: TimeInterval?
     public let memoryAddressing: MemoryAddressing
     public var utilization: Float = 0
     public var deviceErrorHandler: DeviceErrorHandler?
@@ -35,7 +35,7 @@ public class CpuDevice: LocalComputeDevice {
                 deviceId: Int,
                 logInfo: LogInfo,
                 memoryAddressing: MemoryAddressing,
-                timeout: TimeInterval) {
+                timeout: TimeInterval?) {
         self.name = "cpu:\(deviceId)"
 		self.logInfo = logInfo
 		self.id = deviceId

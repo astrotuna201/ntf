@@ -20,7 +20,7 @@ public class CpuComputeService : LocalComputeService {
     
     //--------------------------------------------------------------------------
     // timeout
-    public var timeout: TimeInterval = TimeInterval.greatestFiniteMagnitude {
+    public var timeout: TimeInterval? {
         didSet {
             devices.forEach { $0.timeout = timeout }
         }
@@ -66,7 +66,7 @@ public class CpuUnitTestComputeService : LocalComputeService {
     
     //--------------------------------------------------------------------------
     // timeout
-    public var timeout: TimeInterval = 0 {
+    public var timeout: TimeInterval? {
         didSet {
             devices.forEach { $0.timeout = timeout }
         }

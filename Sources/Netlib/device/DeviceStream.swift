@@ -30,7 +30,7 @@ public protocol DeviceStream:
     var name: String { get }
     /// the maximum time to wait for an operation to complete
     /// a value of 0 (default) will wait forever
-    var timeout: TimeInterval { get set }
+    var timeout: TimeInterval? { get set }
     
     //--------------------------------------------------------------------------
     // synchronization functions

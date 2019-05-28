@@ -8,9 +8,10 @@ import Cuda
 public final class CudaStreamEvent : StreamEvent {
     // properties
     public private(set) var trackingId = 0
-    public private(set) var recordedTime: Date?
+    public var recordedTime: Date?
 
     public let options: StreamEventOptions
+    private let timeout: TimeInterval?
     public let handle: cudaEvent_t
     private let barrier = Mutex()
     private let semaphore = DispatchSemaphore(value: 0)
@@ -23,8 +24,9 @@ public final class CudaStreamEvent : StreamEvent {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(options: StreamEventOptions) throws {
+    public init(options: StreamEventOptions, timeout: TimeInterval?) throws {
         self.options = options
+        self.timeout = timeout
 
         // the default is non host blocking, non timing, non inter process
         var flags: Int32 = cudaEventDisableTiming
@@ -44,8 +46,6 @@ public final class CudaStreamEvent : StreamEvent {
     //--------------------------------------------------------------------------
     // deinit
     deinit {
-        // signal if anyone was waiting
-        signal()
         _ = cudaEventDestroy(handle)
 
         #if DEBUG
@@ -54,31 +54,11 @@ public final class CudaStreamEvent : StreamEvent {
     }
 
     //--------------------------------------------------------------------------
-    /// measure elapsed time since another event
-    public func elapsedTime(since event: StreamEvent) -> TimeInterval {
-        guard let eventTime = event.recordedTime else { return 0 }
-        return Date().timeIntervalSince(eventTime)
-    }
-
-    //--------------------------------------------------------------------------
-    /// tells the event it is being recorded
-    public func record() {
-        recordedTime = Date()
-    }
-
-    //--------------------------------------------------------------------------
-    /// signal
-    /// signals that the event has occurred
-    public func signal() {
-        semaphore.signal()
-    }
-
-    //--------------------------------------------------------------------------
     /// wait
     /// the first thread goes through the barrier.sync and waits on the
     /// semaphore. When it is signaled `occurred` is set to `true` and all
     /// future threads will pass through without waiting
-    public func wait(until timeout: TimeInterval) throws {
+    public func wait() throws {
 //        try barrier.sync {
 //            guard !occurred else { return }
 //            if timeout > 0 {

@@ -430,7 +430,7 @@ public extension TensorView {
             // if `stream` is nil then wait for completion on
             // the hostStream which will synchronize with the calling thread
             if let event = tensorArray.writeCompletionEvent, stream == nil {
-                try event.wait(until: deviceStream.timeout)
+                try event.wait()
             }
 
             return UnsafeBufferPointer(
@@ -469,7 +469,7 @@ public extension TensorView {
             // if `stream` is nil then wait for completion on
             // the hostStream which will synchronize with the calling thread
             if let event = tensorArray.writeCompletionEvent, stream == nil {
-                try event.wait(until: deviceStream.timeout)
+                try event.wait()
             }
 
             return UnsafeMutableBufferPointer(

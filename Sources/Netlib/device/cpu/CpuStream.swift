@@ -12,7 +12,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     public let id: Int
 	public let name: String
     public var logInfo: LogInfo
-    public var timeout: TimeInterval = 0
+    public var timeout: TimeInterval?
     public var executeSynchronously: Bool = false
     public var deviceErrorHandler: DeviceErrorHandler?
     public var _lastError: Error?
@@ -60,9 +60,11 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         do {
             try waitUntilStreamIsComplete()
         } catch {
-            diagnostic("\(timeoutString) DeviceStream(\(trackingId)) " +
-                "\(device.name)_\(name) timeout: \(timeout)",
-                categories: [.streamAlloc])
+            if let timeout = self.timeout {
+                diagnostic("\(timeoutString) DeviceStream(\(trackingId)) " +
+                        "\(device.name)_\(name) timeout: \(timeout)",
+                        categories: [.streamAlloc])
+            }
         }
     }
     
@@ -149,7 +151,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     /// createEvent
     /// creates an event object used for stream synchronization
     public func createEvent(options: StreamEventOptions) throws -> StreamEvent {
-        let event = CpuStreamEvent(options: options)
+        let event = CpuStreamEvent(options: options, timeout: timeout)
         diagnostic("\(createString) StreamEvent(\(event.trackingId)) on " +
             "\(device.name)_\(name)", categories: .streamAlloc)
         return event
@@ -160,13 +162,19 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     @discardableResult
     public func record(event: StreamEvent) throws -> StreamEvent {
         assert(Thread.current === creatorThread, streamThreadViolationMessage)
-        guard lastError == nil else { throw lastError! }
-        diagnostic("\(recordString) StreamEvent(\(event.trackingId)) on " +
-            "\(device.name)_\(name)", categories: .streamSync)
-        
-        // tell the event it is being recorded so it can set the time
         let event = event as! CpuStreamEvent
-        event.record()
+        guard lastError == nil else {
+            throw lastError!
+        }
+
+        diagnostic("\(recordString) StreamEvent(\(event.trackingId)) on " +
+                "\(device.name)_\(name)", categories: .streamSync)
+
+        // set event time
+        if defaultStreamEventOptions.contains(.timing) {
+            event.recordedTime = Date()
+        }
+
         queue {
             event.signal()
         }
@@ -183,8 +191,8 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             "\(device.name)_\(name)", categories: .streamSync)
 
         if !event.occurred {
-            queue{ [timeout = device.timeout] in
-                try event.wait(until: timeout)
+            queue{
+                try event.wait()
             }
         }
 	}
@@ -198,7 +206,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         diagnostic("\(waitString) StreamEvent(\(event.trackingId)) " +
             "waiting for \(device.name)_\(name) to complete",
             categories: .streamSync)
-        try event.wait(until: device.timeout)
+        try event.wait()
         diagnostic("\(signaledString) StreamEvent(\(event.trackingId)) on " +
             "\(device.name)_\(name)", categories: .streamSync)
     }

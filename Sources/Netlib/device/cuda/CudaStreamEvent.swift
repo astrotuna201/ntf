@@ -29,13 +29,9 @@ public final class CudaStreamEvent : StreamEvent {
         self.timeout = timeout
 
         // the default is non host blocking, non timing, non inter process
-        var flags: Int32 = cudaEventDisableTiming
-        if !options.contains(.timing)      { flags &= ~cudaEventDisableTiming }
-        if options.contains(.interprocess) { flags |= cudaEventInterprocess |
-                cudaEventDisableTiming }
-
         var temp: cudaEvent_t?
-        try cudaCheck(status: cudaEventCreateWithFlags(&temp, UInt32(flags)))
+        try cudaCheck(status: cudaEventCreateWithFlags(
+                &temp, UInt32(cudaEventDisableTiming)))
         handle = temp!
 
         #if DEBUG
@@ -55,19 +51,24 @@ public final class CudaStreamEvent : StreamEvent {
 
     //--------------------------------------------------------------------------
     /// wait
-    /// the first thread goes through the barrier.sync and waits on the
-    /// semaphore. When it is signaled `occurred` is set to `true` and all
-    /// future threads will pass through without waiting
     public func wait() throws {
-//        try barrier.sync {
-//            guard !occurred else { return }
-//            if timeout > 0 {
-//                if semaphore.wait(timeout: .now() + timeout) == .timedOut {
-//                    throw StreamEventError.timedOut
-//                }
-//            } else {
-//                semaphore.wait()
-//            }
-//        }
+        try barrier.sync {
+            guard !occurred else { return }
+            if let timeout = timeout {
+                var elapsed = 0.0;
+                // TODO: is 1 millisecond reasonable?
+                let pollingInterval = 0.001
+                while (cudaEventQuery(handle) != cudaSuccess) {
+                    Thread.sleep(forTimeInterval: pollingInterval)
+                    elapsed += pollingInterval;
+                    if (elapsed >= timeout) {
+                        throw StreamEventError.timedOut
+                    }
+                }
+            } else {
+                // wait indefinitely
+                try cudaCheck(status: cudaEventSynchronize(handle))
+            }
+        }
     }
 }

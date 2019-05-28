@@ -99,6 +99,7 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
 public enum ServiceError : Error {
     case serviceIsUnavailable
     case functionFailure(location: String, message: String)
+    case rangeError(String)
 }
 
 //==============================================================================

@@ -25,11 +25,11 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
     ],
     targets: [
-        .systemLibrary(name: "Cuda", path: "Libraries/Cuda"),
+        .systemLibrary(name: "Cuda", path: "Libraries/Cuda", pkgConfig: "cuda-10.0"),
         .systemLibrary(name: "Jpeg", path: "Libraries/Jpeg"),
         .systemLibrary(name: "Png", path: "Libraries/Png"),
         .systemLibrary(name: "ZLib", path: "Libraries/ZLib"),
-        .target(name: "Netlib", 
+        .target(name: "Netlib",  
                 dependencies: ["Cuda", "Jpeg", "Png", "ZLib"], 
                 exclude: excludeDirs),
         .testTarget(

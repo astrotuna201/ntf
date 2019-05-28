@@ -103,7 +103,7 @@ public protocol StreamIntrinsicsProtocol {
     /// - Parameter axes: The axes to reduce
     func any<T>(x: T, along axes: Vector<IndexElement>?, result: inout T)
         where T: TensorView, T.Element == Bool
-    /// Performs a pointwise comparison within the specified tolerance
+    /// Performs a point wise comparison within the specified tolerance
     func approximatelyEqual<T>(lhs: T, rhs: T,
                                tolerance: T.Element,
                                result: inout T.BoolView) where

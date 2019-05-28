@@ -165,6 +165,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             "\(device.name)_\(name)", categories: .streamSync)
         
         // tell the event it is being recorded so it can set the time
+        let event = event as! CpuStreamEvent
         event.record()
         queue {
             event.signal()

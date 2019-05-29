@@ -11,6 +11,10 @@ public protocol LocalPlatform : ComputePlatform {
     /// the global services collection
     static var _services: [String: ComputeService]? { get set }
     var _defaultDevice: ComputeDevice? { get set }
+    /// a platform wide unique device id obtained during initialization
+    static var nextUniqueDeviceId: Int { get }
+    /// a platform wide unique stream id obtained during initialization
+    static var nextUniqueStreamId: Int { get }
 }
 
 public extension LocalPlatform {
@@ -220,6 +224,12 @@ final public class Platform: LocalPlatform {
     public static var _services: [String: ComputeService]?
     public private(set) var trackingId = 0
     public var logInfo: LogInfo
+
+    /// a platform wide unique stream id obtained during initialization
+    private static var deviceIdCounter = AtomicCounter(value: -1)
+    public static var nextUniqueDeviceId: Int {
+        return Platform.deviceIdCounter.increment()
+    }
 
     /// a platform wide unique stream id obtained during initialization
     private static var streamIdCounter = AtomicCounter(value: -1)

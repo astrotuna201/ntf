@@ -38,7 +38,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     /// name label used for logging
     public let name: String
     /// replication collection
-    private var replicas = [DeviceArrayReplicaKey : DeviceArray]()
+    private var replicas = [Int : DeviceArray]()
     /// the object tracking id
     public private(set) var trackingId = 0
 

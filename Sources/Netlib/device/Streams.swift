@@ -31,11 +31,6 @@ public func using<R>(_ stream: DeviceStream,
 /// Manages the scope for the current stream, log, and error handlers
 @usableFromInline
 class _Streams {
-    /// a utility stream to enable calling readOnly and readWrite from
-    /// within the Cpu stream implementation and within HostMultiWrite
-    var _auxHostStream: DeviceStream
-    /// stream that creates arrays unified with the app address space
-    var _hostStream: DeviceStream
     /// stack of default device streams, logging, and exception handler
     var streamStack: [DeviceStream]
 
@@ -77,13 +72,22 @@ class _Streams {
     //--------------------------------------------------------------------------
     /// hostStream
     public static var hostStream: DeviceStream {
-        return _Streams.local._hostStream
+        // create dedicated stream for app data transfer
+        let stream = try! Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "host")
+        ObjectTracker.global.markStatic(stream.trackingId)
+        return stream
     }
     
     //--------------------------------------------------------------------------
     /// auxHostStream
+    // create dedicated stream for data transfer when accessing
+    // within a stream closure or within HostMultiWrite
     public static var auxHostStream: DeviceStream {
-        return _Streams.local._auxHostStream
+        let stream = try! Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "dataSync")
+        ObjectTracker.global.markStatic(stream.trackingId)
+        return stream
     }
     
     //--------------------------------------------------------------------------
@@ -101,17 +105,6 @@ class _Streams {
     // initializers
     private init() {
         do {
-            // create dedicated stream for data transfer when accessing
-            // within a stream closure or within HostMultiWrite
-            _auxHostStream = try Platform.local.createStream(
-                    deviceId: 0, serviceName: "cpu", name: "dataSync")
-            ObjectTracker.global.markStatic(_auxHostStream.trackingId)
-
-            // create dedicated stream for app data transfer
-            _hostStream = try Platform.local.createStream(
-                    deviceId: 0, serviceName: "cpu", name: "host")
-            ObjectTracker.global.markStatic(_hostStream.trackingId)
-
             // create the default stream based on service and device priority.
             let stream = try Platform.local.defaultDevice.createStream(
                     name: "default")

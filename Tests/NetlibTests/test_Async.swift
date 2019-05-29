@@ -27,8 +27,10 @@ class test_Async: XCTestCase {
     // initializes two matrices and adds them together
     func test_hostMultiWrite() {
         do {
+            Platform.log.level = .diagnostic
             typealias Pixel = RGB<Float>
             typealias ImageSet = Volume<Pixel>
+
             let expected = Pixel(0, 0.5, 1.0)
             let items = 3
             var trainingSet = ImageSet((items, 2, 3))

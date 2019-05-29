@@ -17,6 +17,8 @@ public protocol DeviceStream:
     StreamGradientsProtocol
 {
     //--------------------------------------------------------------------------
+    /// used by TensorViews to synchronize access to this object
+    var accessQueue: DispatchQueue { get }
     /// options to use when creating stream events
     var defaultStreamEventOptions: StreamEventOptions { get }
     /// the device the stream is associated with

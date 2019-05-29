@@ -11,6 +11,7 @@ class test_Async: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
+        ("test_hostMultiWrite", test_hostMultiWrite),
         ("test_defaultStreamOp", test_defaultStreamOp),
         ("test_secondaryDiscreetMemoryStream", test_secondaryDiscreetMemoryStream),
         ("test_threeStreamInterleave", test_threeStreamInterleave),
@@ -21,6 +22,44 @@ class test_Async: XCTestCase {
         ("test_perfRecordStreamEvent", test_perfRecordStreamEvent),
     ]
 
+    //==========================================================================
+    // test_hostMultiWrite
+    // initializes two matrices and adds them together
+    func test_hostMultiWrite() {
+        do {
+            typealias Pixel = RGB<Float>
+            typealias ImageSet = Volume<Pixel>
+            let expected = Pixel(0, 0.5, 1.0)
+            let items = 3
+            var trainingSet = ImageSet((items, 2, 3))
+
+            func load<T>(item: Int, into view: inout T) throws
+                where T: TensorView, T.Element == Pixel
+            {
+                let buffer = try view.readWrite()
+                // at this point load image data from a file or database
+                buffer.initialize(repeating: expected)
+            }
+            
+            try trainingSet.hostMultiWrite(synchronous: true) { batch in
+                for i in 0..<batch.extents[0] {
+                    var itemView = batch.view(item: i)
+                    try load(item: i, into: &itemView)
+                }
+            }
+
+            let item = trainingSet.view(item: items - 1)
+            let values = try item.array()
+            XCTAssert(values[0] == expected)
+        } catch {
+            XCTFail(String(describing: error))
+        }
+        
+        if ObjectTracker.global.hasUnreleasedObjects {
+            XCTFail(ObjectTracker.global.getActiveObjectReport())
+        }
+    }
+    
     //==========================================================================
     // test_defaultStreamOp
     // initializes two matrices and adds them together

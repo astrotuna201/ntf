@@ -512,6 +512,64 @@ public extension TensorView {
 }
 
 //==============================================================================
+public extension TensorView {
+    //--------------------------------------------------------------------------
+    /// hostMultiWrite
+    /// divides a tensor into mutable batches and concurrently passes them
+    /// to the `body` for processing
+    /// - Parameter batchSize: the number of items to process at a time. The
+    /// default is the total divided by the number of active cores
+    /// - Parameter synchronous: if `true` the batches will be executed
+    /// synchronously to aid in debugging
+    /// - Parameter body: the function to perform
+    mutating func hostMultiWrite(
+        batchSize: Int? = nil,
+        synchronous: Bool = false,
+        _ body: @escaping (_ view: Self) throws -> Void) throws
+    {
+        assert(batchSize == nil || batchSize! <= extents[0])
+        let stream = _Streams.hostStream
+        let errorDevice = stream.device
+        let shared = try sharedView(using: stream)
+        let queue = DispatchQueue(label: "hostMultiWrite",
+                                  attributes: .concurrent)
+        let batch = batchSize ?? {
+            let size = extents[0] / ProcessInfo.processInfo.activeProcessorCount
+            return size == 0 ? extents[0] : size
+        }()
+        let remainder = extents[0] % batch
+        
+        // do the work
+        func queueBatch(item: Int, count: Int) throws {
+            let view = shared.viewItems(at: item, count: count)
+            if synchronous {
+                try body(view)
+            } else {
+                guard stream.lastError == nil else { throw stream.lastError! }
+                queue.async {
+                    do {
+                        try body(view)
+                    } catch {
+                        errorDevice.reportDevice(error: error)
+                    }
+                }
+            }
+        }
+        
+        // launch the batches
+        let lastBatchIndex = extents[0] - remainder
+        for i in stride(from: 0, to: lastBatchIndex, by: batch) {
+            try queueBatch(item: i, count: batch)
+        }
+        
+        // process remaining items
+        if remainder > 0 {
+            try queueBatch(item: lastBatchIndex, count: remainder)
+        }
+    }
+}
+
+//==============================================================================
 //
 public extension TensorView where Element: FloatingPoint {
     //--------------------------------------------------------------------------

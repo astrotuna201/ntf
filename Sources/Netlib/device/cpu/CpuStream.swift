@@ -89,16 +89,12 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         do {
             // get the parameter sequences
             let input = try inputs()
-            var ref = try result.reference(using: self)
-            var results = try ref.mutableValues(using: self)
+            var sharedView = try result.sharedView(using: self)
+            var results = try sharedView.mutableValues(using: self)
             
             if executeSynchronously {
                 try body(input, &results)
             } else {
-                // safely set a new completion event on the result
-                let completionEvent =
-                    try ref.createAndSetCompletionEvent(using: self)
-                
                 // queue the work
                 // report to device so we don't take a reference to `self`
                 let errorDevice = device
@@ -109,9 +105,6 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
                         errorDevice.reportDevice(error: error)
                     }
                 }
-                // queue signaling of the write completion event
-                try record(event: completionEvent)
-                
                 diagnostic("\(schedulingString): \(functionName()) complete",
                     categories: .scheduling)
             }

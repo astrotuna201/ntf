@@ -24,6 +24,8 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     /// tensorArray object to be copied. It's stored here instead of on the
     /// view, because the view is immutable when taking a read only pointer
     public var lastAccessMutatedView: Bool = false
+    /// the last stream id that wrote to the tensor
+    public weak var lastMutatingStream: DeviceStream?
     /// whenever a buffer write pointer is taken, the associated DeviceArray
     /// becomes the master copy for replication. Synchronization across threads
     /// is still required for taking multiple write pointers, however
@@ -39,11 +41,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     private var replicas = [DeviceArrayReplicaKey : DeviceArray]()
     /// the object tracking id
     public private(set) var trackingId = 0
-    /// the writeCompletionEvent event is recorded to a stream after a
-    /// mutating operation is recorded. Other streams that depend on the
-    /// completion of the mutating operation should record the event before
-    /// a dependent function is recorded
-    public var writeCompletionEvent: StreamEvent?
 
     //--------------------------------------------------------------------------
     // empty
@@ -181,9 +178,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         // copy the other master array
         try replica.copyAsync(from: otherMaster, using: stream)
 
-        // record async copy completion event
-        writeCompletionEvent = try stream.record(event: stream.createEvent())
-
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.device.name)" +
             "\(setText(" --> ", color: .blue))" +
@@ -202,7 +196,6 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     
     //--------------------------------------------------------------------------
     deinit {
-        _ = try? writeCompletionEvent?.wait()
         ObjectTracker.global.remove(trackingId: trackingId)
         if count > 0 {
             diagnostic("\(releaseString) \(name)(\(trackingId)) ",
@@ -249,15 +242,9 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             // cross service?
             if replica.device.service.id != master.device.service.id {
                 try copyCrossService(from: master, to: replica, using: stream)
-                // record async copy completion event
-                writeCompletionEvent = try stream
-                    .record(event: stream.createEvent())
 
             } else if replica.device.id != master.device.id {
                 try copyCrossDevice(from: master, to: replica, using: stream)
-                // record async copy completion event
-                writeCompletionEvent = try stream
-                    .record(event: stream.createEvent())
             }
         }
         

@@ -395,8 +395,8 @@ public extension TensorView {
             let event = try lastStream.createEvent()
             diagnostic(
                 "\(nextStream.device.name)_\(nextStream.name) will wait for " +
-                "\(lastStream.device.name)\(lastStream.name) " +
-                "on StreamEvent\(event.trackingId)",
+                "\(lastStream.device.name)_\(lastStream.name) " +
+                "using StreamEvent(\(event.trackingId))",
                 categories: .streamSync)
             try nextStream.wait(for: lastStream.record(event: event))
         }
@@ -457,9 +457,6 @@ public extension TensorView {
         let queue = tensorArray.accessQueue
         
         return try queue.sync {
-            // this is only used for unit testing
-            tensorArray.lastAccessMutatedView = false
-            
             // sync streams
             try synchronizeStreams(from: tensorArray.lastMutatingStream,
                                    to: deviceStream)

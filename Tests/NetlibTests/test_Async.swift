@@ -11,8 +11,14 @@ class test_Async: XCTestCase {
     //==========================================================================
     // support terminal test run
     static var allTests = [
+        ("test_defaultStreamOp", test_defaultStreamOp),
+        ("test_secondaryDiscreetMemoryStream", test_secondaryDiscreetMemoryStream),
+        ("test_threeStreamInterleave", test_threeStreamInterleave),
+        ("test_tensorReferenceBufferSync", test_tensorReferenceBufferSync),
+        ("test_temporaryStreamShutdown", test_temporaryStreamShutdown),
         ("test_StreamEventWait", test_StreamEventWait),
         ("test_perfCreateStreamEvent", test_perfCreateStreamEvent),
+        ("test_perfRecordStreamEvent", test_perfRecordStreamEvent),
     ]
 
     //==========================================================================
@@ -21,7 +27,7 @@ class test_Async: XCTestCase {
     func test_defaultStreamOp() {
         do {
             Platform.log.level = .diagnostic
-            
+
             let m1 = Matrix<Int32>((2, 5), name: "m1", any: 0..<10)
             let m2 = Matrix<Int32>((2, 5), name: "m2", any: 0..<10)
             let result = m1 + m2

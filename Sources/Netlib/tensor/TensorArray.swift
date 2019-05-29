@@ -25,7 +25,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     /// view, because the view is immutable when taking a read only pointer
     public var lastAccessMutatedView: Bool = false
     /// the last stream id that wrote to the tensor
-    public weak var lastMutatingStream: DeviceStream?
+    public var lastMutatingStream: DeviceStream?
     /// whenever a buffer write pointer is taken, the associated DeviceArray
     /// becomes the master copy for replication. Synchronization across threads
     /// is still required for taking multiple write pointers, however
@@ -92,7 +92,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         diagnostic("\(createString) \(name)(\(trackingId)) " +
             "initializing with \(String(describing: Element.self))[\(count)]",
             categories: .dataAlloc)
-
+        
         // this should never fail since it is copying from host buffer to
         // host buffer. It is synchronous, so we don't need to create or
         // record a completion event.
@@ -222,6 +222,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         UnsafeMutableBufferPointer<Element>
     {
         assert(!isReadOnly, "the TensorArray is read only")
+        lastMutatingStream = stream
         return try migrate(readOnly: false, using: stream)
     }
     

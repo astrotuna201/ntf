@@ -72,23 +72,28 @@ class _Streams {
     //--------------------------------------------------------------------------
     /// hostStream
     public static var hostStream: DeviceStream {
+        return _Streams.current.device.memoryAddressing == .unified ?
+            _Streams.current : _Streams._umaStream
+    }
+    
+    private static var _umaStream: DeviceStream = {
         // create dedicated stream for app data transfer
         let stream = try! Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "host")
         ObjectTracker.global.markStatic(stream.trackingId)
         return stream
-    }
+    }()
     
     //--------------------------------------------------------------------------
     /// auxHostStream
     // create dedicated stream for data transfer when accessing
     // within a stream closure or within HostMultiWrite
-    public static var auxHostStream: DeviceStream {
+    public static var auxHostStream: DeviceStream = {
         let stream = try! Platform.local.createStream(
             deviceId: 0, serviceName: "cpu", name: "dataSync")
         ObjectTracker.global.markStatic(stream.trackingId)
         return stream
-    }
+    }()
     
     //--------------------------------------------------------------------------
     /// logInfo

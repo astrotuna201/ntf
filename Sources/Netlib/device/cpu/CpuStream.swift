@@ -32,7 +32,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         // create a completion event
         self.logInfo = logInfo
         self.device = device
-        self.name = "\(name)\(id)"
+        self.name = name
         self.creatorThread = Thread.current
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)

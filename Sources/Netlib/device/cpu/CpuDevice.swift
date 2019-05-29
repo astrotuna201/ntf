@@ -78,11 +78,9 @@ public class CpuDevice: LocalComputeDevice {
 
     //--------------------------------------------------------------------------
 	// createStream
-	public func createStream(name streamName: String) throws -> DeviceStream {
-        let id = streamId.increment()
-        let streamName = "\(streamName):\(id)"
+	public func createStream(name streamName: String) -> DeviceStream {
         return CpuStream(logInfo: logInfo.flat(streamName),
-                         device: self, name: streamName, id: id)
+                         device: self, name: streamName)
 	}
 }
 

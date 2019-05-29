@@ -28,43 +28,24 @@ ComputePlatform         // local, remote
 ```
 # Streams Architecture
 ## Device Stream
-A device stream is an interface to a set of tensor operations that are executed via a serial asynchronous FIFO queue. Each compute service will have a unique `DeviceStream` hardware specific implementation. The `CpuStream` class will be optimized for the host cpu, and the CudaStream implementation efficiently wraps Cuda streams.
+A device stream is an interface to a set of tensor operations that are executed via a serial asynchronous FIFO queue. Each compute service will have unique hardware specific  `DeviceStream`  implementations. The `CpuStream` class will be optimized for the host cpu, and the CudaStream implementation efficiently wraps Cuda streams.
 
 ![Device Stream](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/DeviceStreamQueue.png)
 
 ### DeviceStream Functions and Drivers 
-Device stream implementations also conform to the _StreamIntrinsicsProtocol_ which will queue a broad set of basic functions that operate on tensors for the user. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly with virtually no work, because all functions can start with the default cpu implementation. Then the driver developer can carefully one by one substitute hardware specific implementations. 
+Device stream implementations conform to the _StreamIntrinsicsProtocol_ which queues a broad set of basic tensor functions. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly, because all functions can start with the default cpu implementation. Later the driver developer can substitute hardware specific implementations.
 
 ### StreamEvent
-A stream event is a synchronization object with barrier semantics. Stream events are:
-- created by a `DeviceStream`
-- recorded on a stream to create a barrier
-- waited on by one or more threads for group synchronization
+A stream event is a synchronization object with barrier semantics used to synchronize streams with the host thread or other streams in a multi stream application. Stream synchronozation is handled automatically, so the application developer has no need to interact with stream events directly.
 
-The application can request the _DeviceStream_ to create a _StreamEvent_ by calling
-```swift
-func createEvent(options: StreamEventOptions) throws -> StreamEvent
-// or for default options
-func createEvent() throws -> StreamEvent
-```
-The cost measured on a 2.3 ghz i5 MacBook Pro is 1 million events created and destroyed in 0.7 seconds. This seems reasonably cheap, with 1 event created per tensor write operation. The discussion of how they are used in a write operation
-
-After an event is created, it can be manually signaled or recorded on a stream to be signaled when the stream head reaches that point. To create and record an event onto a stream
-```swift
-stream.record(event: stream.createEvent())
-```
+The cost measured on a 2.3 ghz i5 MacBook Pro is about 1.5 million events can be created and destroyed per second. This seems reasonably cheap, with 1 event created each time a tensor is accessed by a different stream, or when the application thread request access to the data.
 
 ![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/StreamRecordedEvents.png)
 
 ## Tensors and Streams
-A tensor is an n-dimensional data array, which is used by stream operations for input and output. A stream operation executes on the associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Memory management and synchronization are transparently managed for the user.
+A tensor is an n-dimensional data array used by stream functions as input and output. A stream function executes on the associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Memory management and synchronization are transparently managed for the user.
 
 ![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/TensorStructure.png)
-
-### TensorArray writeCompletionEvent
-The TensorArray class has the `var writeCompletionEvent: StreamEvent` property. Anytime read write access is requested, the caller will wait on this event to ensure the previous operation has completed it's write. Then in the case of readWrite access, a new completion event is created and set. It is the responsibility of the NTF framework developer to `record` the completion event on the stream after the operation has been queued. The user does not need to be aware of this requirement.
-
-
 
 ### Tensor Initialization
 Shaped tensors such as Vector and Matrix and just constrained variations of _TensorView_ which is a generalized n-dimensional tensor. Almost all functions will operate on data objects that generically conform to _TensorView_ and not one of the shaped types. The shaped types are for the purpose of application clarity, and optimized indexing in the application space. The user is unaware of the underlying _TensorArray_ and _DeviceArray_ objects. Shaped tensors provide shape specific _init_ functions, that create and initialize a _TensorArray_ then call a uniform view initializer. TensorViews are structs, and TensorArrays are class objects shared by views.
@@ -74,7 +55,8 @@ A TensorArray can be created:
 - specifying size without initial values. This variation is lazily allocated the first time data access is attempted.
 - specifying size with initial values
 
-In the first two cases, no synchronization is required since there is no data access. 
+## Tensor Synchronization
+Tensors can be freely used on multiple streams and in multiple application threads. However, the application writer needs to be aware that multiple simultaneous writers will cause copy-on-write mutation. The logging diagnostics can be set to report tensor mutation to simplify checking that a design is working as intended.
 
 # Platform protocols
 ## ComputePlatform
@@ -134,6 +116,10 @@ The _LocalPlatform_ protocol adds the remote open function
 /// The default ComputePlatform implementation for a local host
 public protocol LocalPlatform : ComputePlatform {
     static func open(platform url: URL) throws -> ComputePlatform
+    /// a platform wide unique device id obtained during initialization
+    static var nextUniqueDeviceId: Int { get }
+    /// a platform wide unique stream id obtained during initialization
+    static var nextUniqueStreamId: Int { get }
 }
 ```
 ## ComputeService
@@ -168,7 +154,7 @@ public protocol ComputeDevice: ObjectTracking, Logger, DeviceErrorHandling {
     /// the amount of free memory currently available on the device
     var availableMemory: UInt64 { get }
     /// a key to lookup device array replicas
-    var deviceArrayReplicaKey: DeviceArrayReplicaKey { get }
+    var deviceArrayReplicaKey: Int { get }
     /// the id of the device for example gpu:0
     var id: Int { get }
     /// the maximum number of threads supported per block
@@ -285,18 +271,14 @@ A stream event is a synchronization object with barrier semantics, which is:
 
 ```swift
 public protocol StreamEvent: ObjectTracking {
-    /// is `true` if the even has occurred
+    /// is `true` if the even has occurred, used for polling
     var occurred: Bool { get }
     /// the last time the event was recorded
-    var recordedTime: Date? { get }
-    
+    var recordedTime: Date? { get set }
     /// measure elapsed time since another event
-    func elapsedTime(since event: StreamEvent) -> TimeInterval
-    /// tells the event it is being recorded
-    func record()
-    /// signals that the event has occurred
-    func signal()
-    /// will block the caller until the timeout has elapsed
-    func wait(until timeout: TimeInterval) throws
+    func elapsedTime(since other: StreamEvent) -> TimeInterval?
+    /// will block the caller until the timeout has elapsed if one
+    /// was specified during init, otherwise it will block forever
+    func wait() throws
 }
 ```

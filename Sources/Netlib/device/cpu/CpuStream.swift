@@ -25,7 +25,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(logInfo: LogInfo, device: ComputeDevice, name: String){
+    public init(logInfo: LogInfo, device: ComputeDevice, name: String) {
         // create serial command queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         

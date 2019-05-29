@@ -58,6 +58,13 @@ A TensorArray can be created:
 ## Tensor Synchronization
 Tensors can be freely used on multiple streams and in multiple application threads. However, the application writer needs to be aware that multiple simultaneous writers will cause copy-on-write mutation. The logging diagnostics can be set to report tensor mutation to simplify checking that a design is working as intended.
 
+### Tensor Sync Process
+Each time write access to a _TensorArray_ is obtained, the `lastMutatingStream` member is checked to see if it matches the requesting stream. If they do not match, then the streams are synchronized at this point. The private _TensorView_ helper function `synchronizeStreams` is called to do the work.
+```swift
+private func synchronize(stream lastStream: DeviceStream?, with nextStream: DeviceStream)
+```
+An event is created and recorded on the `lastStream` and a wait is queued on the `nextStream` to ensure continuity.
+
 # Platform protocols
 ## ComputePlatform
 A compute platform represents the root for managing all services, devices, and streams on a platform. There is one local instance per process, and possibly many remote instances.

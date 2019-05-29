@@ -389,8 +389,8 @@ public extension TensorView {
     /// records it onto the end of the lastStream, then records a wait
     /// on the new stream. This insures the lastStream finishes before
     /// the new one begins
-    private func synchronizeStreams(from lastStream: DeviceStream?,
-                                    to nextStream: DeviceStream) throws {
+    private func synchronize(stream lastStream: DeviceStream?,
+                             with nextStream: DeviceStream) throws {
         if let lastStream = lastStream, nextStream.id != lastStream.id {
             let event = try lastStream.createEvent()
             diagnostic(
@@ -423,8 +423,8 @@ public extension TensorView {
             tensorArray.lastAccessMutatedView = false
 
             // sync streams
-            try synchronizeStreams(from: tensorArray.lastMutatingStream,
-                                   to: deviceStream)
+            try synchronize(stream: tensorArray.lastMutatingStream,
+                            with: deviceStream)
             // get the buffer
             let buffer = try tensorArray.readOnly(using: deviceStream)
 
@@ -458,8 +458,8 @@ public extension TensorView {
         
         return try queue.sync {
             // sync streams
-            try synchronizeStreams(from: tensorArray.lastMutatingStream,
-                                   to: deviceStream)
+            try synchronize(stream: tensorArray.lastMutatingStream,
+                            with: deviceStream)
             // mutating write?
             try copyIfMutates(using: deviceStream)
 

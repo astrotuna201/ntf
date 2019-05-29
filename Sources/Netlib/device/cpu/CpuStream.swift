@@ -9,7 +9,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 	public private(set) var trackingId = 0
     public var defaultStreamEventOptions = StreamEventOptions()
 	public let device: ComputeDevice
-    public let id: Int
+    public let id = Platform.nextUniqueStreamId
 	public let name: String
     public var logInfo: LogInfo
     public var timeout: TimeInterval = 0
@@ -25,15 +25,14 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(logInfo: LogInfo, device: ComputeDevice, name: String, id: Int){
+    public init(logInfo: LogInfo, device: ComputeDevice, name: String){
         // create serial command queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         
         // create a completion event
         self.logInfo = logInfo
         self.device = device
-        self.id = id
-        self.name = name
+        self.name = "\(name)\(id)"
         self.creatorThread = Thread.current
         let path = logInfo.namePath
         trackingId = ObjectTracker.global.register(self, namePath: path)

@@ -217,6 +217,12 @@ final public class Platform: LocalPlatform {
     public private(set) var trackingId = 0
     public var logInfo: LogInfo
 
+    /// a platform wide unique stream id obtained during initialization
+    private static var streamIdCounter = AtomicCounter(value: -1)
+    public static var nextUniqueStreamId: Int {
+        return Platform.streamIdCounter.increment()
+    }
+
     //--------------------------------------------------------------------------
     // initializers
     /// `init` is private because this is a singleton. Use the `local` static

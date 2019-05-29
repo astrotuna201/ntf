@@ -29,7 +29,9 @@ public protocol ComputePlatform:
     static var local: Platform { get }
     /// the root log
     static var log: Log { get set }
-    
+    /// a platform wide unique stream id obtained during initialization
+    static var nextUniqueStreamId: Int { get }
+
     // instance members
     /// a device automatically selected based on service priority
     var defaultDevice: ComputeDevice { get }

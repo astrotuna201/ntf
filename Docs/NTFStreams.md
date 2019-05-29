@@ -40,12 +40,12 @@ A stream event is a synchronization object with barrier semantics used to synchr
 
 The cost measured on a 2.3 ghz i5 MacBook Pro is about 1.5 million events can be created and destroyed per second. This seems reasonably cheap, with 1 event created each time a tensor is accessed by a different stream, or when the application thread request access to the data.
 
-![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/StreamRecordedEvents.png)
+![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/StreamRecordedEvents.png)
 
 ## Tensors and Streams
 A tensor is an n-dimensional data array used by stream functions as input and output. A stream function executes on the associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Memory management and synchronization are transparently managed for the user.
 
-![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/asyncRefinement/Docs/Diagrams/TensorStructure.png)
+![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/TensorStructure.png)
 
 ### Tensor Initialization
 Shaped tensors such as Vector and Matrix and just constrained variations of _TensorView_ which is a generalized n-dimensional tensor. Almost all functions will operate on data objects that generically conform to _TensorView_ and not one of the shaped types. The shaped types are for the purpose of application clarity, and optimized indexing in the application space. The user is unaware of the underlying _TensorArray_ and _DeviceArray_ objects. Shaped tensors provide shape specific _init_ functions, that create and initialize a _TensorArray_ then call a uniform view initializer. TensorViews are structs, and TensorArrays are class objects shared by views.

@@ -404,9 +404,8 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// readOnly(using stream:
-    /// Returns a read only device memory pointer synced with the specified
-    /// stream. This version is used by accelerator APIs
-    /// Note: pending write completion is handled by the TensorArray
+    /// Returns a read only device memory buffer synced with the specified
+    /// stream.
     func readOnly(using stream: DeviceStream? = nil) throws
         -> UnsafeBufferPointer<Element>
     {
@@ -431,6 +430,7 @@ public extension TensorView {
             // if `stream` is nil then the deviceStream is the hostStream
             // and the caller wants to synchronize with the app thread
             if stream == nil {
+                assert(deviceStream.device.memoryAddressing == .unified)
                 try deviceStream.waitUntilStreamIsComplete()
             }
 
@@ -442,9 +442,8 @@ public extension TensorView {
     
     //--------------------------------------------------------------------------
     /// readWrite(using stream:
-    /// Returns a read write device memory pointer synced with the specified
-    /// stream. This version is used by accelerator APIs
-    /// Note: pending write completion is handled by the TensorArray
+    /// Returns a read write device memory buffer synced with the specified
+    /// stream.
     mutating func readWrite(using stream: DeviceStream? = nil) throws
         -> UnsafeMutableBufferPointer<Element>
     {
@@ -469,9 +468,33 @@ public extension TensorView {
             // if `stream` is nil then the deviceStream is the hostStream
             // and the caller wants to synchronize with the app thread
             if stream == nil {
+                assert(deviceStream.device.memoryAddressing == .unified)
                 try deviceStream.waitUntilStreamIsComplete()
             }
 
+            return UnsafeMutableBufferPointer(
+                start: buffer.baseAddress!.advanced(by: viewDataOffset),
+                count: dataShape.elementSpanCount)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// hostMultiWriteBuffer
+    /// Returns a read write host memory buffer synced with the host app
+    /// stream.
+    mutating func hostMultiWriteBuffer() -> UnsafeMutableBufferPointer<Element>{
+        assert(tensorArray.lastMutatingStream != nil,
+               "readWrite(using: _Streams.hostStream) must be called first")
+        let lastStream = tensorArray.lastMutatingStream!
+        assert(lastStream.device.memoryAddressing == .unified)
+        // get the queue, if we reference it as a dataArray member it
+        // it adds a ref count which messes things up
+        let queue = tensorArray.accessQueue
+        
+        return queue.sync {
+            // the buffer is already in host memory so it can't fail
+            let buffer = try! tensorArray.readWrite(using: lastStream)
+            
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
                 count: dataShape.elementSpanCount)
@@ -525,7 +548,7 @@ public extension TensorView {
     mutating func hostMultiWrite(
         batchSize: Int? = nil,
         synchronous: Bool = false,
-        _ body: @escaping (_ view: Self, _ stream: DeviceStream) throws
+        _ body: @escaping (_ view: Self) throws
         -> Void) throws
     {
         assert(batchSize == nil || batchSize! <= extents[0])
@@ -535,22 +558,22 @@ public extension TensorView {
         let group = DispatchGroup()
         let queue = DispatchQueue(label: "hostMultiWrite",
                                   attributes: .concurrent)
-        let batch = batchSize ?? {
+        let batchSize = batchSize ?? {
             let size = extents[0] / ProcessInfo.processInfo.activeProcessorCount
             return size == 0 ? extents[0] : size
         }()
-        let remainder = extents[0] % batch
+        let remainder = extents[0] % batchSize
         
         // do the work
         func queueBatch(item: Int, count: Int) throws {
             let view = shared.viewItems(at: item, count: count)
             if synchronous {
-                try body(view, stream)
+                try body(view)
             } else {
                 guard stream.lastError == nil else { throw stream.lastError! }
                 queue.async(group: group) {
                     do {
-                        try body(view, stream)
+                        try body(view)
                     } catch {
                         errorDevice.reportDevice(error: error)
                     }
@@ -563,8 +586,8 @@ public extension TensorView {
         
         // launch the batches
         let lastBatchIndex = extents[0] - remainder
-        for i in stride(from: 0, to: lastBatchIndex, by: batch) {
-            try queueBatch(item: i, count: batch)
+        for i in stride(from: 0, to: lastBatchIndex, by: batchSize) {
+            try queueBatch(item: i, count: batchSize)
         }
         
         // process remaining items

@@ -31,6 +31,8 @@ The design goal is to have an asynchronous execution model that is transparent t
 
 The idea of a stream of commands going to a local or remote device across the network seems easy for users to understand and it fits well with encapsulating frameworks like Cuda or OpenCL.
 
+For details see [NTF Streams Architecture](https://github.com/ewconnell/NetlibTF/blob/master/Docs/NTFStreams.md)
+
 ***
 # Tensor Representation
 A tensor is a dynamically sized n-dimensional data array. The Tensor (NDTensor) type can be manipulated much the same as the TensorFlow tensor type. This is flexible, but can make user code harder to understand. Therefore shaped types are provided for clarity and to offer type specific initializers, helper functions, and optimized indexing.

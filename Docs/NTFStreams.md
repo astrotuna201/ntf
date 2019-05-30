@@ -65,6 +65,8 @@ func synchronize(stream lastStream: DeviceStream?, with nextStream: DeviceStream
 ```
 An event is created and recorded on the `lastStream` and a wait is queued on the `nextStream` to ensure continuity.
 
+![Cross Stream Synchronization](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/MultiStreamSync.png)
+
 ## Multi-Threaded Tensor Access on Host
 Applications usually need to process externally loaded data so that it is in the required form. This could be transfer from a file or database, compression/decompression, and type conversion. Ideally all CPU cores should be fully utilized. NTF provides the `hostMultiWrite` function to access a tensor on the host by dividing the first dimension into batches and concurrently executing a user closure for each batch for maximum system throughput. The default batch size is the number of items divided by the `activeProcessorCount`. In this example a training set of 60,000 images is concurrently processed and written to the tensor.
 ```swift

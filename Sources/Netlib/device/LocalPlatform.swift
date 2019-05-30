@@ -162,16 +162,17 @@ public extension LocalPlatform {
     /// - Parameter name: a text label assigned to the stream for logging
     func createStream(deviceId id: Int = 0,
                       serviceName: String? = nil,
-                      name: String = "stream") throws -> DeviceStream {
+                      name: String = "stream",
+                      isStatic: Bool = false) throws -> DeviceStream {
         
         let serviceName = serviceName ?? defaultDevice.service.name
         if let device = requestDevice(serviceName: serviceName, deviceId: id) {
-            return try device.createStream(name: name)
+            return try device.createStream(name: name, isStatic: isStatic)
         } else {
             writeLog("CPU substituted. Service `\(serviceName)` not found.",
                 level: .warning)
             let device = requestDevice(serviceName: "cpu")!
-            return try device.createStream(name: name)
+            return try device.createStream(name: name, isStatic: isStatic)
         }
     }
     
@@ -200,7 +201,6 @@ public extension LocalPlatform {
     static func open(platform url: URL) throws -> ComputePlatform {
         fatalError("not implemented yet")
     }
-
 }
 
 //==============================================================================
@@ -215,7 +215,7 @@ final public class Platform: LocalPlatform {
     public var deviceIdPriority: [Int] = [0]
     public var id: Int = 0
     public static let local = Platform()
-    public var serviceModuleDirectory: URL = URL(fileURLWithPath: "TODO")
+    public var serviceModuleDirectory = URL(fileURLWithPath: "TODO")
     public var servicePriority = ["cuda", "cpu"]
     public lazy var services: [String : ComputeService] = {
         loadServices()
@@ -243,11 +243,8 @@ final public class Platform: LocalPlatform {
     /// member to access the shared instance.
     private init() {
         // create the log
-        logInfo = LogInfo(log: Log(), logLevel: .error,
+        logInfo = LogInfo(log: Log(isStatic: true), logLevel: .error,
                           namePath: String(describing: Platform.self),
                           nestingLevel: 0)
-
-        // mark because it is going to be statically held
-        ObjectTracker.global.markStatic(logInfo.log.trackingId)
     }
 }

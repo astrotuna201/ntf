@@ -78,10 +78,8 @@ class _Streams {
     
     private static var _umaStream: DeviceStream = {
         // create dedicated stream for app data transfer
-        let stream = try! Platform.local.createStream(
-            deviceId: 0, serviceName: "cpu", name: "host")
-        ObjectTracker.global.markStatic(stream.trackingId)
-        return stream
+        return try! Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "host", isStatic: true)
     }()
     
     //--------------------------------------------------------------------------
@@ -89,10 +87,8 @@ class _Streams {
     // create dedicated stream for data transfer when accessing
     // within a stream closure or within HostMultiWrite
     public static var auxHostStream: DeviceStream = {
-        let stream = try! Platform.local.createStream(
-            deviceId: 0, serviceName: "cpu", name: "dataSync")
-        ObjectTracker.global.markStatic(stream.trackingId)
-        return stream
+        return try! Platform.local.createStream(
+            deviceId: 0, serviceName: "cpu", name: "dataSync", isStatic: true)
     }()
     
     //--------------------------------------------------------------------------
@@ -112,9 +108,8 @@ class _Streams {
         do {
             // create the default stream based on service and device priority.
             let stream = try Platform.local.defaultDevice.createStream(
-                    name: "default")
+                    name: "default", isStatic: true)
             streamStack = [stream]
-            ObjectTracker.global.markStatic(stream.trackingId)
         } catch {
             print("Failed to create default streams")
             exit(1)

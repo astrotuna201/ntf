@@ -25,7 +25,9 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(logInfo: LogInfo, device: ComputeDevice, name: String) {
+    public init(logInfo: LogInfo, device: ComputeDevice,
+                name: String, isStatic: Bool)
+    {
         // create serial command queue
         commandQueue = DispatchQueue(label: "\(name).commandQueue")
         
@@ -35,7 +37,8 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
         self.name = name
         self.creatorThread = Thread.current
         let path = logInfo.namePath
-        trackingId = ObjectTracker.global.register(self, namePath: path)
+        trackingId = ObjectTracker.global.register(self, namePath: path,
+                                                   isStatic: isStatic)
         
         diagnostic("\(createString) DeviceStream(\(trackingId)) " +
             "\(device.name)_\(name)", categories: .streamAlloc)

@@ -34,7 +34,7 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     // initializers
     public init(logInfo: LogInfo, device: CudaDevice,
-                name: String, id: Int) throws {
+                name: String, id: Int, isStatic: Bool) throws {
         // create a completion event
         cudaDevice = device
         self.logInfo = logInfo
@@ -50,9 +50,12 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
         var cudaStream: cudaStream_t?
         try cudaCheck(status: cudaStreamCreateWithFlags(&cudaStream, flags))
         handle = cudaStream!
-        cudnn = try CudnnHandle(deviceId: cudaDevice.id, using: handle)
-        cublas = try CublasHandle(deviceId: cudaDevice.id, using: handle)
-        trackingId = ObjectTracker.global.register(self, namePath: path)
+        cudnn = try CudnnHandle(deviceId: cudaDevice.id, using: handle,
+                                isStatic: isStatic)
+        cublas = try CublasHandle(deviceId: cudaDevice.id, using: handle,
+                                  isStatic: isStatic)
+        trackingId = ObjectTracker.global.register(self, namePath: path,
+                                                   isStatic: isStatic)
 
         diagnostic("\(createString) DeviceStream(\(trackingId)) " +
                            "\(device.name)_\(name)", categories: .streamAlloc)
@@ -61,6 +64,13 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     // deinit
     deinit {
+        assert(Thread.current === creatorThread,
+               "Stream has been captured and is being released by a " + 
+               "different thread. Probably by a queued function on the stream.")
+
+        diagnostic("\(releaseString) DeviceStream(\(trackingId)) " +
+                           "\(device.name)_\(name)", categories: [.streamAlloc])
+
         do {
             // select the device
             try cudaDevice.select()

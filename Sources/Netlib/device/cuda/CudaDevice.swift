@@ -11,7 +11,7 @@ public class CudaDevice : LocalComputeDevice {
     public private(set) var trackingId = 0
     public private (set) weak var service: ComputeService!
     public let attributes: [String : String]
-    public var deviceArrayReplicaKey: DeviceArrayReplicaKey
+    public var deviceArrayReplicaKey = Platform.nextUniqueDeviceId
     public let id: Int
     public var logInfo: LogInfo
     public var maxThreadsPerBlock: Int { return Int(props.maxThreadsPerBlock) }
@@ -43,9 +43,6 @@ public class CudaDevice : LocalComputeDevice {
         self.service = service
         self.timeout = timeout
         self.memoryAddressing = memoryAddressing
-        deviceArrayReplicaKey =
-                DeviceArrayReplicaKey(platformId: service.platform!.id,
-                                      serviceId: service.id, deviceId: id)
 
         // get device properties
         var tempProps = cudaDeviceProp()
@@ -98,11 +95,14 @@ public class CudaDevice : LocalComputeDevice {
 
     //--------------------------------------------------------------------------
 	// createStream
-    public func createStream(name streamName: String) throws -> DeviceStream {
+    public func createStream(name streamName: String, isStatic: Bool) throws
+                    -> DeviceStream
+    {
         let id = streamId.increment()
         let streamName = "\(streamName):\(id)"
         return try CudaStream(logInfo: logInfo.flat(streamName),
-                              device: self, name: streamName, id: id)
+                              device: self, name: streamName,
+                              id: id, isStatic: isStatic)
     }
 
 	//--------------------------------------------------------------------------

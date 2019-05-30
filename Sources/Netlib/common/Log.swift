@@ -175,11 +175,11 @@ public protocol LogWriter: ObjectTracking {
     var queue: DispatchQueue { get }
     
     //--------------------------------------------------------------------------
-    /// initialzers
+    /// initializers
     /// initializes the log
     /// - Parameter url: the file to write to. If `nil`, output will be written
     ///   to stdout.
-    init(url: URL?)
+    init(url: URL?, isStatic: Bool)
 
     //--------------------------------------------------------------------------
     /// write
@@ -263,13 +263,13 @@ final public class Log: LogWriter {
 	public let queue = DispatchQueue(label: "Log.queue")
 
     //--------------------------------------------------------------------------
-    // initialzers
-    public init(url: URL? = nil) {
+    // initializers
+    public init(url: URL? = nil, isStatic: Bool) {
         self.url = url
         level = .error
         _silent = false
         _tabSize = 2
-        trackingId = ObjectTracker.global.register(self)
+        trackingId = ObjectTracker.global.register(self, isStatic: isStatic)
     }
     deinit {
         ObjectTracker.global.remove(trackingId: trackingId)

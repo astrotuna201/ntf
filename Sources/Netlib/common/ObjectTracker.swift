@@ -108,16 +108,6 @@ final public class ObjectTracker {
             activeObjects[trackingId] = info
         }
     }
-    
-    //--------------------------------------------------------------------------
-    /// markStatic
-    /// used to note that the object is being held by a static owner, and
-    /// should not show up in a normal leak report
-    public func markStatic(_ trackingId: Int) {
-        #if DEBUG
-        _ = queue.sync { activeObjects[trackingId]!.isStatic = true }
-        #endif
-    }
 
 	//--------------------------------------------------------------------------
 	// remove

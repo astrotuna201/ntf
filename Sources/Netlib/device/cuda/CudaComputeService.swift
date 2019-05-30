@@ -64,7 +64,7 @@ public final class CudaComputeService: LocalComputeService {
         for i in 0..<Int(deviceCount) {
             let device = try CudaDevice(service: self, deviceId: i,
                                         logInfo: logInfo.flat("gpu:\(i)"),
-                                        memoryAddressing: .unified,
+                                        memoryAddressing: .discreet,
                                         timeout: timeout)
             devices.append(device)
         }
@@ -264,7 +264,7 @@ extension NanPropagation {
 //==============================================================================
 // CudnnHandle
 public final class CudnnHandle: ObjectTracking {
-    init(deviceId: Int, using stream: cudaStream_t) throws {
+    init(deviceId: Int, using stream: cudaStream_t, isStatic: Bool) throws {
         self.deviceId = deviceId
         try cudaCheck(status: cudaSetDevice(Int32(deviceId)))
 
@@ -272,7 +272,7 @@ public final class CudnnHandle: ObjectTracking {
         try cudaCheck(status: cudnnCreate(&temp))
         handle = temp!
         try cudaCheck(status: cudnnSetStream(handle, stream))
-        trackingId = ObjectTracker.global.register(self)
+        trackingId = ObjectTracker.global.register(self, isStatic: isStatic)
     }
 
     deinit {
@@ -294,7 +294,9 @@ public final class CudnnHandle: ObjectTracking {
 //==============================================================================
 // CublasHandle
 public final class CublasHandle: ObjectTracking {
-    public init(deviceId: Int, using stream: cudaStream_t) throws {
+    public init(deviceId: Int, using stream: cudaStream_t,
+                isStatic: Bool) throws
+    {
         self.deviceId = deviceId
         try cudaCheck(status: cudaSetDevice(Int32(deviceId)))
 
@@ -302,7 +304,7 @@ public final class CublasHandle: ObjectTracking {
         try cudaCheck(status: cublasCreate_v2(&temp))
         handle = temp!
         try cudaCheck(status: cublasSetStream_v2(handle, stream))
-        trackingId = ObjectTracker.global.register(self)
+        trackingId = ObjectTracker.global.register(self, isStatic: isStatic)
     }
 
     deinit {

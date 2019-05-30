@@ -12,14 +12,14 @@ class test_Async: XCTestCase {
     // support terminal test run
     static var allTests = [
         ("test_hostMultiWrite", test_hostMultiWrite),
-        ("test_defaultStreamOp", test_defaultStreamOp),
-        ("test_secondaryDiscreetMemoryStream", test_secondaryDiscreetMemoryStream),
-        ("test_threeStreamInterleave", test_threeStreamInterleave),
-        ("test_tensorReferenceBufferSync", test_tensorReferenceBufferSync),
-        ("test_temporaryStreamShutdown", test_temporaryStreamShutdown),
-        ("test_StreamEventWait", test_StreamEventWait),
-        ("test_perfCreateStreamEvent", test_perfCreateStreamEvent),
-        ("test_perfRecordStreamEvent", test_perfRecordStreamEvent),
+//        ("test_defaultStreamOp", test_defaultStreamOp),
+//        ("test_secondaryDiscreetMemoryStream", test_secondaryDiscreetMemoryStream),
+//        ("test_threeStreamInterleave", test_threeStreamInterleave),
+//        ("test_tensorReferenceBufferSync", test_tensorReferenceBufferSync),
+//        ("test_temporaryStreamShutdown", test_temporaryStreamShutdown),
+//        ("test_StreamEventWait", test_StreamEventWait),
+//        ("test_perfCreateStreamEvent", test_perfCreateStreamEvent),
+//        ("test_perfRecordStreamEvent", test_perfRecordStreamEvent),
     ]
 
     //==========================================================================
@@ -35,7 +35,7 @@ class test_Async: XCTestCase {
             let items = 100
             var trainingSet = ImageSet((items, 256, 256))
 
-            try trainingSet.hostMultiWrite { batch in
+            try trainingSet.hostMultiWrite(synchronous: true) { batch in
                 for i in 0..<batch.extents[0] {
                     // get a view of the item at `i`
                     var itemView = batch.view(item: i)

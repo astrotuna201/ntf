@@ -75,9 +75,10 @@ public class CpuDevice: LocalComputeDevice {
 
     //--------------------------------------------------------------------------
 	// createStream
-	public func createStream(name streamName: String) -> DeviceStream {
+	public func createStream(name streamName: String,
+                             isStatic: Bool) -> DeviceStream {
         return CpuStream(logInfo: logInfo.flat(streamName),
-                         device: self, name: streamName)
+                         device: self, name: streamName, isStatic: isStatic)
 	}
 }
 

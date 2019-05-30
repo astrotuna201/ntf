@@ -65,6 +65,34 @@ func synchronize(stream lastStream: DeviceStream?, with nextStream: DeviceStream
 ```
 An event is created and recorded on the `lastStream` and a wait is queued on the `nextStream` to ensure continuity.
 
+## Multi-Threaded Tensor Access on Host
+Applications usually need to process externally loaded data so that it is in the required form. This could be transfer from a file or database, compression/decompression, and type conversion. Ideally all CPU cores should be fully utilized. NTF provides the `hostMultiWrite` function to access a tensor on the host by dividing the first dimension into batches and concurrently executing a user closure for each batch for maximum system throughput. The default batch size is the number of items divided by the `activeProcessorCount`. In this example a training set of 60,000 images is concurrently processed and written to the tensor.
+```swift
+typealias Pixel = RGB<UInt8>
+typealias ImageSet = Volume<Pixel>
+let expected = Pixel(0, 127, 255)
+let items = 60000
+var trainingSet = ImageSet((items, 256, 256))
+
+try trainingSet.hostMultiWrite { batch in
+    for i in 0..<batch.extents[0] {
+        // get a view of the item at `i`
+        var itemView = batch.view(item: i)
+        
+        // get a writable buffer for the item
+        let buffer = itemView.hostMultiWriteBuffer()
+        
+        // at this point load image data from a file or database,
+        // decompress, type convert, whatever is needed
+        buffer.initialize(repeating: expected)
+    }
+}
+
+// check the last item to see if it contains the expected value
+let item = trainingSet.view(item: items - 1)
+let values = try item.array()
+assert(values[0] == expected)
+```
 # Platform protocols
 ## ComputePlatform
 A compute platform represents the root for managing all services, devices, and streams on a platform. There is one local instance per process, and possibly many remote instances.

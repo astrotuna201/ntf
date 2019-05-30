@@ -479,29 +479,6 @@ public extension TensorView {
     }
     
     //--------------------------------------------------------------------------
-    /// hostMultiWriteBuffer
-    /// Returns a read write host memory buffer synced with the host app
-    /// stream.
-    mutating func hostMultiWriteBuffer() -> UnsafeMutableBufferPointer<Element>{
-        assert(tensorArray.lastMutatingStream != nil,
-               "readWrite(using: _Streams.hostStream) must be called first")
-        let lastStream = tensorArray.lastMutatingStream!
-        assert(lastStream.device.memoryAddressing == .unified)
-        // get the queue, if we reference it as a dataArray member it
-        // it adds a ref count which messes things up
-        let queue = tensorArray.accessQueue
-        
-        return queue.sync {
-            // the buffer is already in host memory so it can't fail
-            let buffer = try! tensorArray.readWrite(using: lastStream)
-            
-            return UnsafeMutableBufferPointer(
-                start: buffer.baseAddress!.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
-        }
-    }
-    
-    //--------------------------------------------------------------------------
     /// view
     /// Create a sub view of the tensorArray relative to this view
     func view(at offset: [Int], extents: [Int]) -> Self {
@@ -595,6 +572,29 @@ public extension TensorView {
             try queueBatch(item: lastBatchIndex, count: remainder)
         }
         group.wait()
+    }
+    
+    //--------------------------------------------------------------------------
+    /// hostMultiWriteBuffer
+    /// Returns a read write host memory buffer synced with the host app
+    /// stream.
+    mutating func hostMultiWriteBuffer() -> UnsafeMutableBufferPointer<Element>{
+        assert(tensorArray.lastMutatingStream != nil,
+               "readWrite(using: _Streams.hostStream) must be called first")
+        let lastStream = tensorArray.lastMutatingStream!
+        assert(lastStream.device.memoryAddressing == .unified)
+        // get the queue, if we reference it as a dataArray member it
+        // it adds a ref count which messes things up
+        let queue = tensorArray.accessQueue
+        
+        return queue.sync {
+            // the buffer is already in host memory so it can't fail
+            let buffer = try! tensorArray.readWrite(using: lastStream)
+            
+            return UnsafeMutableBufferPointer(
+                start: buffer.baseAddress!.advanced(by: viewDataOffset),
+                count: dataShape.elementSpanCount)
+        }
     }
 }
 

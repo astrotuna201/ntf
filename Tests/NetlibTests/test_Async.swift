@@ -24,7 +24,8 @@ class test_Async: XCTestCase {
 
     //==========================================================================
     // test_hostMultiWrite
-    // initializes two matrices and adds them together
+    // accesses a tensor on the host by dividing the first dimension
+    // into batches and concurrently executing a user closure for each batch
     func test_hostMultiWrite() {
         do {
             Platform.log.level = .diagnostic

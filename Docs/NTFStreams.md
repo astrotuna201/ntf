@@ -3,6 +3,12 @@
 ### Contents
 
 - [Streams Architecture](#streams-architecture)
+    - [Device Streams](#device-streams)
+    - [Stream Events](#stream-events)
+    - [Tensors and Streams](#tensors-and-streams)
+        - [Tensor Initialization](#tensor-initialization)
+        - [Synchronization](#tensor-synchronization)
+        - [Multi-Threaded Host Access](#multi-threaded-tensor-host-access)
 - [Platform Protocols](#platform-abstraction)
     - [ComputePlatform](#ComputePlatform)
     - [ComputeService](#ComputeService)
@@ -27,15 +33,15 @@ ComputePlatform         // local, remote
         StreamEvent
 ```
 # Streams Architecture
-## Device Stream
+## Device Streams
 A device stream is an interface to a set of tensor operations that are executed via a serial asynchronous FIFO queue. Each compute service will have unique hardware specific  `DeviceStream`  implementations. The `CpuStream` class will be optimized for the host cpu, and the CudaStream implementation efficiently wraps Cuda streams.
 
 ![Device Stream](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/DeviceStreamQueue.png)
 
-### DeviceStream Functions and Drivers 
+### Device Stream Functions and Drivers 
 Device stream implementations conform to the _StreamIntrinsicsProtocol_ which queues a broad set of basic tensor functions. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly, because all functions can start with the default cpu implementation. Later the driver developer can substitute hardware specific implementations.
 
-### StreamEvent
+### Stream Events
 A stream event is a synchronization object with barrier semantics used to synchronize streams with the host thread or other streams in a multi stream application. Stream synchronozation is handled automatically, so the application developer has no need to interact with stream events directly.
 
 The cost measured on a 2.3 ghz i5 MacBook Pro is about 1.5 million events can be created and destroyed per second. This seems reasonably cheap, with 1 event created each time a tensor is accessed by a different stream, or when the application thread request access to the data.
@@ -67,7 +73,7 @@ An event is created and recorded on the `lastStream` and a wait is queued on the
 
 ![Cross Stream Synchronization](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/MultiStreamSync.png)
 
-## Multi-Threaded Tensor Access on Host
+## Multi-Threaded Tensor Host Access
 Applications usually need to process externally loaded data so that it is in the required form. This could be transfer from a file or database, compression/decompression, and type conversion. Ideally all CPU cores should be fully utilized. NTF provides the `hostMultiWrite` function to access a tensor on the host by dividing the first dimension into batches and concurrently executing a user closure for each batch for maximum system throughput. The default batch size is the number of items divided by the `activeProcessorCount`. In this example a training set of 60,000 images is concurrently processed and written to the tensor.
 ```swift
 typealias Pixel = RGB<UInt8>

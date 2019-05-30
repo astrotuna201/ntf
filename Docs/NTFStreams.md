@@ -8,6 +8,7 @@
     - [Tensors and Streams](#tensors-and-streams)
         - [Tensor Initialization](#tensor-initialization)
         - [Synchronization](#tensor-synchronization)
+        - [Using Multiple Streams and Devices](#using-multiple-streams-and-devices)
         - [Multi-Threaded Host Access](#multi-threaded-tensor-host-access)
 - [Platform Protocols](#platform-abstraction)
     - [ComputePlatform](#ComputePlatform)
@@ -34,47 +35,64 @@ ComputePlatform         // local, remote
 ```
 # Streams Architecture
 ## Device Streams
-A device stream is an interface to a set of tensor operations that are executed via a serial asynchronous FIFO queue. Each compute service will have unique hardware specific  `DeviceStream`  implementations. The `CpuStream` class will be optimized for the host cpu, and the CudaStream implementation efficiently wraps Cuda streams.
+A device stream is simply an ordered set of commands issued to a device. Commands are added to the stream by calling stream functions such as `add`, `sum`, etc... Commands are added asynchronously so the application thread is not blocked waiting for results. Device and application synchronization are automatic and transparent to the user. 
+
+Each compute service will have a unique hardware specific  `DeviceStream`  implementation optimized for the device. The `CpuStream` class is optimized for the host cpu, and the `CudaStream` implementation efficiently wraps Cuda streams.
 
 ![Device Stream](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/DeviceStreamQueue.png)
 
 ### Device Stream Functions and Drivers 
-Device stream implementations conform to the _StreamIntrinsicsProtocol_ which queues a broad set of basic tensor functions. Additional protocols with higher level functions are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportinity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly, because all functions can start with the default cpu implementation. Later the driver developer can substitute hardware specific implementations.
+Device stream implementations conform to the _StreamIntrinsicsProtocol_ which implements a broad set of basic tensor functions. Additional protocols with higher level functionality are also adopted by the stream. These higher level functions are aggregates whose default implementation use the intrinsics layer to complete the task. However, a stream implementer has the opportunity to directly implement any level of function optimized for the target device. This approach allows the first version of a new device driver to be implemented correctly, because all functions can start with the default cpu implementation. Later the driver developer can substitute hardware specific implementations to optimize performance.
 
 ### Stream Events
-A stream event is a synchronization object with barrier semantics used to synchronize streams with the host thread or other streams in a multi stream application. Stream synchronozation is handled automatically, so the application developer has no need to interact with stream events directly.
+A stream event is a synchronization object with barrier semantics used to synchronize streams with the host thread or other streams in a multi stream application. Stream synchronization is handled automatically, so the application developer has no need to interact with stream events directly.
 
-The cost measured on a 2.3 ghz i5 MacBook Pro is about 1.5 million events can be created and destroyed per second. This seems reasonably cheap, with 1 event created each time a tensor is accessed by a different stream, or when the application thread request access to the data.
+The cost measured on a 2.3 ghz i5 MacBook Pro is about 1.5 million events can be created and destroyed per second. This seems reasonably cheap, with 1 event created each time a tensor is accessed by a different stream, or when the application thread requests access to the data.
 
 ![Queued StreamEvents](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/StreamRecordedEvents.png)
 
 ## Tensors and Streams
-A tensor is an n-dimensional data array used by stream functions as input and output. A stream function executes on the associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Memory management and synchronization are transparently managed for the user.
+A tensor is an n-dimensional data array used by stream functions as input and output. The Tensor _Element_ associated type is unconstrained. It can contain both scalar types and _FixedSizeVector_ types such as `RGB` or `Stereo`. 
+
+A stream function executes on it's associated device, which might exist in a unified memory address space with the application, or in a discrete address space. Data transport, replication, and synchronization are transparently managed for the user.
 
 ![Tensor Structure](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/TensorStructure.png)
 
 ### Tensor Initialization
-Shaped tensors such as Vector and Matrix and just constrained variations of _TensorView_ which is a generalized n-dimensional tensor. Almost all functions will operate on data objects that generically conform to _TensorView_ and not one of the shaped types. The shaped types are for the purpose of application clarity, and optimized indexing in the application space. The user is unaware of the underlying _TensorArray_ and _DeviceArray_ objects. Shaped tensors provide shape specific _init_ functions, that create and initialize a _TensorArray_ then call a uniform view initializer. TensorViews are structs, and TensorArrays are class objects shared by views.
+Shaped tensors such as Vector and Matrix are constrained variations of a _TensorView_ which is a generalized n-dimensional tensor. Almost all functions operate on data objects that generically conform to _TensorView_ and not one of the shaped types. The shaped types are for the purpose of application clarity, and optimized indexing in the application space. The user is unaware of the underlying _TensorArray_ and _DeviceArray_ objects. Shaped tensors provide shape specific _init_ functions, that create and initialize the _TensorArray_ then call a uniform view initializer. TensorViews are structs, and TensorArrays are class objects shared by views.
 
 A TensorArray can be created:
 - empty with no space
-- specifying size without initial values. This variation is lazily allocated the first time data access is attempted.
+- specifying size without initial values. This variation is lazily allocated on the target device the first time data access is requested. No host shadow buffers are allocated, which allows for efficient allocation of temporary tensors on device.
 - specifying size with initial values
 
 ## Tensor Synchronization
-Tensors can be freely used on multiple streams and in multiple application threads. However, the application writer needs to be aware that multiple simultaneous writers will cause copy-on-write mutation. The logging diagnostics can be set to report tensor mutation to simplify checking that a design is working as intended.
+Tensors can be freely used on multiple streams. However, the application writer needs to be aware that multiple simultaneous writers will cause copy-on-write mutation. The logging diagnostics can be set to report tensor mutation to simplify checking that a design is working as intended.
 
 ### Tensor Sync Process
-Each time write access to a _TensorArray_ is obtained, the `lastMutatingStream` member is checked to see if it matches the requesting stream. If they do not match, then the streams are synchronized at this point. The private _TensorView_ helper function `synchronize` is called to do the work.
-```swift
-func synchronize(stream lastStream: DeviceStream?, with nextStream: DeviceStream)
-```
-An event is created and recorded on the `lastStream` and a wait is queued on the `nextStream` to ensure continuity.
+Each time _TensorArray_ write access is obtained, the `lastMutatingStream` member is checked to see if it matches the requesting stream. If they do not match, then a synchronization event is queued to both streams to ensure correct command ordering.
 
 ![Cross Stream Synchronization](https://github.com/ewconnell/NetlibTF/blob/master/Docs/Diagrams/MultiStreamSync.png)
 
+## Using Multiple Streams and Devices
+By default a stream is created for the user on the current thread in the global scope. Operations are implicitly performed on this stream. However more sophisticated applications will create multiple streams on multiple devices on multiple platforms. The syntax for using streams is straitforward.
+```swift
+let stream1 = Platform.local.createStream(deviceId: 1)
+let stream2 = Platform.local.createStream(deviceId: 2)
+
+let volume = using(stream1) {
+    Volume<Int32>((3, 4, 5)).filledWithIndex()
+}
+let view = volume.view(at: [1, 1, 1], extents: [2, 2, 2])
+
+let viewSum = using(stream2) {
+    sum(view).asValue()
+}
+assert(viewSum == 312)
+```
+
 ## Multi-Threaded Tensor Host Access
-Applications usually need to process externally loaded data so that it is in the required form. This could be transfer from a file or database, compression/decompression, and type conversion. Ideally all CPU cores should be fully utilized. NTF provides the `hostMultiWrite` function to access a tensor on the host by dividing the first dimension into batches and concurrently executing a user closure for each batch for maximum system throughput. The default batch size is the number of items divided by the `activeProcessorCount`. In this example a training set of 60,000 images is concurrently processed and written to the tensor.
+Applications usually need to process external data so it is in the required form. This could be transfer from a file or database, compression/decompression, or type conversion. Ideally all CPU cores should be fully utilized. NTF provides the `hostMultiWrite` function to access a tensor on the host by dividing the first dimension into batches and concurrently executing a user closure for each batch for maximum system throughput. The default batch size is the number of items divided by the `activeProcessorCount`. In this example a training set of 60,000 images is concurrently processed and written to the tensor.
 ```swift
 typealias Pixel = RGB<UInt8>
 typealias ImageSet = Volume<Pixel>

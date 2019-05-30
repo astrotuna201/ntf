@@ -525,12 +525,14 @@ public extension TensorView {
     mutating func hostMultiWrite(
         batchSize: Int? = nil,
         synchronous: Bool = false,
-        _ body: @escaping (_ view: Self) throws -> Void) throws
+        _ body: @escaping (_ view: Self, _ stream: DeviceStream) throws
+        -> Void) throws
     {
         assert(batchSize == nil || batchSize! <= extents[0])
         let stream = _Streams.hostStream
         let errorDevice = stream.device
-        let shared = try sharedView(using: stream)
+        var shared = try sharedView(using: stream)
+        let group = DispatchGroup()
         let queue = DispatchQueue(label: "hostMultiWrite",
                                   attributes: .concurrent)
         let batch = batchSize ?? {
@@ -543,18 +545,21 @@ public extension TensorView {
         func queueBatch(item: Int, count: Int) throws {
             let view = shared.viewItems(at: item, count: count)
             if synchronous {
-                try body(view)
+                try body(view, stream)
             } else {
                 guard stream.lastError == nil else { throw stream.lastError! }
-                queue.async {
+                queue.async(group: group) {
                     do {
-                        try body(view)
+                        try body(view, stream)
                     } catch {
                         errorDevice.reportDevice(error: error)
                     }
                 }
             }
         }
+        
+        // ensure the data is local
+        _ = try shared.readWrite(using: stream)
         
         // launch the batches
         let lastBatchIndex = extents[0] - remainder
@@ -566,6 +571,7 @@ public extension TensorView {
         if remainder > 0 {
             try queueBatch(item: lastBatchIndex, count: remainder)
         }
+        group.wait()
     }
 }
 

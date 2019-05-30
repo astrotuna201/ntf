@@ -28,25 +28,26 @@ class test_Async: XCTestCase {
     func test_hostMultiWrite() {
         do {
             Platform.log.level = .diagnostic
-            typealias Pixel = RGB<Float>
+            typealias Pixel = RGB<UInt8>
             typealias ImageSet = Volume<Pixel>
 
-            let expected = Pixel(0, 0.5, 1.0)
-            let items = 3
+            let expected = Pixel(0, 127, 255)
+            let items = 2
             var trainingSet = ImageSet((items, 2, 3))
 
-            func load<T>(item: Int, into view: inout T) throws
+            func load<T>(item: Int, into view: inout T,
+                         using stream: DeviceStream) throws
                 where T: TensorView, T.Element == Pixel
             {
-                let buffer = try view.readWrite()
+                let buffer = try view.readWrite(using: stream)
                 // at this point load image data from a file or database
                 buffer.initialize(repeating: expected)
             }
             
-            try trainingSet.hostMultiWrite(synchronous: true) { batch in
+            try trainingSet.hostMultiWrite(synchronous: true) { batch, stream in
                 for i in 0..<batch.extents[0] {
                     var itemView = batch.view(item: i)
-                    try load(item: i, into: &itemView)
+                    try load(item: i, into: &itemView, using: stream)
                 }
             }
 

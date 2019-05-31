@@ -5,6 +5,11 @@ import PackageDescription
 
 #if os(Linux)
 let excludeDirs: [String] = []
+
+let NTFSwiftSettings: [SwiftSetting] = [
+    SwiftSetting.define("CUDA"),
+]
+
 #else
 let excludeDirs = ["device/cuda"]
 #endif
@@ -26,14 +31,16 @@ let package = Package(
     ],
     targets: [
         .systemLibrary(name: "Cuda", path: "Libraries/Cuda", pkgConfig: "cuda-10.0"),
-        .systemLibrary(name: "Jpeg", path: "Libraries/Jpeg"),
-        .systemLibrary(name: "Png", path: "Libraries/Png"),
-        .systemLibrary(name: "ZLib", path: "Libraries/ZLib"),
+        .systemLibrary(name: "Jpeg", path: "Libraries/Jpeg", pkgConfig: "libjpeg"),
+        .systemLibrary(name: "Png", path: "Libraries/Png", pkgConfig: "libpng"),
+        .systemLibrary(name: "ZLib", path: "Libraries/ZLib", pkgConfig: "zlib"),
         .target(name: "Netlib",  
                 dependencies: ["Cuda", "Jpeg", "Png", "ZLib"], 
-                exclude: excludeDirs),
+                exclude: excludeDirs,
+                swiftSettings: NTFSwiftSettings),
         .testTarget(
                 name: "NetlibTests", 
-                dependencies: ["Netlib"])
+                dependencies: ["Netlib"],
+                swiftSettings: NTFSwiftSettings)
     ]
 )

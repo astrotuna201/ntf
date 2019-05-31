@@ -61,7 +61,7 @@ public extension LocalPlatform {
                                               name: "cpuUnitTest")
             loadedServices[cpuUnitTestService.name] = cpuUnitTestService
 
-            #if os(Linux)
+            #if CUDA
             let cudaService = try CudaComputeService(platform: Platform.local,
                                                      id: loadedServices.count,
                                                      logInfo: logInfo)

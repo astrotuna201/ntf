@@ -3,17 +3,6 @@
 // Swift required to build this package.
 import PackageDescription
 
-#if os(Linux)
-let excludeDirs: [String] = []
-
-let NTFSwiftSettings: [SwiftSetting] = [
-    SwiftSetting.define("CUDA"),
-]
-
-#else
-let excludeDirs = ["device/cuda"]
-#endif
-
 let package = Package(
     name: "Netlib",
     products: [
@@ -36,11 +25,9 @@ let package = Package(
         .systemLibrary(name: "ZLib", path: "Libraries/ZLib", pkgConfig: "zlib"),
         .target(name: "Netlib",  
                 dependencies: ["Cuda", "Jpeg", "Png", "ZLib"], 
-                exclude: excludeDirs,
-                swiftSettings: NTFSwiftSettings),
+                exclude: ["device/cuda"]),
         .testTarget(
                 name: "NetlibTests", 
-                dependencies: ["Netlib"],
-                swiftSettings: NTFSwiftSettings)
+                dependencies: ["Netlib"])
     ]
 )

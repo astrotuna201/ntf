@@ -17,7 +17,10 @@ public enum GZipError: Error {
 }
 
 //==============================================================================
-// zip
+/// zip(data:
+/// - Parameter data: An array of data elements to gzip
+/// - Parameter compression: the compression factor to use. A value of -1
+/// lets gzip choose the optimal factor
 public func zip<T>(data: [T], compression: Int = -1) throws -> [T] {
     return try data.withUnsafeBytes {
         return try zip(buffer: $0, compression: compression).withUnsafeBytes {
@@ -28,7 +31,10 @@ public func zip<T>(data: [T], compression: Int = -1) throws -> [T] {
 }
 
 //============================================================================
-// zip
+/// zip(buffer:
+/// - Parameter buffer: A buffer of data elements to gzip
+/// - Parameter compression: the compression factor to use. A value of -1
+/// lets gzip choose the optimal factor
 public func zip(buffer: UnsafeRawBufferPointer,
                 compression: Int = -1) throws -> [UInt8]
 {
@@ -37,11 +43,14 @@ public func zip(buffer: UnsafeRawBufferPointer,
     var status: Int32
 
     // set compression
-    let level = (0...9 ~= compression) ? Int32(compression) : Z_DEFAULT_COMPRESSION
+    let level = (0...9 ~= compression) ?
+        Int32(compression) : Z_DEFAULT_COMPRESSION
 
     status = deflateInit2_(&stream, level, Z_DEFLATED,
-                           MAX_WBITS + Int32(16), MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-                           ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
+                           MAX_WBITS + Int32(16), MAX_MEM_LEVEL,
+                           Z_DEFAULT_STRATEGY,
+                           ZLIB_VERSION,
+                           Int32(MemoryLayout<z_stream>.size))
 
     guard status == Z_OK else {
         // deflateInit2 returns:
@@ -65,7 +74,8 @@ public func zip(buffer: UnsafeRawBufferPointer,
         // point to next available buffer space
         result.withUnsafeMutableBufferPointer {
             let ptr = $0.baseAddress!.advanced(by: Int(stream.total_out))
-            ptr.withMemoryRebound(to: Bytef.self, capacity: Int(stream.avail_out)) {
+            ptr.withMemoryRebound(to: Bytef.self,
+                                  capacity: Int(stream.avail_out)) {
                 stream.next_out = $0
             }
         }
@@ -82,25 +92,31 @@ public func zip(buffer: UnsafeRawBufferPointer,
 }
 
 //==============================================================================
-// extract
+/// extract(zip:
+/// extracts the contents of a zip archive and writes
+/// the items to the destination.
+/// - Parameter zip: a URL to the zip archive file
+/// - Parameter to destURL: a URL to the location to write the items
+/// - Parameter totalItems: the number of items in the archive
+/// - Parameter progress handler: callback to report item progress
 public func extract(zip: URL, to destURL: URL, totalItems: inout Int,
                     progress handler: (Int) -> Void) throws
 {
 	//Open the ZIP archive
 	var err: Int32 = 0
 	let za = zip_open(zip.path, 0, &err)
-	guard err == 0 else {
+	guard let file = za, err == 0 else {
 		throw GZipError.error(getZipErrorString(error: err))
 	}
-	defer { zip_close(za) }
-	totalItems = Int(zip_get_num_entries(za, 0))
+	defer { zip_close(file) }
+	totalItems = Int(zip_get_num_entries(file, 0))
 
 	// loop through the entries
 	var stat = zip_stat_t()
 	for i in 0..<totalItems {
 		handler(i)
-		if zip_stat_index(za, UInt64(i), 0, &stat) == 0 {
-			let name = String(cString: stat.name)
+		if zip_stat_index(file, UInt64(i), 0, &stat) == 0 {
+			let name = String(cString: stat.name!)
 			let itemSize = Int(stat.size)
 			let itemURL = destURL.appendingPathComponent(name)
 
@@ -112,16 +128,15 @@ public func extract(zip: URL, to destURL: URL, totalItems: inout Int,
                     attributes: nil)
 
 			} else {
-				let zf = zip_fopen_index(za, UInt64(i), 0)
-				defer { zip_fclose(zf) }
-				if zf == nil {
-                    throw GZipError.error("Failed to open zip element: \(name)") 
+                guard let indexFile = zip_fopen_index(file, UInt64(i), 0) else {
+                    throw GZipError.error("Failed to open zip element: \(name)")
                 }
+				defer { zip_fclose(indexFile) }
 
 				// read archive data
 				var data = UnsafeMutableRawBufferPointer
                         .allocate(byteCount: itemSize, alignment: 1)
-                zip_fread(zf, data.baseAddress!, stat.size)
+                zip_fread(indexFile, data.baseAddress!, stat.size)
 
 				// write to output file
 				let fd = open(itemURL.path, O_RDWR | O_TRUNC | O_CREAT, 0o664)
@@ -151,7 +166,10 @@ private func getZipErrorString(error: Int32) -> String {
 }
 
 //==============================================================================
-// unzip
+/// unzip
+/// unzips a byte array to the output type
+/// - Parameter data: the data to unzip
+/// - Returns: an array of exapanded elements
 public func unzip<T>(data: [UInt8]) throws -> [T] {
     return try data.withUnsafeBytes {
         return try unzip(buffer: $0).withUnsafeBytes {
@@ -162,7 +180,10 @@ public func unzip<T>(data: [UInt8]) throws -> [T] {
 }
 
 //==============================================================================
-// unzip
+/// unzip
+/// unzips a buffer to a byte array
+/// - Parameter data: the data to unzip
+/// - Returns: an array of exapanded elements
 public func unzip(buffer: UnsafeRawBufferPointer) throws -> [UInt8] {
 	guard buffer.count > 0 else { return [UInt8]() }
 	var stream = createZStream(buffer: buffer)

@@ -119,7 +119,7 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
     //--------------------------------------------------------------------------
     /// queues a closure on the stream for execution
     /// This will catch and propagate the last asynchronous error thrown.
-    public func queue(_ body: @escaping () throws -> Void) {
+    private func queue(_ body: @escaping () throws -> Void) {
         // if the stream is in an error state, no additional work
         // will be queued
         guard lastError == nil else { return }
@@ -198,6 +198,55 @@ public final class CpuStream: LocalDeviceStream, StreamGradients {
             "\(device.name)_\(name)", categories: .streamSync)
     }
     
+    //--------------------------------------------------------------------------
+    /// fills the device array with zeros
+    public func zero(array: DeviceArray) throws {
+        assert(!array.isReadOnly, "cannot mutate read only reference buffer")
+        queue {
+            array.buffer.initializeMemory(as: UInt8.self, repeating: 0)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// copies from one device array to another
+    public func copyAsync(to array: DeviceArray,
+                          from otherArray: DeviceArray) throws {
+        assert(!array.isReadOnly, "cannot mutate read only reference buffer")
+        assert(array.buffer.count == otherArray.buffer.count,
+               "buffer sizes don't match")
+        queue {
+            array.buffer.copyMemory(
+                from: UnsafeRawBufferPointer(otherArray.buffer))
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    /// copies a host buffer to a device array
+    public func copyAsync(to array: DeviceArray,
+                          from hostBuffer: UnsafeRawBufferPointer) throws
+    {
+        assert(!array.isReadOnly, "cannot mutate read only reference buffer")
+        assert(hostBuffer.baseAddress != nil)
+        assert(array.buffer.count == hostBuffer.count,
+               "buffer sizes don't match")
+        queue {
+            array.buffer.copyMemory(from: hostBuffer)
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    /// copies a device array to a host buffer
+    public func copyAsync(to hostBuffer: UnsafeMutableRawBufferPointer,
+                          from array: DeviceArray) throws
+    {
+        assert(hostBuffer.baseAddress != nil)
+        assert(array.buffer.count == hostBuffer.count,
+               "buffer sizes don't match")
+        queue {
+            hostBuffer.copyMemory(from: UnsafeRawBufferPointer(array.buffer))
+        }
+    }
+
     //--------------------------------------------------------------------------
     /// simulateWork(x:timePerElement:result:
     /// introduces a delay in the stream by sleeping a duration of

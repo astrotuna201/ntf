@@ -176,7 +176,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         replica.version = masterVersion
         
         // copy the other master array
-        try replica.copyAsync(from: otherMaster, using: stream)
+        try stream.copyAsync(to: replica, from: otherMaster)
 
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(otherMaster.device.name)" +
@@ -269,7 +269,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             if other.device.memoryAddressing == .discreet {
                 // get the master uma buffer
                 let buffer = UnsafeRawBufferPointer(master.buffer)
-                try other.copyAsync(from: buffer, using: stream)
+                try stream.copyAsync(to: other, from: buffer)
 
                 diagnostic("\(copyString) \(name)(\(trackingId)) " +
                     "uma:\(master.device.name)" +
@@ -282,7 +282,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             // otherwise they are both unified, so do nothing
         } else if other.device.memoryAddressing == .unified {
             // device to host
-            try master.copyAsync(to: other.buffer, using: stream)
+            try stream.copyAsync(to: other.buffer, from: master)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(master.device.name)_s\(stream.id)" +
@@ -295,7 +295,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             // both are discreet and not in the same service, so
             // transfer to host memory as an intermediate step
             let host = try getArray(for: _Streams.hostStream)
-            try master.copyAsync(to: host.buffer, using: stream)
+            try stream.copyAsync(to: host.buffer, from: master)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(master.device.name)_s\(stream.id)" +
@@ -304,7 +304,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
                 categories: .dataCopy)
             
             let hostBuffer = UnsafeRawBufferPointer(host.buffer)
-            try other.copyAsync(from: hostBuffer, using: stream)
+            try stream.copyAsync(to: other, from: hostBuffer)
             
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(other.device.name)" +
@@ -328,7 +328,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         lastAccessCopiedBuffer = true
         
         // async copy and record completion event
-        try other.copyAsync(from: master, using: stream)
+        try stream.copyAsync(to: other, from: master)
 
         diagnostic("\(copyString) \(name)(\(trackingId)) " +
             "\(master.device.name)" +

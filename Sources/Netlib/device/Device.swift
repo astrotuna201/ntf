@@ -173,26 +173,14 @@ public extension LocalComputeDevice {
 // DeviceArray
 //    This represents a device data array
 public protocol DeviceArray: ObjectTracking {
-    //-------------------------------------
-    // properties
-    /// the device that created this array
-    var device: ComputeDevice { get }
     /// a pointer to the memory on the device
     var buffer: UnsafeMutableRawBufferPointer { get }
+    /// the device that created this array
+    var device: ComputeDevice { get }
+    /// `true` if the array is read only
+    var isReadOnly: Bool { get }
     /// the array edit version number used for replication and synchronization
     var version: Int { get set }
-
-    //-------------------------------------
-    /// asynchronously copies the contents of another device array
-    func copyAsync(from other: DeviceArray, using stream: DeviceStream) throws
-    /// asynchronously copies the contents of an app memory buffer
-    func copyAsync(from buffer: UnsafeRawBufferPointer,
-                   using stream: DeviceStream) throws
-    /// copies the contents to an app memory buffer asynchronously
-    func copyAsync(to buffer: UnsafeMutableRawBufferPointer,
-                   using stream: DeviceStream) throws
-    /// clears the array to zero
-    func zero(using stream: DeviceStream) throws
 }
 
 //==============================================================================

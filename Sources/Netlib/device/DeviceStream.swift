@@ -46,6 +46,19 @@ public protocol DeviceStream:
     func waitUntilStreamIsComplete() throws
 
     //--------------------------------------------------------------------------
+    // data transport functions
+    /// clears the array to zero
+    func zero(array: DeviceArray) throws
+    /// asynchronously copies the contents of another device array
+    func copyAsync(to array: DeviceArray, from otherArray: DeviceArray) throws
+    /// asynchronously copies the contents of an app memory buffer
+    func copyAsync(to array: DeviceArray,
+                   from hostBuffer: UnsafeRawBufferPointer) throws
+    /// copies the contents to an app memory buffer asynchronously
+    func copyAsync(to hostBuffer: UnsafeMutableRawBufferPointer,
+                   from array: DeviceArray) throws
+    
+    //--------------------------------------------------------------------------
     // debugging functions
     /// simulateWork(x:timePerElement:result:
     /// introduces a delay in the stream by sleeping a duration of

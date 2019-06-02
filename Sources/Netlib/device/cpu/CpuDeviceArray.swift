@@ -6,7 +6,7 @@ public class CpuDeviceArray : DeviceArray {
     //--------------------------------------------------------------------------
     // properties
     public private(set) var trackingId = 0
-    public var buffer: UnsafeMutableRawBufferPointer
+    public let buffer: UnsafeMutableRawBufferPointer
     public let device: ComputeDevice
     public var version = 0
     public let isReadOnly: Bool

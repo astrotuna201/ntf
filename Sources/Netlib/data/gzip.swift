@@ -10,13 +10,6 @@ import Glibc
 #endif
 
 //==============================================================================
-// GZipError
-//
-public enum GZipError: Error {
-    case error(_ message: String)
-}
-
-//==============================================================================
 /// zip(data:
 /// - Parameter data: An array of data elements to gzip
 /// - Parameter compression: the compression factor to use. A value of -1
@@ -30,7 +23,7 @@ public func zip<T>(data: [T], compression: Int = -1) throws -> [T] {
     }
 }
 
-//============================================================================
+//==============================================================================
 /// zip(buffer:
 /// - Parameter buffer: A buffer of data elements to gzip
 /// - Parameter compression: the compression factor to use. A value of -1
@@ -266,6 +259,13 @@ private func createZStream(buffer: UnsafeRawBufferPointer) -> z_stream {
             adler: 0,
             reserved: 0
     )
+}
+
+//==============================================================================
+// GZipError
+//
+public enum GZipError: Error {
+    case error(_ message: String)
 }
 
 //==============================================================================

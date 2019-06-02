@@ -4,6 +4,7 @@
 import PackageDescription
 
 #if os(Linux)
+//==============================================================================
 let package = Package(
     name: "Netlib",
     products: [
@@ -43,6 +44,7 @@ let package = Package(
     ]
 )
 #else
+//==============================================================================
 let package = Package(
     name: "Netlib",
     products: [

@@ -12,9 +12,7 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
     // protocol properties
     public private(set) var trackingId = 0
     public var defaultStreamEventOptions = StreamEventOptions()
-    public var device: ComputeDevice {
-        return cudaDevice
-    }
+    public var device: ComputeDevice { return cudaDevice }
     public let id: Int
     public let name: String
     public var logInfo: LogInfo
@@ -65,8 +63,8 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
     // deinit
     deinit {
         assert(Thread.current === creatorThread,
-               "Stream has been captured and is being released by a " + 
-               "different thread. Probably by a queued function on the stream.")
+               "Stream has been captured and is being released by a " +
+                       "different thread. Probably by a queued function on the stream.")
 
         diagnostic("\(releaseString) DeviceStream(\(trackingId)) " +
                            "\(device.name)_\(name)", categories: [.streamAlloc])
@@ -145,13 +143,74 @@ public final class CudaStream: LocalDeviceStream, StreamGradients {
     }
 
     //--------------------------------------------------------------------------
+    /// fills the device array with zeros
+    public func zero(array: DeviceArray) throws {
+        assert(array is CudaDeviceArray)
+        try cudaCheck(
+                status: cudaMemsetAsync(array.buffer.baseAddress!, Int32(0),
+                                        array.buffer.count, handle))
+    }
+
+    //--------------------------------------------------------------------------
+    /// copies from one device array to another
+    public func copyAsync(to array: DeviceArray,
+                          from otherArray: DeviceArray) throws {
+        assert(array is CudaDeviceArray && otherArray is CudaDeviceArray)
+        assert(!array.isReadOnly, "cannot mutate read only reference buffer")
+        assert(array.buffer.count == otherArray.buffer.count,
+               "buffer sizes don't match")
+        try cudaDevice.select()
+
+        // copy
+        try cudaCheck(status: cudaMemcpyAsync(
+                array.buffer.baseAddress!,
+                UnsafeRawPointer(otherArray.buffer.baseAddress!),
+                array.buffer.count,
+                cudaMemcpyDeviceToDevice, handle))
+    }
+
+    //--------------------------------------------------------------------------
+    /// copies a host buffer to a device array
+    public func copyAsync(to array: DeviceArray,
+                          from hostBuffer: UnsafeRawBufferPointer) throws {
+        assert(array is CudaDeviceArray)
+        assert(!array.isReadOnly, "cannot mutate read only reference buffer")
+        assert(hostBuffer.baseAddress != nil)
+        assert(array.buffer.count == hostBuffer.count,
+               "buffer sizes don't match")
+        try cudaDevice.select()
+
+        try cudaCheck(status: cudaMemcpyAsync(
+                array.buffer.baseAddress!,
+                UnsafeRawPointer(hostBuffer.baseAddress!),
+                array.buffer.count,
+                cudaMemcpyHostToDevice, handle))
+    }
+
+    //--------------------------------------------------------------------------
+    /// copies a device array to a host buffer
+    public func copyAsync(to hostBuffer: UnsafeMutableRawBufferPointer,
+                          from array: DeviceArray) throws {
+        assert(array is CudaDeviceArray)
+        assert(hostBuffer.baseAddress != nil)
+        assert(hostBuffer.count == array.buffer.count,
+               "buffer sizes don't match")
+        try cudaDevice.select()
+
+        try cudaCheck(status: cudaMemcpyAsync(
+                hostBuffer.baseAddress!,
+                UnsafeRawPointer(array.buffer.baseAddress!),
+                array.buffer.count,
+                cudaMemcpyDeviceToHost, handle))
+    }
+
+    //--------------------------------------------------------------------------
     /// simulateWork(x:timePerElement:result:
     /// introduces a delay in the stream by sleeping a duration of
     /// x.shape.elementCount * timePerElement
     public func simulateWork<T>(x: T, timePerElement: TimeInterval,
                                 result: inout T)
-            where T: TensorView
-    {
+            where T: TensorView {
         let delay = TimeInterval(x.shape.elementCount) * timePerElement
         delayStream(atLeast: delay)
     }

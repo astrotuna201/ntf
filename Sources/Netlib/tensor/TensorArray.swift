@@ -242,10 +242,10 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
         if let master = master, replica.version != master.version {
             // cross service?
             if replica.device.service.id != master.device.service.id {
-                try copyCrossService(from: master, to: replica, using: stream)
+                try copyCrossService(to: replica, from: master, using: stream)
 
             } else if replica.device.id != master.device.id {
-                try copyCrossDevice(from: master, to: replica, using: stream)
+                try copyCrossDevice(to: replica, from: master, using: stream)
             }
         }
         
@@ -258,8 +258,8 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // copyCrossService
     // copies from an array in one service to another
-    private func copyCrossService(from master: DeviceArray,
-                                  to other: DeviceArray,
+    private func copyCrossService(to other: DeviceArray,
+                                  from master: DeviceArray,
                                   using stream: DeviceStream) throws
     {
         lastAccessCopiedBuffer = true
@@ -319,8 +319,8 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
     //--------------------------------------------------------------------------
     // copyCrossDevice
     // copies from one discreet memory device to the other
-    private func copyCrossDevice(from master: DeviceArray,
-                                 to other: DeviceArray,
+    private func copyCrossDevice(to other: DeviceArray,
+                                 from master: DeviceArray,
                                  using stream: DeviceStream) throws
     {
         // only copy if the devices have discreet memory

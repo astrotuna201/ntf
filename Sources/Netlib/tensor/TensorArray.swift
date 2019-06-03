@@ -122,7 +122,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
 
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
             "readOnly device array reference on \(stream.device.name) " +
-            "\(String(describing: Element.self))[\(buffer.count)]",
+            "\(String(describing: Element.self))[\(count)]",
             categories: .dataAlloc)
     }
     
@@ -147,7 +147,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
 
         diagnostic("\(referenceString) \(name)(\(trackingId)) " +
             "readWrite device array reference on \(stream.device.name) " +
-            "\(String(describing: Element.self))[\(buffer.count)]",
+            "\(String(describing: Element.self))[\(count)]",
             categories: .dataAlloc)
     }
     
@@ -275,8 +275,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
                     "uma:\(master.device.name)" +
                     "\(setText(" --> ", color: .blue))" +
                     "\(other.device.name)_s\(stream.id) " +
-                    "\(String(describing: Element.self))" +
-                    "[\(master.buffer.bindMemory(to: Element.self).count)]",
+                    "\(String(describing: Element.self))[\(count)]",
                     categories: .dataCopy)
             }
             // otherwise they are both unified, so do nothing
@@ -287,8 +286,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             diagnostic("\(copyString) \(name)(\(trackingId)) " +
                 "\(master.device.name)_s\(stream.id)" +
                 "\(setText(" --> ", color: .blue))uma:\(other.device.name) " +
-                "\(String(describing: Element.self))" +
-                "[\(master.buffer.bindMemory(to: Element.self).count)]",
+                "\(String(describing: Element.self))[\(count)]",
                 categories: .dataCopy)
 
         } else {
@@ -310,8 +308,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
                 "\(other.device.name)" +
                 "\(setText(" --> ", color: .blue))" +
                 "\(master.device.name)_s\(stream.id) " +
-                "\(String(describing: Element.self))" +
-                "[\(other.buffer.bindMemory(to: Element.self).count)]",
+                "\(String(describing: Element.self))[\(count)]",
                 categories: .dataCopy)
         }
     }
@@ -334,8 +331,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             "\(master.device.name)" +
             "\(setText(" --> ", color: .blue))" +
             "\(stream.device.name)_s\(stream.id) " +
-            "\(String(describing: Element.self))" +
-            "[\(master.buffer.bindMemory(to: Element.self).count)]",
+            "\(String(describing: Element.self))[\(count)]",
             categories: .dataCopy)
     }
     
@@ -354,8 +350,7 @@ final public class TensorArray<Element>: ObjectTracking, Logging {
             let array = try stream.device.createArray(count: byteCount)
             diagnostic("\(allocString) \(name)(\(trackingId)) " +
                 "device array on \(stream.device.name) " +
-                "\(String(describing: Element.self))" +
-                "[\(array.buffer.bindMemory(to: Element.self).count)]",
+                "\(String(describing: Element.self))[\(count)]",
                 categories: .dataAlloc)
             
             array.version = -1

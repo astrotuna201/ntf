@@ -412,7 +412,6 @@ public extension CpuStream {
 
     //--------------------------------------------------------------------------
     // pow
-    // TODO there needs to be a generic math library!
     func pow<T>(x: T, y: T, result: inout T) where
         T: TensorView, T.Element: AnyNumeric
     {

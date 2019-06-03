@@ -164,21 +164,22 @@ public protocol LogWriter: ObjectTracking {
     var categories: LogCategories? { get set }
     /// message levels greater than or equal to this will be logged
     var level: LogLevel { get set }
+    /// optional output handle to log file
+    var outputFile: FileHandle? { get }
     /// if `true`, messages are silently discarded
     var _silent: Bool { get set }
     /// the tabsize to use for message formatting
     var _tabSize: Int { get set }
-    /// the URL of the file to write messages to. If 'nil', messages are
-    /// written to stdout
-    var url: URL? { get }
     /// A log can be written to freely by any thread, so create write queue
     var queue: DispatchQueue { get }
     
     //--------------------------------------------------------------------------
     /// initializers
     /// initializes the log
-    /// - Parameter url: the file to write to. If `nil`, output will be written
-    ///   to stdout.
+    /// - Parameter url: the file to write to. If `nil`,
+    ///   output will be written to stdout.
+    /// - Parameter isStatic: if `true`, indicates that the object
+    /// will be held statically so it won't be reported as a memory leak
     init(url: URL?, isStatic: Bool)
 
     //--------------------------------------------------------------------------
@@ -212,7 +213,6 @@ public extension LogWriter {
     
     //--------------------------------------------------------------------------
     /// write
-    // TODO: add write to log file support
     func write(level: LogLevel,
                message: @autoclosure () -> String,
                nestingLevel: Int = 0,
@@ -229,23 +229,29 @@ public extension LogWriter {
             
             let indent = String(repeating: " ",
                                 count: nestingLevel * self._tabSize)
-            var eventStr = levelStr + ": " + indent + messageStr
+            var outputStr = levelStr + ": " + indent + messageStr
             
             // add trailing fill if desired
             if !trailing.isEmpty {
-                let fillCount = minCount - eventStr.count
+                let fillCount = minCount - outputStr.count
                 if messageStr.isEmpty {
-                    eventStr += String(repeating: trailing, count: fillCount)
+                    outputStr += String(repeating: trailing, count: fillCount)
                 } else {
                     if fillCount > 1 {
-                        eventStr += " " + String(repeating: trailing,
-                                                 count: fillCount - 1)
+                        outputStr += " " + String(repeating: trailing,
+                                                  count: fillCount - 1)
                     }
                 }
             }
-
-            // write to the console
-            print(eventStr)
+            
+            // output
+            if let fileHandle = outputFile {
+                outputStr += "\n"
+                fileHandle.write(outputStr.data(using: .utf8)!)
+            } else {
+                // write to the console
+                print(outputStr)
+            }
         }
     }
 }
@@ -258,20 +264,38 @@ final public class Log: LogWriter {
     public var level: LogLevel
     public var _silent: Bool
     public var _tabSize: Int
-    public var url: URL?
+    public let outputFile: FileHandle?
     public private(set) var trackingId: Int = 0
 	public let queue = DispatchQueue(label: "Log.queue")
 
     //--------------------------------------------------------------------------
     // initializers
-    public init(url: URL? = nil, isStatic: Bool) {
-        self.url = url
+    public init(url: URL? = nil, isStatic: Bool = true) {
+        assert(url == nil || url!.isFileURL, "Log url must be a file URL")
         level = .error
         _silent = false
         _tabSize = 2
+        var file: FileHandle?
+        if let fileURL = url?.standardizedFileURL {
+            let mgr = FileManager()
+            if !mgr.fileExists(atPath: fileURL.path) {
+                if !mgr.createFile(atPath: fileURL.path, contents: nil) {
+                    print("failed to create log file at: \(fileURL.path)")
+                }
+            }
+
+            do {
+                file = try FileHandle(forWritingTo: fileURL)
+                file!.truncateFile(atOffset: 0)
+            } catch {
+                print(String(describing: error))
+            }
+        }
+        outputFile = file
         trackingId = ObjectTracker.global.register(self, isStatic: isStatic)
     }
     deinit {
+        outputFile?.closeFile()
         ObjectTracker.global.remove(trackingId: trackingId)
     }
 }

@@ -215,11 +215,10 @@ public extension VectorView {
 
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(name: name, elements: any.map { Element(any: $0) })
+        self.init(name: name, elements: any.lazy.map { Element(any: $0) })
     }
 
     //-------------------------------------
@@ -381,13 +380,12 @@ public extension MatrixView {
     
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(_ extents: MatrixExtents, name: String? = nil,
             layout: MatrixLayout = .rowMajor, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
         self.init(extents, name: name, layout: layout,
-                  elements: any.map { Element(any: $0) })
+                  elements: any.lazy.map { Element(any: $0) })
     }
     
     //-------------------------------------
@@ -532,11 +530,11 @@ public extension VolumeView {
 
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(_ extents: VolumeExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+        self.init(extents, name: name,
+                  elements: any.lazy.map { Element(any: $0) })
     }
     
     //-------------------------------------
@@ -660,11 +658,11 @@ public extension NDTensorView {
 public extension NDTensorView {
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(_ extents: [Int], name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+        self.init(extents, name: name,
+                  elements: any.lazy.map { Element(any: $0) })
     }
     
     //-------------------------------------
@@ -818,11 +816,11 @@ public extension NCHWTensorView {
     
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(_ extents: NCHWExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+        self.init(extents, name: name,
+                  elements: any.lazy.map { Element(any: $0) })
     }
     
     //-------------------------------------
@@ -976,11 +974,11 @@ public extension NHWCTensorView {
     
     //-------------------------------------
     /// with convertible collection
-    /// TODO: should the collection be lazy??
     init<C>(_ extents: NHWCExtents, name: String? = nil, any: C) where
         C: Collection, C.Element: AnyConvertable, Element: AnyConvertable
     {
-        self.init(extents, name: name, elements: any.map { Element(any: $0) })
+        self.init(extents, name: name,
+                  elements: any.lazy.map { Element(any: $0) })
     }
     
     //-------------------------------------

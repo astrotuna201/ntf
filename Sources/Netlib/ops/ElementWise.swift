@@ -303,7 +303,6 @@ public extension TensorView where Element: FloatingPoint {
 /// - Parameter rhs: right hand tensor.
 /// - Parameter result: the tensor where the result will be written
 @inlinable @inline(__always)
-// TODO: this complains, talk to the guys
 //@differentiable(vjp: _vjpAdd(lhs:rhs:) where Element : TensorFlowFloatingPoint)
 public func squaredDifference<T>(_ lhs: T, _ rhs: T, result: inout T)
     where T: TensorView, T.Element: FloatingPoint

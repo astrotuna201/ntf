@@ -23,7 +23,7 @@ let package = Package(
     targets: [
         .systemLibrary(name: "Cuda",
                        path: "Libraries/Cuda",
-                       pkgConfig: "cuda-10.1"),
+                       pkgConfig: "cuda-10.0"),
         .systemLibrary(name: "Jpeg",
                        path: "Libraries/Jpeg",
                        pkgConfig: "libjpeg",

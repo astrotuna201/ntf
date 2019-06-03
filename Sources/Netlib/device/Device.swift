@@ -51,10 +51,12 @@ public protocol ComputePlatform: DeviceErrorHandling, ObjectTracking, Logger {
     /// - Parameter serviceName: (cpu, cuda, tpu, ...)
     ///   If no service name is specified, then the default is used.
     /// - Parameter name: a text label assigned to the stream for logging
-    /// - Parameter isStatic: if `true` the object will not be tracked
+    /// - Parameter isStatic: if `true` the object will not be reported
+    ///   as a memory leak
     func createStream(deviceId: Int,
                       serviceName: String?,
-                      name: String, isStatic: Bool) throws -> DeviceStream
+                      name: String,
+                      isStatic: Bool) throws -> DeviceStream
     
     //--------------------------------------------------------------------------
     /// requestDevices
@@ -84,8 +86,14 @@ public protocol ComputeService: ObjectTracking, Logger, DeviceErrorHandling {
     var timeout: TimeInterval? { get set }
 
     /// required initializer to support dynamically loaded services
-    init(platform: ComputePlatform, id: Int,
-         logInfo: LogInfo, name: String?) throws
+    /// - Parameter platform: the parent platform object
+    /// - Parameter id: the service id
+    /// - Parameter logInfo: the log information to use
+    /// - Parameter name: an optional service name
+    init(platform: ComputePlatform,
+         id: Int,
+         logInfo: LogInfo,
+         name: String?) throws
 }
 
 //==============================================================================
@@ -202,6 +210,12 @@ public protocol StreamEvent: ObjectTracking {
 }
 
 public extension StreamEvent {
+    //--------------------------------------------------------------------------
+    /// elapsedTime
+    /// computes the timeinterval between two stream event recorded times
+    /// - Parameter other: the other event used to compute the interval
+    /// - Returns: the elapsed interval. Will return `nil` if this event or
+    ///   the other have not been recorded.
     func elapsedTime(since other: StreamEvent) -> TimeInterval? {
         guard let time = recordedTime,
               let other = other.recordedTime else { return nil }

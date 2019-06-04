@@ -81,15 +81,8 @@ public protocol _Logging {
 }
 
 public extension _Logging {
-//    //--------------------------------------------------------------------------
-//    // willLog
-//    func willLog(level: LogLevel) -> Bool {
-//        return level <= log.level || level <= logLevel
-//    }
-//
     //--------------------------------------------------------------------------
     /// writeLog
-    ///
     func writeLog(_ message: @autoclosure () -> String,
                   level: LogLevel = .error,
                   indent: Int = 0,

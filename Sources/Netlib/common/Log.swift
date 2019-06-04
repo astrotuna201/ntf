@@ -164,8 +164,6 @@ public protocol LogWriter: ObjectTracking {
     var categories: LogCategories? { get set }
     /// message levels greater than or equal to this will be logged
     var level: LogLevel { get set }
-    /// optional output handle to log file
-    var outputFile: FileHandle? { get }
     /// if `true`, messages are silently discarded
     var _silent: Bool { get set }
     /// the tabsize to use for message formatting
@@ -173,15 +171,6 @@ public protocol LogWriter: ObjectTracking {
     /// A log can be written to freely by any thread, so create write queue
     var queue: DispatchQueue { get }
     
-    //--------------------------------------------------------------------------
-    /// initializers
-    /// initializes the log
-    /// - Parameter url: the file to write to. If `nil`,
-    ///   output will be written to stdout.
-    /// - Parameter isStatic: if `true`, indicates that the object
-    /// will be held statically so it won't be reported as a memory leak
-    init(url: URL?, isStatic: Bool)
-
     //--------------------------------------------------------------------------
     /// write
     /// writes an entry into the log
@@ -197,6 +186,11 @@ public protocol LogWriter: ObjectTracking {
                nestingLevel: Int,
                trailing: String,
                minCount: Int)
+
+    //--------------------------------------------------------------------------
+    /// output(message:
+    /// writes the formatted message to the log
+    func output(message: String)
 }
 
 //==============================================================================
@@ -243,15 +237,7 @@ public extension LogWriter {
                     }
                 }
             }
-            
-            // output
-            if let fileHandle = outputFile {
-                outputStr += "\n"
-                fileHandle.write(outputStr.data(using: .utf8)!)
-            } else {
-                // write to the console
-                print(outputStr)
-            }
+            output(message: outputStr)
         }
     }
 }
@@ -264,12 +250,16 @@ final public class Log: LogWriter {
     public var level: LogLevel
     public var _silent: Bool
     public var _tabSize: Int
-    public let outputFile: FileHandle?
     public private(set) var trackingId: Int = 0
 	public let queue = DispatchQueue(label: "Log.queue")
+    private let outputFile: FileHandle?
 
     //--------------------------------------------------------------------------
-    // initializers
+    /// init(url:isStatic:
+    /// - Parameter url: the file to write to. If `nil`,
+    ///   output will be written to stdout.
+    /// - Parameter isStatic: if `true`, indicates that the object
+    /// will be held statically so it won't be reported as a memory leak
     public init(url: URL? = nil, isStatic: Bool = true) {
         assert(url == nil || url!.isFileURL, "Log url must be a file URL")
         level = .error
@@ -294,9 +284,20 @@ final public class Log: LogWriter {
         outputFile = file
         trackingId = ObjectTracker.global.register(self, isStatic: isStatic)
     }
+    
     deinit {
         outputFile?.closeFile()
         ObjectTracker.global.remove(trackingId: trackingId)
+    }
+    
+    public func output(message: String) {
+        if let fileHandle = outputFile {
+            let message = message + "\n"
+            fileHandle.write(message.data(using: .utf8)!)
+        } else {
+            // write to the console
+            print(message)
+        }
     }
 }
 

@@ -65,15 +65,14 @@ public final class AtomicCounter {
 }
 
 //==============================================================================
-// Mutex
+/// Mutex
+/// TODO: verify using a DispatchQueue is faster than a counting semaphore
 public final class Mutex {
     // properties
-    private let semaphore = DispatchSemaphore(value: 1)
+    private let queue = DispatchQueue(label: "Mutex")
     
     // functions
     func sync<R>(execute work: () throws -> R) rethrows -> R {
-        semaphore.wait()
-        defer { semaphore.signal() }
-        return try work()
+        return try queue.sync(execute: work)
     }
 }

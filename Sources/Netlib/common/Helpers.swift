@@ -21,7 +21,8 @@ extension Int {
 // String(timeInterval:
 extension String {
     public init(timeInterval: TimeInterval) {
-        let milliseconds = Int(timeInterval.truncatingRemainder(dividingBy: 1.0) * 1000)
+        let milliseconds = Int(timeInterval
+            .truncatingRemainder(dividingBy: 1.0) * 1000)
         let interval = Int(timeInterval)
         let seconds = interval % 60
         let minutes = (interval / 60) % 60
@@ -34,7 +35,7 @@ extension String {
 //==============================================================================
 // almostEquals
 public func almostEquals<T: AnyNumeric>(_ a: T, _ b: T,
-                                       tolerance: Double = 0.00001) -> Bool {
+                                        tolerance: Double = 0.00001) -> Bool {
     return abs(a.asDouble - b.asDouble) < tolerance
 }
 

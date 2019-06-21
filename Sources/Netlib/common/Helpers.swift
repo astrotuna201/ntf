@@ -67,7 +67,10 @@ public final class AtomicCounter {
 
 //==============================================================================
 /// Mutex
+/// is this better named "critical section"
 /// TODO: verify using a DispatchQueue is faster than a counting semaphore
+/// TODO: rethink this and see if async(flags: .barrier makes sense using a
+/// concurrent queue
 public final class Mutex {
     // properties
     private let queue = DispatchQueue(label: "Mutex")

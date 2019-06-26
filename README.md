@@ -55,8 +55,6 @@ All of these types are just constrained variations of a _Tensor_ which conforms 
 ### TensorArray
 A _TensorArray_ is an abstract representation of a contiguous fixed size linear byte array. No data space is actually allocated until the first access is made. The point of access determines where the data is allocated. So if data is first accessed on a device, it will only exist there unless referenced somewhere else, making on device temporary variables efficient.
 
-__<I need to redo this diagram to change the names!>__
-
 ![TensorArray Diagram](https://github.com/ewconnell/ntf/blob/master/Docs/Diagrams/TensorStructure.png)
 
 ### TensorView

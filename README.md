@@ -57,7 +57,7 @@ A _TensorArray_ is an abstract representation of a contiguous fixed size linear 
 
 __<I need to redo this diagram to change the names!>__
 
-![TensorArray Diagram](https://github.com/ewconnell/Netlib/blob/master/documents/DataArrayDiagram.png)
+![TensorArray Diagram](https://github.com/ewconnell/ntf/blob/master/Docs/Diagrams/TensorStructure.png)
 
 ### TensorView
 A _TensorView_ is a struct that presents a shaped view of an associated _TensorArray_ object, along with a variety of access functions. Creation of a _TensorView_ will automatically create a _TensorArray_ object if one is not specified.

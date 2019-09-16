@@ -50,6 +50,17 @@ extension Zip3Sequence : Sequence {
         return Zip3Iterator.init(_s1.makeIterator(), _s2.makeIterator(),
                                  _s3.makeIterator())
     }
+    
+    func reduce<Result>(
+        _ initialResult: Result,
+        _ nextPartialResult: (Result, (S1.Element, S2.Element, S3.Element)) throws -> Result) rethrows -> Result
+    {
+        var result = initialResult
+        for value in self {
+            result = try nextPartialResult(result, value)
+        }
+        return result
+    }
 }
 
 public func zip<S1, S2, S3>(_ s1: S1, _ s2: S2, _ s3: S3) ->

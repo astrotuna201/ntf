@@ -65,10 +65,8 @@ public extension ScalarView {
         let shape = DataShape(extents: extents)
         let array = TensorArray<Bool>(count: shape.elementCount,
                                       name: String(describing: Self.self))
-        return ScalarValue<Bool>(
-            shape: shape, dataShape: shape,
-            tensorArray: array, viewDataOffset: 0,
-            indexAlignment: nil, traversal: .normal, isShared: false)
+        return ScalarValue<Bool>(shape: shape, tensorArray: array,
+                                 viewDataOffset: 0,isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -78,10 +76,8 @@ public extension ScalarView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return ScalarValue<IndexElement>(
-            shape: shape, dataShape: shape,
-            tensorArray: array, viewDataOffset: 0,
-            indexAlignment: nil, traversal: .normal, isShared: false)
+        return ScalarValue<IndexElement>(shape: shape, tensorArray: array,
+                                         viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -92,9 +88,8 @@ public extension ScalarView {
         let shape = DataShape(extents: [1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -103,28 +98,19 @@ public extension ScalarView {
 public struct ScalarValue<Element>: ScalarView {
     // properties
     public let shape: DataShape
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -153,9 +139,8 @@ public extension VectorView {
         let shape = DataShape(extents: [count])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                    tensorArray: array, viewDataOffset: 0,
-                    indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //-------------------------------------
@@ -169,9 +154,8 @@ public extension VectorView {
 
         // create shape considering column major
         let shape = DataShape(extents: [buffer.count])
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -180,10 +164,8 @@ public extension VectorView {
         let shape = DataShape(extents: extents)
         let array = TensorArray<Bool>(count: shape.elementCount,
                                       name: String(describing: Self.self))
-        return Vector<Bool>(shape: shape, dataShape: shape,
-                            tensorArray: array, viewDataOffset: 0,
-                            indexAlignment: nil,
-                            traversal: .normal, isShared: false)
+        return Vector<Bool>(shape: shape, tensorArray: array,
+                            viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -193,10 +175,8 @@ public extension VectorView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return Vector<IndexElement>(shape: shape, dataShape: shape,
-                                    tensorArray: array, viewDataOffset: 0,
-                                    indexAlignment: nil,
-                                    traversal: .normal, isShared: false)
+        return Vector<IndexElement>(shape: shape, tensorArray: array,
+                                    viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -208,9 +188,8 @@ public extension VectorView {
         let shape = DataShape(extents: [1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //-------------------------------------
@@ -229,9 +208,8 @@ public extension VectorView {
         let shape = DataShape(extents: [elements.count])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -239,29 +217,20 @@ public extension VectorView {
 // Vector
 public struct Vector<Element>: VectorView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -285,9 +254,8 @@ public extension MatrixView {
         let shape = DataShape(extents: [extents.rows, extents.cols])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -317,9 +285,8 @@ public extension MatrixView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -328,10 +295,8 @@ public extension MatrixView {
         let shape = DataShape(extents: extents)
         let array = TensorArray<Bool>(count: shape.elementCount,
                                       name: String(describing: Self.self))
-        return Matrix<Bool>(shape: shape, dataShape: shape,
-                            tensorArray: array, viewDataOffset: 0,
-                            indexAlignment: nil, traversal: .normal,
-                            isShared: false)
+        return Matrix<Bool>(shape: shape, tensorArray: array,
+                            viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -341,25 +306,16 @@ public extension MatrixView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return Matrix<IndexElement>(shape: shape, dataShape: shape,
-                                    tensorArray: array, viewDataOffset: 0,
-                                    indexAlignment: nil, traversal: .normal,
-                                    isShared: false)
+        return Matrix<IndexElement>(shape: shape, tensorArray: array,
+                                    viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
     // transpose
     var t: Self {
-        var tAlign: [Int]?
-        if let indexAlignment = self.indexAlignment {
-            tAlign = [indexAlignment[1], indexAlignment[0]]
-        }
         return Self.init(shape: shape.transposed(),
-                         dataShape: dataShape.transposed(),
                          tensorArray: tensorArray,
                          viewDataOffset: viewDataOffset,
-                         indexAlignment: tAlign,
-                         traversal: traversal,
                          isShared: isShared)
     }
 }
@@ -373,9 +329,8 @@ public extension MatrixView {
         let shape = DataShape(extents: [1, 1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //-------------------------------------
@@ -400,9 +355,8 @@ public extension MatrixView {
             DataShape(extents: extents).columnMajor()
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -410,29 +364,20 @@ public extension MatrixView {
 // Matrix
 public struct Matrix<Element>: MatrixView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
     
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -457,9 +402,8 @@ public extension VolumeView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -483,9 +427,8 @@ public extension VolumeView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -494,10 +437,8 @@ public extension VolumeView {
         let shape = DataShape(extents: extents)
         let array = TensorArray<Bool>(count: shape.elementCount,
                                       name: String(describing: Self.self))
-        return Volume<Bool>(shape: shape, dataShape: shape,
-                            tensorArray: array, viewDataOffset: 0,
-                            indexAlignment: nil, traversal: .normal,
-                            isShared: false)
+        return Volume<Bool>(shape: shape, tensorArray: array,
+                            viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -507,10 +448,8 @@ public extension VolumeView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return Volume<IndexElement>(shape: shape, dataShape: shape,
-                                    tensorArray: array, viewDataOffset: 0,
-                                    indexAlignment: nil, traversal: .normal,
-                                    isShared: false)
+        return Volume<IndexElement>(shape: shape, tensorArray: array,
+                                    viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -523,9 +462,8 @@ public extension VolumeView {
         let shape = DataShape(extents: [1, 1, 1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //-------------------------------------
@@ -546,9 +484,8 @@ public extension VolumeView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -556,29 +493,20 @@ public extension VolumeView {
 /// Volume
 public struct Volume<Element>: VolumeView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
 
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -602,9 +530,8 @@ public extension NDTensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -622,9 +549,8 @@ public extension NDTensorView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -633,10 +559,8 @@ public extension NDTensorView {
         let shape = DataShape(extents: extents)
         let name = String(describing: Self.self)
         let array = TensorArray<Bool>(count: shape.elementCount, name: name)
-        return NDTensor<Bool>(shape: shape, dataShape: shape,
-                              tensorArray: array, viewDataOffset: 0,
-                              indexAlignment: nil, traversal: .normal,
-                              isShared: false)
+        return NDTensor<Bool>(shape: shape, tensorArray: array,
+                              viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -646,10 +570,8 @@ public extension NDTensorView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return NDTensor<IndexElement>(shape: shape, dataShape: shape,
-                                      tensorArray: array, viewDataOffset: 0,
-                                      indexAlignment: nil, traversal: .normal,
-                                      isShared: false)
+        return NDTensor<IndexElement>(shape: shape, tensorArray: array,
+                                      viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -673,9 +595,8 @@ public extension NDTensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -684,29 +605,20 @@ public extension NDTensorView {
 // This is an n-dimentional tensor without specialized extent accessors
 public struct NDTensor<Element>: NDTensorView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
 
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -738,10 +650,8 @@ public extension NCHWTensorView {
         let shape = DataShape(extents: extent)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil,
-                  traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -768,10 +678,8 @@ public extension NCHWTensorView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
         
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil,
-                  traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -780,10 +688,8 @@ public extension NCHWTensorView {
         let shape = DataShape(extents: extents)
         let name = String(describing: Self.self)
         let array = TensorArray<Bool>(count: shape.elementCount, name: name)
-        return NCHWTensor<Bool>(shape: shape, dataShape: shape,
-                                tensorArray: array, viewDataOffset: 0,
-                                indexAlignment: nil, traversal: .normal,
-                                isShared: false)
+        return NCHWTensor<Bool>(shape: shape, tensorArray: array,
+                                viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -793,10 +699,8 @@ public extension NCHWTensorView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return NCHWTensor<IndexElement>(
-            shape: shape, dataShape: shape,
-            tensorArray: array, viewDataOffset: 0,
-            indexAlignment: nil, traversal: .normal, isShared: false)
+        return NCHWTensor<IndexElement>(shape: shape, tensorArray: array,
+                                        viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -809,9 +713,8 @@ public extension NCHWTensorView {
         let shape = DataShape(extents: [1, 1, 1, 1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //-------------------------------------
@@ -833,9 +736,8 @@ public extension NCHWTensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -843,29 +745,20 @@ public extension NCHWTensorView {
 // NCHWTensor
 public struct NCHWTensor<Element>: NCHWTensorView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
 
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -897,9 +790,8 @@ public extension NHWCTensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -926,10 +818,8 @@ public extension NHWCTensorView {
         assert(shape.elementCount == buffer.count,
                "shape count does not match buffer count")
 
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil,
-                  traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 
     //--------------------------------------------------------------------------
@@ -938,10 +828,8 @@ public extension NHWCTensorView {
         let shape = DataShape(extents: extents)
         let name = String(describing: Self.self)
         let array = TensorArray<Bool>(count: shape.elementCount, name: name)
-        return NHWCTensor<Bool>(shape: shape, dataShape: shape,
-                                tensorArray: array, viewDataOffset: 0,
-                                indexAlignment: nil, traversal: .normal,
-                                isShared: false)
+        return NHWCTensor<Bool>(shape: shape, tensorArray: array,
+                                viewDataOffset: 0, isShared: false)
     }
     
     //--------------------------------------------------------------------------
@@ -951,10 +839,8 @@ public extension NHWCTensorView {
         let name = String(describing: Self.self)
         let array = TensorArray<IndexElement>(count: shape.elementCount,
                                               name: name)
-        return NHWCTensor<IndexElement>(
-            shape: shape, dataShape: shape,
-            tensorArray: array, viewDataOffset: 0,
-            indexAlignment: nil, traversal: .normal, isShared: false)
+        return NHWCTensor<IndexElement>(shape: shape, tensorArray: array,
+                                        viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -967,9 +853,8 @@ public extension NHWCTensorView {
         let shape = DataShape(extents: [1, 1, 1, 1])
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: [element], name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
     
     //-------------------------------------
@@ -991,9 +876,8 @@ public extension NHWCTensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(elements: elements, name: name)
-        self.init(shape: shape, dataShape: shape,
-                  tensorArray: array, viewDataOffset: 0,
-                  indexAlignment: nil, traversal: .normal, isShared: false)
+        self.init(shape: shape, tensorArray: array,
+                  viewDataOffset: 0, isShared: false)
     }
 }
 
@@ -1001,29 +885,20 @@ public extension NHWCTensorView {
 /// NHWCTensor
 public struct NHWCTensor<Element>: NHWCTensorView {
     // properties
-    public let dataShape: DataShape
-    public let indexAlignment: [Int]?
     public let isShared: Bool
     public let shape: DataShape
     public var tensorArray: TensorArray<Element>
-    public let traversal: TensorTraversal
     public var viewDataOffset: Int
 
     public init(shape: DataShape,
-                dataShape: DataShape,
                 tensorArray: TensorArray<Element>,
                 viewDataOffset: Int,
-                indexAlignment: [Int]?,
-                traversal: TensorTraversal,
                 isShared: Bool)
     {
         self.shape = shape
-        self.dataShape = dataShape
         self.tensorArray = tensorArray
         self.viewDataOffset = viewDataOffset
-        self.indexAlignment = indexAlignment
         self.isShared = isShared
-        self.traversal = traversal
     }
 }
 
@@ -1035,19 +910,10 @@ public extension NHWCTensor {
         T: VectorView, T.Element: FixedSizeVector, T.Element.Scalar == Element
     {
         let viewExtents = [1, 1, vector.shape.extents[0], T.Element.count]
-        let dataExtents = [1, 1, vector.dataShape.extents[0],
-                           T.Element.count]
-        var alignment: [Int]?
-        if let align = vector.indexAlignment {
-            alignment = [0, 0, align[0], 0]
-        }
         let array = TensorArray<Element>(vector.tensorArray)
         self.init(shape: DataShape(extents: viewExtents),
-                  dataShape: DataShape(extents: dataExtents),
                   tensorArray: array,
                   viewDataOffset: vector.viewDataOffset,
-                  indexAlignment: alignment,
-                  traversal: vector.traversal,
                   isShared: vector.isShared)
     }
 
@@ -1059,21 +925,10 @@ public extension NHWCTensor {
                            matrix.shape.extents[0],
                            matrix.shape.extents[1],
                            T.Element.count]
-        let dataExtents = [1,
-                           matrix.dataShape.extents[0],
-                           matrix.dataShape.extents[1],
-                           T.Element.count]
-        var alignment: [Int]?
-        if let align = matrix.indexAlignment {
-            alignment = [0, align[0], align[1], 0]
-        }
         let array = TensorArray<Element>(matrix.tensorArray)
         self.init(shape: DataShape(extents: viewExtents),
-                  dataShape: DataShape(extents: dataExtents),
                   tensorArray: array,
                   viewDataOffset: matrix.viewDataOffset,
-                  indexAlignment: alignment,
-                  traversal: matrix.traversal,
                   isShared: matrix.isShared)
     }
 }

@@ -51,38 +51,25 @@ public protocol TensorView: Logging {
     // functions with correct access are exposed as protocol extensions.
     // this gives full access to protocol default implementations.
 
-    /// the shape of the actual underlying data. If `dataShape.extents` do not
-    /// match `shape.extents` then the data is repeated (broadcast) across
-    /// all dimensions during iteration and indexing.
-    /// If `dataShape` is nil, then it equals `shape`
-    var dataShape: DataShape { get }
     /// returns an index one past the end of the tensor used for collections
     var endIndex: Index { get }
-    /// an adjustment to indexes to align properly when using repeated data
-    var indexAlignment: [Int]? { get }
     /// used internally when obtaining write access to manage
     /// multi-threaded writes without causing `tensorArray` copy on write.
     var isShared: Bool { get }
-    /// the virtual shape of the view used for indexing
-    /// if `shape` and `dataShape` are not equal, then `dataShape` is repeated
+    /// the shape of the view used for indexing
     var shape: DataShape { get }
     /// returns the first tensor index used for collections
     var startIndex: Index { get }
     /// class reference to the underlying byte buffer
     var tensorArray: TensorArray<Element> { get set }
-    /// the indexing traversal procedure to use
-    var traversal: TensorTraversal { get }
     /// the linear element offset where the view begins
     var viewDataOffset: Int { get set }
 
     //--------------------------------------------------------------------------
     /// fully specified used for creating views
     init(shape: DataShape,
-         dataShape: DataShape,
          tensorArray: TensorArray<Element>,
          viewDataOffset: Int,
-         indexAlignment: [Int]?,
-         traversal: TensorTraversal,
          isShared: Bool)
 
     //--------------------------------------------------------------------------
@@ -111,17 +98,6 @@ public protocol TensorView: Logging {
 /// The data type used for tensors that contain tensor spatial index values
 public typealias IndexElement = Int32
 
-//--------------------------------------------------------------------------
-/// zeroAlignment(_ rank:
-@inlinable @inline(__always)
-func zeroAlignment(_ rank: Int) -> [Int] {
-    return [Int](repeating: 0, count: rank)
-}
-
-//==============================================================================
-/// traversal
-public enum TensorTraversal: Int32, Codable { case normal, repeated }
-
 //==============================================================================
 // TensorView default implementation
 public extension TensorView {
@@ -129,7 +105,7 @@ public extension TensorView {
     /// the extents of the view
     var extents: [Int] { return shape.extents }
     /// `true` if the values are contiguosly arranged in memory
-    var isContiguous: Bool { return dataShape.isContiguous }
+    var isContiguous: Bool { return shape.isContiguous }
     /// is `true` if the last data access caused the view's underlying
     /// tensorArray object to be copied.
     /// Used primarily for debugging and unit testing
@@ -158,11 +134,8 @@ public extension TensorView {
     /// empty
     init() {
         self.init(shape: DataShape(),
-                  dataShape: DataShape(),
                   tensorArray: TensorArray(),
                   viewDataOffset: 0,
-                  indexAlignment: [0],
-                  traversal: .normal,
                   isShared: false)
     }
     
@@ -170,11 +143,9 @@ public extension TensorView {
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
         self.init(shape: DataShape(extents: extents),
-                  dataShape: other.shape,
                   tensorArray: other.tensorArray,
                   viewDataOffset: other.viewDataOffset,
-                  indexAlignment: zeroAlignment(extents.count),
-                  traversal: .repeated, isShared: other.isShared)
+                  isShared: other.isShared)
     }
 
     //--------------------------------------------------------------------------
@@ -183,9 +154,8 @@ public extension TensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        return Self(shape: shape, dataShape: shape,
-                    tensorArray: array, viewDataOffset: 0,
-                    indexAlignment: nil, traversal: .normal, isShared: false)
+        return Self(shape: shape, tensorArray: array, viewDataOffset: 0,
+                    isShared: false)
     }
     
     func createDense() -> Self { return createDense(with: self.extents) }
@@ -193,21 +163,17 @@ public extension TensorView {
     //--------------------------------------------------------------------------
     /// create(value:
     func create(value: Element, name: String? = nil) -> Self {
-        let dataExtents = [Int](repeating: 1, count: rank)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: 1, name: name)
         var view = Self(shape: self.shape.dense,
-                        dataShape: DataShape(extents: dataExtents),
                         tensorArray: array, viewDataOffset: 0,
-                        indexAlignment: zeroAlignment(rank),
-                        traversal: .repeated,
                         isShared: false)
         try! view.readWrite()[0] = value
         return view
     }
 
     //--------------------------------------------------------------------------
-    /// createSubView
+    /// createView
     /// Returns a view of the tensorArray relative to this view
     private func createView(at offset: [Int], extents: [Int],
                             isReference: Bool) -> Self {
@@ -216,28 +182,12 @@ public extension TensorView {
         assert(shape.contains(offset: offset, extents: extents))
         let viewShape = DataShape(extents: extents, strides: shape.strides)
 
-        switch traversal {
-        case .normal:
-            // the subview offset is the current plus the offset of index
-            let dataOffset = viewDataOffset + shape.linearIndex(of: offset)
-            return Self(shape: viewShape,
-                        dataShape: viewShape,
-                        tensorArray: tensorArray,
-                        viewDataOffset: dataOffset,
-                        indexAlignment: indexAlignment,
-                        traversal: traversal,
-                        isShared: isReference)
-
-        case .repeated:
-            let alignment = zip(offset, dataShape.extents).map { $0 % $1 }
-            return Self(shape: viewShape,
-                        dataShape: dataShape,
-                        tensorArray: tensorArray,
-                        viewDataOffset: 0,
-                        indexAlignment: alignment,
-                        traversal: traversal,
-                        isShared: isReference)
-        }
+        // the subview offset is the current plus the offset of index
+        let dataOffset = viewDataOffset + shape.linearIndex(of: offset)
+        return Self(shape: viewShape,
+                    tensorArray: tensorArray,
+                    viewDataOffset: dataOffset,
+                    isShared: isReference)
     }
     
     //--------------------------------------------------------------------------
@@ -255,11 +205,9 @@ public extension TensorView {
         return try queue.sync {
             try copyIfMutates(using: stream)
             return Self(shape: shape,
-                        dataShape: dataShape,
                         tensorArray: tensorArray,
                         viewDataOffset: viewDataOffset,
-                        indexAlignment: indexAlignment,
-                        traversal: traversal, isShared: true)
+                        isShared: true)
         }
     }
     
@@ -274,23 +222,18 @@ public extension TensorView {
         }
         
         // create flattened view
-         // TODO: the flat alignment is wrong
-        let flatShape = shape.flattened()
-        return Self(shape: flatShape,
-                    dataShape: flatShape,
+        return Self(shape: shape.flattened(),
                     tensorArray: tensorArray,
                     viewDataOffset: viewDataOffset,
-                    indexAlignment: zeroAlignment(flatShape.rank),
-                    traversal: traversal, isShared: isShared)
+                    isShared: isShared)
     }
 
     //--------------------------------------------------------------------------
     /// realized
     /// create a dense view where the elements are coalesced
-    /// and potentially type converted when working with qtensors
     /// if it is already of the correct form, then `self` is reaturned
     func realized() throws -> Self {
-        if shape.isContiguous && shape == dataShape {
+        if shape.isContiguous {
             return self
         } else {
             var result = createDense()
@@ -312,7 +255,7 @@ public extension TensorView {
     func value(at position: Index.Position) throws -> Element {
         let buffer = try readOnly()
         let index = Index(view: self, at: position)
-        return buffer[index.dataIndex]
+        return buffer[index.bufferIndex]
     }
     
     //--------------------------------------------------------------------------
@@ -321,7 +264,7 @@ public extension TensorView {
     mutating func set(value: Element, at position: Index.Position) throws {
         let buffer = try readWrite()
         let index = Index(view: self, at: position)
-        buffer[index.dataIndex] = value
+        buffer[index.bufferIndex] = value
     }
     
     //--------------------------------------------------------------------------
@@ -331,21 +274,9 @@ public extension TensorView {
     /// - Returns: the new data shape
     /// - Precondition: Each value in `axes` must be in the range `-rank..<rank`
     func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
-        // TODO: test this
-        var align = indexAlignment
-        if traversal == .repeated {
-            for i in 0..<rank where shape.extents[i] != 1 {
-                align!.append(indexAlignment![i])
-            }
-        }
-        
-        let squeezedShape = shape.squeezed(axes: axes)
-        return NDTensor<Element>(shape: squeezedShape,
-                                 dataShape: squeezedShape,
+        return NDTensor<Element>(shape: shape.squeezed(axes: axes),
                                  tensorArray: tensorArray,
                                  viewDataOffset: viewDataOffset,
-                                 indexAlignment: align,
-                                 traversal: traversal,
                                  isShared: isShared)
     }
     
@@ -374,7 +305,7 @@ public extension TensorView {
         guard !isShared && !isUniqueReference() else { return }
         
         diagnostic("\(mutationString) \(name)(\(tensorArray.trackingId)) " +
-            "\(String(describing: Element.self))[\(dataShape.elementCount)]",
+            "\(String(describing: Element.self))[\(shape.elementCount)]",
             categories: [.dataCopy, .dataMutation])
         
         // create the new array and copy the values
@@ -436,7 +367,7 @@ public extension TensorView {
 
             return UnsafeBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
+                count: shape.elementSpanCount)
         }
     }
     
@@ -474,7 +405,7 @@ public extension TensorView {
 
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
+                count: shape.elementSpanCount)
         }
     }
     
@@ -593,7 +524,7 @@ public extension TensorView {
             
             return UnsafeMutableBufferPointer(
                 start: buffer.baseAddress!.advanced(by: viewDataOffset),
-                count: dataShape.elementSpanCount)
+                count: shape.elementSpanCount)
         }
     }
 }

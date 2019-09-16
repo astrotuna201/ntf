@@ -7,11 +7,8 @@ import Foundation
 //==========================================================================
 public protocol TensorIndexing: Strideable {
     associatedtype Position
-    /// the linear spatial position in the virtual view shape. The view
-    /// shape and dataShape are equal if there is no padding or repeating
-    var viewIndex: Int { get }
-    /// the linear buffer index of the data corresponding to the `viewIndex`
-    var dataIndex: Int { get }
+    /// the linear buffer element index
+    var bufferIndex: Int { get }
     
     /// initializer for starting at any position
     init<T>(view: T, at position: Position) where T: TensorView
@@ -27,46 +24,18 @@ public extension TensorIndexing {
     // Equatable
     @inlinable @inline(__always)
     static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.viewIndex == rhs.viewIndex
+        return lhs.bufferIndex == rhs.bufferIndex
     }
     
     // Comparable
     @inlinable @inline(__always)
     static func < (lhs: Self, rhs: Self) -> Bool {
-        return lhs.viewIndex < rhs.viewIndex
+        return lhs.bufferIndex < rhs.bufferIndex
     }
     
     @inlinable @inline(__always)
     func distance(to other: Self) -> Int {
-        return other.viewIndex - viewIndex
-    }
-}
-
-//==============================================================================
-/// ExtentBounds
-public struct ExtentBounds {
-    public let align: Int
-    public let viewExtent: Int
-    public let viewStride: Int
-    public let dataExtent: Int
-    public let dataStride: Int
-}
-
-public typealias TensorBounds = ContiguousArray<ExtentBounds>
-
-public extension TensorView {
-    //--------------------------------------------------------------------------
-    /// used by indexing objects
-    func createTensorBounds() -> TensorBounds {
-        var bounds = TensorBounds()
-        for dim in 0..<rank {
-            bounds.append(ExtentBounds(align: indexAlignment?[dim] ?? 0,
-                                       viewExtent: shape.extents[dim],
-                                       viewStride: shape.strides[dim],
-                                       dataExtent: dataShape.extents[dim],
-                                       dataStride: dataShape.strides[dim]))
-        }
-        return bounds
+        return other.bufferIndex - bufferIndex
     }
 }
 
@@ -104,7 +73,7 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Element {
-        return buffer[index.dataIndex]
+        return buffer[index.bufferIndex]
     }
 }
 
@@ -142,10 +111,10 @@ public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Element {
         get {
-            return buffer[index.dataIndex]
+            return buffer[index.bufferIndex]
         }
         set {
-            buffer[index.dataIndex] = newValue
+            buffer[index.bufferIndex] = newValue
         }
     }
 }

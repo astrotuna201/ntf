@@ -147,13 +147,13 @@ Tensor extents: [2, 2, 2]
   46 47 
   51 52 
 ```
-All tensor views are able to repeat data through indexing. No matter the extents, `volume` only uses storage
-for a single value.
+All tensor views are able to repeat data through indexing. No matter the extents, `volume` in this example only uses storage
+for a single scalar value.
 ```swift
 let volume = Volume<Int32>((2, 3, 10), repeating: Volume(42))
 print(volume.formatted((2,0)))
 ```        
-The extents of repeated data are not required to match any extent of the Tensor being created. 
+The extent of a repeated data dimension must either be 1 (which implies broadcasting) or it must match the corresponding dimension of the tensor being created.
 
 These examples repeat row and column vectors.
 No matter the extents, `matrix` only uses the shared storage from `rowVector` and repeats it through indexing.

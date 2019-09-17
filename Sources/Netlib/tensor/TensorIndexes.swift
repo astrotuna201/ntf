@@ -9,7 +9,8 @@ import Foundation
 /// ScalarIndex
 public struct ScalarIndex: TensorIndexing {
     // properties
-    public var bufferIndex: Int = 0
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
     
     //--------------------------------------------------------------------------
     // initializers
@@ -34,19 +35,29 @@ public struct ScalarIndex: TensorIndexing {
 /// VectorIndex
 public struct VectorIndex: TensorIndexing {
     // properties
-    public var bufferIndex: Int
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
     public let stride: Int
     
     //--------------------------------------------------------------------------
     // initializers
     public init<T>(view: T, at position: VectorPosition) where T: TensorView {
         stride = view.shape.strides[0]
-        bufferIndex = position
+        viewIndex = position
+        computeDataIndex()
     }
     
     public init<T>(endOf view: T) where T: TensorView {
         stride = view.shape.strides[0]
-        bufferIndex = view.shape.elementCount
+        viewIndex = view.shape.elementCount
+        computeDataIndex()
+    }
+    
+    //--------------------------------------------------------------------------
+    /// computeDataIndex
+    @inlinable @inline(__always)
+    public mutating func computeDataIndex() {
+        dataIndex = viewIndex * stride
     }
     
     //--------------------------------------------------------------------------
@@ -55,7 +66,8 @@ public struct VectorIndex: TensorIndexing {
     @inlinable @inline(__always)
     public func increment() -> VectorIndex {
         var next = self
-        next.bufferIndex += stride
+        next.viewIndex += 1
+        next.dataIndex += stride
         return next
     }
     
@@ -66,7 +78,8 @@ public struct VectorIndex: TensorIndexing {
     public func advanced(by n: Int) -> VectorIndex {
         guard n != 1 else { return increment() }
         var next = self
-        next.bufferIndex += n * stride
+        next.viewIndex += n
+        next.computeDataIndex()
         return next
     }
 }
@@ -75,7 +88,8 @@ public struct VectorIndex: TensorIndexing {
 /// MatrixIndex
 public struct MatrixIndex: TensorIndexing {
     // properties
-    public var bufferIndex: Int = 0
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
     public let rowExtent: Int
     public let rowStride: Int
     public let colExtent: Int
@@ -92,7 +106,8 @@ public struct MatrixIndex: TensorIndexing {
         colExtent = view.shape.extents[1]
         colStride = view.shape.strides[1]
         col = position.c
-        bufferIndex = computeBufferIndex()
+        viewIndex = row * rowExtent + col * colExtent
+        computeDataIndex()
     }
 
     public init<T>(endOf view: T) where T: TensorView {
@@ -102,14 +117,15 @@ public struct MatrixIndex: TensorIndexing {
         colExtent = view.shape.extents[1]
         colStride = view.shape.strides[1]
         col = 0
-        bufferIndex = view.shape.elementCount
+        viewIndex = view.shape.elementCount
+        computeDataIndex()
     }
 
     //--------------------------------------------------------------------------
-    /// computeBufferIndex
+    /// computeDataIndex
     @inlinable @inline(__always)
-    public func computeBufferIndex() -> Int {
-        return row * rowStride + col * colStride
+    public mutating func computeDataIndex() {
+        dataIndex = row * rowStride + col * colStride
     }
     
     //--------------------------------------------------------------------------
@@ -118,13 +134,14 @@ public struct MatrixIndex: TensorIndexing {
     @inlinable @inline(__always)
     public func increment() -> MatrixIndex {
         var next = self
+        next.viewIndex += 1
         next.col += 1
         if next.col == colExtent {
             next.col = 0
             next.row += 1
-            next.bufferIndex = next.computeBufferIndex()
+            next.computeDataIndex()
         } else {
-            next.bufferIndex += colStride
+            next.dataIndex += colStride
         }
         return next
     }
@@ -137,9 +154,10 @@ public struct MatrixIndex: TensorIndexing {
         guard n != 1 else { return increment() }
         let jump = n.quotientAndRemainder(dividingBy: rowExtent)
         var next = self
+        next.viewIndex += n
         next.row += jump.quotient
         next.col += jump.remainder
-        next.bufferIndex = next.computeBufferIndex()
+        next.computeDataIndex()
         return next
     }
 }
@@ -148,7 +166,8 @@ public struct MatrixIndex: TensorIndexing {
 /// VolumeIndex
 public struct VolumeIndex: TensorIndexing {
     // properties
-    public var bufferIndex: Int = 0
+    public var dataIndex: Int = 0
+    public var viewIndex: Int = 0
     public let depExtent: Int
     public let depStride: Int
     public let rowExtent: Int
@@ -171,7 +190,8 @@ public struct VolumeIndex: TensorIndexing {
         colExtent = view.shape.extents[2]
         colStride = view.shape.strides[2]
         col = position.c
-        computeBufferIndex()
+        viewIndex = dep * depExtent + row * rowExtent + col * colExtent
+        computeDataIndex()
     }
     
     public init<T>(endOf view: T) where T: TensorView {
@@ -184,14 +204,15 @@ public struct VolumeIndex: TensorIndexing {
         colExtent = view.shape.extents[2]
         colStride = view.shape.strides[2]
         col = 0
-        computeBufferIndex()
+        viewIndex = view.shape.elementCount
+        computeDataIndex()
     }
     
     //--------------------------------------------------------------------------
-    /// computeBufferIndex
+    /// computeDataIndex
     @inlinable @inline(__always)
-    public mutating func computeBufferIndex() {
-        bufferIndex = dep * depStride + row * rowStride + col * colStride
+    public mutating func computeDataIndex() {
+        dataIndex = dep * depStride + row * rowStride + col * colStride
     }
     
     //--------------------------------------------------------------------------
@@ -200,6 +221,7 @@ public struct VolumeIndex: TensorIndexing {
     @inlinable @inline(__always)
     public func increment() -> VolumeIndex {
         var next = self
+        next.viewIndex += 1
         next.col += 1
         if next.col == colExtent {
             next.col = 0
@@ -208,9 +230,9 @@ public struct VolumeIndex: TensorIndexing {
                 next.row = 0
                 next.dep += 1
             }
-            next.computeBufferIndex()
+            next.computeDataIndex()
         } else {
-            next.bufferIndex += colStride
+            next.dataIndex += colStride
         }
         return next
     }
@@ -222,6 +244,7 @@ public struct VolumeIndex: TensorIndexing {
     public func advanced(by n: Int) -> VolumeIndex {
         guard n != 1 else { return increment() }
         var next = self
+        next.viewIndex += n
 
         // update the depth, row, and column positions
         var jump = n.quotientAndRemainder(dividingBy: depExtent)
@@ -233,7 +256,7 @@ public struct VolumeIndex: TensorIndexing {
         next.col += jump.remainder
         
         // now set the index
-        next.computeBufferIndex()
+        next.computeDataIndex()
         return next
     }
 }
@@ -242,7 +265,8 @@ public struct VolumeIndex: TensorIndexing {
 /// NDIndex
 public struct NDIndex: TensorIndexing {
     // properties
-    public var bufferIndex: Int = 0
+    public var viewIndex: Int = 0
+    public var dataIndex: Int = 0
     public var position: NDPosition
     public let extents: [Int]
     public let strides: [Int]
@@ -250,25 +274,29 @@ public struct NDIndex: TensorIndexing {
     //--------------------------------------------------------------------------
     // initializers
     public init<T>(view: T, at position: NDPosition) where T: TensorView {
+        assert(position.count == 1 || position.count == view.rank)
         extents = view.shape.extents
         strides = view.shape.strides
-        self.position = position
-        computeBufferIndex()
+        self.position = position.count == 1 ?
+            [Int](repeating: position[0], count: view.rank) : position
+        viewIndex = zip(position, extents).reduce(0) { $0 + $1.0 * $1.1 }
+        computeDataIndex()
     }
     
     public init<T>(endOf view: T) where T: TensorView {
         position = [Int](repeating: 0, count: view.rank)
         position[0] = view.extents[0]
-        bufferIndex = view.shape.elementCount
         extents = view.shape.extents
         strides = view.shape.strides
+        viewIndex = view.shape.elementCount
+        computeDataIndex()
     }
     
     //--------------------------------------------------------------------------
-    /// computeBufferIndex
+    /// computeDataIndex
     @inlinable @inline(__always)
-    public mutating func computeBufferIndex() {
-        bufferIndex = zip(position, strides).reduce(0) {
+    public mutating func computeDataIndex() {
+        dataIndex = zip(position, strides).reduce(0) {
             $0 + $1.0 * $1.1
         }
     }
@@ -279,8 +307,10 @@ public struct NDIndex: TensorIndexing {
     @inlinable @inline(__always)
     public func increment() -> NDIndex {
         var next = self
-
-        // increment the last dimension
+        next.viewIndex += 1
+        
+        // increment the last dimension,
+        // recursively working towards lower rank dimensions
         func nextPosition(for dim: Int) {
             next.position[dim] += 1
             if next.position[dim] == extents[dim] && dim > 0 {
@@ -290,9 +320,9 @@ public struct NDIndex: TensorIndexing {
         }
         nextPosition(for: extents.count - 1)
         
-        // this should be rethought for the simple incremental case instead
-        // of full recompute
-        next.computeBufferIndex()
+        // TODO: this should be reconsidered for
+        // the simple incremental case instead of full recompute
+        next.computeDataIndex()
         return next
     }
     
@@ -304,7 +334,8 @@ public struct NDIndex: TensorIndexing {
         guard n != 1 else { return increment() }
         var next = self
         var distance = n
-        
+        next.viewIndex += n
+
         var jump: (quotient: Int, remainder: Int)
         for dim in (1..<extents.count).reversed() {
             jump = distance.quotientAndRemainder(dividingBy: extents[dim])
@@ -314,7 +345,7 @@ public struct NDIndex: TensorIndexing {
                 next.position[0] += jump.remainder
             }
         }
-        next.computeBufferIndex()
+        next.computeDataIndex()
         return next
     }
 }

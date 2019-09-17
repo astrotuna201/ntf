@@ -7,9 +7,11 @@ import Foundation
 //==========================================================================
 public protocol TensorIndexing: Strideable {
     associatedtype Position
-    /// the linear buffer element index
-    var bufferIndex: Int { get }
-    
+    /// sequential logical view element index
+    var viewIndex: Int { get }
+    /// linear data buffer element index
+    var dataIndex: Int { get }
+
     /// initializer for starting at any position
     init<T>(view: T, at position: Position) where T: TensorView
     /// initializer specifically for the endIndex
@@ -24,18 +26,18 @@ public extension TensorIndexing {
     // Equatable
     @inlinable @inline(__always)
     static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.bufferIndex == rhs.bufferIndex
+        return lhs.viewIndex == rhs.viewIndex
     }
     
     // Comparable
     @inlinable @inline(__always)
     static func < (lhs: Self, rhs: Self) -> Bool {
-        return lhs.bufferIndex < rhs.bufferIndex
+        return lhs.viewIndex < rhs.viewIndex
     }
     
     @inlinable @inline(__always)
     func distance(to other: Self) -> Int {
-        return other.bufferIndex - bufferIndex
+        return other.viewIndex - viewIndex
     }
 }
 
@@ -73,7 +75,7 @@ public struct TensorValueCollection<View>: RandomAccessCollection
     
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Element {
-        return buffer[index.bufferIndex]
+        return buffer[index.dataIndex]
     }
 }
 
@@ -111,10 +113,10 @@ public struct TensorMutableValueCollection<View>: RandomAccessCollection,
     @inlinable @inline(__always)
     public subscript(index: View.Index) -> View.Element {
         get {
-            return buffer[index.bufferIndex]
+            return buffer[index.dataIndex]
         }
         set {
-            buffer[index.bufferIndex] = newValue
+            buffer[index.dataIndex] = newValue
         }
     }
 }

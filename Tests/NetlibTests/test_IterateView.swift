@@ -23,8 +23,8 @@ class test_IterateView: XCTestCase {
         ("test_repeatingValue", test_repeatingValue),
         ("test_repeatingRow", test_repeatingRow),
         ("test_repeatingCol", test_repeatingCol),
+        ("test_repeatingColInVolume", test_repeatingColInVolume),
         ("test_repeatingMatrix", test_repeatingMatrix),
-        ("test_repeatingVolume", test_repeatingVolume),
         ("test_repeatingMatrixSubView", test_repeatingMatrixSubView),
     ]
     
@@ -275,16 +275,49 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
+    // test_repeatingColInVolume
+    func test_repeatingColInVolume() {
+        do {
+            let pattern = Volume<Int32>((1, 3, 1), elements: [
+                1,
+                0,
+                1,
+            ])
+            
+            let matrix = Volume<Int32>((2, 3, 4), repeating: pattern)
+            let expected: [Int32] = [
+                1, 1, 1, 1,
+                0, 0, 0, 0,
+                1, 1, 1, 1,
+                
+                1, 1, 1, 1,
+                0, 0, 0, 0,
+                1, 1, 1, 1,
+            ]
+            
+            let values = try matrix.array()
+            XCTAssert(values == expected, "values do not match")
+        } catch {
+            XCTFail(String(describing: error))
+        }
+    }
+    
+    //==========================================================================
     // test_repeatingMatrix
     func test_repeatingMatrix() {
         do {
-            let pattern = Matrix<Int32>((2, 2), elements: [
-                1, 0,
-                0, 1,
+            let pattern = Volume<Int32>((1, 3, 4), elements: [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
             ])
             
-            let matrix = Matrix<Int32>((3, 4), repeating: pattern)
+            let matrix = Volume<Int32>((2, 3, 4), repeating: pattern)
             let expected: [Int32] = [
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+
                 1, 0, 1, 0,
                 0, 1, 0, 1,
                 1, 0, 1, 0,
@@ -298,50 +331,20 @@ class test_IterateView: XCTestCase {
     }
     
     //==========================================================================
-    // test_repeatingVolume
-    func test_repeatingVolume() {
-        do {
-            let pattern = Volume<Int32>((2,2,2), elements:[
-                1, 0,
-                0, 1,
-                
-                2, 3,
-                3, 2
-            ])
-            
-            // create a virtual view and get it's values
-            let volume = Volume<Int32>((2, 3, 4), repeating: pattern)
-            let expected: [Int32] = [
-                1, 0, 1, 0,
-                0, 1, 0, 1,
-                1, 0, 1, 0,
-                
-                2, 3, 2, 3,
-                3, 2, 3, 2,
-                2, 3, 2, 3,
-            ]
-            
-            let values = try volume.array()
-            XCTAssert(values == expected, "values do not match")
-        } catch {
-            XCTFail(String(describing: error))
-        }
-    }
-
-    //==========================================================================
     // test_repeatingMatrixSubView
     func test_repeatingMatrixSubView() {
         do {
-            let pattern = Matrix<Int32>((2, 2), elements: [
-                1, 0,
-                0, 1,
+            let pattern = Matrix<Int32>((3, 1), elements: [
+                1,
+                0,
+                1,
             ])
             
             let matrix = Matrix<Int32>((3, 4), repeating: pattern)
             let expected: [Int32] = [
-                1, 0, 1, 0,
-                0, 1, 0, 1,
-                1, 0, 1, 0,
+                1, 1, 1, 1,
+                0, 0, 0, 0,
+                1, 1, 1, 1,
             ]
 
             let values = try matrix.array()
@@ -349,8 +352,8 @@ class test_IterateView: XCTestCase {
 
             let view = matrix.view(at: [1, 1], extents: [2, 3])
             let viewExpected: [Int32] = [
-                1, 0, 1,
-                0, 1, 0,
+                0, 0, 0,
+                1, 1, 1,
             ]
 
             let viewValues = try view.array()

@@ -63,13 +63,13 @@ public protocol TensorView: Logging {
     /// class reference to the underlying byte buffer
     var tensorArray: TensorArray<Element> { get set }
     /// the linear element offset where the view begins
-    var viewDataOffset: Int { get set }
+    var viewOffset: Int { get set }
 
     //--------------------------------------------------------------------------
     /// fully specified used for creating views
     init(shape: DataShape,
          tensorArray: TensorArray<Element>,
-         viewDataOffset: Int,
+         viewOffset: Int,
          isShared: Bool)
 
     //--------------------------------------------------------------------------
@@ -135,16 +135,33 @@ public extension TensorView {
     init() {
         self.init(shape: DataShape(),
                   tensorArray: TensorArray(),
-                  viewDataOffset: 0,
+                  viewOffset: 0,
                   isShared: false)
     }
     
     //--------------------------------------------------------------------------
     /// repeated view
     init(with extents: [Int], repeating other: Self) {
-        self.init(shape: DataShape(extents: extents),
+        // make sure other has valid extents
+        assert({
+            for i in 0..<other.rank {
+                if other.extents[i] != 1 && other.extents[i] != extents[i] {
+                    return false
+                }
+            }
+            return true
+        }(), "repeated tensor extents must be either 1" +
+            " or match the new tensor extents")
+        
+        // compute strides, setting stride to 0 for repeated dimensions
+        var strides = [Int](repeating: 0, count: extents.count)
+        for i in 0..<other.rank where other.extents[i] == extents[i] {
+            strides[i] = other.shape.strides[i]
+        }
+
+        self.init(shape: DataShape(extents: extents, strides: strides),
                   tensorArray: other.tensorArray,
-                  viewDataOffset: other.viewDataOffset,
+                  viewOffset: other.viewOffset,
                   isShared: other.isShared)
     }
 
@@ -154,7 +171,7 @@ public extension TensorView {
         let shape = DataShape(extents: extents)
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: shape.elementCount, name: name)
-        return Self(shape: shape, tensorArray: array, viewDataOffset: 0,
+        return Self(shape: shape, tensorArray: array, viewOffset: 0,
                     isShared: false)
     }
     
@@ -166,7 +183,7 @@ public extension TensorView {
         let name = name ?? String(describing: Self.self)
         let array = TensorArray<Element>(count: 1, name: name)
         var view = Self(shape: self.shape.dense,
-                        tensorArray: array, viewDataOffset: 0,
+                        tensorArray: array, viewOffset: 0,
                         isShared: false)
         try! view.readWrite()[0] = value
         return view
@@ -183,10 +200,10 @@ public extension TensorView {
         let viewShape = DataShape(extents: extents, strides: shape.strides)
 
         // the subview offset is the current plus the offset of index
-        let dataOffset = viewDataOffset + shape.linearIndex(of: offset)
+        let dataOffset = viewOffset + shape.linearIndex(of: offset)
         return Self(shape: viewShape,
                     tensorArray: tensorArray,
-                    viewDataOffset: dataOffset,
+                    viewOffset: dataOffset,
                     isShared: isReference)
     }
     
@@ -206,7 +223,7 @@ public extension TensorView {
             try copyIfMutates(using: stream)
             return Self(shape: shape,
                         tensorArray: tensorArray,
-                        viewDataOffset: viewDataOffset,
+                        viewOffset: viewOffset,
                         isShared: true)
         }
     }
@@ -224,7 +241,7 @@ public extension TensorView {
         // create flattened view
         return Self(shape: shape.flattened(),
                     tensorArray: tensorArray,
-                    viewDataOffset: viewDataOffset,
+                    viewOffset: viewOffset,
                     isShared: isShared)
     }
 
@@ -255,7 +272,7 @@ public extension TensorView {
     func value(at position: Index.Position) throws -> Element {
         let buffer = try readOnly()
         let index = Index(view: self, at: position)
-        return buffer[index.bufferIndex]
+        return buffer[index.dataIndex]
     }
     
     //--------------------------------------------------------------------------
@@ -264,7 +281,7 @@ public extension TensorView {
     mutating func set(value: Element, at position: Index.Position) throws {
         let buffer = try readWrite()
         let index = Index(view: self, at: position)
-        buffer[index.bufferIndex] = value
+        buffer[index.dataIndex] = value
     }
     
     //--------------------------------------------------------------------------
@@ -276,7 +293,7 @@ public extension TensorView {
     func squeezed(axes: [Int]? = nil) -> NDTensor<Element> {
         return NDTensor<Element>(shape: shape.squeezed(axes: axes),
                                  tensorArray: tensorArray,
-                                 viewDataOffset: viewDataOffset,
+                                 viewOffset: viewOffset,
                                  isShared: isShared)
     }
     
@@ -366,7 +383,7 @@ public extension TensorView {
             }
 
             return UnsafeBufferPointer(
-                start: buffer.baseAddress!.advanced(by: viewDataOffset),
+                start: buffer.baseAddress!.advanced(by: viewOffset),
                 count: shape.elementSpanCount)
         }
     }
@@ -404,7 +421,7 @@ public extension TensorView {
             }
 
             return UnsafeMutableBufferPointer(
-                start: buffer.baseAddress!.advanced(by: viewDataOffset),
+                start: buffer.baseAddress!.advanced(by: viewOffset),
                 count: shape.elementSpanCount)
         }
     }
@@ -523,7 +540,7 @@ public extension TensorView {
             let buffer = try! tensorArray.readWrite(using: lastStream)
             
             return UnsafeMutableBufferPointer(
-                start: buffer.baseAddress!.advanced(by: viewDataOffset),
+                start: buffer.baseAddress!.advanced(by: viewOffset),
                 count: shape.elementSpanCount)
         }
     }

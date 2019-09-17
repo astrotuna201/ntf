@@ -147,6 +147,8 @@ Tensor extents: [2, 2, 2]
   46 47 
   51 52 
 ```
+
+### Broadcasting
 All tensor views are able to repeat data through indexing. No matter the extents, `volume` in this example only uses storage
 for a single scalar value.
 ```swift

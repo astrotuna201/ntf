@@ -203,6 +203,11 @@ let expected = [Int32](0..<6)
 let values = try matrix.array()
 assert(values == expected, "values don't match")
 ```
+### Deciding When To Copy a Tensor of Non-Contiguous Elements
+TensorView layouts such as column major, or operations such as transpose, and structural recasting, are represented by manipulating strides. If it is determined that there is a performance advantage to reordering elements, then a simple copy can be made, which will produce a dense contiguous tensor for subsequent operations.
+
+Static compiler analyses could determine if a tensor with non-contiguous layout is accessed only once in a scope, and therefore should be used as is. However, if the tensor is constant and used iteratively, then a copy which reorders the elements contiguously before iteration might be faster depending on the tensor size. If the tensor is small (fits into cache), then it should be faster not to copy and to just use strided access. Further investigation needs to be made to determine how best to determine the "right size" decision point, as cache sizes vary across target architectures.
+
 ### Zero Copy Structural Casting of Vector Elements
 A tensor can store and manipulate vector elements. A vector Element can be structurally recast to other types such as an NHWC tensor used by Cuda.
 

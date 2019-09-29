@@ -22,11 +22,11 @@
 This document describes what streams are and how they work in detail, along with the platform protocols.
 
 ## Platform Abstraction
-NTF defines a set of class protocols for platform abstraction. They encapsulate functionality to allow run time selection of compute services (cpu, cuda, metal, etc.) and devices to enable application portability without recoding or recompiling.
+NTF defines a set of class protocols for platform abstraction. They encapsulate functionality to allow run time selection of compute services (cpu, cuda, vulkan, etc.) and devices to enable application portability without recoding or recompiling.
 ```swift
 ComputePlatform         // local, remote
   services[]
-    ComputeService      // (cpu, cuda, amd, tpu, ...)
+    ComputeService      // (cpu, cuda, vulkan, tpu, ...)
       devices[]
         ComputeDevice   // (gpu:0, gpu:1, ...)
           DeviceArray
@@ -109,6 +109,7 @@ try trainingSet.hostMultiWrite { batch in
         
         // at this point load image data from a file or database,
         // decompress, type convert, whatever is needed
+        // In this example we'll just fill the buffer with the `expected` value
         buffer.initialize(repeating: expected)
     }
 }

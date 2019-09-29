@@ -106,6 +106,8 @@ public extension TensorView {
     var extents: [Int] { return shape.extents }
     /// `true` if the values are contiguosly arranged in memory
     var isContiguous: Bool { return shape.isContiguous }
+    /// the number of items in the tensor, which is equal to `extents[0]`
+    var items: Int { return shape.extents[0] }
     /// is `true` if the last data access caused the view's underlying
     /// tensorArray object to be copied.
     /// Used primarily for debugging and unit testing

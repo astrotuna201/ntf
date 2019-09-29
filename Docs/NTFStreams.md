@@ -97,11 +97,10 @@ Applications usually need to process external data so it is in the required form
 typealias Pixel = RGB<UInt8>
 typealias ImageSet = Volume<Pixel>
 let expected = Pixel(0, 127, 255)
-let items = 60000
-var trainingSet = ImageSet((items, 256, 256))
+var trainingSet = ImageSet((60000, 256, 256))
 
 try trainingSet.hostMultiWrite { batch in
-    for i in 0..<batch.extents[0] {
+    for i in 0..<batch.items {
         // get a view of the item at `i`
         var itemView = batch.view(item: i)
         
@@ -115,7 +114,7 @@ try trainingSet.hostMultiWrite { batch in
 }
 
 // check the last item to see if it contains the expected value
-let item = trainingSet.view(item: items - 1)
+let item = trainingSet.view(item: trainingSet.items - 1)
 let values = try item.array()
 assert(values[0] == expected)
 ```

@@ -32,11 +32,10 @@ class test_Async: XCTestCase {
             typealias Pixel = RGB<UInt8>
             typealias ImageSet = Volume<Pixel>
             let expected = Pixel(0, 127, 255)
-            let items = 100
-            var trainingSet = ImageSet((items, 256, 256))
+            var trainingSet = ImageSet((100, 256, 256))
 
-            try trainingSet.hostMultiWrite(synchronous: true) { batch in
-                for i in 0..<batch.extents[0] {
+            try trainingSet.hostMultiWrite { batch in
+                for i in 0..<batch.items {
                     // get a view of the item at `i`
                     var itemView = batch.view(item: i)
                     
@@ -45,12 +44,14 @@ class test_Async: XCTestCase {
                     
                     // at this point load image data from a file or database,
                     // decompress, type convert, whatever is needed
+                    // In this example we'll just fill the buffer with
+                    // the `expected` value
                     buffer.initialize(repeating: expected)
                 }
             }
 
             // check the last item to see if it contains the expected value
-            let item = trainingSet.view(item: items - 1)
+            let item = trainingSet.view(item: trainingSet.items - 1)
             let values = try item.array()
             XCTAssert(values[0] == expected)
         } catch {

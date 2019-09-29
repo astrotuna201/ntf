@@ -1,12 +1,12 @@
 # NetlibTF
 
 ## Overview
-NetlibTF is key Netlib IP that has been reworked and enhanced specifically to meet the design goals of the Google Swift 4 TensorFlow project (as I understand them).
+NetlibTF is extracted Netlib IP that has been reworked and enhanced specifically to meet the design goals of the Swift 4 TensorFlow project. This was developed prior to starting at Google, so it's anticipated that design requirements will change and expand, particularly with respect to MLIR integration and Vulkan.
 
 The design currently addresses:
 - [Tensor Representation](#tensor-representation)
 - [Device Abstraction](#device-abstraction)
-- [Asynchronous Execution](#execution-model)
+- [Asynchronous Execution](#asynchronous-execution)
 - [Logging](#logging)
 
 The code is in early stages and needs signficant testing along with performance and usuability refinement.
@@ -20,16 +20,16 @@ The code will compile inside the S4TF environment, but currently there are no de
 * Minimal memory consumption and zero copy capability API variants for “careful” designs
 * Convenient expression composition for “casual” prototype designs
 * Transparent asynchronous execution model to minimize device stalling and efficiently use collections of devices with continuously variable latencies, both local and remote.
-* An execution model that can leverage existing standard driver models such as Cuda and OpenCL.
+* An execution model that can leverage existing standard driver models such as Cuda and Vulkan.
 * Integrated fine grain logging that enables selection of both message level (error, warning, diagnostic) and message category.
 * Enable clear closure opportunities for compiler vectorization
 * Extensible driver model without requiring a rebuild <TBD>
 * Reusable Function repository for rapid model development using “expert” designed functional components.<TBD>
 
-## Execution Model
-The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, OpenCL, and other proprietary models such as Google TPUs.
+## Asynchronous Execution
+The design goal is to have an asynchronous execution model that is transparent to the user and can leverage existing driver infrastructure such as Cuda, Vulkan, and other proprietary models such as Google TPUs.
 
-The idea of a stream of commands going to a local or remote device across the network seems easy for users to understand and it fits well with encapsulating frameworks like Cuda or OpenCL.
+The idea of a stream of commands going to a local or remote device across the network seems easy for users to understand and it fits well with encapsulating frameworks like Cuda or Vulkan.
 
 For details see [NTF Streams Architecture](https://github.com/ewconnell/NetlibTF/blob/master/Docs/NTFStreams.md)
 

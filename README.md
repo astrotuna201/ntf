@@ -4,10 +4,10 @@
 NetlibTF is key Netlib IP that has been reworked and enhanced specifically to meet the design goals of the Google Swift 4 TensorFlow project (as I understand them).
 
 The design currently addresses:
-* Tensor representation
-* Device abstraction
-* Asynchronous execution
-* Logging
+- [Tensor Representation](#tensor-representation)
+- [Device Abstraction](#device-abstraction)
+- [Asynchronous Execution](#execution-model)
+- [Logging](#logging)
 
 The code is in early stages and needs signficant testing along with performance and usuability refinement.
 

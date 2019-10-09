@@ -7,9 +7,9 @@
 //        ComputeService (cpu, cuda, amd, tpu, ...)
 //          devices[]
 //            ComputeDevice (gpu:0, gpu:1, ...)
-//            DeviceArray
+//              DeviceArray
 //              DeviceStream
-//            StreamEvent
+//                StreamEvent
 //
 import Foundation
 

@@ -1,6 +1,17 @@
 //******************************************************************************
-//  Created by Edward Connell on 3/3/16.
-//  Copyright © 2016 Edward Connell. All rights reserved.
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 import Foundation
 
@@ -93,7 +104,8 @@ public struct DataShape: Equatable, Codable {
     //--------------------------------------------------------------------------
     // spanCount
     // A sub view may cover a wider range of parent element indexes
-    // than the number of elements defined by the extent of this view
+    // than the number of dense elements defined by the extent of this view
+    // due to striding.
     // The span of the extent is the linear index of the last index + 1
     private static func spanCount(for extents: [Int],
                                   with strides: [Int]) -> Int {
